@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Godot Project",
+      "type": "godot",
+      "request": "launch",
+      "project": "${workspaceFolder}",
+      "address": "127.0.0.1",
+      "port": 6007,
+      "launch_game_instance": true,
+      "launch_scene": false
+    }
+  ]
+}

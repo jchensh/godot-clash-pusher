@@ -1,0 +1,25 @@
+; Engine configuration file.
+; 竖屏皇室战争式对推小游戏 — Godot 4.x
+; 详细规划见 PLAN.md（项目唯一权威规划）。
+
+config_version=5
+
+[application]
+
+config/name="对推小游戏"
+config/description="竖屏皇室战争式对推小游戏 (V1 白膜)"
+config/features=PackedStringArray("4.6", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[display]
+
+window/size/viewport_width=720
+window/size/viewport_height=1280
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+window/handheld/orientation="portrait"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"

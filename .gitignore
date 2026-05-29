@@ -1,0 +1,22 @@
+# Godot 4+ 专用忽略项
+.godot/
+
+# 自动生成的翻译文件
+*.translation
+
+# 安卓导出构建模板与生成物
+/android/
+
+# 导出产物
+/build/
+/export/
+*.apk
+*.aab
+*.pck
+*.zip
+
+# 编辑器/系统杂项
+*.tmp
+*.log
+Thumbs.db
+.DS_Store

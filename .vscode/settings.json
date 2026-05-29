@@ -1,0 +1,10 @@
+{
+  "godotTools.editorPath.godot4": "C:\\Users\\user\\AppData\\Local\\Microsoft\\WinGet\\Packages\\GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe\\Godot_v4.6.3-stable_win64.exe",
+  "godotTools.lsp.serverPort": 6005,
+  "files.eol": "\n",
+  "[gdscript]": {
+    "editor.insertSpaces": false,
+    "editor.tabSize": 4,
+    "editor.detectIndentation": false
+  }
+}
