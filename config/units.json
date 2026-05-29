@@ -1,0 +1,47 @@
+{
+  "knight_body": {
+    "name": "骑士",
+    "hp": 600,
+    "damage": 75,
+    "attack_speed": 1.2,
+    "move_speed": 1.0,
+    "attack_range": 0.5,
+    "target_type": "ground"
+  },
+  "archer_body": {
+    "name": "弓箭手",
+    "hp": 120,
+    "damage": 40,
+    "attack_speed": 1.0,
+    "move_speed": 1.0,
+    "attack_range": 3.0,
+    "target_type": "ground"
+  },
+  "giant_body": {
+    "name": "巨人",
+    "hp": 2000,
+    "damage": 120,
+    "attack_speed": 1.5,
+    "move_speed": 0.6,
+    "attack_range": 0.5,
+    "target_type": "ground"
+  },
+  "goblin_body": {
+    "name": "哥布林",
+    "hp": 80,
+    "damage": 50,
+    "attack_speed": 1.1,
+    "move_speed": 1.4,
+    "attack_range": 0.4,
+    "target_type": "ground"
+  },
+  "minion_body": {
+    "name": "亡灵",
+    "hp": 90,
+    "damage": 35,
+    "attack_speed": 1.0,
+    "move_speed": 1.2,
+    "attack_range": 0.6,
+    "target_type": "air"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "knight": {
+    "name": "骑士",
+    "elixir_cost": 3,
+    "skills": [
+      { "type": "spawn_unit", "unit_id": "knight_body", "count": 1 }
+    ]
+  },
+  "archers": {
+    "name": "弓箭手",
+    "elixir_cost": 3,
+    "skills": [
+      { "type": "spawn_unit", "unit_id": "archer_body", "count": 2 }
+    ]
+  },
+  "giant": {
+    "name": "巨人",
+    "elixir_cost": 5,
+    "skills": [
+      { "type": "spawn_unit", "unit_id": "giant_body", "count": 1 }
+    ]
+  },
+  "goblins": {
+    "name": "哥布林",
+    "elixir_cost": 2,
+    "skills": [
+      { "type": "spawn_unit", "unit_id": "goblin_body", "count": 3 }
+    ]
+  },
+  "minions": {
+    "name": "亡灵",
+    "elixir_cost": 3,
+    "skills": [
+      { "type": "spawn_unit", "unit_id": "minion_body", "count": 3 }
+    ]
+  },
+  "fireball": {
+    "name": "火球",
+    "elixir_cost": 4,
+    "skills": [
+      { "type": "aoe_damage", "radius": 1.5, "damage": 300 }
+    ]
+  },
+  "arrows": {
+    "name": "射箭",
+    "elixir_cost": 3,
+    "skills": [
+      { "type": "direct_damage", "damage": 150, "target": "first_enemy_in_lane" }
+    ]
+  },
+  "zap": {
+    "name": "电击",
+    "elixir_cost": 2,
+    "skills": [
+      { "type": "direct_damage", "damage": 75, "target": "first_enemy_in_lane" }
+    ]
+  }
+}
