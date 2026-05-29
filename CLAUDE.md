@@ -46,7 +46,14 @@ godot --path F:\godotProject -e                   # 打开编辑器 GUI
 
 IDE：**VS Code**（默认）。装 `geequlim.godot-tools` 扩展（`.vscode/extensions.json` 已推荐）；F5 用 `.vscode/launch.json` 的「Debug Godot Project」启动调试。
 
+## 分支 / 提交 / 推送约定
+- **开发在 `develop` 分支进行**；`main` 为稳定线，远端 `origin` = https://github.com/jchensh/godot-clash-pusher 。
+- **仅当用户说"提交"时**才 `git commit`；提交后**顺带 `git push`**（develop 首次推送用 `git push -u origin develop` 建立跟踪）。
+- 仍遵守"一步一确认"：每步做完先停下报告，待用户说提交再 commit+push。
+
 ## 当前进度
 - Step 0 ✅ 脚手架 + git + 工具链
 - Step 1 ✅ `ConfigLoader` + 三张 JSON 配置
-- **Now：Step 2** `Elixir` 圣水系统 + `SimClock` 固定逻辑 tick（10Hz / `TICK_DELTA=0.1s`）。下一步：Step 3 = `Deck` 循环抽牌。
+- Step 2 ✅ `Elixir` 圣水系统 + `SimClock` 固定逻辑 tick（10Hz / `TICK_DELTA=0.1s`）
+- Step 3 ✅ `Deck` 循环卡组（8 库 + 4 手，出一张补一张）
+- **Now：Step 4** `Unit` + `Lane` 推进与碰撞（纯逻辑）。⚠️ 开做前须先定 `attack_range`/`target_type` 语义（见 HISTORY 待定项）。
