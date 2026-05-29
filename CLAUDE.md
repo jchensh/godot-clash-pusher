@@ -7,6 +7,7 @@
 ## 开发纪律（最高优先级）
 - **一步一确认**：严格按 PLAN.md 第六节步骤顺序；**每完成一步停下等用户确认**，再进下一步，不要一次做多步。
 - **每步一次 git commit**，message 描述本步内容（如 `step2: elixir system + unit tests`）。
+- **每步同时更新 [HISTORY.md](HISTORY.md)**：记录新增/修改文件、决策、踩坑与修复、验收结果，随该步一起 commit。它是跨对话的进度与历史真相源。
 - **第 0~6 步是纯逻辑层，必须配单元测试，测试通过才算完成。**
 - **遇配置含义/接口不清，先提问，不要猜着往下跑。**
 - 给成功标准而非实现细节；不自行扩大范围。
@@ -46,4 +47,6 @@ godot --path F:\godotProject -e                   # 打开编辑器 GUI
 IDE：**VS Code**（默认）。装 `geequlim.godot-tools` 扩展（`.vscode/extensions.json` 已推荐）；F5 用 `.vscode/launch.json` 的「Debug Godot Project」启动调试。
 
 ## 当前进度
-- **Now：Step 0 完成**（脚手架 + git + 工具链）。下一步：Step 1 = `ConfigLoader` + 三张 JSON 配置。
+- Step 0 ✅ 脚手架 + git + 工具链
+- Step 1 ✅ `ConfigLoader` + 三张 JSON 配置
+- **Now：Step 2** `Elixir` 圣水系统 + `SimClock` 固定逻辑 tick（10Hz / `TICK_DELTA=0.1s`）。下一步：Step 3 = `Deck` 循环抽牌。
