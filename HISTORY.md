@@ -30,29 +30,27 @@
 | 0 | 脚手架 + git + 工具链 | ✅ 完成 | `77909c9` |
 | 1 | ConfigLoader + 三张 JSON | ✅ 完成 | `a632dcd` |
 | 2 | Elixir 圣水系统 + SimClock 固定 tick | ✅ 完成 | `22b75cb` |
-| 3 | Deck 循环抽牌 | ✅ 完成 | _本次提交_ |
-| 4 | Unit + Lane 推进与碰撞 | ⬜ 🚧 **需先决策**（见下方门禁） | — |
+| 3 | Deck 循环抽牌 | ✅ 完成 | `1da44e3` |
+| 4 | Unit + Lane 推进与碰撞 | ✅ 完成 | _本次提交_ |
 | 5 | Tower + Battle 胜负判定 | ⬜ | — |
 | 6 | SkillSystem 三积木 | ⬜ | — |
 | 7 | 显示层 MVP（白膜 + UI） | ⬜ | — |
 | 8 | AIController 规则 AI | ⬜ | — |
 | 9 | 安卓导出 + 触摸 + 竖屏 | ⬜ | — |
 
-**测试现状**：35 个测试全部通过（config_loader 7 + elixir 10 + sim_clock 6 + deck 9 + smoke 3）。
+**测试现状**：49 个测试全部通过（config_loader 7 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + smoke 3）。
 
 **分支 / 远端**：开发在 **`develop`** 分支；`main` 为稳定线。远端 `origin` = https://github.com/jchensh/godot-clash-pusher （Public）。约定：用户说"提交"时才 commit + push。
 
 ---
 
-## 🚧 Step 4 前置门禁（开做前必须先与用户决策！）
+## Step 4 前置语义（已确认，可开做）
 
 > **给接手的人 / agent**：`Unit` + `Lane`（Step 4）涉及战斗结算，依赖下面两个语义。PLAN §9 未定。
-> **未与用户确认前，不要开始 Step 4。** 确认后把结论补记到本节并更新下方「仍待定」清单。
+> 用户已于 2026-06-06 确认，可按下列结论开始 Step 4。
 
-1. **`attack_range` 的单位**：是 lane 进度 `0~1` 的比例（如 0.5 = 半条 lane），还是抽象距离单位（显示层再映射成像素）？
-   - PLAN §5.2 骑士示例值 0.5；若按 0~1 比例则对近战明显过大，疑为抽象单位。需用户拍板。
-2. **`target_type` 的含义**：是「该单位**属于**地面 / 空中」（决定它能否被某类攻击命中），还是「该单位**能攻击**地面 / 空中」？
-   - 配置里现有 `ground` / `air` 两种值，但语义未定。
+1. **`attack_range` 的单位**：lane 进度 `0~1` 的比例；例如 `0.5` 表示半条 lane。
+2. **`target_type` 的含义**：单位自身的地面 / 空中类型（即该单位属于 `ground` 还是 `air`），用于后续命中/筛选判断；不要把它解释为“该单位能攻击什么”。如后续需要表达攻击能力，再另加字段（如 `attack_targets`）并走配置。
 
 > 次要（可在 Step 4 过程中细化，不卡开工）：单位攻击目标规则（同 lane 最前敌人 / 优先塔）、`direct_damage` 的 `target` 枚举、多积木结算顺序。
 
@@ -67,6 +65,10 @@
 5. **测试用自写 headless runner**：零外部依赖（用户选择）。
 6. **配置数据存为字典 + 交叉引用校验**：主动校验 deck→card、spawn_unit→unit 的引用完整性，提早抓 id 笔误。
 7. **起始圣水 = 0（空槽开局）**：PLAN/配置未定义起手圣水；先按 0 做，将来如需半槽起手再加 `levels.json.elixir_start` 字段（用户 2026-05-30 确认）。
+8. **`attack_range` = lane 进度比例**：用户 2026-06-06 确认，范围数值按 `0.0~1.0` 的 lane 进度解释。
+9. **`target_type` = 单位自身类型**：2026-06-06 决策，`ground` / `air` 表示单位属于地面/空中，用于命中筛选；攻击能力后续若需要用独立配置字段表达。
+10. **`attack_speed` = 攻击间隔（秒/次）**：Step 4 决策，单位初次接敌可立即攻击，攻击后按 `attack_speed` 秒进入冷却。
+11. **Lane 目标选择 = 范围内最近敌人**：Step 4 决策，单位只打同 lane 中距离最近且在自身 `attack_range` 内的敌方单位；未接敌时沿 owner 方向推进，接近前方敌人时停在自身攻击范围边界。
 
 ---
 
@@ -76,6 +78,7 @@
 - **配置规模扩充**：PLAN §5 仅给 3 卡/1 单位示例；实际做了 8 卡/5 单位/1 关卡（Step 3 抽牌需要完整牌组）。数值均为可调占位。
 - **ConfigLoader 不建 typed 类**：PLAN 说"转为游戏内数据"，按最小化解读为字典。
 - **额外的交叉引用校验**：超出"读入并打印"的验收，属主动加固。
+- **Step 4 补充单位字段校验**：`ConfigLoader` 现在校验 `attack_speed` / `attack_range` / `target_type` 等 Step 4 必用字段，其中 `attack_range` 必须在 `0.0~1.0`。
 - **验证命令调整**：PLAN 设想 `--headless --quit`，实际须用 `--headless --editor --quit`（空工程无主场景）。
 - **godot.cmd shim 实现返工**：见下方 Step 0 踩坑。
 
@@ -89,10 +92,12 @@
 - ✅ **逻辑 tick 频率 = 10Hz**：保持。
 - ✅ **起始圣水 = 0**（空槽开局）：先按此做；将来如需半槽起手再加 `levels.json.elixir_start` 字段。
 
+**已确认（2026-06-06）**
+- ✅ **`attack_range` 语义**：lane 进度 `0~1` 的比例。
+- ✅ **`target_type` 语义**：单位自身类型（ground/air），不是攻击能力。
+
 **仍待定**
-- [ ] **`attack_range` 语义**：是 lane 进度 0~1 的比例，还是抽象距离单位？（PLAN §9，**Step 4 前必须定**）
-- [ ] **`target_type` 语义**：是"该单位属于地面/空中"还是"该单位能攻击地面/空中"？（PLAN §9）
-- [ ] **单位攻击目标规则、多积木结算顺序、direct_damage 的 target 枚举**：PLAN §9，到对应步骤前细化。
+- [ ] **多积木结算顺序、direct_damage 的 target 枚举**：PLAN §9，到 Step 6 前细化。
 
 ---
 
@@ -179,3 +184,35 @@
 **踩坑**：无（一次通过）。
 
 **验收**：测试 35/35 全过（+9 deck）✅。
+
+---
+
+### Step 4 — Unit + Lane 推进与碰撞  （本次提交）
+**新增**
+- `logic/unit.gd` + `.uid`：单位运行时状态。包含 `unit_id`、`owner_id`、`lane_index`、`progress`、血量、伤害、攻击间隔、移动速度、攻击范围、单位自身类型；支持扣血、死亡判断、攻击冷却、方向判断。
+- `logic/lane.gd` + `.uid`：单 lane 纯逻辑推进与碰撞/攻击结算。每 tick 推进冷却、判断范围内最近敌人、停下攻击、未接敌则按 owner 方向推进，并在结算后移除死亡单位。
+- `tests/test_unit.gd` + `.uid`：6 个测试，覆盖配置初始化、进度钳制、owner 推进方向、扣血死亡、攻击冷却、真实配置 unit。
+- `tests/test_lane.gd` + `.uid`：8 个测试，覆盖加入 lane、双方方向推进、相遇互伤、攻击冷却、死亡移除、接近后战斗、最近目标选择、真实配置 lane 结算。
+
+**修改**
+- `config/units.json`：按已确认语义把所有 `attack_range` 调整为 `0.0~1.0` 的 lane 比例（例如骑士/巨人近战 `0.05`，弓箭手 `0.25`）。
+- `logic/config_loader.gd`：单位配置校验补齐 Step 4 必用字段，并校验 `attack_range` 范围与 `target_type` 枚举。
+- `tests/test_runner.gd`：测试脚本加载失败时计入失败，避免坏测试文件被静默跳过。
+- `AGENTS.md`：同步当前 worktree、开发分支、Step 4/5 指针与 Step 4 语义。
+
+**决策**
+- 逻辑坐标采用全局 lane 进度：`OWNER_PLAYER` 从 `0` 向 `1` 推进，`OWNER_OPPONENT` 从 `1` 向 `0` 推进。
+- `move_speed` 解释为 lane 进度/秒；`attack_range` 解释为 lane 进度比例；`attack_speed` 解释为攻击间隔（秒/次）。
+- Lane 中攻击目标为自身攻击范围内最近敌方单位；双方同 tick 中已排定的攻击统一结算，因此相遇时可以互相掉血。
+
+**踩坑与修复**
+1. **GDScript 跨脚本类型标注/推断不稳定**：新脚本尚未注册 `.uid` 时，`Unit` 类型标注和 `:=` 推断会导致测试脚本解析失败。
+   修复：`Lane` 内部保持动态参数风格，关键局部变量显式转 `int/float`；随后用 `--headless --editor --quit` 让 Godot 注册 `Unit` / `Lane` 全局类并生成 `.uid`。
+2. **测试 runner 漏报坏测试文件**：脚本加载失败原先只 `push_error`，未计入失败。
+   修复：加载失败时增加总数和失败数，并记录失败信息。
+3. **攻击范围边界浮点误差**：距离理论上等于 `attack_range` 时可能因二进制浮点略大，导致一侧未出手。
+   修复：Lane 范围判断加入 `_EPSILON=1e-6` 容差。
+
+**验收**：
+- `HOME=/private/tmp/godot-home godot --headless --path /Users/jeffchen/godot-develop --script res://tests/test_runner.gd` → 49/49 全过 ✅
+- `HOME=/private/tmp/godot-home godot --headless --editor --path /Users/jeffchen/godot-develop --quit` → exit 0，`Unit` / `Lane` 注册成功 ✅

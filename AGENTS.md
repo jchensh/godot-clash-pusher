@@ -28,10 +28,11 @@
 
 ## 当前工程环境
 
-- 项目根目录：`/Users/jeffchen/godot`
+- 项目根目录：`/Users/jeffchen/godot-develop`
 - 引擎：Godot `4.6.3 stable`，标准 GDScript 构建。
 - 仓库：`https://github.com/jchensh/godot-clash-pusher`
-- 默认分支：`main`
+- 稳定分支：`main`
+- 当前开发分支：`develop`
 - GitHub CLI：`gh` 已安装，已登录为 `jchensh`。
 - 命令行访问 GitHub 需要走本机代理：`127.0.0.1:7897`。
 
@@ -46,19 +47,19 @@ godot --version
 跑全部单元测试：
 
 ```bash
-godot --headless --path /Users/jeffchen/godot --script res://tests/test_runner.gd
+godot --headless --path /Users/jeffchen/godot-develop --script res://tests/test_runner.gd
 ```
 
 如果 Codex/沙箱环境无法写入 `~/Library/Application Support/Godot`，用临时 HOME 跑：
 
 ```bash
-HOME=/private/tmp/godot-home godot --headless --path /Users/jeffchen/godot --script res://tests/test_runner.gd
+HOME=/private/tmp/godot-home godot --headless --path /Users/jeffchen/godot-develop --script res://tests/test_runner.gd
 ```
 
 打开 Godot 编辑器：
 
 ```bash
-godot --path /Users/jeffchen/godot -e
+godot --path /Users/jeffchen/godot-develop -e
 ```
 
 ## Git 和 GitHub 规则
@@ -70,7 +71,7 @@ git status --short --branch
 git diff
 git add <files>
 git commit -m "stepN: concise description"
-git push origin main
+git push origin develop
 ```
 
 GitHub 远端查询、PR、issue、仓库信息优先使用 `gh`：
@@ -88,7 +89,7 @@ gh issue list
 HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897 gh auth status
 HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897 gh repo view jchensh/godot-clash-pusher
 HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897 git fetch origin
-HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897 git push origin main
+HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897 git push origin develop
 ```
 
 不要通过 GitHub Desktop 做 agent 自动化日常开发流；它只作为用户图形化检查或手动操作的备用方式。
@@ -103,11 +104,19 @@ HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897 git push orig
 
 ## 当前开发指针
 
-截至本文件创建时：
+截至 2026-06-06：
 
 - Step 0：完成。
 - Step 1：完成。
 - Step 2：完成。
-- 下一步：Step 3，`Deck` 循环抽牌系统。
+- Step 3：完成。
+- Step 4：完成。
+- 下一步：Step 5，`Tower` + `Battle` 胜负判定。
+
+Step 4 前置语义已确认：
+
+- `attack_range`：lane 进度 `0~1` 的比例。
+- `target_type`：单位自身的地面 / 空中类型（`ground` / `air`），不是攻击能力。
+- `attack_speed`：攻击间隔（秒/次）。
 
 实际进度以 `HISTORY.md` 为准；如果本节过期，先更新 `HISTORY.md`，再更新本节。

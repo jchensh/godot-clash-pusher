@@ -15,6 +15,9 @@ func _initialize() -> void:
 		var script: GDScript = load(path)
 		if script == null:
 			push_error("无法加载测试脚本: " + path)
+			total += 1
+			failed += 1
+			failure_msgs.append("%s -> 无法加载测试脚本" % path.get_file())
 			continue
 		var file_name := path.get_file()
 		var seen := {}

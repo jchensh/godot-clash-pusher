@@ -56,4 +56,5 @@ IDE：**VS Code**（默认）。装 `geequlim.godot-tools` 扩展（`.vscode/ext
 - Step 1 ✅ `ConfigLoader` + 三张 JSON 配置
 - Step 2 ✅ `Elixir` 圣水系统 + `SimClock` 固定逻辑 tick（10Hz / `TICK_DELTA=0.1s`）
 - Step 3 ✅ `Deck` 循环卡组（8 库 + 4 手，出一张补一张）
-- **Now：Step 4** `Unit` + `Lane` 推进与碰撞（纯逻辑）。⚠️ 开做前须先定 `attack_range`/`target_type` 语义（见 HISTORY 待定项）。
+- Step 4 ✅ `Unit` + `Lane` 推进与碰撞（纯逻辑）
+- **Now：Step 5** `Tower` + `Battle` 胜负判定。

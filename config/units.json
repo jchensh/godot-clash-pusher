@@ -5,7 +5,7 @@
     "damage": 75,
     "attack_speed": 1.2,
     "move_speed": 1.0,
-    "attack_range": 0.5,
+    "attack_range": 0.05,
     "target_type": "ground"
   },
   "archer_body": {
@@ -14,7 +14,7 @@
     "damage": 40,
     "attack_speed": 1.0,
     "move_speed": 1.0,
-    "attack_range": 3.0,
+    "attack_range": 0.25,
     "target_type": "ground"
   },
   "giant_body": {
@@ -23,7 +23,7 @@
     "damage": 120,
     "attack_speed": 1.5,
     "move_speed": 0.6,
-    "attack_range": 0.5,
+    "attack_range": 0.05,
     "target_type": "ground"
   },
   "goblin_body": {
@@ -32,7 +32,7 @@
     "damage": 50,
     "attack_speed": 1.1,
     "move_speed": 1.4,
-    "attack_range": 0.4,
+    "attack_range": 0.04,
     "target_type": "ground"
   },
   "minion_body": {
@@ -41,7 +41,7 @@
     "damage": 35,
     "attack_speed": 1.0,
     "move_speed": 1.2,
-    "attack_range": 0.6,
+    "attack_range": 0.06,
     "target_type": "air"
   }
 }
