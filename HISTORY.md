@@ -38,7 +38,7 @@
 | 8 | AIController 规则 AI | ⬜ | — |
 | 9 | 安卓导出 + 触摸 + 竖屏 | ⬜ | — |
 
-**测试现状**：76 个测试全部通过（config_loader 7 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + skill_system 11 + smoke 3）。
+**测试现状**：88 个测试全部通过（config_loader 7 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + skill_system 11 + player 6 + match 6 + smoke 3）。
 
 **分支 / 远端**：开发在 **`develop`** 分支；`main` 为稳定线。远端 `origin` = https://github.com/jchensh/godot-clash-pusher （Public）。约定：用户说"提交"时才 commit + push。
 
@@ -283,3 +283,26 @@
 **验收**：
 - `HOME=/private/tmp/godot-home godot --headless --editor --path /Users/jeffchen/godot-develop --quit` → exit 0，`SkillSystem` 注册成功 ✅
 - `HOME=/private/tmp/godot-home godot --headless --path /Users/jeffchen/godot-develop --script res://tests/test_runner.gd` → 76/76 全过（+11 skill_system，旧 65 零回归）✅
+
+---
+
+### Step 7 — 显示层 MVP（进行中）
+> 第一步带画面。按「逻辑/显示分离」拆成两段：**7a** 先补可测的逻辑编排层，**7b** 再搭 Godot 画面并真跑验证。
+> 用户 2026-06-07 确认的 MVP 口径：①对手被动（只有静止三塔、不出牌，AI 留到 Step 8）②单 lane ③出牌两段式（先点卡再点落点，落点限己方半场 progress 0~0.5）④竖屏白膜：己方在下、敌方在上，近战方块/远程圆/建筑三角，蓝=己方红=对手。
+
+#### 7a — 对局编排层 Player + Match（本次提交）
+**新增**
+- `logic/player.gd` + `.uid`：`Player` 一方对局状态（owner + 注入 Elixir/Deck/ConfigLoader/SkillSystem）。`try_play_card(hand_index, lane_index, target_progress)` 串起「圣水门槛 → 扣圣水 → 循环卡组 → 触发技能」（不足/下标非法则 false 且不改状态）；`can_play()` 供 UI 置灰；`regen(dt)`、`card_cost()`。**玩家与 AI 共用此出牌入口**（对称性落点）。
+- `logic/match.gd` + `.uid`：`Match` 一局总驱动。组合 Battle + 两个对称 Player + SkillSystem + SimClock；`setup(level_id)` 按配置搭好（双方各 3 塔 + 单 lane、起始圣水 0）；`update(real_dt)` 把可变帧 dt 经 SimClock 折成固定 10Hz tick，逐 tick 双方圣水回涨 + `battle.step`，对局结束即停；`is_over()`/`get_result()`/`get_interpolation_fraction()`（供显示插值）。
+- `tests/test_player.gd` + `.uid`：6 测试（圣水不足拒绝、出牌扣费+生成+落点、卡组循环、can_play 反映圣水、回涨、非法下标 no-op）。
+- `tests/test_match.gd` + `.uid`：6 测试（搭双方 Player+battle、起始圣水 0、双方对称回涨、**帧率无关性**一大帧 vs 多小帧一致、update 驱动战斗使单位前进、结束后 update 不再推进）。
+
+**决策**：`Battle` 保持只管塔/lane/胜负不膨胀；圣水门槛与对局循环放新的 `Player`/`Match`（PLAN §4 列了 Player；Match 是 §3 数据流「逻辑层」侧的总驱动）。SkillSystem 仍不碰圣水。起始圣水 0（决策日志 7）。
+
+**踩坑与修复**
+1. **`match.gd` 的 `var n := clock.advance(dt)` 解析失败**：`clock` 是无类型 var，跨脚本方法返回类型推断不出 → `Cannot infer the type of "n"`（同 Step 4 的 `:=` 不稳定）。修复：显式 `var n: int = ...`。
+2. **test_runner 汇总会「假绿」**：当 `match.gd` 解析失败时，`test_match.gd` 预载到的是坏 GDScript，`MatchScript.new()` 返回 null、后续 `m.player` 等抛**运行时** SCRIPT ERROR，但这些错误不会写入 `_failures`，runner 仍把用例计为 PASS、汇总显示 88/88。**教训：逻辑层验收不能只看汇总，必须 grep stderr 的 `SCRIPT ERROR`/`Parse Error`/`Compilation failed`**。已据此确认修复后 0 错误行。（runner 加固为可选后续项。）
+
+**验收**：
+- `HOME=/private/tmp/godot-home godot --headless --editor --path /Users/jeffchen/godot-develop --quit` → 无解析错误，`Player`/`Match` 注册并生成 `.uid` ✅
+- `HOME=/private/tmp/godot-home godot --headless --path /Users/jeffchen/godot-develop --script res://tests/test_runner.gd` → **SCRIPT ERROR 行数=0**，88/88 全过（+6 player +6 match，旧 76 零回归）✅
