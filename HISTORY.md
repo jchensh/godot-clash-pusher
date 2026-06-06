@@ -33,8 +33,8 @@
 | 3 | Deck 循环抽牌 | ✅ 完成 | `1da44e3` |
 | 4 | Unit + Lane 推进与碰撞 | ✅ 完成 | `2b5742b` |
 | 5 | Tower + Battle 胜负判定 | ✅ 完成 | `b804f67` |
-| 6 | SkillSystem 三积木 | ✅ 完成 | _本次提交_ |
-| 7 | 显示层 MVP（白膜 + UI） | ⬜ | — |
+| 6 | SkillSystem 三积木 | ✅ 完成 | `a3cc5e5` |
+| 7 | 显示层 MVP（白膜 + UI） | ✅ 完成 | 7a `b33957b` / 7b _本次提交_ |
 | 8 | AIController 规则 AI | ⬜ | — |
 | 9 | 安卓导出 + 触摸 + 竖屏 | ⬜ | — |
 
@@ -286,7 +286,7 @@
 
 ---
 
-### Step 7 — 显示层 MVP（进行中）
+### Step 7 — 显示层 MVP（白膜 + UI）
 > 第一步带画面。按「逻辑/显示分离」拆成两段：**7a** 先补可测的逻辑编排层，**7b** 再搭 Godot 画面并真跑验证。
 > 用户 2026-06-07 确认的 MVP 口径：①对手被动（只有静止三塔、不出牌，AI 留到 Step 8）②单 lane ③出牌两段式（先点卡再点落点，落点限己方半场 progress 0~0.5）④竖屏白膜：己方在下、敌方在上，近战方块/远程圆/建筑三角，蓝=己方红=对手。
 
@@ -301,8 +301,54 @@
 
 **踩坑与修复**
 1. **`match.gd` 的 `var n := clock.advance(dt)` 解析失败**：`clock` 是无类型 var，跨脚本方法返回类型推断不出 → `Cannot infer the type of "n"`（同 Step 4 的 `:=` 不稳定）。修复：显式 `var n: int = ...`。
-2. **test_runner 汇总会「假绿」**：当 `match.gd` 解析失败时，`test_match.gd` 预载到的是坏 GDScript，`MatchScript.new()` 返回 null、后续 `m.player` 等抛**运行时** SCRIPT ERROR，但这些错误不会写入 `_failures`，runner 仍把用例计为 PASS、汇总显示 88/88。**教训：逻辑层验收不能只看汇总，必须 grep stderr 的 `SCRIPT ERROR`/`Parse Error`/`Compilation failed`**。已据此确认修复后 0 错误行。（runner 加固为可选后续项。）
+2. **test_runner 汇总会「假绿」**：当 `match.gd` 解析失败时，`test_match.gd` 预载到的是坏 GDScript，`MatchScript.new()` 返回 null、后续 `m.player` 等抛**运行时** SCRIPT ERROR，但这些错误不会写入 `_failures`，runner 仍把用例计为 PASS、汇总显示 88/88。**教训：逻辑层验收不能只看汇总，必须 grep stderr 的 `SCRIPT ERROR`/`Parse Error`/`Compilation failed`**。已据此确认修复后 0 错误行。（**已跟进加固**，见下方「测试基建加固 — test_runner 防『假绿』」。）
 
 **验收**：
 - `HOME=/private/tmp/godot-home godot --headless --editor --path /Users/jeffchen/godot-develop --quit` → 无解析错误，`Player`/`Match` 注册并生成 `.uid` ✅
 - `HOME=/private/tmp/godot-home godot --headless --path /Users/jeffchen/godot-develop --script res://tests/test_runner.gd` → **SCRIPT ERROR 行数=0**，88/88 全过（+6 player +6 match，旧 76 零回归）✅
+
+#### 7b — Godot 显示层（白膜 + UI）（本次提交）
+**新增**
+- `view/battle_scene.gd` + `.uid` + `view/battle_scene.tscn`：主场景。`_ready` 建 `Match` 并程序化搭白膜；`_process(delta)` → `match.update(delta)` 后每帧只读逻辑状态作画。三塔=三角（红=对手在上 / 蓝=己方在下）+ 绿血条；单位近战=方块、远程=圆（按 `attack_range` 粗分），按 `progress` 映射屏幕 y、视图侧 `lerp` 平滑；圣水条 + 4 手牌按钮（显示卡 id+费用、`can_play` 置灰）；胜负横幅读 `battle.result`。两段式出牌：点卡选中 → 点己方半场（progress 0~0.5）→ `player.try_play_card`。坐标 `0~1`→像素映射只活在本层。
+- `project.godot`：设 `run/main_scene=res://view/battle_scene.tscn`。
+
+**决策 / 范围**
+- 对手被动（不出牌，AI 留 Step 8）、单 lane、落点限己方半场——均按 2026-06-07 确认口径。
+- 视图侧用「`lerp` 趋近目标」做平滑（够顺够简），未用 SimClock 子 tick 严格插值；`get_interpolation_fraction()` 已就绪，需要再升级。
+- **UI 全英文（决定，用户 2026-06-07 确认）**：手牌显示卡 id（knight/fireball…）而非中文 name，胜负横幅与数字也全英文，整个显示层不出现中文。故 V1 **不引入中文字体**——既规避 PLAN §7 的「中文豆腐块」问题，又零字体资源依赖。将来若要显示中文 name，再导入一个 CJK `.ttf` 即可（届时仅改显示层，逻辑不动）。
+
+**踩坑与修复**
+1. `battle_scene.gd` 的 `var r := match_obj.get_result()` 解析失败（同 `:=` 跨脚本推断坑）→ 显式 `var r: int = ...`。
+2. 全屏背景/装饰 `ColorRect` 默认拦截鼠标 → 统一 `mouse_filter=IGNORE`，让点击穿透到 `_unhandled_input` 做部署；按钮保持默认 STOP。
+
+**验收（真跑 Godot 渲染，非仅 headless）**
+- `--headless --quit-after` 跑主场景：`battle_scene` 0 脚本错误 ✅
+- 渲染截图（临时 runner 出牌后存 PNG，验后删）：白膜场地 / 三塔+血条 / 单位 / 圣水条 / 手牌——出两张牌后手牌正确轮换为 `minions·fireball·giant·goblins` 且 `giant[5]` 因圣水不足置灰，确认「部署→推进→卡组循环→圣水扣费」闭环 ✅
+- 强制残血王塔 + 部署骑士截图：王塔归零变灰、空血条、显示 **YOU WIN** 横幅，确认「推塔→出胜负」✅
+- 全量单元测试仍 88/88（显示层无单测，逻辑零回归）✅
+
+#### 测试基建加固 — test_runner 防「假绿」（2026-06-07，跟进 7a 踩坑 #2）
+> 把"逻辑脚本编译失败时 runner 仍全绿"的隐患，从"靠人工 grep stderr"升级为"runner 自动判失败、非 0 退出"。只改 `tests/test_runner.gd`，零新依赖（守住"逻辑层必测、零外部依赖"纪律）。
+
+**根因**：坏逻辑脚本（解析/编译失败）被测试 `preload` 后，`Script.new()` 返回 null；其后对 null 的调用抛的是**运行时** SCRIPT ERROR——GDScript 无 try/catch、运行时错误只静默中止当前方法、进程 exit 仍 0——这些错误不写入 `_failures`。实测两种"假绿"表现：① **soft 编译错误**（如 `Cannot infer the type`）→ 预载方测试文件仍能加载、用例被计为 PASS；② **hard 语法错误** → 预载方测试文件解析失败、`load()` 后非 null 但无可见 `test_*` 方法 → 整文件被静默跳过、根本不计数。两者汇总都「全绿」。
+
+**方案（调研 4 个候选后择优）**
+- ✅ **启动预检 `res://logic`（核心修复）**：runner 跑测试前遍历 `logic/*.gd`，`load()` 后判 `can_instantiate()`；为 false（或 load 返回 null）即坏脚本 → 打印点名 + **整体非 0 退出、不放行**。`can_instantiate()==false` 恰好等价于"被 preload 后 `.new()` 返回 null"，与根因一一对应。
+- ✅ **测试脚本 `can_instantiate()` 校验**：发现/加载测试文件时原仅判 `== null`，现加判 `can_instantiate()`，堵住表现 ② 的静默跳过。
+- ✅ **每个测试 `script.new()` 加 null 守卫**：实例化失败即计失败，避免后续访问 `_failures` 再抛运行时错误被吞。
+- ❌ **放弃"读引擎 SCRIPT ERROR 计数"**：Godot 4 无公开的运行时错误计数 API，GDScript 也无 try/catch；实测坏脚本 `.new()` 触发的 SCRIPT ERROR 静默中止、exit 仍 0 → 此路不通。
+- 选 `can_instantiate()` 而非 `GDScript.reload()`：两者实测都能判坏（reload 坏脚本返回 `ERR_PARSE_ERROR=43`、好脚本 `OK=0`；can_instantiate 坏=false、好=true），但 reload 会重新编译有副作用，can_instantiate 只读首次 load 的编译结果、无副作用且语义更贴合。实测全部 11 个真实 logic 脚本两法均判「好」，零误报。
+
+**自验（临时坏脚本 + 对应测试，验后即删）**
+- 造 `logic/_selftest_broken.gd`（分别试 hard 语法错误、soft `var n := <untyped>.method()` 类型推断错误）+ `tests/test_selftest_broken.gd`（复刻 `test_match` 的"preload 后直接 `.new()` 用、不先 null 断言"）。
+- **旧 runner**：EXIT=0、汇总 88/88（坏用例被静默跳过）→ 复现假绿。
+- **新 runner**：预检捕获、点名 `_selftest_broken.gd`、EXIT=1（hard 与 soft 两种错误均被拦下，soft 即本节根因里的 `Cannot infer the type of "n"`）。
+- 删除临时文件后跑全量回归。
+
+**验收**：`HOME=/private/tmp/godot-home godot --headless --path /Users/jeffchen/godot-develop --script res://tests/test_runner.gd` → **EXIT=0、88/88 全过、SCRIPT ERROR 行数=0、预检零噪声**（健康时预检不打印）✅
+
+#### 7 过程备忘 — 后台任务与本会话共用 worktree（2026-06-07，忠实记录）
+> Step 7 期间用户启动了上面的「test_runner 加固」后台任务，它与本会话**共用同一个 git worktree**（并非独立 worktree）。如实记下，免得以后人/agent 困惑。
+- **探针文件一度混入 7a 提交**：任务为自验加固效果，在 `logic/` 放了临时坏脚本 `_probe_broken.gd`、根目录放了 `zzz_probe.gd`。本会话提交 7a 时 `git add -A` 把这两个文件一并卷入；随即 `git rm --cached` + `git commit --amend` 把它们从 7a 提交剔除（文件留在磁盘供任务继续用，后由任务自行清理删除）。
+- **改动混在同一工作区**：任务完成后，其 `tests/test_runner.gd` 加固与 HISTORY 记录，和本会话 7b 的 `view/*`、`project.godot`、HISTORY 改动同处一个未提交工作区，提交时按文件归属分开（runner 加固代码 → 独立提交；view/项目配置/HISTORY → 7b 提交）。
+- **教训**：后台任务可能与主会话共用同一 worktree；`git add -A` 前务必先 `git status` 看清每个文件归属，分别提交，别把对方的活卷进自己的提交。

@@ -113,7 +113,8 @@ HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897 git push orig
 - Step 4：完成。
 - Step 5：完成。
 - Step 6：完成。
-- 下一步：Step 7，显示层 MVP（白膜方块 + 手牌 UI + 圣水条 + 血条；PLAN 的 MVP 节点，先用 1 条 lane 跑通）。
+- Step 7：完成（7a Player/Match 逻辑 + 7b Godot 白膜画面，单 lane MVP，对手被动）。
+- 下一步：Step 8，`AIController` 规则 AI 接入（对手按规则自己出牌，一局正常分胜负）。
 
 Step 4 前置语义已确认：
 
