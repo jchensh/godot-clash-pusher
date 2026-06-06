@@ -104,19 +104,29 @@ HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897 git push orig
 
 ## 当前开发指针
 
-截至 2026-06-06：
+截至 2026-06-07：
 
 - Step 0：完成。
 - Step 1：完成。
 - Step 2：完成。
 - Step 3：完成。
 - Step 4：完成。
-- 下一步：Step 5，`Tower` + `Battle` 胜负判定。
+- Step 5：完成。
+- 下一步：Step 6，`SkillSystem` 三积木（spawn_unit / direct_damage / aoe_damage）。
 
 Step 4 前置语义已确认：
 
 - `attack_range`：lane 进度 `0~1` 的比例。
 - `target_type`：单位自身的地面 / 空中类型（`ground` / `air`），不是攻击能力。
 - `attack_speed`：攻击间隔（秒/次）。
+
+Step 5 已确认决策：
+
+- 三塔制：每方 1 王塔 + 2 公主塔（血量取自 `levels.json.tower_hp`）。
+- 王塔归零 → 该方立即负；公主塔毁不结束对局，只计入剩余塔血。
+- 超时（`match_duration`）→ 比双方剩余塔血总和，多者胜、相等判平。
+- V1 单 lane 两端接双方王塔，单位推到底直接削王塔。
+
+Step 6 待细化（开工前先与用户确认）：多积木卡牌结算顺序、`direct_damage` 的 `target` 枚举与含义。
 
 实际进度以 `HISTORY.md` 为准；如果本节过期，先更新 `HISTORY.md`，再更新本节。

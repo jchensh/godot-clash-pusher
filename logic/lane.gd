@@ -13,8 +13,17 @@ const _EPSILON := 0.000001
 var lane_index: int = 0
 var units: Array = []
 
+# 防守两端的塔（可空）：start 守 progress 0（玩家端），end 守 progress 1（对手端）。
+# 不接塔时为 null，lane 行为与 Step 4 完全一致。由 Battle 负责接线。
+var tower_at_start = null
+var tower_at_end = null
+
 func _init(lane_index_: int = 0) -> void:
 	lane_index = lane_index_
+
+func set_towers(start_tower, end_tower) -> void:
+	tower_at_start = start_tower
+	tower_at_end = end_tower
 
 func add_unit(unit) -> void:
 	if unit == null:
@@ -37,6 +46,8 @@ func tick(dt: float) -> void:
 		if not unit.is_alive():
 			continue
 		var target = _find_enemy_in_range(unit)
+		if target == null:
+			target = _find_enemy_tower_in_range(unit)
 		if target != null:
 			if unit.can_attack():
 				attacks.append({
@@ -67,6 +78,20 @@ func _move_unit(unit, dt: float) -> void:
 			var limit: float = float(blocker.progress) + float(unit.attack_range)
 			if desired < limit:
 				desired = minf(float(unit.progress), limit)
+
+	# 别走进尽头的敌塔：停在自身攻击范围边界（塔比任何敌方单位都更靠后，
+	# 因此此处只会在没有更近的单位阻挡时收紧 desired）。
+	var tower = _enemy_tower_for(unit)
+	if tower != null and tower.is_alive():
+		var tpos: float = _tower_position(tower)
+		if direction > 0:
+			var t_limit: float = tpos - float(unit.attack_range)
+			if desired > t_limit:
+				desired = maxf(float(unit.progress), t_limit)
+		else:
+			var t_limit: float = tpos + float(unit.attack_range)
+			if desired < t_limit:
+				desired = minf(float(unit.progress), t_limit)
 
 	unit.move_to(desired)
 
@@ -100,6 +125,27 @@ func _is_ahead(unit, other) -> bool:
 	if unit.get_direction() > 0:
 		return other.progress >= unit.progress
 	return other.progress <= unit.progress
+
+# 单位前方尽头的敌塔在攻击范围内则返回它，否则 null。
+func _find_enemy_tower_in_range(unit):
+	var tower = _enemy_tower_for(unit)
+	if tower == null or not tower.is_alive():
+		return null
+	var distance := absf(_tower_position(tower) - float(unit.progress))
+	if distance <= float(unit.attack_range) + _EPSILON:
+		return tower
+	return null
+
+# 该单位推进方向尽头的敌方塔：玩家(向 1)对 end 塔，对手(向 0)对 start 塔；
+# 同阵营或空则返回 null。
+func _enemy_tower_for(unit):
+	var tower = tower_at_end if unit.get_direction() > 0 else tower_at_start
+	if tower != null and tower.owner_id != unit.owner_id:
+		return tower
+	return null
+
+func _tower_position(tower) -> float:
+	return 1.0 if tower == tower_at_end else 0.0
 
 func _remove_dead() -> void:
 	for i in range(units.size() - 1, -1, -1):

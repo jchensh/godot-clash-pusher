@@ -57,4 +57,5 @@ IDE：**VS Code**（默认）。装 `geequlim.godot-tools` 扩展（`.vscode/ext
 - Step 2 ✅ `Elixir` 圣水系统 + `SimClock` 固定逻辑 tick（10Hz / `TICK_DELTA=0.1s`）
 - Step 3 ✅ `Deck` 循环卡组（8 库 + 4 手，出一张补一张）
 - Step 4 ✅ `Unit` + `Lane` 推进与碰撞（纯逻辑）
-- **Now：Step 5** `Tower` + `Battle` 胜负判定。
+- Step 5 ✅ `Tower` + `Battle` 胜负判定（三塔制；王塔归零判负；超时比塔血）
+- **Now：Step 6** `SkillSystem` 三积木（spawn_unit / direct_damage / aoe_damage）。

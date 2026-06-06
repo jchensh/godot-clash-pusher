@@ -31,14 +31,14 @@
 | 1 | ConfigLoader + 三张 JSON | ✅ 完成 | `a632dcd` |
 | 2 | Elixir 圣水系统 + SimClock 固定 tick | ✅ 完成 | `22b75cb` |
 | 3 | Deck 循环抽牌 | ✅ 完成 | `1da44e3` |
-| 4 | Unit + Lane 推进与碰撞 | ✅ 完成 | _本次提交_ |
-| 5 | Tower + Battle 胜负判定 | ⬜ | — |
+| 4 | Unit + Lane 推进与碰撞 | ✅ 完成 | `2b5742b` |
+| 5 | Tower + Battle 胜负判定 | ✅ 完成 | _本次提交_ |
 | 6 | SkillSystem 三积木 | ⬜ | — |
 | 7 | 显示层 MVP（白膜 + UI） | ⬜ | — |
 | 8 | AIController 规则 AI | ⬜ | — |
 | 9 | 安卓导出 + 触摸 + 竖屏 | ⬜ | — |
 
-**测试现状**：49 个测试全部通过（config_loader 7 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + smoke 3）。
+**测试现状**：65 个测试全部通过（config_loader 7 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + smoke 3）。
 
 **分支 / 远端**：开发在 **`develop`** 分支；`main` 为稳定线。远端 `origin` = https://github.com/jchensh/godot-clash-pusher （Public）。约定：用户说"提交"时才 commit + push。
 
@@ -69,6 +69,11 @@
 9. **`target_type` = 单位自身类型**：2026-06-06 决策，`ground` / `air` 表示单位属于地面/空中，用于命中筛选；攻击能力后续若需要用独立配置字段表达。
 10. **`attack_speed` = 攻击间隔（秒/次）**：Step 4 决策，单位初次接敌可立即攻击，攻击后按 `attack_speed` 秒进入冷却。
 11. **Lane 目标选择 = 范围内最近敌人**：Step 4 决策，单位只打同 lane 中距离最近且在自身 `attack_range` 内的敌方单位；未接敌时沿 owner 方向推进，接近前方敌人时停在自身攻击范围边界。
+12. **三塔制（1 王 + 2 公主）/方**：Step 5 决策（用户 2026-06-07 确认）。塔血取自 `levels.json.tower_hp`（king/princess）。`Tower` 只是血量容器（kind/owner/hp），位置由 Lane/Battle 接线。
+13. **王塔归零 = 该方立即负**：Step 5 决策（用户 2026-06-07 确认）。公主塔被摧毁**不**结束对局，只减少该方剩余塔血。三塔才有层次。
+14. **超时（match_duration）按剩余塔血总和判胜负**：Step 5 决策。时间到 → 双方在场塔血求和，多者胜、相等判平。
+15. **V1 单 lane 两端接双方王塔**：Step 5 决策（用户 2026-06-07 确认）。单位推到尽头直接削敌王塔，使 1-lane 阶段也能按王塔归零正常结束；两座公主塔仍实体化、满血计入超时比拼，扩到 3 lane 时再接公主/中路。
+16. **Lane↔Tower 接线方式 = Lane 持两端可空塔引用**：Step 5 决策。`Lane.set_towers(start,end)`；不接塔时为 null，行为与 Step 4 完全一致（旧测试不受影响）。单位攻击优先级：范围内敌方单位 > 尽头敌塔。
 
 ---
 
@@ -216,3 +221,31 @@
 **验收**：
 - `HOME=/private/tmp/godot-home godot --headless --path /Users/jeffchen/godot-develop --script res://tests/test_runner.gd` → 49/49 全过 ✅
 - `HOME=/private/tmp/godot-home godot --headless --editor --path /Users/jeffchen/godot-develop --quit` → exit 0，`Unit` / `Lane` 注册成功 ✅
+
+---
+
+### Step 5 — Tower + Battle 胜负判定  （本次提交）
+**前置语义（用户 2026-06-07 确认）**
+- 三塔制：每方 1 王塔 + 2 公主塔。
+- 王塔归零 → 该方立即负；公主塔毁不结束对局，只计入剩余塔血。
+- 超时（match_duration）→ 比双方剩余塔血总和，多者胜、相等判平。
+- V1 单 lane 两端接双方王塔，单位推到底直接削王塔。
+
+**新增**
+- `logic/tower.gd` + `.uid`：`Tower` 纯血量容器。`kind`（king/princess）、`owner_id`、`max_hp/hp`；`is_king()` / `is_alive()` / `is_destroyed()` / `take_damage()`（钳零、非正伤害与已毁后 no-op）。不含像素/位置。
+- `logic/battle.gd` + `.uid`：`Battle` 战斗总控。持双方塔列表 + 王塔引用 + lane 列表 + `match_duration`/`elapsed`/`result`。`step(dt)` 先结算各 lane 再计时与判负（对局结束后 no-op）；`build_v1_single_lane(level)` 按配置搭「双方各 3 塔 + 单 lane 接双王塔」并返回 lane；`total_tower_hp()` / `remaining_time()` / `is_over()`。胜负枚举 `RESULT_ONGOING/PLAYER_WIN/OPPONENT_WIN/DRAW`。跨脚本一律 `preload` 加载，不依赖 class_name 全局注册。
+- `tests/test_tower.gd` + `.uid`：6 测试（建塔、公主非王、扣血、钳零摧毁、非正伤害 no-op、已毁后 no-op）。
+- `tests/test_battle.gd` + `.uid`：10 测试（建三塔、削敌王塔、王塔归零判玩家胜、对手镜像胜、公主毁不结束、超时比塔血胜、超时平、结束后不再推进、停在塔攻击范围边界不穿塔、真实配置 level_01+骑士集成）。
+
+**修改**
+- `logic/lane.gd`：**加性扩展**。新增可空两端塔引用 `tower_at_start`（守 progress 0）/ `tower_at_end`（守 progress 1）+ `set_towers()`；`tick()` 在无敌方单位可打时改打尽头敌塔；`_move_unit()` 增加「停在敌塔攻击范围边界」夹取；新增 `_find_enemy_tower_in_range()` / `_enemy_tower_for()`（按方向取尽头敌塔且需异阵营）/ `_tower_position()`。不接塔时全部 null → 与 Step 4 行为完全一致。
+- `HISTORY.md` / `CLAUDE.md` / `AGENTS.md`：进度指针与决策同步。
+
+**决策**：见上方决策日志 12–16。
+
+**踩坑与修复**
+- 无（一次通过）。沿用 Step 4 经验提前规避：① 跨脚本统一 `preload`，不靠 class_name 全局名，先 `--editor --quit` 注册 `Tower`/`Battle` 并生成 `.uid`；② 攻击范围边界判断复用 `_EPSILON` 容差；③ Lane 改动保持加性，旧 8 个 lane 测试零回归。
+
+**验收**：
+- `HOME=/private/tmp/godot-home godot --headless --editor --path /Users/jeffchen/godot-develop --quit` → exit 0，`Tower` / `Battle` 注册成功 ✅
+- `HOME=/private/tmp/godot-home godot --headless --path /Users/jeffchen/godot-develop --script res://tests/test_runner.gd` → 65/65 全过（+6 tower +10 battle，旧 49 零回归）✅
