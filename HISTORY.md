@@ -32,13 +32,13 @@
 | 2 | Elixir 圣水系统 + SimClock 固定 tick | ✅ 完成 | `22b75cb` |
 | 3 | Deck 循环抽牌 | ✅ 完成 | `1da44e3` |
 | 4 | Unit + Lane 推进与碰撞 | ✅ 完成 | `2b5742b` |
-| 5 | Tower + Battle 胜负判定 | ✅ 完成 | _本次提交_ |
-| 6 | SkillSystem 三积木 | ⬜ | — |
+| 5 | Tower + Battle 胜负判定 | ✅ 完成 | `b804f67` |
+| 6 | SkillSystem 三积木 | ✅ 完成 | _本次提交_ |
 | 7 | 显示层 MVP（白膜 + UI） | ⬜ | — |
 | 8 | AIController 规则 AI | ⬜ | — |
 | 9 | 安卓导出 + 触摸 + 竖屏 | ⬜ | — |
 
-**测试现状**：65 个测试全部通过（config_loader 7 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + smoke 3）。
+**测试现状**：76 个测试全部通过（config_loader 7 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + skill_system 11 + smoke 3）。
 
 **分支 / 远端**：开发在 **`develop`** 分支；`main` 为稳定线。远端 `origin` = https://github.com/jchensh/godot-clash-pusher （Public）。约定：用户说"提交"时才 commit + push。
 
@@ -75,6 +75,14 @@
 15. **V1 单 lane 两端接双方王塔**：Step 5 决策（用户 2026-06-07 确认）。单位推到尽头直接削敌王塔，使 1-lane 阶段也能按王塔归零正常结束；两座公主塔仍实体化、满血计入超时比拼，扩到 3 lane 时再接公主/中路。
 16. **Lane↔Tower 接线方式 = Lane 持两端可空塔引用**：Step 5 决策。`Lane.set_towers(start,end)`；不接塔时为 null，行为与 Step 4 完全一致（旧测试不受影响）。单位攻击优先级：范围内敌方单位 > 尽头敌塔。
 
+> 以下 17–21 为 **Step 6（SkillSystem）开工前提**，用户 2026-06-07 确认。原 PLAN §9 遗留的「多积木结算顺序」「direct_damage 的 target 枚举」在此定稿，并补全 `aoe_damage` 圆心/半径与出牌指令口径。
+
+17. **多积木卡牌结算顺序 = 数组顺序、自上而下、逐个同步结算**：`skills` 数组里多个积木严格按下标先后执行，前一个执行完再下一个；策划用数组次序控制先后，不引入优先级字段。当前 8 张卡均为单积木，本规则面向未来叠积木的卡。
+18. **`direct_damage.target` V1 仅实现 `first_enemy_in_lane`**：语义 = 出牌方指定 lane 中**最逼近出牌方自己塔**的敌方单位（玩家塔在 progress 0 → 取 progress 最小的敌方单位；对手塔在 1 → 取最大）。该 lane 无敌方单位则**空放**（无效果）。V1 的 direct_damage 只打单位、不打塔。其余 target 取值（如 nearest_enemy / enemy_tower）后续用 `match` 分支扩展，不改架构。
+19. **`aoe_damage` 圆心/半径口径**：`radius` 按 lane 进度比例解释（`0~1`，与 attack_range 同尺度）；V1 为**沿 lane 的一维范围**——命中目标 lane 中 `|progress - center| <= radius` 的敌方单位。圆心 `center` 由出牌指令携带（玩家点哪 / AI 指定）。`config/cards.json` 里 `fireball.radius=1.5` 为可调占位（V1 覆盖整条 lane）。跨 lane 溅射留到多 lane 阶段（需二维坐标）再做。
+20. **技能伤害 V1 只打敌方单位**：`aoe_damage` / `direct_damage` 仅作用于出牌方的敌方单位，不误伤己方、不打塔（简化；CR 式友伤后续如需再开）。
+21. **出牌指令统一为 `(card_id, owner_id, lane_index, target_progress)`**：`spawn_unit` 在 `(lane_index, target_progress)` 处生成 `count` 个该单位（owner = 出牌方）；`aoe_damage` 用 `target_progress` 作圆心；`direct_damage` 只用 `lane_index`。部署区限制属 Step 7 输入层，逻辑层信任传入位置。**SkillSystem 不校验/扣圣水**（圣水门槛是上层 Player/显示层职责），只负责执行技能效果——对齐 §6 验收「出一张卡能正确触发 生成/直伤/AOE」。
+
 ---
 
 ## 与原计划（PLAN.md）的出入
@@ -101,8 +109,12 @@
 - ✅ **`attack_range` 语义**：lane 进度 `0~1` 的比例。
 - ✅ **`target_type` 语义**：单位自身类型（ground/air），不是攻击能力。
 
+**已确认（2026-06-07）**
+- ✅ **三塔制 + 胜负规则**：见决策日志 12–16（王塔归零判负、超时比塔血、单 lane 接王塔）。
+- ✅ **Step 6 技能结算口径**：见决策日志 17–21（多积木数组顺序、`direct_damage.target=first_enemy_in_lane`、`aoe_damage` 一维圆心/半径、伤害只打敌方单位、出牌指令 `(card_id, owner_id, lane_index, target_progress)`）。原 PLAN §9 遗留项至此全部定稿。
+
 **仍待定**
-- [ ] **多积木结算顺序、direct_damage 的 target 枚举**：PLAN §9，到 Step 6 前细化。
+- [ ] 暂无（V1 锁定范围内的技能/胜负语义已全部确认）。
 
 ---
 
@@ -249,3 +261,25 @@
 **验收**：
 - `HOME=/private/tmp/godot-home godot --headless --editor --path /Users/jeffchen/godot-develop --quit` → exit 0，`Tower` / `Battle` 注册成功 ✅
 - `HOME=/private/tmp/godot-home godot --headless --path /Users/jeffchen/godot-develop --script res://tests/test_runner.gd` → 65/65 全过（+6 tower +10 battle，旧 49 零回归）✅
+
+---
+
+### Step 6 — SkillSystem 三积木  （本次提交）
+**前置语义（用户 2026-06-07 确认）**：见决策日志 17–21（多积木数组顺序、`direct_damage.target=first_enemy_in_lane`、`aoe_damage` 一维圆心/半径、伤害只打敌方单位、出牌指令 `(card_id, owner_id, lane_index, target_progress)`）。
+
+**新增**
+- `logic/skill_system.gd` + `.uid`：`SkillSystem` 解析卡牌 `skills` 数组并执行。`play_card(card_id, owner_id, lane_index, target_progress)` 按数组顺序逐个结算（卡不存在返回 false）；`_spawn_unit`（在出牌位置生成 `count` 个该单位，owner=出牌方）、`_direct_damage`（命中 `_first_enemy_in_lane` = 最逼近出牌方塔的敌方单位，无则空放）、`_aoe_damage`（沿 lane 命中 `|progress-center|<=radius` 的敌方单位）。伤害类只打敌方、不打塔；**不校验/扣圣水**。跨脚本一律 `preload`。
+- `tests/test_skill_system.gd` + `.uid`：11 测试（生成数量/owner/位置、未知单位 no-op、直伤选玩家/对手各自最前敌、无敌空放、AOE 半径边界命中、AOE 不误伤己方、多积木全执行、未知卡 false、真实卡入对局并随 tick 推进）。
+
+**修改**
+- `logic/battle.gd`：新增 `get_lane(lane_index)`（按 `lane_index` 查 lane），供 SkillSystem 定位 lane。加性，无回归。
+- `HISTORY.md` / `CLAUDE.md` / `AGENTS.md`：进度指针与决策同步。
+
+**决策**：见决策日志 17–21。补充实现细节：`SkillSystem` 依赖注入 `(ConfigLoader, Battle)`，自身不持有圣水/卡组逻辑；AOE/直伤通过 `lane.get_units()` 读单位、`take_damage` 改血，死亡单位由后续 `lane.tick` 统一移除（直伤目标选择已过滤 `is_alive`）。
+
+**踩坑与修复**
+- 无（一次通过）。AOE 边界沿用 `_EPSILON` 容差；多积木/自定义半径测试用「向已加载的 `loader.cards` 注入内存卡」实现，不污染 `config/*.json`。
+
+**验收**：
+- `HOME=/private/tmp/godot-home godot --headless --editor --path /Users/jeffchen/godot-develop --quit` → exit 0，`SkillSystem` 注册成功 ✅
+- `HOME=/private/tmp/godot-home godot --headless --path /Users/jeffchen/godot-develop --script res://tests/test_runner.gd` → 76/76 全过（+11 skill_system，旧 65 零回归）✅

@@ -112,7 +112,8 @@ HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897 git push orig
 - Step 3：完成。
 - Step 4：完成。
 - Step 5：完成。
-- 下一步：Step 6，`SkillSystem` 三积木（spawn_unit / direct_damage / aoe_damage）。
+- Step 6：完成。
+- 下一步：Step 7，显示层 MVP（白膜方块 + 手牌 UI + 圣水条 + 血条；PLAN 的 MVP 节点，先用 1 条 lane 跑通）。
 
 Step 4 前置语义已确认：
 
@@ -127,6 +128,11 @@ Step 5 已确认决策：
 - 超时（`match_duration`）→ 比双方剩余塔血总和，多者胜、相等判平。
 - V1 单 lane 两端接双方王塔，单位推到底直接削王塔。
 
-Step 6 待细化（开工前先与用户确认）：多积木卡牌结算顺序、`direct_damage` 的 `target` 枚举与含义。
+Step 6 已确认决策（原 PLAN §9 遗留项至此定稿，详见 HISTORY 决策日志 17–21）：
+
+- 多积木卡牌按 `skills` 数组顺序自上而下逐个同步结算。
+- `direct_damage.target` V1 仅 `first_enemy_in_lane` = 最逼近出牌方塔的敌方单位；无则空放；只打单位不打塔。
+- `aoe_damage` 的 `radius` 按 lane 进度比例（0~1），沿 lane 一维命中；圆心由出牌指令携带。
+- 技能伤害 V1 只打敌方单位；出牌指令统一为 `(card_id, owner_id, lane_index, target_progress)`；SkillSystem 不校验/扣圣水。
 
 实际进度以 `HISTORY.md` 为准；如果本节过期，先更新 `HISTORY.md`，再更新本节。

@@ -49,6 +49,12 @@ func add_opponent_tower(tower) -> void:
 func add_lane(lane) -> void:
 	lanes.append(lane)
 
+func get_lane(lane_index: int):
+	for lane in lanes:
+		if lane.lane_index == lane_index:
+			return lane
+	return null
+
 # 便捷搭建：按 level 配置建一个 V1 单 lane 对局
 # （双方各 1 王 + 2 公主；单 lane 两端接双方王塔）。返回该 lane 供调用方部署单位。
 func build_v1_single_lane(level: Dictionary):
