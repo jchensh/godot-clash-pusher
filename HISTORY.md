@@ -34,11 +34,11 @@
 | 4 | Unit + Lane 推进与碰撞 | ✅ 完成 | `2b5742b` |
 | 5 | Tower + Battle 胜负判定 | ✅ 完成 | `b804f67` |
 | 6 | SkillSystem 三积木 | ✅ 完成 | `a3cc5e5` |
-| 7 | 显示层 MVP（白膜 + UI） | ✅ 完成 | 7a `b33957b` / 7b _本次提交_ |
-| 8 | AIController 规则 AI | ⬜ | — |
+| 7 | 显示层 MVP（白膜 + UI） | ✅ 完成 | 7a `b33957b` / 7b `304066b` |
+| 8 | AIController 规则 AI | ✅ 完成 | _本次提交_ |
 | 9 | 安卓导出 + 触摸 + 竖屏 | ⬜ | — |
 
-**测试现状**：88 个测试全部通过（config_loader 7 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + skill_system 11 + player 6 + match 6 + smoke 3）。
+**测试现状**：94 个测试全部通过（config_loader 7 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + skill_system 11 + player 6 + match 6 + ai_controller 6 + smoke 3）。
 
 **分支 / 远端**：开发在 **`develop`** 分支；`main` 为稳定线。远端 `origin` = https://github.com/jchensh/godot-clash-pusher （Public）。约定：用户说"提交"时才 commit + push。
 
@@ -82,6 +82,10 @@
 19. **`aoe_damage` 圆心/半径口径**：`radius` 按 lane 进度比例解释（`0~1`，与 attack_range 同尺度）；V1 为**沿 lane 的一维范围**——命中目标 lane 中 `|progress - center| <= radius` 的敌方单位。圆心 `center` 由出牌指令携带（玩家点哪 / AI 指定）。`config/cards.json` 里 `fireball.radius=1.5` 为可调占位（V1 覆盖整条 lane）。跨 lane 溅射留到多 lane 阶段（需二维坐标）再做。
 20. **技能伤害 V1 只打敌方单位**：`aoe_damage` / `direct_damage` 仅作用于出牌方的敌方单位，不误伤己方、不打塔（简化；CR 式友伤后续如需再开）。
 21. **出牌指令统一为 `(card_id, owner_id, lane_index, target_progress)`**：`spawn_unit` 在 `(lane_index, target_progress)` 处生成 `count` 个该单位（owner = 出牌方）；`aoe_damage` 用 `target_progress` 作圆心；`direct_damage` 只用 `lane_index`。部署区限制属 Step 7 输入层，逻辑层信任传入位置。**SkillSystem 不校验/扣圣水**（圣水门槛是上层 Player/显示层职责），只负责执行技能效果——对齐 §6 验收「出一张卡能正确触发 生成/直伤/AOE」。
+
+> 22 为 **Step 8（AIController）出牌规则**，用户 2026-06-07 确认（原 PLAN §9「规则 AI 出牌优先级表」在此定稿）。
+
+22. **规则 AI = 简单进攻型 + 中等节奏**：①圣水 `get_int() >= 6` 才考虑出牌；②出「出得起且有用」的**最贵**牌——兵随时有用、伤害法术仅在对面 lane 有敌方单位时才算有用（否则跳过，不空放）；③兵部署在自家塔前 `progress 0.9` 往 0 推，法术落在「最逼近 AI 塔的敌方单位」处；④两次出牌最小间隔 `1.0s`（防一次性倾泻）；⑤**确定性、无随机**（利于测试与复现）。V1 单一难度，`levels.json.ai_difficulty` 暂为占位。AI 一律经对称入口 `opponent.try_play_card` 发指令（与玩家同路径）。
 
 ---
 
@@ -352,3 +356,25 @@
 - **探针文件一度混入 7a 提交**：任务为自验加固效果，在 `logic/` 放了临时坏脚本 `_probe_broken.gd`、根目录放了 `zzz_probe.gd`。本会话提交 7a 时 `git add -A` 把这两个文件一并卷入；随即 `git rm --cached` + `git commit --amend` 把它们从 7a 提交剔除（文件留在磁盘供任务继续用，后由任务自行清理删除）。
 - **改动混在同一工作区**：任务完成后，其 `tests/test_runner.gd` 加固与 HISTORY 记录，和本会话 7b 的 `view/*`、`project.godot`、HISTORY 改动同处一个未提交工作区，提交时按文件归属分开（runner 加固代码 → 独立提交；view/项目配置/HISTORY → 7b 提交）。
 - **教训**：后台任务可能与主会话共用同一 worktree；`git add -A` 前务必先 `git status` 看清每个文件归属，分别提交，别把对方的活卷进自己的提交。
+
+---
+
+### Step 8 — AIController 规则 AI（本次提交）
+**前置规则（用户 2026-06-07 确认）**：见决策日志 22（简单进攻型、阈值 6、最贵可用兵、法术不空放、自家塔前部署、出牌间隔 1s、确定性无随机）。
+
+**新增**
+- `ai/ai_controller.gd` + `.uid`：`AIController(match, config)`。`tick(dt)` 由 Match 固定 tick 循环驱动：冷却中跳过，否则 `_decide()`——圣水 `<6` 则等；否则在手牌里选「出得起且有用」的最贵牌（兵随时可出、法术仅在对面有敌方单位时可出，避免空放），兵部署 `progress 0.9`、法术落最前敌人处，经 `opponent.try_play_card` 出牌；出牌后进 `1.0s` 冷却。`_has_spawn()`/`_lead_enemy_progress()` 辅助。无随机。
+- `tests/test_ai_controller.gd` + `.uid`：6 测试（圣水不足等待、出最贵可用兵+部署位+扣费、冷却拦截再出、无敌跳过法术改出兵、有敌则放法术削敌、**整局 AI 自驱跑到分胜负且削到玩家王塔**）。
+
+**修改**
+- `logic/match.gd`：加 `opponent_controller`（可空、鸭子类型）+ `set_opponent_controller()`；`update()` 的每 tick 循环里在 `opponent.regen` 后、`battle.step` 前调用 `opponent_controller.tick(TICK_DELTA)`。Match 不 import AIController（保持逻辑层不依赖 ai 层，控制器注入）。不注入则对手被动（= Step 7 行为）。
+- `view/battle_scene.gd`：`_ready` 里 `set_opponent_controller(AIControllerScript.new(match_obj, loader))` 接入 AI——MVP 画面现在有会出牌的对手。
+
+**决策**：见决策日志 22。补充：AI 驱动放在 Match 的固定 tick 内（保证与圣水/战斗同频、帧率无关），而非显示层每帧——否则 AI 决策会绑渲染帧率。控制器用注入而非 Match 直接 new，守住「逻辑层不依赖 AI 层」与「玩家 AI 对称」。
+
+**踩坑与修复**：无（一次通过）。
+
+**验收**：
+- `HOME=/private/tmp/godot-home godot --headless --editor --path /Users/jeffchen/godot-develop --quit` → exit 0，`AIController` 注册 ✅
+- `HOME=/private/tmp/godot-home godot --headless --path /Users/jeffchen/godot-develop --script res://tests/test_runner.gd` → 94/94 全过、SCRIPT ERROR 行=0（+6 ai_controller，旧 88 零回归）✅
+- 真跑渲染截图：AI 自驱部署红方单位、与玩家蓝方单位在 lane 内对推 ✅

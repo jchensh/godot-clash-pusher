@@ -60,4 +60,5 @@ IDE：**VS Code**（默认）。装 `geequlim.godot-tools` 扩展（`.vscode/ext
 - Step 5 ✅ `Tower` + `Battle` 胜负判定（三塔制；王塔归零判负；超时比塔血）
 - Step 6 ✅ `SkillSystem` 三积木（spawn_unit / direct_damage / aoe_damage）
 - Step 7 ✅ 显示层 MVP（白膜方块 + 手牌 UI + 圣水条 + 血条；单 lane 跑通；7a Player/Match 逻辑 + 7b Godot 画面）
-- **Now：Step 8** `AIController` 规则 AI 接入（让对手自己出牌对抗）。
+- Step 8 ✅ `AIController` 规则 AI（简单进攻型；对手自驱出牌、一局正常分胜负）
+- **Now：Step 9** 安卓导出 + 触摸适配 + 竖屏配置（Windows/Mac 导出 APK，手机能跑能玩）。

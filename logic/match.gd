@@ -22,6 +22,7 @@ var skill_system      # SkillSystem
 var clock             # SimClock
 var player            # Player（OWNER_PLAYER）
 var opponent          # Player（OWNER_OPPONENT）
+var opponent_controller = null   # 规则 AI（可空，鸭子类型）：每逻辑 tick 由 update 驱动
 
 func _init(config_ = null) -> void:
 	config = config_
@@ -43,6 +44,10 @@ func _make_player(owner_id: int, deck_ids: Array, emax: float, regen: float):
 	var deck = DeckScript.new(deck_ids)
 	return PlayerScript.new(owner_id, elixir, deck, config, skill_system)
 
+# 注入对手控制器（规则 AI）。不注入则对手被动（Step 7 行为）。
+func set_opponent_controller(controller) -> void:
+	opponent_controller = controller
+
 # 显示层每帧调用：固定 tick 推进。对局已结束则不再推进。
 func update(real_dt: float) -> void:
 	if battle == null or battle.is_over():
@@ -51,6 +56,8 @@ func update(real_dt: float) -> void:
 	for i in n:
 		player.regen(SimClockScript.TICK_DELTA)
 		opponent.regen(SimClockScript.TICK_DELTA)
+		if opponent_controller != null:
+			opponent_controller.tick(SimClockScript.TICK_DELTA)
 		battle.step(SimClockScript.TICK_DELTA)
 		if battle.is_over():
 			break

@@ -114,7 +114,13 @@ HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897 git push orig
 - Step 5：完成。
 - Step 6：完成。
 - Step 7：完成（7a Player/Match 逻辑 + 7b Godot 白膜画面，单 lane MVP，对手被动）。
-- 下一步：Step 8，`AIController` 规则 AI 接入（对手按规则自己出牌，一局正常分胜负）。
+- Step 8：完成（AIController 简单进攻型规则 AI，经 Match.opponent_controller 注入；对手自驱出牌、一局正常分胜负）。
+- 下一步：Step 9，安卓导出 + 触摸适配 + 竖屏配置（导出 APK，手机能跑能玩）。
+
+Step 8 已确认决策（详见 HISTORY 决策日志 22）：
+
+- 规则 AI = 简单进攻型 + 中等节奏：圣水 ≥6 才出、出最贵的可用兵、伤害法术仅在对面有敌方单位时才放、兵部署自家塔前 progress 0.9、出牌间隔 1s、确定性无随机。
+- AI 经对称入口 `opponent.try_play_card` 出牌；控制器注入 `Match.set_opponent_controller()`，逻辑层不依赖 AI 层。
 
 Step 4 前置语义已确认：
 

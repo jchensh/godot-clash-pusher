@@ -9,6 +9,7 @@ const ConfigLoaderScript = preload("res://logic/config_loader.gd")
 const MatchScript = preload("res://logic/match.gd")
 const UnitScript = preload("res://logic/unit.gd")
 const BattleScript = preload("res://logic/battle.gd")
+const AIControllerScript = preload("res://ai/ai_controller.gd")
 
 const LANE_TOP := 240.0       # progress 1 = 敌方王塔
 const LANE_BOTTOM := 940.0    # progress 0 = 己方王塔
@@ -35,6 +36,7 @@ func _ready() -> void:
 	loader.load_all()
 	match_obj = MatchScript.new(loader)
 	match_obj.setup("level_01")
+	match_obj.set_opponent_controller(AIControllerScript.new(match_obj, loader))  # 接入规则 AI
 	_build_field()
 	unit_layer = Node2D.new()
 	add_child(unit_layer)
