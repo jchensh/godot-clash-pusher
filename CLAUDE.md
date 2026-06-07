@@ -47,6 +47,28 @@ godot --path F:\godotProject -e                   # 打开编辑器 GUI
 
 IDE：**VS Code**（默认）。装 `geequlim.godot-tools` 扩展（`.vscode/extensions.json` 已推荐）；F5 用 `.vscode/launch.json` 的「Debug Godot Project」启动调试。
 
+## godot-ai MCP（编辑器联动，**辅助工具**）
+项目装了 `godot-ai` 插件（`addons/godot_ai/`），在 **Godot 编辑器内**起一个 MCP server（`http://127.0.0.1:8000/mcp`），让 AI 能直接读写引擎：看场景树、建/改节点、改脚本、跑测试、截图等（工具名 `mcp__godot-ai__*`，如 `editor_state` / `scene_get_hierarchy` / `node_create` / `script_patch` / `test_run` / `editor_screenshot`）。
+
+**前提条件**
+- server 本体由 Godot 插件提供：**只有 Godot 编辑器开着时才可用**，关掉就断。
+- 注册信息在用户级 `~\.claude.json`（scope=user，全局生效），非项目内。
+- **必须先开 Godot 编辑器，再开 Claude Code 会话**；顺序反了当前会话连不上，需新开会话重连。
+
+**管理 / 排查**
+```powershell
+claude mcp list            # 看所有 MCP 与连接状态（godot-ai ✓ Connected 即正常）
+claude mcp get godot-ai    # 看详情
+claude mcp remove godot-ai -s user   # 卸载注册（不删插件）
+```
+界面里敲 `/mcp` 也能看状态；Godot 那边在「项目设置→插件」启停 `godot_ai`。
+
+**使用守则（重要）**
+- ❌ **不主动用**——默认当辅助工具，**仅当用户明确叫我用时才用**，绝不自行驱动引擎。
+- ✅ 被叫到时：**只读操作**（看场景树/截图/读日志/跑测试）可直接做。
+- ⚠️ **写操作**（建节点/改脚本/改属性等会改工程的）先按"一步一确认"跟用户确认再动手。
+- 这条与上面「实机/画面验收交给真人」纪律一致：MCP 是补充手段，不替代真人肉眼验收。
+
 ## 分支 / 提交 / 推送约定
 - **开发在 `develop` 分支进行**；`main` 为稳定线，远端 `origin` = https://github.com/jchensh/godot-clash-pusher 。
 - **仅当用户说"提交"时**才 `git commit`；提交后**顺带 `git push`**（develop 首次推送用 `git push -u origin develop` 建立跟踪）。

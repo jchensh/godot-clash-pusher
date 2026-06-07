@@ -40,13 +40,15 @@
 | 9 | 安卓导出 + 触摸 + 竖屏 | ⏸ 缓做（移至 V2 后续阶段） | — |
 | V2-1 | 3-lane 逻辑层 + 侧路公主倒转打王塔 | ✅ 完成 | `adf5cfe` |
 | V2-2 | 3-lane 接通（Match+显示层+选 lane+AI 中路） | ✅ 完成（GUI 实机验收通过） | `a1af321` |
-| V2-3 | 程序化美术换皮（兵种造型/塔/背景） | ✅ 代码完成（待用户视觉验收） | 待提交 |
+| V2-3 | 程序化美术换皮（兵种造型/塔/背景） | ✅ 完成 | `190dc04` |
 
 > **阶段进度（2026-06-08）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**A 模块（3-lane）已完成**（V2-1+V2-2）。**D 模块进行中**：V2-3 程序化换皮（兵种/塔/背景造型，逻辑零改动）代码完成。下一步 **V2-4**（动画与特效）。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
 
 **测试现状**：110 个测试全部通过（config_loader 7 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + battle_v2 12 + skill_system 11 + **player 10** + match 6 + ai_controller 6 + smoke 3）。
 
 **分支 / 远端**：开发在 **`develop`** 分支；`main` 为稳定线。远端 `origin` = https://github.com/jchensh/godot-clash-pusher （Public）。约定：用户说"提交"时才 commit + push。
+
+**Godot AI MCP（表现层辅助工具）**：项目已导入 `godot-ai` 插件（`addons/godot_ai/`），来源 https://github.com/hi-godot/godot-ai ，当前版本 `2.6.1`。Godot 编辑器 GUI 打开并启用插件时，会启动 MCP server `http://127.0.0.1:8000/mcp`（WebSocket `127.0.0.1:9500`）供 Codex / Claude Code 连接。插件目录与 `project.godot` 启用配置随项目进 git；Codex/Claude 的用户级 MCP 配置在项目外，不进 git。
 
 ---
 
@@ -107,6 +109,10 @@
 26. **越界部署 = 拒绝出牌**：含 `spawn_unit` 的兵牌，落点 `target_progress` 必须在出牌方己方半场（玩家 `[0,0.5]`、对手 `[0.5,1.0]`），越界 → `try_play_card` 返回 false、不扣圣水、不抽牌（皇室战争式）。**纯伤害法术**（无 spawn 积木，如 fireball/arrows/zap）**不受半场限制**，可打敌方半场。校验落在对称入口 `Player.try_play_card`（玩家/AI 同受约束）。
 27. **AI V2-2 最小适配 = 固定中路（lane 1）**：AI 出兵与感知敌情都只在中路，确保 3-lane 下出牌不报错、保持确定性。完整的「按 lane 选攻防方向 + 难度分级」是 V2-6（B）的事，此处不做。
 28. **出牌交互 = 先选卡再点落点（tap-to-place）**：点手牌选中 → 点己方半场某 lane 落点部署；落点的 lane 由点击 x 最近列决定、progress 由点击 y 决定并钳在己方半场。拖拽（drag-drop）留后续表现优化（V2-5/后续）。
+
+> 29 为 **表现层阶段引入 Godot AI MCP**，用户 2026-06-08 确认安装并纳入 git。
+
+29. **Godot AI MCP = 表现层辅助工具，不替代测试/真人验收**：选用 `hi-godot/godot-ai`（https://github.com/hi-godot/godot-ai，MIT，导入版本 `2.6.1`）。它通过 Godot 编辑器插件启动本地 MCP server（HTTP `127.0.0.1:8000/mcp`、WebSocket `127.0.0.1:9500`），供 Codex / Claude Code 读取场景树、截图、日志、编辑器状态并辅助 UI/动画/特效排查。逻辑正确性仍以 headless test runner 为准；写操作仍遵守一步一确认；主观视觉/手感验收仍交用户确认。
 
 ---
 
@@ -469,3 +475,46 @@
 - 逻辑层零改动；`godot --headless ... test_runner.gd` → **110/110**（视觉换皮，无新单测，旧测零回归）✅
 - `godot --headless --path F:\godotProject` 实跑 → `_ready` 跑通、无 SCRIPT ERROR ✅
 - **GUI 视觉验收交用户**（按新纪律：实机/画面验收由真人在编辑器执行；见决策日志「人工验收原则」）。
+
+### 工具链 — 引入 Godot AI MCP（表现层辅助）
+**背景**
+- 进入 V2 D 模块后，后续 V2-4 / V2-5 会集中处理动画、特效、UI、截图、运行时日志与编辑器场景状态。纯逻辑阶段的 CLI + 单测仍足够，但表现层排查需要更直接的编辑器联动。
+- 调研 `godot-mcp-pro`、`tomyud1/godot-mcp`、`hi-godot/godot-ai` 后，优先选择 **Godot AI**：免费 MIT、明确支持 Codex / Claude Code、工具面覆盖场景树/日志/截图/测试/节点和 UI 操作，且工具数量相对克制。
+
+**来源**
+- GitHub：https://github.com/hi-godot/godot-ai
+- 导入版本：`2.6.1`（下载源码 commit `5818173` / tag `v2.6.1`）
+
+**项目内新增/修改（进 git）**
+- `addons/godot_ai/`：Godot 编辑器插件本体。
+- `project.godot`：
+  - `[editor_plugins] enabled=PackedStringArray("res://addons/godot_ai/plugin.cfg")`
+  - `[autoload] _mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"`（插件首次加载后自动加入）
+- `AGENTS.md`：新增 Godot AI MCP 的使用方法、前提与守则。
+- `HISTORY.md`：记录本节。
+
+**项目外配置（不进 git）**
+- `uv`：通过 winget 安装 `astral-sh.uv`，版本 `0.11.19`。当前 Codex shell 若 PATH 未刷新，可临时前置 `C:\Users\user\AppData\Local\Microsoft\WinGet\Packages\astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe`。
+- Codex 用户配置：`C:\Users\user\.codex\config.toml` 增加 `[mcp_servers."godot-ai"] url = "http://127.0.0.1:8000/mcp"`。
+- Claude Code 用户配置：`claude mcp add --scope user --transport http godot-ai http://127.0.0.1:8000/mcp`，写入 `C:\Users\user\.claude.json`。
+- 用户环境变量关闭遥测：`GODOT_AI_DISABLE_TELEMETRY=true` / `DISABLE_TELEMETRY=true`。
+
+**使用方法**
+- 先打开 Godot 编辑器：`godot --path F:\godotProject -e`。Godot AI MCP server 由编辑器插件启动；关掉编辑器后 MCP 会断开。
+- 正常连接时：
+  - MCP HTTP：`127.0.0.1:8000`
+  - Godot WebSocket：`127.0.0.1:9500`
+  - Claude Code 检查：`claude mcp list` 应显示 `godot-ai ... ✓ Connected`
+- 若网络下载依赖，命令行使用 Clash Verge 系统代理：`HTTP_PROXY=http://127.0.0.1:7897` / `HTTPS_PROXY=http://127.0.0.1:7897`。
+
+**踩坑与修复**
+1. `uv` 用 winget 装完后当前 shell 的 PATH 未刷新；本次安装用完整 WinGet 包目录临时前置 PATH 继续执行。
+2. 插件在 `--headless` 下会打印 `MCP | plugin disabled in headless mode`，这是设计行为；必须用 Godot 编辑器 GUI 启动 server。
+3. 用 `Start-Process powershell ...` 嵌套设置环境变量时，Godot 进程没有拿到 `uvx` PATH，日志报 `MCP | no server found — install uv or run: pip install godot-ai`。改用显式环境启动后，日志显示 `MCP | started server` 与 `MCP | connected to server`。
+4. 临时诊断日志 `godot_ai_live.log` 属本地排查产物，不纳入 git。
+
+**验收**
+- `uvx godot-ai --version` → `godot-ai 2.6.1` ✅
+- Godot 编辑器启动后端口检查：`127.0.0.1:8000` / `127.0.0.1:9500` 均监听 ✅
+- `claude mcp list` → `godot-ai: http://127.0.0.1:8000/mcp (HTTP) - ✓ Connected` ✅
+- `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` → **110/110 全过** ✅

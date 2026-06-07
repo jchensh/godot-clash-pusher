@@ -29,13 +29,47 @@
 
 ## 当前工程环境
 
-- 项目根目录：`/Users/jeffchen/godot-develop`
+- 项目根目录：`F:\godotProject`（历史 Mac 路径 `/Users/jeffchen/godot-develop` 仅作旧记录参考）
 - 引擎：Godot `4.6.3 stable`，标准 GDScript 构建。
 - 仓库：`https://github.com/jchensh/godot-clash-pusher`
 - 稳定分支：`main`
 - 当前开发分支：`develop`
 - GitHub CLI：`gh` 已安装，已登录为 `jchensh`。
 - 命令行访问 GitHub 需要走本机代理：`127.0.0.1:7897`。
+- Godot AI MCP 插件：`addons/godot_ai/`，来源 `https://github.com/hi-godot/godot-ai`，当前导入版本 `2.6.1`。
+
+## godot-ai MCP（表现层辅助工具）
+
+项目已导入并启用 `godot-ai` 插件。它在 **Godot 编辑器 GUI 打开时**启动本地 MCP server：
+
+```text
+Codex / Claude Code
+  -> http://127.0.0.1:8000/mcp
+  -> Godot AI Python server
+  -> WebSocket 127.0.0.1:9500
+  -> Godot Editor Plugin
+  -> EditorInterface / SceneTree
+```
+
+用途：表现层开发时辅助 agent 读取场景树、查看编辑器状态、运行场景/测试、读取日志、截图、定位 UI/动画/特效问题。它**不替代**现有 headless 单元测试，也**不替代**用户的肉眼/手感验收。
+
+使用前提：
+
+- 先打开 Godot 编辑器：`godot --path F:\godotProject -e`。
+- 插件只在编辑器 GUI 模式启动 server；`--headless` 下不会启动 MCP server。
+- 端口正常时：`127.0.0.1:8000`（MCP HTTP）和 `127.0.0.1:9500`（Godot WebSocket）应监听。
+- Codex 用户配置：`C:\Users\user\.codex\config.toml` 里有 `[mcp_servers."godot-ai"] url = "http://127.0.0.1:8000/mcp"`。
+- Claude Code 用户配置：`claude mcp list` 应显示 `godot-ai ... ✓ Connected`。
+- `uv` 是 Python server 运行器；若当前 shell 找不到，先确认用户 PATH 含 `C:\Users\user\AppData\Local\Microsoft\WinGet\Packages\astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe`。
+- 遥测已用用户环境变量关闭：`GODOT_AI_DISABLE_TELEMETRY=true` / `DISABLE_TELEMETRY=true`。
+
+使用守则：
+
+- MCP 是**辅助工具**。逻辑正确性仍以 `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` 为准。
+- 读操作（看场景树、截图、读日志、查编辑器状态）可用于表现层排查。
+- 写操作（创建/删除节点、改属性、改脚本、改场景）必须遵守“一步一确认”，且不得绕过 `PLAN_V2.md` 当前步骤范围。
+- 需要主观判断的视觉、动画、手感验收仍优先交给用户在编辑器里确认；agent 可提供明确测试步骤和预期结果。
+- 不同时安装/启用多个 Godot MCP 工具，避免端口和工具语义冲突。
 
 ## Mac 常用命令
 
@@ -105,43 +139,16 @@ HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897 git push orig
 
 ## 当前开发指针
 
-截至 2026-06-07：
+截至 2026-06-08：
 
-- Step 0：完成。
-- Step 1：完成。
-- Step 2：完成。
-- Step 3：完成。
-- Step 4：完成。
-- Step 5：完成。
-- Step 6：完成。
-- Step 7：完成（7a Player/Match 逻辑 + 7b Godot 白膜画面，单 lane MVP，对手被动）。
-- Step 8：完成（AIController 简单进攻型规则 AI，经 Match.opponent_controller 注入；对手自驱出牌、一局正常分胜负）。
-- **V1 收官（2026-06-07）**：Step 0–8 即 V1 全部玩法范围，已完成；**Step 9（安卓导出）缓做**，降级到后续阶段（编辑器内即可体验/开发，需要分发时再做）。
-- **下一步：进入 V2**，权威规划见 `PLAN_V2.md`，顺序 A→D→B→C，**首个步骤 V2-1 = 多 lane 逻辑层（3-lane）**。开工前先与用户确认 V2-1 待细化项（公主塔被毁后行为、部署/河道规则）。
-
-Step 8 已确认决策（详见 HISTORY 决策日志 22）：
-
-- 规则 AI = 简单进攻型 + 中等节奏：圣水 ≥6 才出、出最贵的可用兵、伤害法术仅在对面有敌方单位时才放、兵部署自家塔前 progress 0.9、出牌间隔 1s、确定性无随机。
-- AI 经对称入口 `opponent.try_play_card` 出牌；控制器注入 `Match.set_opponent_controller()`，逻辑层不依赖 AI 层。
-
-Step 4 前置语义已确认：
-
-- `attack_range`：lane 进度 `0~1` 的比例。
-- `target_type`：单位自身的地面 / 空中类型（`ground` / `air`），不是攻击能力。
-- `attack_speed`：攻击间隔（秒/次）。
-
-Step 5 已确认决策：
-
-- 三塔制：每方 1 王塔 + 2 公主塔（血量取自 `levels.json.tower_hp`）。
-- 王塔归零 → 该方立即负；公主塔毁不结束对局，只计入剩余塔血。
-- 超时（`match_duration`）→ 比双方剩余塔血总和，多者胜、相等判平。
-- V1 单 lane 两端接双方王塔，单位推到底直接削王塔。
-
-Step 6 已确认决策（原 PLAN_V1 §9 遗留项至此定稿，详见 HISTORY 决策日志 17–21）：
-
-- 多积木卡牌按 `skills` 数组顺序自上而下逐个同步结算。
-- `direct_damage.target` V1 仅 `first_enemy_in_lane` = 最逼近出牌方塔的敌方单位；无则空放；只打单位不打塔。
-- `aoe_damage` 的 `radius` 按 lane 进度比例（0~1），沿 lane 一维命中；圆心由出牌指令携带。
-- 技能伤害 V1 只打敌方单位；出牌指令统一为 `(card_id, owner_id, lane_index, target_progress)`；SkillSystem 不校验/扣圣水。
+- **V1 已收官**：Step 0–8 完成；原 Step 9（安卓导出）缓做，移至后续需要分发时再做。
+- **V2 进行中**，权威规划见 `PLAN_V2.md`，顺序 **A → D → B → C**。
+- **V2 A 模块（3-lane）已完成**：
+  - V2-1：3-lane 逻辑层 + 侧路公主塔倒后转打王塔。
+  - V2-2：Match / 显示层 / 出牌选 lane / 部署半场校验 / AI 固定中路接通。
+- **V2 D 模块进行中**：
+  - V2-3：程序化美术换皮完成（单位/塔/背景造型，逻辑零改动）。
+  - **Now：V2-4 动画与特效**（攻击/受击/死亡、远程投射物、AOE 爆点、塔摧毁）。
+- Godot AI MCP 已引入，作为表现层辅助工具；使用前先开 Godot 编辑器并确认 `godot-ai` MCP 已连接。
 
 实际进度以 `HISTORY.md` 为准；如果本节过期，先更新 `HISTORY.md`，再更新本节。
