@@ -439,6 +439,7 @@
 - `view/battle_scene.gd`：单 lane → 3 lane。`LANE_X` 标量改 `LANE_XS=[160,360,560]` 三列；`_build_field` 画 3 道 + 各自己方半场/中线；`_build_towers` 把 6 塔按 `[king中, 左公主, 右公主]` 摆 3 列；`_sync_units` 遍历 3 lane 定位；输入加 `_lane_from_x()` 按点击 x 归属最近列，`_unhandled_input` 改为出到选中 lane。
 - `tests/test_ai_controller.gd`：`_opponent_units` 与放敌人 lane 由 0 改 1（跟随 AI 中路）。
 - `tests/test_player.gd`：+4 部署校验测试（越界拒绝/边界 0.5 允许/纯法术可打敌方半场/对手越界拒绝）。
+- `view/battle_scene.gd`：**运行期事件日志**（`LOG_EVENTS` 开关，仅显示层）——MATCH START / SELECT / PLAY(含圣水增减、被拒原因) / SPAWN / DEATH / TOWER HIT / TOWER DOWN / RESULT，带对局时间戳，打到 Output 面板。白膜阶段肉眼分不清兵种/战况，靠日志观测；**逻辑层零改动、headless 单测不受影响**（view 不进测试）。用户反馈（决策见下）：实机/画面验收以后优先真人执行。
 
 **范围边界**：表现仍白膜（贴图/动画/音频是 D 模块 V2-3+）；AI 仍单一难度、只打中路（完整 lane 攻防是 V2-6）。
 
