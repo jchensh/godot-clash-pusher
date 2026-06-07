@@ -38,11 +38,12 @@
 | 7 | 显示层 MVP（白膜 + UI） | ✅ 完成 | 7a `b33957b` / 7b `304066b` |
 | 8 | AIController 规则 AI | ✅ 完成 | `198798f` |
 | 9 | 安卓导出 + 触摸 + 竖屏 | ⏸ 缓做（移至 V2 后续阶段） | — |
-| V2-1 | 3-lane 逻辑层 + 侧路公主倒转打王塔 | ✅ 完成 | 待提交 |
+| V2-1 | 3-lane 逻辑层 + 侧路公主倒转打王塔 | ✅ 完成 | `adf5cfe` |
+| V2-2 | 3-lane 接通（Match+显示层+选 lane+AI 中路） | ✅ 完成（GUI 实机验收通过） | 待提交 |
 
-> **阶段进度（2026-06-08）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**V2-1（3-lane 逻辑层）已完成**（`Battle.build_v2_three_lanes` + `Lane` 转火兜底 + 12 单测）；`Match`/显示层/AI 仍在单 lane，将于 **V2-2** 接通 3 lane + 出牌选 lane + 部署半场校验。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
+> **阶段进度（2026-06-08）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**A 模块（3-lane）已代码完成**：V2-1 逻辑层 + V2-2 接通 Match/显示层/出牌选 lane/部署半场校验/AI 固定中路。下一步 **V2-3** 进入 D 模块（美术换皮）。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
 
-**测试现状**：106 个测试全部通过（config_loader 7 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + **battle_v2 12** + skill_system 11 + player 6 + match 6 + ai_controller 6 + smoke 3）。
+**测试现状**：110 个测试全部通过（config_loader 7 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + battle_v2 12 + skill_system 11 + **player 10** + match 6 + ai_controller 6 + smoke 3）。
 
 **分支 / 远端**：开发在 **`develop`** 分支；`main` 为稳定线。远端 `origin` = https://github.com/jchensh/godot-clash-pusher （Public）。约定：用户说"提交"时才 commit + push。
 
@@ -99,6 +100,12 @@
 
 24. **侧路公主塔被摧毁后，该 lane 单位转打王塔**（皇室战争式「拆侧塔开路、威胁王塔」）：侧路（lane 0/2）主塔为公主塔；公主塔归零后，该 lane 内推到尽头的单位改为攻击该端**王塔**。实现 = `Lane` 持兜底引用 `king_at_start/king_at_end`，`_enemy_tower_for` 改为「主塔活着打主塔，主塔毁则打兜底王塔」。中路（lane 1）主塔本就是王塔，无需兜底。三条 lane 的兜底王塔指向**同一座**王塔对象，故中路 + 已破侧路对王塔的伤害天然累加。
 25. **部署规则 = 仅己方半场（progress 0~0.5）、任意 lane 可选**：玩家出兵落点限己方半场，但可自由选 3 条 lane 中任意一条。⚠️ **本规则的强制校验留到 V2-2**（与出牌选 lane 的输入层一并做）；V2-1 仅完成 3-lane 拓扑与转火逻辑，逻辑层暂仍信任传入的 `(lane_index, target_progress)`（沿用决策 21）。
+
+> 26–28 为 **V2-2（3-lane 接通 + 显示层 + 出牌选 lane）开工前提**，用户 2026-06-08 确认。
+
+26. **越界部署 = 拒绝出牌**：含 `spawn_unit` 的兵牌，落点 `target_progress` 必须在出牌方己方半场（玩家 `[0,0.5]`、对手 `[0.5,1.0]`），越界 → `try_play_card` 返回 false、不扣圣水、不抽牌（皇室战争式）。**纯伤害法术**（无 spawn 积木，如 fireball/arrows/zap）**不受半场限制**，可打敌方半场。校验落在对称入口 `Player.try_play_card`（玩家/AI 同受约束）。
+27. **AI V2-2 最小适配 = 固定中路（lane 1）**：AI 出兵与感知敌情都只在中路，确保 3-lane 下出牌不报错、保持确定性。完整的「按 lane 选攻防方向 + 难度分级」是 V2-6（B）的事，此处不做。
+28. **出牌交互 = 先选卡再点落点（tap-to-place）**：点手牌选中 → 点己方半场某 lane 落点部署；落点的 lane 由点击 x 最近列决定、progress 由点击 y 决定并钳在己方半场。拖拽（drag-drop）留后续表现优化（V2-5/后续）。
 
 ---
 
@@ -421,3 +428,27 @@
 **验收**：
 - `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` → **106/106 全过**、exit 0（+12 battle_v2，旧 94 零回归）✅
 - `godot --headless --quit --path F:\godotProject` 工程加载 exit 0 ✅
+
+### V2-2 — 3-lane 接通（Match + 显示层 + 出牌选 lane + AI 最小适配）  （本次提交）
+**前置语义（用户 2026-06-08 确认）**：见决策日志 26–28（越界部署拒绝、AI 固定中路、tap-to-place 选 lane）。
+
+**新增/修改**
+- `logic/match.gd`：`setup()` 由 `build_v1_single_lane` 改 `build_v2_three_lanes`——实际对局变 3 lane。
+- `logic/player.gd`：`try_play_card` 加部署半场校验（决策 26）——含 `spawn_unit` 的兵牌落点须在出牌方己方半场（玩家 `[0,0.5]`、对手 `[0.5,1.0]`），越界返回 false、不扣圣水/不抽牌；纯法术不受限。新增 `_spawns_troops()` / `_deploy_allowed()`，preload `UnitScript` 取 owner 常量。
+- `ai/ai_controller.gd`：`LANE_INDEX 0→1`（固定中路，决策 27），出兵与感知敌情都在中路。
+- `view/battle_scene.gd`：单 lane → 3 lane。`LANE_X` 标量改 `LANE_XS=[160,360,560]` 三列；`_build_field` 画 3 道 + 各自己方半场/中线；`_build_towers` 把 6 塔按 `[king中, 左公主, 右公主]` 摆 3 列；`_sync_units` 遍历 3 lane 定位；输入加 `_lane_from_x()` 按点击 x 归属最近列，`_unhandled_input` 改为出到选中 lane。
+- `tests/test_ai_controller.gd`：`_opponent_units` 与放敌人 lane 由 0 改 1（跟随 AI 中路）。
+- `tests/test_player.gd`：+4 部署校验测试（越界拒绝/边界 0.5 允许/纯法术可打敌方半场/对手越界拒绝）。
+
+**范围边界**：表现仍白膜（贴图/动画/音频是 D 模块 V2-3+）；AI 仍单一难度、只打中路（完整 lane 攻防是 V2-6）。
+
+**决策**：见决策日志 26–28。补充：半场校验放对称入口 `Player.try_play_card`，玩家与 AI 同受约束（AI 在 0.9 出兵属对手半场 `[0.5,1.0]`，合法）；显示层落点已 `minf(_, DEPLOY_MAX)` 钳在 0.5，正常点击不会触发拒绝，逻辑层校验是兜底。
+
+**踩坑与修复**：无（test_match 因 lane 0 仍在、玩家在己方半场 0.1 出牌而零回归；仅 AI/player 测试随中路与新规则相应更新）。
+
+**验收**：
+- `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` → **110/110 全过**、exit 0（+4 player 部署校验，旧 106 零回归；含 `test_full_match_with_ai_resolves` 在 3-lane 下 AI 自驱正常分胜负）✅
+- `godot --headless --editor --path F:\godotProject --quit` → exit 0，`battle_scene.gd` 无 parse/编译错误 ✅
+- `godot --headless --path F:\godotProject` 实跑游戏循环数秒 → 无 SCRIPT ERROR（3-lane 场景 + AI 自驱运行期干净）✅
+- **GUI 实机验收（截图核验）**：3 lane + 6 塔（中王大/两侧公主小）布局正确；点选左/右 lane 出 goblins，蓝方单位分别落到左/右路并推进、攻击对手对应公主塔；AI 红方走中路；破王出 YOU/LOSE 横幅 ✅
+- **平衡观察（留 V2-8）**：headless 量得「人类挂机、AI 自驱」一局 AI 6.1s 首出兵、王塔 7.6s 首次受伤、19.8s 破王。因中路 lane 直通王塔无公主保护，单路直推威胁很大；非 bug（决策 24 拓扑使然），数值/河道平衡到 V2-8 统一处理。

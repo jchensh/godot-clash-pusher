@@ -1,8 +1,9 @@
-# BattleScene —— Step 7b 显示层 MVP（白膜）。
+# BattleScene —— 显示层（白膜）。V2-2：3 lane + 出牌选 lane。
 #
 # 只读 Match 的逻辑状态作画；出牌一律经 player.try_play_card（玩家/AI 对称）。
 # 逻辑坐标 0~1 → 像素的映射只活在本层：progress 0=己方塔在屏幕下，1=敌方塔在上。
-# 单 lane；对手被动（不出牌，AI 留到 Step 8）。两段式出牌：先点手牌，再点己方半场落点。
+# 3 条 lane（左公主/中王/右公主）；对手由规则 AI 自驱（固定中路）。
+# 两段式出牌：先点手牌，再点己方半场落点——落点 lane 由点击 x 最近列决定、progress 由 y 决定。
 extends Node2D
 
 const ConfigLoaderScript = preload("res://logic/config_loader.gd")
@@ -11,9 +12,10 @@ const UnitScript = preload("res://logic/unit.gd")
 const BattleScript = preload("res://logic/battle.gd")
 const AIControllerScript = preload("res://ai/ai_controller.gd")
 
-const LANE_TOP := 240.0       # progress 1 = 敌方王塔
-const LANE_BOTTOM := 940.0    # progress 0 = 己方王塔
-const LANE_X := 360.0
+const LANE_TOP := 240.0       # progress 1 = 敌方塔
+const LANE_BOTTOM := 940.0    # progress 0 = 己方塔
+const LANE_XS := [160.0, 360.0, 560.0]   # lane 0 左 / 1 中 / 2 右 的列中心 x
+const LANE_HALF_W := 70.0     # 每条 lane 列半宽（用于画道与判定点击归属）
 const DEPLOY_MAX := 0.5       # 落点限己方半场
 
 const COL_PLAYER := Color(0.35, 0.55, 1.0)
@@ -81,19 +83,22 @@ func _label(text: String, pos: Vector2, font_size: int = 24, color: Color = Colo
 
 func _build_field() -> void:
 	_rect(Color(0.10, 0.11, 0.14), Vector2(0, 0), Vector2(720, 1280))
-	_rect(Color(0.16, 0.18, 0.22), Vector2(LANE_X - 90, LANE_TOP - 40), Vector2(180, (LANE_BOTTOM - LANE_TOP) + 80))
 	var mid_y := _progress_to_y(DEPLOY_MAX)
-	_rect(Color(0.20, 0.28, 0.40, 0.25), Vector2(LANE_X - 90, mid_y), Vector2(180, LANE_BOTTOM - mid_y + 40))  # 己方半场
-	_rect(Color(1, 1, 1, 0.25), Vector2(LANE_X - 90, mid_y), Vector2(180, 3))                                  # 中线
+	for lx in LANE_XS:
+		var x0: float = lx - LANE_HALF_W
+		_rect(Color(0.16, 0.18, 0.22), Vector2(x0, LANE_TOP - 40), Vector2(LANE_HALF_W * 2.0, (LANE_BOTTOM - LANE_TOP) + 80))
+		_rect(Color(0.20, 0.28, 0.40, 0.25), Vector2(x0, mid_y), Vector2(LANE_HALF_W * 2.0, LANE_BOTTOM - mid_y + 40))  # 己方半场
+		_rect(Color(1, 1, 1, 0.18), Vector2(x0, mid_y), Vector2(LANE_HALF_W * 2.0, 3))                                  # 中线
 
+# towers 数组顺序（build_v2_three_lanes）：[0]=王塔(中) [1]=左公主 [2]=右公主。
 func _build_towers() -> void:
 	var b = match_obj.battle
-	_add_tower(b.opponent_towers[0], Vector2(LANE_X, LANE_TOP), COL_OPPONENT, 46.0)
-	_add_tower(b.opponent_towers[1], Vector2(LANE_X - 200, LANE_TOP - 30), COL_OPPONENT, 34.0)
-	_add_tower(b.opponent_towers[2], Vector2(LANE_X + 200, LANE_TOP - 30), COL_OPPONENT, 34.0)
-	_add_tower(b.player_towers[0], Vector2(LANE_X, LANE_BOTTOM), COL_PLAYER, 46.0)
-	_add_tower(b.player_towers[1], Vector2(LANE_X - 200, LANE_BOTTOM + 30), COL_PLAYER, 34.0)
-	_add_tower(b.player_towers[2], Vector2(LANE_X + 200, LANE_BOTTOM + 30), COL_PLAYER, 34.0)
+	_add_tower(b.opponent_towers[0], Vector2(LANE_XS[1], LANE_TOP), COL_OPPONENT, 46.0)
+	_add_tower(b.opponent_towers[1], Vector2(LANE_XS[0], LANE_TOP), COL_OPPONENT, 34.0)
+	_add_tower(b.opponent_towers[2], Vector2(LANE_XS[2], LANE_TOP), COL_OPPONENT, 34.0)
+	_add_tower(b.player_towers[0], Vector2(LANE_XS[1], LANE_BOTTOM), COL_PLAYER, 46.0)
+	_add_tower(b.player_towers[1], Vector2(LANE_XS[0], LANE_BOTTOM), COL_PLAYER, 34.0)
+	_add_tower(b.player_towers[2], Vector2(LANE_XS[2], LANE_BOTTOM), COL_PLAYER, 34.0)
 
 func _add_tower(tower, pos: Vector2, color: Color, s: float) -> void:
 	var tri := Polygon2D.new()                                       # 建筑=三角
@@ -132,21 +137,24 @@ func _build_hud() -> void:
 
 # ---------- 每帧同步 ----------
 func _sync_units(delta: float) -> void:
-	var lane = match_obj.battle.get_lane(0)
 	var live := {}
-	for u in lane.get_units():
-		live[u] = true
-		var off := 12.0 if u.owner_id == UnitScript.OWNER_PLAYER else -12.0
-		var target := Vector2(LANE_X + off, _progress_to_y(u.progress))
-		if not unit_views.has(u):
-			var created := _make_unit_node(u)
-			created.position = target
-			unit_layer.add_child(created)
-			unit_views[u] = created
-		else:
-			var existing = unit_views[u]
-			var cur: Vector2 = existing.position
-			existing.position = cur.lerp(target, minf(delta * 12.0, 1.0))
+	for li in range(LANE_XS.size()):
+		var lane = match_obj.battle.get_lane(li)
+		if lane == null:
+			continue
+		for u in lane.get_units():
+			live[u] = true
+			var off := 12.0 if u.owner_id == UnitScript.OWNER_PLAYER else -12.0
+			var target := Vector2(LANE_XS[li] + off, _progress_to_y(u.progress))
+			if not unit_views.has(u):
+				var created := _make_unit_node(u)
+				created.position = target
+				unit_layer.add_child(created)
+				unit_views[u] = created
+			else:
+				var existing = unit_views[u]
+				var cur: Vector2 = existing.position
+				existing.position = cur.lerp(target, minf(delta * 12.0, 1.0))
 	for u in unit_views.keys():
 		if not live.has(u):
 			unit_views[u].queue_free()
@@ -208,12 +216,24 @@ func _sync_banner() -> void:
 func _on_card_pressed(i: int) -> void:
 	selected_card = i
 
+# 点击 x 归属到最近的 lane 列。
+func _lane_from_x(x: float) -> int:
+	var best := 0
+	var best_d := INF
+	for i in range(LANE_XS.size()):
+		var d: float = absf(x - float(LANE_XS[i]))
+		if d < best_d:
+			best_d = d
+			best = i
+	return best
+
 func _unhandled_input(event: InputEvent) -> void:
 	if match_obj == null or match_obj.is_over():
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		if selected_card < 0:
 			return
+		var lane_index := _lane_from_x(event.position.x)
 		var progress := minf(_y_to_progress(event.position.y), DEPLOY_MAX)
-		if match_obj.player.try_play_card(selected_card, 0, progress):
+		if match_obj.player.try_play_card(selected_card, lane_index, progress):
 			selected_card = -1

@@ -9,8 +9,8 @@ class_name AIController
 
 const PLAY_THRESHOLD := 6        # 圣水 get_int() >= 此值才考虑出牌（中等节奏）
 const PLAY_COOLDOWN := 1.0       # 两次出牌最小间隔（秒），避免一次性倾泻
-const DEPLOY_PROGRESS := 0.9     # 兵的部署位：自家塔(progress 1)前，往 0 推
-const LANE_INDEX := 0
+const DEPLOY_PROGRESS := 0.9     # 兵的部署位：自家塔(progress 1)前，往 0 推（己方半场）
+const LANE_INDEX := 1            # V2-2 最小适配：固定中路出兵与感知（决策 27）；按 lane 攻防留 V2-6
 
 var match_ref      # Match：读战局、经 opponent 出牌
 var config         # ConfigLoader

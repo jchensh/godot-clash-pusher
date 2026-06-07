@@ -74,3 +74,41 @@ func test_invalid_hand_index_is_noop() -> void:
 	assert_false(p.try_play_card(-1, 0, 0.1), "负下标返回 false")
 	assert_almost_eq(p.elixir.get_amount(), 10.0, 0.0001, "圣水未动")
 	assert_eq(ctx[2].get_units().size(), 0, "未生成单位")
+
+# ---- V2-2：部署半场校验（决策 26）----
+
+func test_troop_deploy_rejected_outside_own_half() -> void:
+	var ctx = _setup()
+	var lane = ctx[2]
+	var p = _player(ctx[0], ctx[3], 10.0)            # hand[0]=knight（兵）
+	var ok = p.try_play_card(0, 0, 0.7)              # 0.7 在敌方半场
+	assert_false(ok, "兵牌落点越界己方半场 → 拒绝")
+	assert_almost_eq(p.elixir.get_amount(), 10.0, 0.0001, "拒绝后未扣圣水")
+	assert_eq(lane.get_units().size(), 0, "拒绝后未生成单位")
+	assert_eq(p.deck.get_hand()[0], "knight", "拒绝后手牌未循环")
+
+func test_troop_deploy_allowed_at_half_boundary() -> void:
+	var ctx = _setup()
+	var lane = ctx[2]
+	var p = _player(ctx[0], ctx[3], 10.0)
+	var ok = p.try_play_card(0, 0, 0.5)             # 边界 0.5 属己方半场
+	assert_true(ok, "落点正好在半场边界 → 允许")
+	assert_eq(lane.get_units().size(), 1, "生成单位")
+
+func test_spell_allowed_in_enemy_half() -> void:
+	var ctx = _setup()
+	var loader = ctx[0]
+	var deck = DeckScript.new(["fireball", "knight", "giant", "goblins", "minions", "archers", "arrows", "zap"])
+	var p = PlayerScript.new(UnitScript.OWNER_PLAYER, ElixirScript.new(10.0, 1.0, 10.0), deck, loader, ctx[3])
+	var ok = p.try_play_card(0, 0, 0.8)             # hand[0]=fireball（纯法术），打敌方半场
+	assert_true(ok, "纯法术不受半场限制，可打敌方半场")
+	assert_almost_eq(p.elixir.get_amount(), 6.0, 0.0001, "扣 4 圣水(fireball)")
+
+func test_opponent_troop_deploy_rejected_in_player_half() -> void:
+	var ctx = _setup()
+	var loader = ctx[0]
+	var deck = DeckScript.new(_deck_ids(loader))
+	var p = PlayerScript.new(UnitScript.OWNER_OPPONENT, ElixirScript.new(10.0, 1.0, 10.0), deck, loader, ctx[3])
+	var ok = p.try_play_card(0, 0, 0.2)            # 对手半场 [0.5,1.0]；0.2 进了玩家半场
+	assert_false(ok, "对手兵牌落点进玩家半场 → 拒绝")
+	assert_almost_eq(p.elixir.get_amount(), 10.0, 0.0001, "拒绝后未扣圣水")

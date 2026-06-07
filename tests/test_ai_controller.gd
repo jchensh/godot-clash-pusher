@@ -17,9 +17,10 @@ func _setup():
 	var ai = AIControllerScript.new(m, loader)
 	return [loader, m, ai]
 
+# AI V2-2 固定中路（lane 1）出兵，故在中路 lane 统计对手单位。
 func _opponent_units(m) -> Array:
 	var arr := []
-	for u in m.battle.get_lane(0).get_units():
+	for u in m.battle.get_lane(1).get_units():
 		if u.owner_id == UnitScript.OWNER_OPPONENT:
 			arr.append(u)
 	return arr
@@ -78,8 +79,8 @@ func test_casts_spell_when_enemy_present() -> void:
 	# 手牌里最贵的可用牌是法术（fireball 4 > knight 3 > goblins/zap 2）
 	m.opponent.deck = DeckScript.new(["fireball", "knight", "goblins", "zap", "archers", "minions", "arrows", "giant"])
 	m.opponent.elixir.current = 10.0
-	var enemy = UnitScript.new("knight_body", UnitScript.OWNER_PLAYER, 0, loader.get_unit("knight_body"), 0.5)
-	m.battle.get_lane(0).add_unit(enemy)
+	var enemy = UnitScript.new("knight_body", UnitScript.OWNER_PLAYER, 1, loader.get_unit("knight_body"), 0.5)
+	m.battle.get_lane(1).add_unit(enemy)   # 敌方单位放中路，AI 才会感知并放火球
 	ai.tick(0.1)
 	assert_true(enemy.hp < enemy.max_hp, "对面有敌方单位→AI 放火球削它")
 	assert_eq(_opponent_units(m).size(), 0, "本次出的是法术，不是兵")

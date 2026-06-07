@@ -27,11 +27,12 @@ var opponent_controller = null   # 规则 AI（可空，鸭子类型）：每逻
 func _init(config_ = null) -> void:
 	config = config_
 
-# 按关卡配置搭好一局：双方各 3 塔 + 单 lane（V1）、两个对称 Player、固定时钟。
+# 按关卡配置搭好一局：双方各 3 塔 + 3 lane（V2-1 拓扑：左公主/中王/右公主）、
+# 两个对称 Player、固定时钟。
 func setup(level_id: String = "level_01") -> void:
 	var level: Dictionary = config.get_level(level_id)
 	battle = BattleScript.new()
-	battle.build_v1_single_lane(level)
+	battle.build_v2_three_lanes(level)
 	skill_system = SkillSystemScript.new(config, battle)
 	clock = SimClockScript.new()
 	var emax := float(level.get("elixir_max", 10))

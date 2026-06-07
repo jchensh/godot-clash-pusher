@@ -7,6 +7,11 @@
 extends RefCounted
 class_name Player
 
+const UnitScript = preload("res://logic/unit.gd")
+
+const DEPLOY_HALF_MAX := 0.5     # 己方半场上界：玩家可部署 [0,0.5]，对手 [0.5,1.0]（决策 26）
+const _EPSILON := 0.000001
+
 var owner_id: int = 0
 var elixir            # Elixir
 var deck              # Deck
@@ -43,7 +48,8 @@ func can_play(hand_index: int) -> bool:
 	return elixir.get_int() >= card_cost(card_id)
 
 # 尝试出第 hand_index 格手牌到 (lane_index, target_progress)。
-# 圣水不足/下标非法 → 返回 false 且不改任何状态；成功 → 扣圣水、循环卡组、触发技能。
+# 圣水不足/下标非法/兵牌落点越界己方半场 → 返回 false 且不改任何状态；
+# 成功 → 扣圣水、循环卡组、触发技能。
 func try_play_card(hand_index: int, lane_index: int, target_progress: float = 0.0) -> bool:
 	if deck == null or elixir == null or skill_system == null:
 		return false
@@ -53,6 +59,8 @@ func try_play_card(hand_index: int, lane_index: int, target_progress: float = 0.
 	var card_id = hand[hand_index]
 	if card_id == null:
 		return false
+	if not _deploy_allowed(card_id, target_progress):
+		return false   # 兵牌落点须在己方半场（决策 26）；纯法术不受限
 	var cost := card_cost(card_id)
 	if elixir.get_int() < cost:
 		return false
@@ -61,3 +69,20 @@ func try_play_card(hand_index: int, lane_index: int, target_progress: float = 0.
 	deck.play(hand_index)
 	skill_system.play_card(card_id, owner_id, lane_index, target_progress)
 	return true
+
+# 该卡是否会生成单位（含 spawn_unit 积木）。纯伤害法术（fireball/arrows/zap）返回 false。
+func _spawns_troops(card_id) -> bool:
+	if config == null:
+		return false
+	for sk in config.get_card(card_id).get("skills", []):
+		if typeof(sk) == TYPE_DICTIONARY and sk.get("type") == "spawn_unit":
+			return true
+	return false
+
+# 部署是否合法（决策 26）：纯法术不限半场；兵牌落点须落在出牌方己方半场。
+func _deploy_allowed(card_id, target_progress: float) -> bool:
+	if not _spawns_troops(card_id):
+		return true
+	if owner_id == UnitScript.OWNER_PLAYER:
+		return target_progress <= DEPLOY_HALF_MAX + _EPSILON
+	return target_progress >= DEPLOY_HALF_MAX - _EPSILON
