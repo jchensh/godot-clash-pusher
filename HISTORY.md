@@ -518,3 +518,22 @@
 - Godot 编辑器启动后端口检查：`127.0.0.1:8000` / `127.0.0.1:9500` 均监听 ✅
 - `claude mcp list` → `godot-ai: http://127.0.0.1:8000/mcp (HTTP) - ✓ Connected` ✅
 - `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` → **110/110 全过** ✅
+
+### 工具链 — 环境复现指南与 Windows setup 脚本
+**背景**
+- Godot AI MCP 的插件本体已经进入项目 git，但 agent 客户端注册、`uv`、用户环境变量、Godot/gh/git 等本机工具安装都属于机器级状态；换电脑后不会随仓库自动恢复。
+- 因此新增项目级环境指南，类似 Node 项目的 `package.json`/README 角色：说明哪些东西在 git，哪些东西需要每台机器单独装和配。
+
+**新增**
+- `docs/ENVIRONMENT.md`：记录 Godot 4.6.3、Godot AI `2.6.1`、`uv`、Codex/Claude MCP 注册、代理、运行测试、打开编辑器、MCP 使用与排错方式。
+- `scripts/setup-godot-ai.ps1`：Windows PowerShell 辅助脚本。检查 `addons/godot_ai/plugin.cfg`，检查 `godot`/`git`/`uv`，必要时通过 winget 安装 `astral-sh.uv`，设置 Godot AI 遥测关闭变量，并按需写入 Codex 与 Claude Code 的用户级 MCP 配置。
+
+**决策**
+- OS 依赖必须写清楚：Windows 使用 PowerShell + winget + `.ps1`；macOS 使用 Terminal + Homebrew，按 `docs/ENVIRONMENT.md` 手动执行 `brew install --cask godot` / `brew install git uv gh` 并配置 MCP。
+- 不把 `C:\Users\user\.codex\config.toml`、`C:\Users\user\.claude.json`、用户环境变量或 winget/uv 安装目录纳入 git；这些是每台机器的本地状态。
+- `addons/godot_ai/`、`project.godot` 插件启用、`docs/ENVIRONMENT.md`、`scripts/setup-godot-ai.ps1` 才是项目可追踪部分。
+
+**验收**
+- PowerShell parser 检查 `scripts/setup-godot-ai.ps1` 通过，无语法错误。
+- `git diff --check` 通过。
+- `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` → **110/110 全过** ✅
