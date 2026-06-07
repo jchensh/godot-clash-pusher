@@ -4,13 +4,13 @@
 
 ## 必读顺序
 
-1. 先读 [PLAN.md](PLAN.md)：项目唯一权威规划，规格、步骤、验收标准以它为准。
+1. 先读 [PLAN_GRAND.md](PLAN_GRAND.md)（全项目 roadmap）与 [PLAN_V2.md](PLAN_V2.md)（**当前阶段权威规划**，规格、步骤、验收标准以它为准）；[PLAN_V1.md](PLAN_V1.md) 为已完成的 V1 规格（存档备查）。
 2. 再读 [HISTORY.md](HISTORY.md)：当前进度、已完成步骤、历史决策、踩坑记录。
 3. 必要时读 [CLAUDE.md](CLAUDE.md)：原 Claude Code 操作手册；其中 Windows 工具链命令仅作历史参考，Mac 命令以本文件为准。
 
 ## 开发纪律
 
-- 严格按 `PLAN.md` 第六节开发步骤推进。
+- 严格按 `PLAN_V2.md` 的施工图步骤推进（V1 已完成，见 `PLAN_V1.md`）。
 - 一步一确认：完成一个步骤后停下，等待用户确认，再进入下一步。
 - 每步完成后更新 `HISTORY.md`，记录新增/修改文件、关键决策、踩坑、验收结果。
 - 每步一次 git commit，commit message 描述本步内容，例如 `step3: deck cycle system + unit tests`。
@@ -115,7 +115,8 @@ HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897 git push orig
 - Step 6：完成。
 - Step 7：完成（7a Player/Match 逻辑 + 7b Godot 白膜画面，单 lane MVP，对手被动）。
 - Step 8：完成（AIController 简单进攻型规则 AI，经 Match.opponent_controller 注入；对手自驱出牌、一局正常分胜负）。
-- 下一步：Step 9，安卓导出 + 触摸适配 + 竖屏配置（导出 APK，手机能跑能玩）。
+- **V1 收官（2026-06-07）**：Step 0–8 即 V1 全部玩法范围，已完成；**Step 9（安卓导出）缓做**，降级到后续阶段（编辑器内即可体验/开发，需要分发时再做）。
+- **下一步：进入 V2**，权威规划见 `PLAN_V2.md`，顺序 A→D→B→C，**首个步骤 V2-1 = 多 lane 逻辑层（3-lane）**。开工前先与用户确认 V2-1 待细化项（公主塔被毁后行为、部署/河道规则）。
 
 Step 8 已确认决策（详见 HISTORY 决策日志 22）：
 
@@ -135,7 +136,7 @@ Step 5 已确认决策：
 - 超时（`match_duration`）→ 比双方剩余塔血总和，多者胜、相等判平。
 - V1 单 lane 两端接双方王塔，单位推到底直接削王塔。
 
-Step 6 已确认决策（原 PLAN §9 遗留项至此定稿，详见 HISTORY 决策日志 17–21）：
+Step 6 已确认决策（原 PLAN_V1 §9 遗留项至此定稿，详见 HISTORY 决策日志 17–21）：
 
 - 多积木卡牌按 `skills` 数组顺序自上而下逐个同步结算。
 - `direct_damage.target` V1 仅 `first_enemy_in_lane` = 最逼近出牌方塔的敌方单位；无则空放；只打单位不打塔。
