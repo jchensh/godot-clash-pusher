@@ -1,6 +1,10 @@
 ; Engine configuration file.
-; 竖屏皇室战争式对推小游戏 — Godot 4.x
-; 详细规划见 PLAN.md（项目唯一权威规划）。
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
@@ -17,7 +21,6 @@ config/icon="res://icon.svg"
 window/size/viewport_width=720
 window/size/viewport_height=1280
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
 window/handheld/orientation="portrait"
 
 [rendering]
