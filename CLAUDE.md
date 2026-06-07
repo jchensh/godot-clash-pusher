@@ -61,4 +61,7 @@ IDE：**VS Code**（默认）。装 `geequlim.godot-tools` 扩展（`.vscode/ext
 - Step 6 ✅ `SkillSystem` 三积木（spawn_unit / direct_damage / aoe_damage）
 - Step 7 ✅ 显示层 MVP（白膜方块 + 手牌 UI + 圣水条 + 血条；单 lane 跑通；7a Player/Match 逻辑 + 7b Godot 画面）
 - Step 8 ✅ `AIController` 规则 AI（简单进攻型；对手自驱出牌、一局正常分胜负）
-- **Now：Step 9** 安卓导出 + 触摸适配 + 竖屏配置（Windows/Mac 导出 APK，手机能跑能玩）。
+- Step 9 ⏸ 安卓导出（缓做，移至 V2 后续；编辑器内即可体验/开发）
+- **V1 收官**。现进入 **V2**（顺序 A→D→B→C，权威规划见 PLAN_V2.md）：
+  - V2-1 ✅ 3-lane 逻辑层：`Battle.build_v2_three_lanes` + `Lane` 侧路公主倒后转打王塔（决策日志 24–25）；`Match`/显示层/AI 仍单 lane。
+  - **Now：V2-2** 多 lane 显示层 + 出牌选 lane（接通 `Match` 到 3 lane、画 6 塔布局、部署半场校验、AI 最小适配）。开工前定 HISTORY「仍待定」两项。

@@ -18,12 +18,21 @@ var units: Array = []
 var tower_at_start = null
 var tower_at_end = null
 
+# 兜底王塔（V2-1，可空）：当本端主塔（侧路公主）被摧毁后，该 lane 的单位转打这座王塔
+# （皇室战争式「拆侧塔开路、威胁王塔」）。中路 lane 主塔本就是王塔，无需兜底。
+var king_at_start = null
+var king_at_end = null
+
 func _init(lane_index_: int = 0) -> void:
 	lane_index = lane_index_
 
 func set_towers(start_tower, end_tower) -> void:
 	tower_at_start = start_tower
 	tower_at_end = end_tower
+
+func set_king_fallback(start_king, end_king) -> void:
+	king_at_start = start_king
+	king_at_end = end_king
 
 func add_unit(unit) -> void:
 	if unit == null:
@@ -83,7 +92,7 @@ func _move_unit(unit, dt: float) -> void:
 	# 因此此处只会在没有更近的单位阻挡时收紧 desired）。
 	var tower = _enemy_tower_for(unit)
 	if tower != null and tower.is_alive():
-		var tpos: float = _tower_position(tower)
+		var tpos: float = _enemy_tower_end(unit)
 		if direction > 0:
 			var t_limit: float = tpos - float(unit.attack_range)
 			if desired > t_limit:
@@ -131,21 +140,27 @@ func _find_enemy_tower_in_range(unit):
 	var tower = _enemy_tower_for(unit)
 	if tower == null or not tower.is_alive():
 		return null
-	var distance := absf(_tower_position(tower) - float(unit.progress))
+	var distance := absf(_enemy_tower_end(unit) - float(unit.progress))
 	if distance <= float(unit.attack_range) + _EPSILON:
 		return tower
 	return null
 
-# 该单位推进方向尽头的敌方塔：玩家(向 1)对 end 塔，对手(向 0)对 start 塔；
-# 同阵营或空则返回 null。
+# 该单位推进方向尽头当前应攻击的敌方塔：先打该端主塔（侧路公主 / 中路王塔）；
+# 主塔被摧毁后转打该端兜底王塔（V2-1）；都不可打则返回 null。
 func _enemy_tower_for(unit):
-	var tower = tower_at_end if unit.get_direction() > 0 else tower_at_start
-	if tower != null and tower.owner_id != unit.owner_id:
-		return tower
+	var forward: bool = unit.get_direction() > 0
+	var primary = tower_at_end if forward else tower_at_start
+	if primary != null and primary.is_alive() and primary.owner_id != unit.owner_id:
+		return primary
+	var king = king_at_end if forward else king_at_start
+	if king != null and king.is_alive() and king.owner_id != unit.owner_id:
+		return king
 	return null
 
-func _tower_position(tower) -> float:
-	return 1.0 if tower == tower_at_end else 0.0
+# 单位推进方向尽头的 lane 进度：向 1 推进打 end(1.0)，向 0 推进打 start(0.0)。
+# 主塔与兜底王塔同处该端，故按方向取位置（不依赖塔对象身份）。
+func _enemy_tower_end(unit) -> float:
+	return 1.0 if unit.get_direction() > 0 else 0.0
 
 func _remove_dead() -> void:
 	for i in range(units.size() - 1, -1, -1):

@@ -38,10 +38,11 @@
 | 7 | 显示层 MVP（白膜 + UI） | ✅ 完成 | 7a `b33957b` / 7b `304066b` |
 | 8 | AIController 规则 AI | ✅ 完成 | `198798f` |
 | 9 | 安卓导出 + 触摸 + 竖屏 | ⏸ 缓做（移至 V2 后续阶段） | — |
+| V2-1 | 3-lane 逻辑层 + 侧路公主倒转打王塔 | ✅ 完成 | 待提交 |
 
-> **阶段进度（2026-06-07）**：**V1 收官**——Step 0–8 即 V1 全部玩法范围，已完成；**Step 9（安卓打包）缓做**（编辑器内即可体验/继续开发，需要分发到手机时再做）。现已进入 **V2**，权威规划见 [PLAN_V2.md](PLAN_V2.md)：顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，**不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
+> **阶段进度（2026-06-08）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**V2-1（3-lane 逻辑层）已完成**（`Battle.build_v2_three_lanes` + `Lane` 转火兜底 + 12 单测）；`Match`/显示层/AI 仍在单 lane，将于 **V2-2** 接通 3 lane + 出牌选 lane + 部署半场校验。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
 
-**测试现状**：94 个测试全部通过（config_loader 7 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + skill_system 11 + player 6 + match 6 + ai_controller 6 + smoke 3）。
+**测试现状**：106 个测试全部通过（config_loader 7 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + **battle_v2 12** + skill_system 11 + player 6 + match 6 + ai_controller 6 + smoke 3）。
 
 **分支 / 远端**：开发在 **`develop`** 分支；`main` 为稳定线。远端 `origin` = https://github.com/jchensh/godot-clash-pusher （Public）。约定：用户说"提交"时才 commit + push。
 
@@ -94,6 +95,11 @@
 
 23. **V1 在 Step 8 收官；Step 9（安卓打包）缓做**：当前阶段编辑器内即可体验/继续开发，打包对玩法迭代无帮助，降级到后续阶段（需要分发到手机时再做）。**V2 范围与顺序 = A→D→B→C**：A 玩法深度（核心 = 3-lane，必做）→ D 表现/换皮 → B AI 深度 → C 内容/数值；**V2 不做空中/地面克制**（留后续）。**文档重构**：原 `PLAN.md` → `PLAN_V1.md`（V1 历史规格存档）；新增 `PLAN_V2.md`（V2 分步施工图）与 `PLAN_GRAND.md`（全项目 roadmap，粗粒度）。CLAUDE/AGENTS/HISTORY 的「必读/规格」指针改指 PLAN_GRAND + PLAN_V2。
 
+> 24–25 为 **V2-1（3-lane 逻辑层）开工前提**，用户 2026-06-08 确认（PLAN_V2 §4 两个待细化项至此定稿）。
+
+24. **侧路公主塔被摧毁后，该 lane 单位转打王塔**（皇室战争式「拆侧塔开路、威胁王塔」）：侧路（lane 0/2）主塔为公主塔；公主塔归零后，该 lane 内推到尽头的单位改为攻击该端**王塔**。实现 = `Lane` 持兜底引用 `king_at_start/king_at_end`，`_enemy_tower_for` 改为「主塔活着打主塔，主塔毁则打兜底王塔」。中路（lane 1）主塔本就是王塔，无需兜底。三条 lane 的兜底王塔指向**同一座**王塔对象，故中路 + 已破侧路对王塔的伤害天然累加。
+25. **部署规则 = 仅己方半场（progress 0~0.5）、任意 lane 可选**：玩家出兵落点限己方半场，但可自由选 3 条 lane 中任意一条。⚠️ **本规则的强制校验留到 V2-2**（与出牌选 lane 的输入层一并做）；V2-1 仅完成 3-lane 拓扑与转火逻辑，逻辑层暂仍信任传入的 `(lane_index, target_progress)`（沿用决策 21）。
+
 ---
 
 ## 与原计划（PLAN_V1.md）的出入
@@ -124,8 +130,12 @@
 - ✅ **三塔制 + 胜负规则**：见决策日志 12–16（王塔归零判负、超时比塔血、单 lane 接王塔）。
 - ✅ **Step 6 技能结算口径**：见决策日志 17–21（多积木数组顺序、`direct_damage.target=first_enemy_in_lane`、`aoe_damage` 一维圆心/半径、伤害只打敌方单位、出牌指令 `(card_id, owner_id, lane_index, target_progress)`）。原 PLAN §9 遗留项至此全部定稿。
 
-**仍待定**
-- [ ] 暂无（V1 锁定范围内的技能/胜负语义已全部确认）。
+**已确认（2026-06-08）**
+- ✅ **V2-1 拓扑/转火/部署**：见决策日志 24–25（侧路公主毁后转打王塔；部署仅己方半场/任意 lane，强制校验留 V2-2）。
+
+**仍待定（V2-2 开工前定）**
+- [ ] **部署半场校验落点**：在 `Player.try_play_card` 拒绝越界出兵，还是在 `SkillSystem._spawn_unit` 钳制到己方半场？（仅约束 spawn，伤害法术 direct/aoe 不受限）
+- [ ] **跨 lane 河道规则**：单位是否绑定生成 lane 不可换道（决策 25 已定「任意 lane 可选」，但生成后是否锁 lane 待 V2-2 确认）。
 
 ---
 
@@ -385,3 +395,29 @@
 - `HOME=/private/tmp/godot-home godot --headless --editor --path /Users/jeffchen/godot-develop --quit` → exit 0，`AIController` 注册 ✅
 - `HOME=/private/tmp/godot-home godot --headless --path /Users/jeffchen/godot-develop --script res://tests/test_runner.gd` → 94/94 全过、SCRIPT ERROR 行=0（+6 ai_controller，旧 88 零回归）✅
 - 真跑渲染截图：AI 自驱部署红方单位、与玩家蓝方单位在 lane 内对推 ✅
+
+---
+
+## V2 阶段
+
+> 环境切换说明：自此阶段起开发机为 **Windows**（工程根 `F:\godotProject`，PowerShell，godot 4.6.3 经 `~\bin\godot.cmd` shim 在 PATH）。HISTORY/PLAN 中 Mac 路径(`/Users/jeffchen/...`)与 bash 命令为历史记录，Windows 下命令一律翻译为 PowerShell。GitHub 远端 git/gh 走本机代理 `127.0.0.1:7897`。
+
+### V2-1 — 3-lane 逻辑层 + 侧路公主倒后转打王塔（纯逻辑）  （本次提交）
+**前置语义（用户 2026-06-08 确认）**：见决策日志 24–25（侧路公主毁后转打王塔；部署仅己方半场/任意 lane，强制校验留 V2-2）。
+
+**范围边界**：仅做 3-lane 的 `Battle`/`Lane` 拓扑与转火逻辑 + 单测；**不动** `Match.setup`（仍单 lane）、显示层、AI——「Match 接通 3 lane + 出牌选 lane + AI 最小适配 + 部署半场校验」整体留 **V2-2**（对齐 PLAN_V2 验收划分：V2-1=单测、V2-2=编辑器可玩）。
+
+**新增/修改**
+- `logic/lane.gd`：加兜底王塔 `king_at_start/king_at_end` + `set_king_fallback()`；`_enemy_tower_for` 改为「主塔活着打主塔，主塔（侧路公主）毁则转打该端兜底王塔」；塔位置改 `_enemy_tower_end(unit)` 按单位方向取（替换原 `_tower_position(tower)` 的对象身份判断——否则兜底王塔会被误算到错误端，是必修 bug）。
+- `logic/battle.gd`：加 `build_v2_three_lanes(level)`——lane 0 左公主↔公主、lane 1 中王↔王、lane 2 右公主↔公主；侧路挂同一对王塔兜底；6 塔全计入 `player/opponent_towers`，胜负与超时比塔血规则不变。
+- `tests/test_battle_v2.gd`：新增 12 个测试（拓扑/中路打王/侧路打公主/**公主毁转打王**/共享王塔双重承伤/三 lane 独立推进/跨 lane 不交战/破王取胜/超时比 6 塔血/平局/真实配置烟雾）。
+
+**决策**：见决策日志 24–25。补充：兜底王塔与主塔同处 lane 端点（progress 1.0/0.0），公主一倒，原本停在 `端点∓attack_range` 攻击公主的单位下一 tick 即对同位置王塔在射程内、自动转火；王塔的「物理靠后」由显示层（V2-2+）做视觉偏移，逻辑层用一维端点足矣。
+
+**踩坑与修复**
+1. `var before := battle.opponent_king.hp` 解析失败：`opponent_king` 是 Variant，`:=` 无法从其成员推断类型 → 改 `var before: float = ...`。
+2. 独立性测试初版 10 tick（move 0.5 仅走到 0.5，未达 0.9 射程）误判「公主未被削」→ 增到 30 tick 让单位走到边界并出手。
+
+**验收**：
+- `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` → **106/106 全过**、exit 0（+12 battle_v2，旧 94 零回归）✅
+- `godot --headless --quit --path F:\godotProject` 工程加载 exit 0 ✅

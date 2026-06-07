@@ -78,6 +78,46 @@ func build_v1_single_lane(level: Dictionary):
 	add_lane(lane)
 	return lane
 
+# 便捷搭建：按 level 配置建一个 V2 三 lane 对局（PLAN_V2 §3 A）。
+# 拓扑：lane 0 左→公主、lane 1 中→王、lane 2 右→公主；双方各 1 王 + 2 公主。
+# 侧路（0/2）挂兜底王塔：公主塔被摧毁后该 lane 单位转打王塔（皇室战争式）。
+# 6 塔全部计入 player/opponent_towers，胜负与超时比塔血规则与 V1 一致。返回 lanes 数组。
+func build_v2_three_lanes(level: Dictionary) -> Array:
+	match_duration = float(level.get("match_duration", 0.0))
+	var tower_hp: Dictionary = level.get("tower_hp", {})
+	var king_hp := float(tower_hp.get("king", 0.0))
+	var princess_hp := float(tower_hp.get("princess", 0.0))
+
+	var p_king = TowerScript.new(TowerScript.KIND_KING, UnitScript.OWNER_PLAYER, king_hp)
+	var p_left = TowerScript.new(TowerScript.KIND_PRINCESS, UnitScript.OWNER_PLAYER, princess_hp)
+	var p_right = TowerScript.new(TowerScript.KIND_PRINCESS, UnitScript.OWNER_PLAYER, princess_hp)
+	add_player_tower(p_king)
+	add_player_tower(p_left)
+	add_player_tower(p_right)
+
+	var o_king = TowerScript.new(TowerScript.KIND_KING, UnitScript.OWNER_OPPONENT, king_hp)
+	var o_left = TowerScript.new(TowerScript.KIND_PRINCESS, UnitScript.OWNER_OPPONENT, princess_hp)
+	var o_right = TowerScript.new(TowerScript.KIND_PRINCESS, UnitScript.OWNER_OPPONENT, princess_hp)
+	add_opponent_tower(o_king)
+	add_opponent_tower(o_left)
+	add_opponent_tower(o_right)
+
+	var lane_left = LaneScript.new(0)
+	lane_left.set_towers(p_left, o_left)
+	lane_left.set_king_fallback(p_king, o_king)
+	add_lane(lane_left)
+
+	var lane_mid = LaneScript.new(1)
+	lane_mid.set_towers(p_king, o_king)   # 中路主塔即王塔，无需兜底
+	add_lane(lane_mid)
+
+	var lane_right = LaneScript.new(2)
+	lane_right.set_towers(p_right, o_right)
+	lane_right.set_king_fallback(p_king, o_king)
+	add_lane(lane_right)
+
+	return lanes
+
 func is_over() -> bool:
 	return result != RESULT_ONGOING
 
