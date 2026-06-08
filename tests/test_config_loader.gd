@@ -14,6 +14,9 @@ func test_load_all_succeeds() -> void:
 	assert_true(ok, "load_all 应成功; errors=%s" % str(loader.errors))
 	assert_true(loader.errors.is_empty(), "不应有错误")
 
+func test_excel_source_workbook_exists() -> void:
+	assert_true(FileAccess.file_exists("res://config/GameConfig.xlsx"), "策划源表 GameConfig.xlsx 应存在")
+
 func test_cards_loaded() -> void:
 	var loader = _make_loaded()
 	assert_true(loader.cards.size() > 0, "cards 非空")

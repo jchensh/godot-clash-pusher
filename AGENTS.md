@@ -1,154 +1,129 @@
 # AGENTS.md
 
-本文件是给 Codex / Claude / 其他编程 agent 的项目入口守则。开始任何编码、重构、测试、提交前，先读本文件，再按下方顺序读取项目资料。
+竖屏「皇室战争式对推小游戏」，**Godot 4.x / GDScript**。玩家 vs 规则 AI，圣水 + 循环卡组部署单位，沿 lane 互推、推塔决胜。V1 纯 2D 白膜，先 Windows 跑通再导出安卓。
 
-## 必读顺序
+> **编码前必读**：[PLAN_GRAND.md](PLAN_GRAND.md)（全项目 roadmap）→ [PLAN_V2.md](PLAN_V2.md)（**当前阶段权威规划**）；[PLAN_V1.md](PLAN_V1.md) 是已完成的 V1 规格（存档备查）。本文件只是操作手册，当前阶段规格以 PLAN_V2.md 为准。
 
-1. 先读 [PLAN_GRAND.md](PLAN_GRAND.md)（全项目 roadmap）与 [PLAN_V2.md](PLAN_V2.md)（**当前阶段权威规划**，规格、步骤、验收标准以它为准）；[PLAN_V1.md](PLAN_V1.md) 为已完成的 V1 规格（存档备查）。
-2. 再读 [HISTORY.md](HISTORY.md)：当前进度、已完成步骤、历史决策、踩坑记录。
-3. 必要时读 [CLAUDE.md](CLAUDE.md)：原 Claude Code 操作手册；其中 Windows 工具链命令仅作历史参考，Mac 命令以本文件为准。
+## 开发纪律（最高优先级）
+- **一步一确认**：严格按 PLAN_V2.md 的施工图步骤顺序；**每完成一步停下等用户确认**，再进下一步，不要一次做多步。
+- **每步一次 git commit**，message 描述本步内容（如 `step2: elixir system + unit tests`）。
+- **每步同时更新 [HISTORY.md](HISTORY.md)**：记录新增/修改文件、决策、踩坑与修复、验收结果，随该步一起 commit。它是跨对话的进度与历史真相源。
+- **第 0~6 步是纯逻辑层，必须配单元测试，测试通过才算完成。**
+- **遇配置含义/接口不清，先提问，不要猜着往下跑。**
+- 给成功标准而非实现细节；不自行扩大范围。
+- **需实机操作验证的（点界面、看画面/动画/手感等表现层行为），优先让真人验收**：AI 不要自己去驱动鼠标点引擎窗口跑（低效、易错）。正确做法 = AI 写好**可执行的测试用例**（开什么场景、点哪、预期看到什么、判定通过的标准），用户在 Godot 编辑器里执行后回报 通过/不通过；AI 据反馈修。能 headless 单测覆盖的逻辑仍走单测，**只有真正需要肉眼看画面的才交给真人**。进入表现层（D 模块 V2-3+）后这类验收会很多。
 
-## 开发纪律
+## 硬性 DO-NOT
+- ❌ 不用物理引擎（`RigidBody2D`/`Area2D`）做 lane 碰撞——用「队列前后关系」纯逻辑判断。
+- ❌ 逻辑层禁用屏幕像素坐标——单位位置一律 `0.0~1.0` 的 lane 进度（**0=己方塔，1=敌方塔**）。
+- ❌ 游戏速度禁绑渲染帧率——圣水/时间/推进用**固定逻辑 tick** 结算，显示层做插值。
+- ❌ 不过度设计，不写用不到的「未来扩展」代码。
+- ❌ 不擅自删改与当前任务无关的代码/注释。
 
-- 严格按 `PLAN_V2.md` 的施工图步骤推进（V1 已完成，见 `PLAN_V1.md`）。
-- 一步一确认：完成一个步骤后停下，等待用户确认，再进入下一步。
-- 每步完成后更新 `HISTORY.md`，记录新增/修改文件、关键决策、踩坑、验收结果。
-- 每步一次 git commit，commit message 描述本步内容，例如 `step3: deck cycle system + unit tests`。
-- 第 0~6 步是纯逻辑层，必须配单元测试；测试通过才算完成。
-- 遇到配置含义、接口语义、战斗规则不清楚时，先问用户，不要猜。
-- 不自行扩大范围，不写当前步骤用不到的未来扩展代码。
-- 不擅自删改与当前任务无关的代码、注释、配置或历史记录。
-- 需实机操作验证的（点界面、看画面/动画/手感等表现层行为），优先让真人验收：不要自己驱动鼠标点引擎窗口跑（低效易错）。正确做法 = 写好可执行的测试用例（开什么场景、点哪、预期看到什么、判定标准），用户在 Godot 编辑器执行后回报 通过/不通过，再据反馈修。能 headless 单测覆盖的逻辑仍走单测；只有真正要肉眼看画面的才交给真人。表现层（D 模块起）此类验收会很多。
+## 架构铁律
+- **逻辑层 / 显示层彻底分离**：逻辑层持有真实状态（位置/血量/圣水），不关心画面；显示层每帧读逻辑状态画出来。
+- 玩家与 AI **完全对称**：两者都只是「向逻辑层发指令」。
+- 数值/卡牌**走配置，不硬编码**。Godot 运行时读取 `config/cards.json`、`config/units.json`、`config/levels.json`；`config/GameConfig.xlsx` 是给人类策划读改的工作簿镜像。
 
-## 硬性禁止
+## 配置工作流（JSON / Excel 双入口）
+- **agent 默认改 JSON**：Codex / Claude 做配置、数值、卡牌、关卡调整时，优先直接编辑 `config/cards.json`、`config/units.json`、`config/levels.json`，因为这是 Godot 实际读取路径，也更省上下文和操作成本。
+- agent 确认 JSON 配置正确后，用当前 JSON 覆写同步 Excel：
+  ```powershell
+  uv run --with openpyxl python tools/build_config.py --from-json
+  ```
+  这会从 `config/*.json` 重建 `config/GameConfig.xlsx`，让人类之后仍能用 Excel 查看和继续改。
+- **人类策划可以直接改 Excel**：如果用户自己在 `GameConfig.xlsx` 里调数值，改完后运行：
+  ```powershell
+  uv run --with openpyxl python tools/build_config.py
+  ```
+  这会从 Excel 重新生成 `config/cards.json`、`config/units.json`、`config/levels.json`。
+- 提交前必须校验 JSON 与 Excel 已同步：
+  ```powershell
+  uv run --with openpyxl python tools/build_config.py --check
+  godot --headless --path F:\godotProject --script res://tests/test_runner.gd
+  ```
+- `tools/build_config.py --from-json` 会覆盖 `GameConfig.xlsx`。如果发现 Excel 可能有用户尚未同步到 JSON 的改动，agent 必须先停下询问，不要直接覆盖。
+- agent 修改配置时必须遵守：先改 JSON，再 `--from-json` 同步 Excel，再跑 `--check` 和 Godot 单测；如果用户只要求分析方案，不要擅自生成或改配置。
+- 当前工作簿 sheet 约定：
+  - `Units`：单位基础数值。`attack_interval_s` 会生成到 JSON 的 `attack_speed` 字段，语义是「攻击间隔（秒/次）」。
+  - `Cards`：卡牌主表，控制 `card_id`、名称、费用、启用状态。
+  - `CardSkills`：一行一个技能积木，按 `card_id + order` 聚合成 JSON 的 `skills` 数组。
+  - `Levels`：关卡主表，包含圣水、时长、AI 难度、塔血。
+  - `Decks`：每关玩家/AI 的 8 张卡组。
+  - `Balance_View`：公式视图，辅助看 DPS 等派生指标；不导出。
+  - `_Enums`：下拉枚举源，隐藏表；不导出。
 
-- 不用 Godot 物理引擎处理 lane 碰撞；不要用 `RigidBody2D` / `Area2D` 做单位互撞。
-- 逻辑层不依赖屏幕像素坐标；单位位置统一使用 `0.0~1.0` 的 lane 进度，`0=己方塔`，`1=敌方塔`。
-- 游戏速度不绑定渲染帧率；圣水、时间、推进用固定逻辑 tick，显示层只做读取和插值。
-- 不绕过 JSON 配置硬编码数值；卡牌、单位、关卡数值走 `config/`。
-
-## 当前工程环境
-
-- 项目根目录：`F:\godotProject`（历史 Mac 路径 `/Users/jeffchen/godot-develop` 仅作旧记录参考）
-- 引擎：Godot `4.6.3 stable`，标准 GDScript 构建。
-- 仓库：`https://github.com/jchensh/godot-clash-pusher`
-- 稳定分支：`main`
-- 当前开发分支：`develop`
-- GitHub CLI：`gh` 已安装，已登录为 `jchensh`。
-- 命令行访问 GitHub 需要走本机代理：`127.0.0.1:7897`。
-- Godot AI MCP 插件：`addons/godot_ai/`，来源 `https://github.com/hi-godot/godot-ai`，当前导入版本 `2.6.1`。
-
-## godot-ai MCP（表现层辅助工具）
-
-项目已导入并启用 `godot-ai` 插件。它在 **Godot 编辑器 GUI 打开时**启动本地 MCP server：
-
-```text
-Codex / Claude Code
-  -> http://127.0.0.1:8000/mcp
-  -> Godot AI Python server
-  -> WebSocket 127.0.0.1:9500
-  -> Godot Editor Plugin
-  -> EditorInterface / SceneTree
+## 目录布局
+```
+/logic   逻辑层（不依赖 Godot 渲染）
+/view    显示层脚本与场景
+/ai      AIController
+/config  GameConfig.xlsx（策划源表）+ cards.json / units.json / levels.json（生成产物）
+/tests   单元测试（test_*.gd） + test_runner.gd + test_case.gd
+/tools   配置生成脚本等项目工具
 ```
 
-用途：表现层开发时辅助 agent 读取场景树、查看编辑器状态、运行场景/测试、读取日志、截图、定位 UI/动画/特效问题。它**不替代**现有 headless 单元测试，也**不替代**用户的肉眼/手感验收。
+## 工具链 / 常用命令
+引擎：**Godot 4.6.3 stable（标准 GDScript 构建）**。已加入用户 PATH（经 `~\bin\godot.cmd` shim，指向 WinGet 安装的 `_console.exe`）。新终端中 `godot` 直接可用。
 
-使用前提：
-
-- 先打开 Godot 编辑器：`godot --path F:\godotProject -e`。
-- 插件只在编辑器 GUI 模式启动 server；`--headless` 下不会启动 MCP server。
-- 端口正常时：`127.0.0.1:8000`（MCP HTTP）和 `127.0.0.1:9500`（Godot WebSocket）应监听。
-- Codex 用户配置：`C:\Users\user\.codex\config.toml` 里有 `[mcp_servers."godot-ai"] url = "http://127.0.0.1:8000/mcp"`。
-- Claude Code 用户配置：`claude mcp list` 应显示 `godot-ai ... ✓ Connected`。
-- `uv` 是 Python server 运行器；若当前 shell 找不到，先确认用户 PATH 含 `C:\Users\user\AppData\Local\Microsoft\WinGet\Packages\astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe`。
-- 遥测已用用户环境变量关闭：`GODOT_AI_DISABLE_TELEMETRY=true` / `DISABLE_TELEMETRY=true`。
-
-使用守则：
-
-- MCP 是**辅助工具**。逻辑正确性仍以 `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` 为准。
-- 读操作（看场景树、截图、读日志、查编辑器状态）可用于表现层排查。
-- 写操作（创建/删除节点、改属性、改脚本、改场景）必须遵守“一步一确认”，且不得绕过 `PLAN_V2.md` 当前步骤范围。
-- 需要主观判断的视觉、动画、手感验收仍优先交给用户在编辑器里确认；agent 可提供明确测试步骤和预期结果。
-- 不同时安装/启用多个 Godot MCP 工具，避免端口和工具语义冲突。
-
-## Mac 常用命令
-
-确认 Godot：
-
-```bash
-godot --version
+```powershell
+godot --version                                   # 确认可用
+godot --headless --quit --path F:\godotProject    # 验证工程能打开/导入
+godot --headless --script res://tests/test_runner.gd   # 跑全部单元测试（CI/逻辑层验收）
+godot --path F:\godotProject -e                   # 打开编辑器 GUI
 ```
+> 测试用**自写轻量 runner**（零外部依赖）：`tests/test_runner.gd` 自动发现 `test_*.gd`、跑 `test_*` 方法、汇总并以 exit 0/1 返回。新测试文件 `extends "res://tests/test_case.gd"`。
 
-跑全部单元测试：
+IDE：**VS Code**（默认）。装 `geequlim.godot-tools` 扩展（`.vscode/extensions.json` 已推荐）；F5 用 `.vscode/launch.json` 的「Debug Godot Project」启动调试。
 
-```bash
-godot --headless --path /Users/jeffchen/godot-develop --script res://tests/test_runner.gd
+## godot-ai MCP（编辑器联动，**辅助工具**）
+项目装了 `godot-ai` 插件（`addons/godot_ai/`），在 **Godot 编辑器内**起一个 MCP server（`http://127.0.0.1:8000/mcp`），让 AI 能直接读写引擎：看场景树、建/改节点、改脚本、跑测试、截图等（工具名 `mcp__godot-ai__*`，如 `editor_state` / `scene_get_hierarchy` / `node_create` / `script_patch` / `test_run` / `editor_screenshot`）。
+
+**前提条件**
+- server 本体由 Godot 插件提供：**只有 Godot 编辑器开着时才可用**，关掉就断。
+- 注册信息在用户级 `~\.claude.json`（scope=user，全局生效），非项目内。
+- **必须先开 Godot 编辑器，再开 Claude Code 会话**；顺序反了当前会话连不上，需新开会话重连。
+
+**管理 / 排查**
+```powershell
+claude mcp list            # 看所有 MCP 与连接状态（godot-ai ✓ Connected 即正常）
+claude mcp get godot-ai    # 看详情
+claude mcp remove godot-ai -s user   # 卸载注册（不删插件）
 ```
+界面里敲 `/mcp` 也能看状态；Godot 那边在「项目设置→插件」启停 `godot_ai`。
 
-如果 Codex/沙箱环境无法写入 `~/Library/Application Support/Godot`，用临时 HOME 跑：
+**使用守则（重要）**
+- ❌ **不主动用**——默认当辅助工具，**仅当用户明确叫我用时才用**，绝不自行驱动引擎。
+- ✅ 被叫到时：**只读操作**（看场景树/截图/读日志/跑测试）可直接做。
+- ⚠️ **写操作**（建节点/改脚本/改属性等会改工程的）先按"一步一确认"跟用户确认再动手。
+- 这条与上面「实机/画面验收交给真人」纪律一致：MCP 是补充手段，不替代真人肉眼验收。
 
-```bash
-HOME=/private/tmp/godot-home godot --headless --path /Users/jeffchen/godot-develop --script res://tests/test_runner.gd
-```
+**画面/FX 验收用 MCP 时的协议（V2-4 教训，别让用户陪打）**
+- **一次性载全工具**：开头一个 ToolSearch 把 `editor_state / project_run / project_manage / editor_screenshot / game_manage / logs_read` 全拿到；认准 **`editor_screenshot source="game"`** 截运行中游戏（2D 工程别用默认 `viewport` 源，会因无 Node3D 报错）。
+- **干净启动序列**（避开缓存滞后/截图桥未就绪）：`project_manage(op=stop)` → `editor_state`（刷新缓存，等 `is_playing=false`）→ `project_run(autosave=false)` → 轮询 `editor_state` 到 `game_capture_ready=true` 才截图。
+- **不被动碰运气抓 <0.3s 瞬时 FX、绝不让用户手动延长对局陪打**：写**临时(不提交)验收 harness**把要看的 FX 摆好并定格够久（`Engine.time_scale≈0.15` 慢放／暂停／循环），在已知时刻截图，验后删（headless 探针的"有画面"版）。
+- **用日志掐时机**：`logs_read(source="game")` 能拿到运行中游戏 stdout（`battle_scene._log` 的 SPAWN/DEATH/TOWER HIT 都在那），据此把截图对准关键事件。
+- **`game_manage input_mouse` 坐标不可靠**：position 被映射到桌面全局坐标（多屏），点不准卡牌/落点；要交互走代码钩子/harness 或让用户点。
 
-打开 Godot 编辑器：
+## 分支 / 提交 / 推送约定
+- **开发在 `develop` 分支进行**；`main` 为稳定线，远端 `origin` = https://github.com/jchensh/godot-clash-pusher 。
+- **仅当用户说"提交"时**才 `git commit`；提交后**顺带 `git push`**（develop 首次推送用 `git push -u origin develop` 建立跟踪）。
+- 仍遵守"一步一确认"：每步做完先停下报告，待用户说提交再 commit+push。
 
-```bash
-godot --path /Users/jeffchen/godot-develop -e
-```
-
-## Git 和 GitHub 规则
-
-日常本地开发优先使用 `git`：
-
-```bash
-git status --short --branch
-git diff
-git add <files>
-git commit -m "stepN: concise description"
-git push origin develop
-```
-
-GitHub 远端查询、PR、issue、仓库信息优先使用 `gh`：
-
-```bash
-gh auth status
-gh repo view jchensh/godot-clash-pusher
-gh pr list
-gh issue list
-```
-
-因为当前网络环境下 CLI 访问 GitHub 需要代理，执行远端 `git` / `gh` 命令时优先带上：
-
-```bash
-HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897 gh auth status
-HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897 gh repo view jchensh/godot-clash-pusher
-HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897 git fetch origin
-HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897 git push origin develop
-```
-
-不要通过 GitHub Desktop 做 agent 自动化日常开发流；它只作为用户图形化检查或手动操作的备用方式。
-
-## 测试与验收
-
-- 新逻辑代码必须有 `tests/test_*.gd` 覆盖。
-- 新测试文件继承 `res://tests/test_case.gd`。
-- 测试方法名以 `test_` 开头。
-- `tests/test_runner.gd` 会自动发现并执行测试。
-- 提交前至少跑一次全部测试，并把结果写入 `HISTORY.md` 对应步骤记录。
-
-## 当前开发指针
-
-截至 2026-06-08：
-
-- **V1 已收官**：Step 0–8 完成；原 Step 9（安卓导出）缓做，移至后续需要分发时再做。
-- **V2 进行中**，权威规划见 `PLAN_V2.md`，顺序 **A → D → B → C**。
-- **V2 A 模块（3-lane）已完成**：
-  - V2-1：3-lane 逻辑层 + 侧路公主塔倒后转打王塔。
-  - V2-2：Match / 显示层 / 出牌选 lane / 部署半场校验 / AI 固定中路接通。
-- **V2 D 模块进行中**：
-  - V2-3：程序化美术换皮完成（单位/塔/背景造型，逻辑零改动）。
-  - **Now：V2-4 动画与特效**（攻击/受击/死亡、远程投射物、AOE 爆点、塔摧毁）。
-- Godot AI MCP 已引入，作为表现层辅助工具；使用前先开 Godot 编辑器并确认 `godot-ai` MCP 已连接。
-
-实际进度以 `HISTORY.md` 为准；如果本节过期，先更新 `HISTORY.md`，再更新本节。
+## 当前进度
+- Step 0 ✅ 脚手架 + git + 工具链
+- Step 1 ✅ `ConfigLoader` + 三张 JSON 配置
+- Step 2 ✅ `Elixir` 圣水系统 + `SimClock` 固定逻辑 tick（10Hz / `TICK_DELTA=0.1s`）
+- Step 3 ✅ `Deck` 循环卡组（8 库 + 4 手，出一张补一张）
+- Step 4 ✅ `Unit` + `Lane` 推进与碰撞（纯逻辑）
+- Step 5 ✅ `Tower` + `Battle` 胜负判定（三塔制；王塔归零判负；超时比塔血）
+- Step 6 ✅ `SkillSystem` 三积木（spawn_unit / direct_damage / aoe_damage）
+- Step 7 ✅ 显示层 MVP（白膜方块 + 手牌 UI + 圣水条 + 血条；单 lane 跑通；7a Player/Match 逻辑 + 7b Godot 画面）
+- Step 8 ✅ `AIController` 规则 AI（简单进攻型；对手自驱出牌、一局正常分胜负）
+- Step 9 ⏸ 安卓导出（缓做，移至 V2 后续；编辑器内即可体验/开发）
+- **V1 收官**。现进入 **V2**（顺序 A→D→B→C，权威规划见 PLAN_V2.md）：
+  - V2-1 ✅ 3-lane 逻辑层：`Battle.build_v2_three_lanes` + `Lane` 侧路公主倒后转打王塔（决策日志 24–25）。
+  - V2-2 ✅ 3-lane 接通：`Match` 改 3 lane、显示层 3 道/6 塔、tap-to-place 选 lane、`Player` 部署半场校验、AI 固定中路（决策日志 26–28）。A 模块（3-lane）完成。
+  - V2-3 ✅ 程序化美术换皮（仅 view 层）：兵种按形状/大小/朝向区分、塔造型(王城垛/公主尖顶)、河道木桥背景；逻辑零改动、单测 110/110。待用户视觉验收。
+  - V2-4 ✅ 完成（视觉验收通过，`55c2fb7`）：动画与特效（仅 view 层，逻辑零改动，路线 A 纯显示层还原）——受击闪白、攻击顶刺、死亡消散、远程投射物（弓箭手）、AOE/法术爆点（玩家精确/AI 推断）、塔受击抖动+摧毁碎块。编译通过、单测仍 110/110、headless 强制触发全 FX 路径零报错、人工视觉验收通过。
+  - **Now：V2-5**（D 模块）UI 美化 + 音频 + 主菜单/结算界面闭环。

@@ -43,9 +43,9 @@
 | V2-3 | 程序化美术换皮（兵种造型/塔/背景） | ✅ 完成 | `190dc04` |
 | V2-4 | 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，仅 view 层） | ✅ 完成（视觉验收通过） | `55c2fb7` |
 
-> **阶段进度（2026-06-09）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**A 模块（3-lane）已完成**（V2-1+V2-2）。**D 模块进行中**：V2-3 程序化换皮 + V2-4 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，均仅 view 层、逻辑零改动）代码完成、待视觉验收。下一步 **V2-5**（UI 美化 + 音频 + 主菜单/结算闭环）。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
+> **阶段进度（2026-06-09）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**A 模块（3-lane）已完成**（V2-1+V2-2）。**D 模块进行中**：V2-3 程序化换皮 + V2-4 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，均仅 view 层、逻辑零改动）已完成并通过视觉验收。配置体系已迁移为 JSON 运行时配置 + `GameConfig.xlsx` 人类策划工作簿镜像；agent 默认改 JSON，确认后同步 Excel。下一步 **V2-5**（UI 美化 + 音频 + 主菜单/结算闭环）。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
 
-**测试现状**：110 个测试全部通过（config_loader 7 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + battle_v2 12 + skill_system 11 + **player 10** + match 6 + ai_controller 6 + smoke 3）。V2-3/V2-4 为纯 view 层（换皮/动画特效），逻辑零改动、无新单测，仍 110/110。
+**测试现状**：111 个测试全部通过（config_loader 8 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + battle_v2 12 + skill_system 11 + **player 10** + match 6 + ai_controller 6 + smoke 3）。配置源表存在性已纳入 `test_config_loader.gd`；V2-3/V2-4 为纯 view 层（换皮/动画特效），逻辑零改动。
 
 **分支 / 远端**：开发在 **`develop`** 分支；`main` 为稳定线。远端 `origin` = https://github.com/jchensh/godot-clash-pusher （Public）。约定：用户说"提交"时才 commit + push。
 
@@ -118,6 +118,10 @@
 > 30 为 **V2-4（动画与特效）事件源选型**，用户 2026-06-09 确认。
 
 30. **V2-4 动画事件源 = 路线 A（纯显示层、零改逻辑）**：受击/死亡/塔摧毁靠显示层逐帧 diff 血量还原；攻击配对/投射物来源靠显示层复刻 `Lane` 的目标选择（范围内最近敌方单位 + 尽头敌塔）还原；玩家法术按点击点/直伤目标精确出特效，AI 法术（显示层看不到其经 `opponent_controller.tick` 的出牌）按「同帧某 lane ≥2 个玩家单位聚集掉血」推断爆点（近似，带节流 + 聚集窗）。代价：攻击/投射物配对为启发式、AI 法术落点为近似；收益：逻辑层一行不改、不扩大范围、无新单测、契合架构铁律「显示层每帧读逻辑状态画出来」。备选路线 B（逻辑层每 tick 发可测事件缓冲，显示层 drain 精确驱动）记录在案，若将来精确度不足再升级。
+
+> 31 为 **配置体系迁移到 Excel 源表**，用户 2026-06-09 确认。
+
+31. **配置工作流 = JSON / Excel 双入口，agent 默认 JSON 优先**：Godot 运行时仍读 `config/cards.json`、`config/units.json`、`config/levels.json`，避免引入 Excel 运行时解析依赖、也不改战斗逻辑。Codex / Claude 修改配置时优先直接改 JSON（更省上下文、路径更短、贴近运行时），确认没问题后运行 `tools/build_config.py --from-json` 把当前 JSON 覆写同步到 `config/GameConfig.xlsx`。人类策划仍可直接改 Excel，再运行 `tools/build_config.py` 生成 JSON。提交前统一跑 `tools/build_config.py --check` 与 Godot 单测。若 Excel 可能有用户尚未同步到 JSON 的手工改动，agent 不得直接 `--from-json` 覆盖，必须先询问。
 
 ---
 
@@ -573,3 +577,28 @@
 **背景**：V2-4 用 MCP 截图验收时效率差——找工具慢、与「播放状态/截图桥」反复较劲、截图时机靠碰运气、还让用户手动延长对局来配合。用户要求改进，协议已固化进 [CLAUDE.md](CLAUDE.md)「画面/FX 验收用 MCP 时的协议」（可移植、随 repo 走）。
 **协议要点**：① 开头一次 ToolSearch 载全工具（editor_state/project_run/project_manage/editor_screenshot/game_manage/logs_read），认准 **`editor_screenshot source="game"`**（2D 工程别用默认 `viewport` 源会报错）；② 干净启动 `stop`→`editor_state`(等 is_playing=false)→`project_run(autosave=false)`→轮询 `game_capture_ready=true` 再截；③ 不碰运气抓 <0.3s 瞬时 FX、不让用户陪打——写**临时(不提交)验收 harness** 用 `Engine.time_scale≈0.15` 慢放/暂停/循环把 FX 定格再截（headless 探针的"有画面"版）；④ `logs_read(source="game")` 读局内事件（`_log` 的 SPAWN/DEATH/TOWER HIT）掐时机；⑤ `game_manage input_mouse` 坐标被映射到桌面全局坐标(多屏)、点不准 UI，别依赖，要交互走代码钩子/harness 或让用户点。
 **踩坑**：① input_mouse 注入坐标映射到全局桌面坐标（多显示器），点不中卡牌；② 截图桥须用 MCP 自己 `project_run` 启动的实例（手动 Play 的实例 `_mcp_game_helper` 不一定建桥），且 stop 后要先 `editor_state` 刷新缓存再 run。
+
+### 工具链 — Excel 策划源表 + JSON 生成配置（2026-06-09）
+**背景**
+- 现有配置只有 `cards.json` / `units.json` / `levels.json` 三张 JSON，早期实现轻量，但继续进入 V2-B/V2-C 后会扩卡、扩关卡、扩 AI 难度与数值平衡；直接手改 JSON 不适合策划长期读改。
+- 目标是让人类日常维护 Excel，同时保持 Godot 运行时继续读取 JSON，避免为游戏逻辑引入 Excel 解析依赖。
+
+**新增 / 修改**
+- `config/GameConfig.xlsx`：新的策划源表。包含 `Units`、`Cards`、`CardSkills`、`Levels`、`Decks`、`Balance_View`、`_Enums`。`Balance_View` 用公式辅助看 DPS 等派生指标；`_Enums` 为下拉枚举源，不导出。
+- `tools/build_config.py`：配置同步脚本。默认从 `GameConfig.xlsx` 生成 `config/cards.json`、`config/units.json`、`config/levels.json`；`--check` 校验 Excel 生成结果与磁盘 JSON 一致；`--from-json` 从当前 JSON 重建 Excel，用于 agent JSON 优先改配置后的同步，以及初始化/救急反向同步。
+- `CLAUDE.md`：新增「配置工作流（JSON / Excel 双入口）」；明确 agent 默认直接改 JSON，确认后 `--from-json` 同步 Excel。
+- `AGENTS.md`：按用户要求用更完整的 `CLAUDE.md` 内容覆写补齐，并同步配置工作流。
+- `.gitattributes`：将 `*.xlsx` 标记为 binary。
+- `tests/test_config_loader.gd`：新增 `test_excel_source_workbook_exists`，确保策划源表随项目存在。
+- `config/*.json`：当前由 `GameConfig.xlsx` 生成过一次；后续 agent 可直接改 JSON，最终再同步回 Excel。
+
+**决策**
+- 运行时仍读 JSON，`ConfigLoader` 与战斗逻辑不为本次迁移改架构。
+- agent 默认 JSON 优先；Excel 是给人类读改的工作簿镜像，也是最终需要保持同步的策划视图。
+- `CardSkills` 采用“一行一个技能积木”，按 `card_id + order` 聚合成 JSON 的 `skills` 数组，避免在单元格里手写 JSON。
+- `attack_interval_s` 是 Excel 面向策划的字段名，生成到 JSON 仍叫 `attack_speed`，沿用现有代码字段；语义记录为「攻击间隔（秒/次）」。
+- `--from-json` 是 agent 配置工作流的常规收尾步骤；但它会覆盖 Excel，所以遇到疑似用户未同步 Excel 改动时必须先确认。
+
+**验收**
+- `uv run --with openpyxl python tools\build_config.py --check` → `config check ok`、exit 0（uv 首次解析依赖时有 openpyxl 依赖版本 warning，但不影响执行）✅
+- `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` → **111/111 全过**、exit 0 ✅

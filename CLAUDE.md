@@ -23,15 +23,44 @@
 ## 架构铁律
 - **逻辑层 / 显示层彻底分离**：逻辑层持有真实状态（位置/血量/圣水），不关心画面；显示层每帧读逻辑状态画出来。
 - 玩家与 AI **完全对称**：两者都只是「向逻辑层发指令」。
-- 数值/卡牌**全走 JSON 配置**（`config/cards.json`、`units.json`、`levels.json`），改数值不改代码。
+- 数值/卡牌**走配置，不硬编码**。Godot 运行时读取 `config/cards.json`、`config/units.json`、`config/levels.json`；`config/GameConfig.xlsx` 是给人类策划读改的工作簿镜像。
+
+## 配置工作流（JSON / Excel 双入口）
+- **agent 默认改 JSON**：Codex / Claude 做配置、数值、卡牌、关卡调整时，优先直接编辑 `config/cards.json`、`config/units.json`、`config/levels.json`，因为这是 Godot 实际读取路径，也更省上下文和操作成本。
+- agent 确认 JSON 配置正确后，用当前 JSON 覆写同步 Excel：
+  ```powershell
+  uv run --with openpyxl python tools/build_config.py --from-json
+  ```
+  这会从 `config/*.json` 重建 `config/GameConfig.xlsx`，让人类之后仍能用 Excel 查看和继续改。
+- **人类策划可以直接改 Excel**：如果用户自己在 `GameConfig.xlsx` 里调数值，改完后运行：
+  ```powershell
+  uv run --with openpyxl python tools/build_config.py
+  ```
+  这会从 Excel 重新生成 `config/cards.json`、`config/units.json`、`config/levels.json`。
+- 提交前必须校验 JSON 与 Excel 已同步：
+  ```powershell
+  uv run --with openpyxl python tools/build_config.py --check
+  godot --headless --path F:\godotProject --script res://tests/test_runner.gd
+  ```
+- `tools/build_config.py --from-json` 会覆盖 `GameConfig.xlsx`。如果发现 Excel 可能有用户尚未同步到 JSON 的改动，agent 必须先停下询问，不要直接覆盖。
+- agent 修改配置时必须遵守：先改 JSON，再 `--from-json` 同步 Excel，再跑 `--check` 和 Godot 单测；如果用户只要求分析方案，不要擅自生成或改配置。
+- 当前工作簿 sheet 约定：
+  - `Units`：单位基础数值。`attack_interval_s` 会生成到 JSON 的 `attack_speed` 字段，语义是「攻击间隔（秒/次）」。
+  - `Cards`：卡牌主表，控制 `card_id`、名称、费用、启用状态。
+  - `CardSkills`：一行一个技能积木，按 `card_id + order` 聚合成 JSON 的 `skills` 数组。
+  - `Levels`：关卡主表，包含圣水、时长、AI 难度、塔血。
+  - `Decks`：每关玩家/AI 的 8 张卡组。
+  - `Balance_View`：公式视图，辅助看 DPS 等派生指标；不导出。
+  - `_Enums`：下拉枚举源，隐藏表；不导出。
 
 ## 目录布局
 ```
 /logic   逻辑层（不依赖 Godot 渲染）
 /view    显示层脚本与场景
 /ai      AIController
-/config  cards.json / units.json / levels.json
+/config  GameConfig.xlsx（策划源表）+ cards.json / units.json / levels.json（生成产物）
 /tests   单元测试（test_*.gd） + test_runner.gd + test_case.gd
+/tools   配置生成脚本等项目工具
 ```
 
 ## 工具链 / 常用命令
