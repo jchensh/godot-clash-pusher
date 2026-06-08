@@ -69,6 +69,13 @@ claude mcp remove godot-ai -s user   # 卸载注册（不删插件）
 - ⚠️ **写操作**（建节点/改脚本/改属性等会改工程的）先按"一步一确认"跟用户确认再动手。
 - 这条与上面「实机/画面验收交给真人」纪律一致：MCP 是补充手段，不替代真人肉眼验收。
 
+**画面/FX 验收用 MCP 时的协议（V2-4 教训，别让用户陪打）**
+- **一次性载全工具**：开头一个 ToolSearch 把 `editor_state / project_run / project_manage / editor_screenshot / game_manage / logs_read` 全拿到；认准 **`editor_screenshot source="game"`** 截运行中游戏（2D 工程别用默认 `viewport` 源，会因无 Node3D 报错）。
+- **干净启动序列**（避开缓存滞后/截图桥未就绪）：`project_manage(op=stop)` → `editor_state`（刷新缓存，等 `is_playing=false`）→ `project_run(autosave=false)` → 轮询 `editor_state` 到 `game_capture_ready=true` 才截图。
+- **不被动碰运气抓 <0.3s 瞬时 FX、绝不让用户手动延长对局陪打**：写**临时(不提交)验收 harness**把要看的 FX 摆好并定格够久（`Engine.time_scale≈0.15` 慢放／暂停／循环），在已知时刻截图，验后删（headless 探针的"有画面"版）。
+- **用日志掐时机**：`logs_read(source="game")` 能拿到运行中游戏 stdout（`battle_scene._log` 的 SPAWN/DEATH/TOWER HIT 都在那），据此把截图对准关键事件。
+- **`game_manage input_mouse` 坐标不可靠**：position 被映射到桌面全局坐标（多屏），点不准卡牌/落点；要交互走代码钩子/harness 或让用户点。
+
 ## 分支 / 提交 / 推送约定
 - **开发在 `develop` 分支进行**；`main` 为稳定线，远端 `origin` = https://github.com/jchensh/godot-clash-pusher 。
 - **仅当用户说"提交"时**才 `git commit`；提交后**顺带 `git push`**（develop 首次推送用 `git push -u origin develop` 建立跟踪）。
@@ -89,5 +96,5 @@ claude mcp remove godot-ai -s user   # 卸载注册（不删插件）
   - V2-1 ✅ 3-lane 逻辑层：`Battle.build_v2_three_lanes` + `Lane` 侧路公主倒后转打王塔（决策日志 24–25）。
   - V2-2 ✅ 3-lane 接通：`Match` 改 3 lane、显示层 3 道/6 塔、tap-to-place 选 lane、`Player` 部署半场校验、AI 固定中路（决策日志 26–28）。A 模块（3-lane）完成。
   - V2-3 ✅ 程序化美术换皮（仅 view 层）：兵种按形状/大小/朝向区分、塔造型(王城垛/公主尖顶)、河道木桥背景；逻辑零改动、单测 110/110。待用户视觉验收。
-  - V2-4 ✅ 代码完成（待视觉验收）：动画与特效（仅 view 层，逻辑零改动，路线 A 纯显示层还原）——受击闪白、攻击顶刺、死亡消散、远程投射物（弓箭手）、AOE/法术爆点（玩家精确/AI 推断）、塔受击抖动+摧毁碎块。编译通过、单测仍 110/110、headless 强制触发全 FX 路径零报错。
+  - V2-4 ✅ 完成（视觉验收通过，`55c2fb7`）：动画与特效（仅 view 层，逻辑零改动，路线 A 纯显示层还原）——受击闪白、攻击顶刺、死亡消散、远程投射物（弓箭手）、AOE/法术爆点（玩家精确/AI 推断）、塔受击抖动+摧毁碎块。编译通过、单测仍 110/110、headless 强制触发全 FX 路径零报错、人工视觉验收通过。
   - **Now：V2-5**（D 模块）UI 美化 + 音频 + 主菜单/结算界面闭环。

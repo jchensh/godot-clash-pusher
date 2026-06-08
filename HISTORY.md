@@ -41,7 +41,7 @@
 | V2-1 | 3-lane 逻辑层 + 侧路公主倒转打王塔 | ✅ 完成 | `adf5cfe` |
 | V2-2 | 3-lane 接通（Match+显示层+选 lane+AI 中路） | ✅ 完成（GUI 实机验收通过） | `a1af321` |
 | V2-3 | 程序化美术换皮（兵种造型/塔/背景） | ✅ 完成 | `190dc04` |
-| V2-4 | 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，仅 view 层） | ✅ 代码完成（待视觉验收） | — |
+| V2-4 | 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，仅 view 层） | ✅ 完成（视觉验收通过） | `55c2fb7` |
 
 > **阶段进度（2026-06-09）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**A 模块（3-lane）已完成**（V2-1+V2-2）。**D 模块进行中**：V2-3 程序化换皮 + V2-4 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，均仅 view 层、逻辑零改动）代码完成、待视觉验收。下一步 **V2-5**（UI 美化 + 音频 + 主菜单/结算闭环）。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
 
@@ -567,4 +567,9 @@
 - `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` → **110/110 全过、SCRIPT ERROR=0**（逻辑零改动，无新单测）✅
 - `godot --headless --path F:\godotProject` 实跑主场景 14s（AI 自驱）→ 0 运行期错误；常驻路径（出兵建节点 / 攻击节拍复刻 / 塔受击）干净 ✅
 - 临时探针强制触发 AI 独跑碰不到的 FX 路径 → **0 运行期错误**；正向证据：DEATH×1（死亡消散实体）、TOWER DOWN×1（碎块）、投射物在飞×1、特效×8（火球/电击/射箭/AI-AOE 推断），玩家三种法术 + 兵牌 no-op 分支均无错 ✅
-- **GUI 视觉验收交用户**（按纪律：实机/画面验收由真人在编辑器执行）——验收清单见交付报告。
+- **GUI 视觉验收**：人工主观验收**通过**（2026-06-09，用户在编辑器实机确认）；过程用 godot-ai MCP `editor_screenshot source="game"` 辅助核对静态换皮 / 塔摧毁置灰 / 运行时节点树（unit_layer 6 单位 + 6 塔 + fx_layer）。提交 `55c2fb7`、已推 develop。
+
+### 工具链 — godot-ai MCP 画面/FX 验收协议（V2-4 复盘，2026-06-09）
+**背景**：V2-4 用 MCP 截图验收时效率差——找工具慢、与「播放状态/截图桥」反复较劲、截图时机靠碰运气、还让用户手动延长对局来配合。用户要求改进，协议已固化进 [CLAUDE.md](CLAUDE.md)「画面/FX 验收用 MCP 时的协议」（可移植、随 repo 走）。
+**协议要点**：① 开头一次 ToolSearch 载全工具（editor_state/project_run/project_manage/editor_screenshot/game_manage/logs_read），认准 **`editor_screenshot source="game"`**（2D 工程别用默认 `viewport` 源会报错）；② 干净启动 `stop`→`editor_state`(等 is_playing=false)→`project_run(autosave=false)`→轮询 `game_capture_ready=true` 再截；③ 不碰运气抓 <0.3s 瞬时 FX、不让用户陪打——写**临时(不提交)验收 harness** 用 `Engine.time_scale≈0.15` 慢放/暂停/循环把 FX 定格再截（headless 探针的"有画面"版）；④ `logs_read(source="game")` 读局内事件（`_log` 的 SPAWN/DEATH/TOWER HIT）掐时机；⑤ `game_manage input_mouse` 坐标被映射到桌面全局坐标(多屏)、点不准 UI，别依赖，要交互走代码钩子/harness 或让用户点。
+**踩坑**：① input_mouse 注入坐标映射到全局桌面坐标（多显示器），点不中卡牌；② 截图桥须用 MCP 自己 `project_run` 启动的实例（手动 Play 的实例 `_mcp_game_helper` 不一定建桥），且 stop 后要先 `editor_state` 刷新缓存再 run。
