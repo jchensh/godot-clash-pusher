@@ -41,10 +41,11 @@
 | V2-1 | 3-lane 逻辑层 + 侧路公主倒转打王塔 | ✅ 完成 | `adf5cfe` |
 | V2-2 | 3-lane 接通（Match+显示层+选 lane+AI 中路） | ✅ 完成（GUI 实机验收通过） | `a1af321` |
 | V2-3 | 程序化美术换皮（兵种造型/塔/背景） | ✅ 完成 | `190dc04` |
+| V2-4 | 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，仅 view 层） | ✅ 代码完成（待视觉验收） | — |
 
-> **阶段进度（2026-06-08）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**A 模块（3-lane）已完成**（V2-1+V2-2）。**D 模块进行中**：V2-3 程序化换皮（兵种/塔/背景造型，逻辑零改动）代码完成。下一步 **V2-4**（动画与特效）。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
+> **阶段进度（2026-06-09）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**A 模块（3-lane）已完成**（V2-1+V2-2）。**D 模块进行中**：V2-3 程序化换皮 + V2-4 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，均仅 view 层、逻辑零改动）代码完成、待视觉验收。下一步 **V2-5**（UI 美化 + 音频 + 主菜单/结算闭环）。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
 
-**测试现状**：110 个测试全部通过（config_loader 7 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + battle_v2 12 + skill_system 11 + **player 10** + match 6 + ai_controller 6 + smoke 3）。
+**测试现状**：110 个测试全部通过（config_loader 7 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + battle_v2 12 + skill_system 11 + **player 10** + match 6 + ai_controller 6 + smoke 3）。V2-3/V2-4 为纯 view 层（换皮/动画特效），逻辑零改动、无新单测，仍 110/110。
 
 **分支 / 远端**：开发在 **`develop`** 分支；`main` 为稳定线。远端 `origin` = https://github.com/jchensh/godot-clash-pusher （Public）。约定：用户说"提交"时才 commit + push。
 
@@ -113,6 +114,10 @@
 > 29 为 **表现层阶段引入 Godot AI MCP**，用户 2026-06-08 确认安装并纳入 git。
 
 29. **Godot AI MCP = 表现层辅助工具，不替代测试/真人验收**：选用 `hi-godot/godot-ai`（https://github.com/hi-godot/godot-ai，MIT，导入版本 `2.6.1`）。它通过 Godot 编辑器插件启动本地 MCP server（HTTP `127.0.0.1:8000/mcp`、WebSocket `127.0.0.1:9500`），供 Codex / Claude Code 读取场景树、截图、日志、编辑器状态并辅助 UI/动画/特效排查。逻辑正确性仍以 headless test runner 为准；写操作仍遵守一步一确认；主观视觉/手感验收仍交用户确认。
+
+> 30 为 **V2-4（动画与特效）事件源选型**，用户 2026-06-09 确认。
+
+30. **V2-4 动画事件源 = 路线 A（纯显示层、零改逻辑）**：受击/死亡/塔摧毁靠显示层逐帧 diff 血量还原；攻击配对/投射物来源靠显示层复刻 `Lane` 的目标选择（范围内最近敌方单位 + 尽头敌塔）还原；玩家法术按点击点/直伤目标精确出特效，AI 法术（显示层看不到其经 `opponent_controller.tick` 的出牌）按「同帧某 lane ≥2 个玩家单位聚集掉血」推断爆点（近似，带节流 + 聚集窗）。代价：攻击/投射物配对为启发式、AI 法术落点为近似；收益：逻辑层一行不改、不扩大范围、无新单测、契合架构铁律「显示层每帧读逻辑状态画出来」。备选路线 B（逻辑层每 tick 发可测事件缓冲，显示层 drain 精确驱动）记录在案，若将来精确度不足再升级。
 
 ---
 
@@ -537,3 +542,29 @@
 - PowerShell parser 检查 `scripts/setup-godot-ai.ps1` 通过，无语法错误。
 - `git diff --check` 通过。
 - `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` → **110/110 全过** ✅
+
+### V2-4 — 动画与特效（仅显示层，路线 A 纯显示层还原）  （本次提交）
+**前置决策（用户 2026-06-09 确认）**：见决策日志 30——事件来源走**路线 A：纯显示层、零改逻辑**。逻辑层一行不改，显示层逐帧读状态 + 复刻「目标选择」还原攻击/投射物；玩家法术按点击点/直伤目标精确出特效，AI 法术按「同帧多单位聚集掉血」推断爆点（近似）。
+
+**范围边界**：**只改 `view/battle_scene.gd`**；`logic/*`、`ai/*`、`config/*` 零改动 → 单测仍 110/110。音频/主菜单/结算是 V2-5。仍无外部素材、无 `.import`、无授权负担。
+
+**修改（全部在 `view/battle_scene.gd`）**
+- **受击闪白**：逐帧 diff 单位 hp，下降即把主体 `body.color` 向白 lerp + 轻微放大（`modulate>1` 在 GL Compatibility 不保证提亮，故用颜色 lerp，稳定可见）。
+- **攻击顶刺**：新增 `_view_find_target` 复刻 `Lane._find_enemy_in_range`（范围内最近敌方单位）+ 尽头敌塔判定来识别「交战」；交战时按 `attack_speed` 节拍把机体朝目标方向顶出再回落（`beat` 预热使接敌当帧即出手，对齐逻辑「接触即攻击」；真伤判定仍以受击闪白为准，二者解耦）。
+- **远程投射物**：`attack_range ≥ 0.15`（仅弓箭手 0.25）判远程，攻击节拍时从自身朝目标当前位置发飞镖，按距离折算飞行时长，命中留烟。
+- **死亡消散**：单位从 lane 消失时不再立即 `queue_free`，先冒烟，再缩小+淡出+旋转 0.35s 后释放（`dying_units` 承接，逻辑单位早已被 `_remove_dead` 移除）。
+- **AOE/法术爆点**：玩家法术（可靠，`_play_spell_fx` 直接知道卡/落点）——火球落点橙色扩张爆盘、电击青蓝放射火花、射箭落箭+尘；直伤落在「最逼近自己塔的敌方单位」处（`_first_enemy_screen_pos_for`，与 `SkillSystem` 选择一致）。AI 法术（显示层看不到其经 `opponent_controller.tick` 的出牌）——按「同帧某 lane ≥2 个玩家单位聚集掉血」推断一次爆点（近似，0.5s 节流 + 0.25 聚集窗）。
+- **塔受击/摧毁**：受击抖动 + 白色火花（按 flash 节流）；摧毁瞬间碎块向上爆裂、受重力下落、淡出 + 塔身置灰 + 大抖动。
+- 新增轻量特效系统：`fx_layer`（盖在单位/塔之上）+ `projectiles`/`effects`/`dying_units` 列表 + 通用 `_update_effects`（扩张/淡出/速度+重力/自旋）、`_update_projectiles`、`_update_dying`。动画时长一律按渲染 `delta` 推进（显示层插值，**不绑逻辑 tick**——游戏速度仍由 `SimClock` 固定 tick 决定）。
+
+**决策**：见决策日志 30。补充：动画与随机散布（抖动、碎块）仅活在显示层，不影响逻辑确定性；攻击节拍在显示层近似计时，与逻辑 tick 的精确伤害时刻可能微小漂移，但受击闪白由真血量 diff 驱动，锚定真实掉血时刻。
+
+**踩坑与修复**
+- 临时 headless 探针时序坑：场景 `_ready` 要等加入树后的首帧才跑，探针在 `_initialize` 即访问 `scene.match_obj` 报 `Nil.config`；改到 `_process` 首帧（_ready 已就绪）后正常。**这是探针自身问题，非 `battle_scene.gd`**；探针（`tests/_fxsmoke.gd`）验后即删、不入 git。
+
+**验收**
+- `godot --headless --editor --path F:\godotProject --quit` → exit 0、`battle_scene.gd` 无解析/编译错误 ✅
+- `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` → **110/110 全过、SCRIPT ERROR=0**（逻辑零改动，无新单测）✅
+- `godot --headless --path F:\godotProject` 实跑主场景 14s（AI 自驱）→ 0 运行期错误；常驻路径（出兵建节点 / 攻击节拍复刻 / 塔受击）干净 ✅
+- 临时探针强制触发 AI 独跑碰不到的 FX 路径 → **0 运行期错误**；正向证据：DEATH×1（死亡消散实体）、TOWER DOWN×1（碎块）、投射物在飞×1、特效×8（火球/电击/射箭/AI-AOE 推断），玩家三种法术 + 兵牌 no-op 分支均无错 ✅
+- **GUI 视觉验收交用户**（按纪律：实机/画面验收由真人在编辑器执行）——验收清单见交付报告。
