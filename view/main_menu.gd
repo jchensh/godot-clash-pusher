@@ -4,7 +4,7 @@
 # 全英文 UI（延续 7b 决定，零中文字体依赖）；纯程序化绘制、零外部素材；与逻辑层零关联。
 extends Control
 
-const BATTLE_SCENE := "res://view/battle_scene.tscn"
+const DIFFICULTY_SCENE := "res://view/difficulty_select.tscn"
 
 func _ready() -> void:
 	_build()
@@ -28,7 +28,7 @@ func _build() -> void:
 	_center_label("V2 prototype - white-box", 1186, 20, Color(0.55, 0.6, 0.55))
 
 func _on_start_pressed() -> void:
-	get_tree().change_scene_to_file(BATTLE_SCENE)
+	get_tree().change_scene_to_file(DIFFICULTY_SCENE)   # 先选难度，再进对局
 
 func _on_quit_pressed() -> void:
 	get_tree().quit()

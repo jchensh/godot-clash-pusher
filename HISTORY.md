@@ -680,3 +680,23 @@
 - `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` → **116/116 全过**（+5 ai_controller，旧测更新后零回归）✅
 - `battle_scene` headless 实跑日志佐证新行为：`SPAWN 敌方 giant_body lane0 → TOWER HIT 我方 公主(左)`——AI 从固定中路变为集火侧路最弱公主塔 ✅
 - 逻辑层步骤，正确性由单测覆盖（按纪律无需肉眼验收）。
+
+### 难度选择界面（仅显示层/场景，配合 V2-6）  （本次提交）
+**背景**：V2-6 让 AI 支持 easy/normal/hard，用户要求在进对局前加一个让玩家选难度的界面。
+
+**新增 / 修改**
+- `view/difficulty_select.gd` + `.tscn`（新）：难度选择界面。EASY(绿)/NORMAL(蓝)/HARD(红) 三个彩色按钮（各带一句说明）+ BACK。选一个 → 写入 `GameState.ai_difficulty` 并 `change_scene_to_file(battle_scene)`；BACK 回主菜单。全英文、纯程序化、零外部素材。
+- `view/game_state.gd`（新）：跨场景会话状态。`static var ai_difficulty := "normal"`，难度界面写入、battle_scene 读取（用静态变量在场景切换间保持，不引入 autoload；经 preload 引用读写）。
+- `view/main_menu.gd`：`START` 改为进难度界面（`difficulty_select.tscn`）而非直接进对局。
+- `view/battle_scene.gd`：`_ready` 读 `GameState.ai_difficulty` 并以之构造 `AIController(match, loader, difficulty)`（覆盖关卡默认）；顶部信息条下加小字 `AI: <难度>`；起始日志带难度。
+
+**新流程**：主菜单 `START` → 难度界面 → 选难度进对局（用所选难度建 AI）→ 结算 `REMATCH`(同难度，GameState 持续) / `MENU`(回主菜单)。
+
+**决策**：难度做成独立一屏（贴合「难度选择界面」）；难度经 `GameState` 静态变量传递（最轻、无需 autoload、跨 `change_scene_to_file` 持续）；逻辑层不参与（难度仅经已测的 `AIController` 构造参数注入）。
+
+**验收**
+- `godot --headless --editor --path F:\godotProject --quit` → exit 0、无解析错误 ✅
+- 单测 **116/116**（逻辑零改动）✅
+- 难度界面 / 主菜单 headless 烟测 → 0 报错 ✅
+- 临时探针：`GameState=hard → battle._ai_diff=hard → AIController.get_difficulty()=hard`，确认难度经界面接到 AI；验后即删、不入 git ✅
+- **GUI 视觉验收**：人工实机确认菜单→难度→对局闭环 + AI 难度生效（2026-06-10，用户验收）✅

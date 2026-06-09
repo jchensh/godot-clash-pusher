@@ -16,6 +16,7 @@ const MatchScript = preload("res://logic/match.gd")
 const UnitScript = preload("res://logic/unit.gd")
 const BattleScript = preload("res://logic/battle.gd")
 const AIControllerScript = preload("res://ai/ai_controller.gd")
+const GameStateScript = preload("res://view/game_state.gd")
 
 const LANE_TOP := 240.0       # progress 1 = 敌方塔
 const LANE_BOTTOM := 940.0    # progress 0 = 己方塔
@@ -57,6 +58,7 @@ const LOG_EVENTS := true      # 运行期把战局事件打到 Output 面板（�
 
 var match_obj
 var selected_card := -1
+var _ai_diff := "normal"   # 本局 AI 难度（来自难度选择界面），仅显示/接线用
 
 var _result_logged := false
 var _tower_hit := {}          # tower -> true（首次受伤已记）
@@ -86,7 +88,8 @@ func _ready() -> void:
 	loader.load_all()
 	match_obj = MatchScript.new(loader)
 	match_obj.setup("level_01")
-	match_obj.set_opponent_controller(AIControllerScript.new(match_obj, loader))  # 接入规则 AI
+	_ai_diff = GameStateScript.ai_difficulty
+	match_obj.set_opponent_controller(AIControllerScript.new(match_obj, loader, _ai_diff))  # 接入规则 AI（玩家所选难度）
 	_build_field()
 	unit_layer = Node2D.new()
 	add_child(unit_layer)
@@ -94,7 +97,7 @@ func _ready() -> void:
 	fx_layer = Node2D.new()
 	add_child(fx_layer)
 	_build_hud()
-	_log("MATCH START  level_01 | 3 lane | AI=固定中路")
+	_log("MATCH START  level_01 | 3 lane | AI=%s" % _ai_diff)
 
 func _process(delta: float) -> void:
 	if match_obj == null:
@@ -259,6 +262,9 @@ func _build_topbar() -> void:
 	crown_opp_label = _label("0  ENEMY", Vector2(0, 16), 26, COL_OPPONENT)
 	crown_opp_label.size = Vector2(696, 30)
 	crown_opp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	var diff_lbl := _label("AI: %s" % _ai_diff.to_upper(), Vector2(0, 60), 18, Color(0.72, 0.78, 0.72))
+	diff_lbl.size = Vector2(720, 24)
+	diff_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 # 圣水条：分段刻度 + 左侧圆形数字徽章。
 func _build_elixir() -> void:
