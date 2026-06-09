@@ -43,11 +43,12 @@
 | V2-3 | 程序化美术换皮（兵种造型/塔/背景） | ✅ 完成 | `190dc04` |
 | V2-4 | 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，仅 view 层） | ✅ 完成（视觉验收通过） | `55c2fb7` |
 | V2-5a | 主菜单 + 结算面板（场景闭环骨架，仅显示层） | ✅ 完成（视觉验收通过） | `6891f32` |
-| V2-5b | 战斗内 HUD 美化（顶部条/圣水分段/卡面/血条变色，仅显示层） | ✅ 完成（视觉验收通过） | 本次提交 |
+| V2-5b | 战斗内 HUD 美化（顶部条/圣水分段/卡面/血条变色，仅显示层） | ✅ 完成（视觉验收通过） | `032dd5f` |
+| V2-6 | 规则 AI 升级（攻防结合 + 按 lane 选向 + 难度分级，逻辑层 + 单测） | ✅ 完成（单测覆盖） | 本次提交 |
 
-> **阶段进度（2026-06-10）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**A 模块（3-lane）已完成**（V2-1+V2-2）。**D 模块进行中**：V2-3 程序化换皮 + V2-4 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，均仅 view 层、逻辑零改动）已完成并通过视觉验收。配置体系已迁移为 JSON 运行时配置 + `GameConfig.xlsx` 人类策划工作簿镜像；agent 默认改 JSON，确认后同步 Excel。**V2-5（D 模块收尾）进行中**：按一步一确认拆 3 小步（5a 场景闭环骨架 / 5b 战斗内 UI 美化 / 5c 音频，**音频缓做、UI 保持全英文**，决策日志 32）；**V2-5a（菜单+结算闭环）与 V2-5b（战斗内 HUD 美化：顶部信息条/分段圣水条/卡面+费用徽章+选中框/塔血条变色/结算按钮样式）均已完成并通过视觉验收**；**5c 音频按决策 32 缓做**。至此 **D 模块除缓做音频外收尾完成**，按 A→D→B→C 下一步进入 **B 模块（V2-6 规则 AI 升级）**，或择期补 5c 音频。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
+> **阶段进度（2026-06-10）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**A 模块（3-lane）已完成**（V2-1+V2-2）。**D 模块进行中**：V2-3 程序化换皮 + V2-4 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，均仅 view 层、逻辑零改动）已完成并通过视觉验收。配置体系已迁移为 JSON 运行时配置 + `GameConfig.xlsx` 人类策划工作簿镜像；agent 默认改 JSON，确认后同步 Excel。**V2-5（D 模块收尾）进行中**：按一步一确认拆 3 小步（5a 场景闭环骨架 / 5b 战斗内 UI 美化 / 5c 音频，**音频缓做、UI 保持全英文**，决策日志 32）；**V2-5a（菜单+结算闭环）与 V2-5b（战斗内 HUD 美化：顶部信息条/分段圣水条/卡面+费用徽章+选中框/塔血条变色/结算按钮样式）均已完成并通过视觉验收**；**5c 音频按决策 32 缓做**。至此 **D 模块除缓做音频外收尾完成**。**B 模块 V2-6（规则 AI 升级：攻防结合 + 按 lane 选进攻方向 + `ai_difficulty` 难度 easy/normal/hard 分级，逻辑层 + 单测，决策 33）已完成**；并加了**难度选择界面**（主菜单→难度→对局，仅显示层）。下一步按 A→D→B→C 进入 **C 模块（V2-7 内容/数值）**，或择期补 5c 音频。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
 
-**测试现状**：111 个测试全部通过（config_loader 8 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + battle_v2 12 + skill_system 11 + **player 10** + match 6 + ai_controller 6 + smoke 3）。配置源表存在性已纳入 `test_config_loader.gd`；V2-3/V2-4/V2-5a/V2-5b 为纯 view/场景层（换皮/动画特效/主菜单+结算闭环/HUD 美化），逻辑零改动。
+**测试现状**：116 个测试全部通过（config_loader 8 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + battle_v2 12 + skill_system 11 + **player 10** + match 6 + **ai_controller 11** + smoke 3）。配置源表存在性已纳入 `test_config_loader.gd`；V2-3/V2-4/V2-5a/V2-5b 与难度选择界面为纯 view/场景层，逻辑零改动；V2-6 为逻辑层（AI 攻防/难度），ai_controller 单测从 6 增到 11。
 
 **分支 / 远端**：开发在 **`develop`** 分支；`main` 为稳定线。远端 `origin` = https://github.com/jchensh/godot-clash-pusher （Public）。约定：用户说"提交"时才 commit + push。
 
@@ -128,6 +129,10 @@
 > 32 为 **V2-5（D 模块收尾）开工前提**，用户 2026-06-10 确认。
 
 32. **V2-5 拆 3 小步 + 音频缓做 + UI 保持全英文**：V2-5 原打包「UI 美化 + 音频 + 主菜单 + 结算闭环」，按「一步一确认」拆为 **V2-5a 场景闭环骨架（主菜单 + 结算面板 + 菜单→对局→结算→菜单）→ V2-5b 战斗内 UI 美化 → V2-5c 音频**，每小步停下做真人视觉验收。**音频本阶段缓做**（既不引入外部 CC0 音效素材、也不先做程序化合成），留到 a/b 之后单独处理；**UI 保持全英文**（延续 7b 决定，不导入 CJK 字体、零字体依赖）。理由同 V2-3/V2-4 零外部素材路线：先把场景闭环与可玩骨架立起来再逐步美化，避免一步铺太大、便于分段验收。
+
+> 33 为 **V2-6（规则 AI 升级）开工前提**，用户 2026-06-10 确认（PLAN_V2 §4「难度分级差异维度」至此定稿）。
+
+33. **规则 AI = 攻防结合 + 按 lane 选向 + 难度 3 档（easy/normal/hard）4 维度**：难度从 `levels.json.ai_difficulty` 解析（`Match.setup` 存 `ai_difficulty`、`AIController` 读取，构造参数可覆盖便于单测；难度选择界面经 `GameState` 静态变量传入覆盖关卡值）。差异维度：①圣水阈值（easy 8 / normal 6 / hard 4）②出牌间隔（2.0 / 1.2 / 0.6 s）③是否防守（easy 否，normal/hard 是）④进攻选路（easy 固定中路，normal/hard 集火「守军塔血最低」的 lane）。**防守口径**：玩家单位 `progress ≥ 0.55`（越中线逼近 AI 塔）该 lane 受威胁，优先在塔前 `0.9` 空投最贵可用兵 body-block，防守优先于进攻。**进攻口径**：选目标 lane 出最贵可用兵；最贵可用为法术且场上有敌方单位时落在最前敌人处（不空放）。确定性无随机（延续决策 22）、tie-break 取小 index、仍走 `opponent.try_play_card`（玩家/AI 对称）。
 
 ---
 
@@ -654,3 +659,24 @@
 - `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` → **111/111 全过**（逻辑零改动，无新单测）✅
 - `battle_scene` headless 烟测 400 帧 → 每帧 `_sync_hud`（卡面/圣水/顶部条）+ `_sync_towers`（血条变色）0 运行期错误 ✅
 - **GUI 视觉验收**：人工主观验收**通过**（2026-06-10，用户在编辑器实机确认顶部条/圣水分段/卡面+费用徽章+选中框/塔血变色/结算按钮样式，且出牌/选牌/部署等交互未被破坏）✅
+
+### V2-6 — 规则 AI 升级（攻防结合 + 按 lane 选向 + 难度分级，逻辑层）  （本次提交）
+**前置决策（用户 2026-06-10 确认）**：见决策日志 33（3 档 easy/normal/hard × 4 维度；防守 = 越中线威胁 lane 空投拦截兵；进攻 = 集火最弱敌塔）。
+
+**新增 / 修改**
+- `ai/ai_controller.gd`：重写。难度参数表 `DIFF`（threshold/cooldown/defends/smart_lane）+ `_resolve_params`（构造未指定则读 `match.ai_difficulty`）；`_decide` 防守优先（`_most_threatened_lane` 选玩家单位 `progress≥0.55` 且最逼近 AI 塔的 lane → `_deploy_best_troop` 空投最贵兵）→ 其次进攻（`_attack`：`_attack_lane` 智能档选 `_target_tower_hp` 最低的 lane、easy 固定中路；最贵可用兵；法术落 `_lead_enemy_anywhere`）。确定性无随机，仍走 `opponent.try_play_card`。
+- `logic/match.gd`：`setup` 存 `ai_difficulty = String(level.get("ai_difficulty","normal"))`（+1 var、+1 行），供 AIController 读取。
+- `tests/test_ai_controller.gd`：旧 6 测更新为多 lane 行为（`_all_opponent_units`/`_units_in_lane` 扫全 3 lane），新增 5 测：难度阈值有别(hard vs easy)、难度从关卡解析、受威胁 lane 防守、easy 无视威胁固定中路、集火最弱塔。
+
+**范围边界**：仅逻辑层 + 单测；`view/*`、`config/*` 零改动（难度选择界面是同批的另一改动/提交）。`level_01.ai_difficulty` 仍为 `normal`。
+
+**决策**：见决策日志 33。补充：AI 视角 = `opponent`（塔在 progress 1、部署 0.9 往 0 推、攻击玩家塔 `lane.tower_at_start`，侧路公主毁后兜底 `lane.king_at_start`）；玩家单位 progress 越大越逼近 AI 塔，故威胁线取 `progress ≥ 0.55`。
+
+**踩坑与修复**
+- 无（一次通过）。旧测因「固定中路」假设需改：起手全塔满血时最弱守军 = 公主(1400)，集火取 lane 0（tie-break 小 index），故 `test_plays_most_expensive_affordable_troop` 的落点 lane 由 1 改 0；`_opponent_units`(只看 lane1) 改为扫全 3 lane。
+
+**验收**
+- `godot --headless --editor --path F:\godotProject --quit` → exit 0，无解析/编译错误 ✅
+- `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` → **116/116 全过**（+5 ai_controller，旧测更新后零回归）✅
+- `battle_scene` headless 实跑日志佐证新行为：`SPAWN 敌方 giant_body lane0 → TOWER HIT 我方 公主(左)`——AI 从固定中路变为集火侧路最弱公主塔 ✅
+- 逻辑层步骤，正确性由单测覆盖（按纪律无需肉眼验收）。

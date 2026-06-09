@@ -23,6 +23,7 @@ var clock             # SimClock
 var player            # Player（OWNER_PLAYER）
 var opponent          # Player（OWNER_OPPONENT）
 var opponent_controller = null   # 规则 AI（可空，鸭子类型）：每逻辑 tick 由 update 驱动
+var ai_difficulty := "normal"    # 关卡 AI 难度（V2-6）：供 AIController 读取分级行为
 
 func _init(config_ = null) -> void:
 	config = config_
@@ -31,6 +32,7 @@ func _init(config_ = null) -> void:
 # 两个对称 Player、固定时钟。
 func setup(level_id: String = "level_01") -> void:
 	var level: Dictionary = config.get_level(level_id)
+	ai_difficulty = String(level.get("ai_difficulty", "normal"))
 	battle = BattleScript.new()
 	battle.build_v2_three_lanes(level)
 	skill_system = SkillSystemScript.new(config, battle)
