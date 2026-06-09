@@ -45,12 +45,13 @@
 | V2-5a | 主菜单 + 结算面板（场景闭环骨架，仅显示层） | ✅ 完成（视觉验收通过） | `6891f32` |
 | V2-5b | 战斗内 HUD 美化（顶部条/圣水分段/卡面/血条变色，仅显示层） | ✅ 完成（视觉验收通过） | `032dd5f` |
 | V2-6 | 规则 AI 升级（攻防结合 + 按 lane 选向 + 难度分级，逻辑层 + 单测） | ✅ 完成（单测覆盖） | `e916a00` |
-| V2-7a | 扩卡池（+6 卡 / +4 单位 → 14 卡 / 9 单位，纯 JSON + 单测） | ✅ 完成（单测覆盖） | （本次提交） |
-| V2-7b | 多关卡（4 关）+ 选关界面（取代难度界面，关卡自带难度） | ✅ 完成（单测 + headless 烟测） | （本次提交） |
+| V2-7a | 扩卡池（+6 卡 / +4 单位 → 14 卡 / 9 单位，纯 JSON + 单测） | ✅ 完成（单测覆盖） | `dd2cbf1` |
+| V2-7b | 多关卡（4 关）+ 选关界面（取代难度界面，关卡自带难度） | ✅ 完成（单测 + headless 烟测） | `dd2cbf1` |
+| V2-7c | 组卡界面（自由选 8 张，覆盖关卡默认卡组） | ✅ 完成（单测 + headless 烟测） | （本次提交） |
 
-> **阶段进度（2026-06-10）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**A 模块（3-lane）已完成**（V2-1+V2-2）。**D 模块进行中**：V2-3 程序化换皮 + V2-4 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，均仅 view 层、逻辑零改动）已完成并通过视觉验收。配置体系已迁移为 JSON 运行时配置 + `GameConfig.xlsx` 人类策划工作簿镜像；agent 默认改 JSON，确认后同步 Excel。**V2-5（D 模块收尾）进行中**：按一步一确认拆 3 小步（5a 场景闭环骨架 / 5b 战斗内 UI 美化 / 5c 音频，**音频缓做、UI 保持全英文**，决策日志 32）；**V2-5a（菜单+结算闭环）与 V2-5b（战斗内 HUD 美化：顶部信息条/分段圣水条/卡面+费用徽章+选中框/塔血条变色/结算按钮样式）均已完成并通过视觉验收**；**5c 音频按决策 32 缓做**。至此 **D 模块除缓做音频外收尾完成**。**B 模块 V2-6（规则 AI 升级：攻防结合 + 按 lane 选进攻方向 + `ai_difficulty` 难度 easy/normal/hard 分级，逻辑层 + 单测，决策 33）已完成**；并加了**难度选择界面**（主菜单→难度→对局，仅显示层）。**C 模块 V2-7（内容/数值）进行中**：按一步一确认拆 3 小步（7a 扩卡池 / 7b 多关卡+选关 / 7c 组卡界面，决策 34）；**V2-7a 扩卡池（+6 卡 +4 单位 → 14 卡 / 9 单位，仍走三积木）+ V2-7b 多关卡（4 关、各自带难度/节奏/AI 卡组）+ 选关界面（取代难度选择界面）均已完成**（单测 120/120 + headless 烟测）。下一步 **V2-7c 组卡界面**（自由选 8 张），或择期补 5c 音频。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
+> **阶段进度（2026-06-10）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**A 模块（3-lane）已完成**（V2-1+V2-2）。**D 模块进行中**：V2-3 程序化换皮 + V2-4 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，均仅 view 层、逻辑零改动）已完成并通过视觉验收。配置体系已迁移为 JSON 运行时配置 + `GameConfig.xlsx` 人类策划工作簿镜像；agent 默认改 JSON，确认后同步 Excel。**V2-5（D 模块收尾）进行中**：按一步一确认拆 3 小步（5a 场景闭环骨架 / 5b 战斗内 UI 美化 / 5c 音频，**音频缓做、UI 保持全英文**，决策日志 32）；**V2-5a（菜单+结算闭环）与 V2-5b（战斗内 HUD 美化：顶部信息条/分段圣水条/卡面+费用徽章+选中框/塔血条变色/结算按钮样式）均已完成并通过视觉验收**；**5c 音频按决策 32 缓做**。至此 **D 模块除缓做音频外收尾完成**。**B 模块 V2-6（规则 AI 升级：攻防结合 + 按 lane 选进攻方向 + `ai_difficulty` 难度 easy/normal/hard 分级，逻辑层 + 单测，决策 33）已完成**；并加了**难度选择界面**（主菜单→难度→对局，仅显示层）。**C 模块 V2-7（内容/数值）**：按一步一确认拆 3 小步（7a 扩卡池 / 7b 多关卡+选关 / 7c 组卡界面，决策 34）。**V2-7a 扩卡池（+6 卡 +4 单位 → 14 卡 / 9 单位，仍走三积木）+ V2-7b 多关卡（4 关、各自带难度/节奏/AI 卡组）+ 选关界面（取代难度选择界面）+ V2-7c 组卡界面（自由选 8 张、经 `GameState.player_deck` 覆盖关卡默认）均已完成**（单测 121/121 + headless 烟测），至此 **V2-7（扩卡池+组卡+多关卡）收尾完成**。新流程：菜单 → 选关 → 组卡 → 对局 → 结算。下一步 **V2-8 数值平衡 pass**，或择期补 5c 音频。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
 
-**测试现状**：120 个测试全部通过（config_loader **11** + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + battle_v2 12 + skill_system 11 + **player 10** + match **7** + **ai_controller 11** + smoke 3）。配置源表存在性已纳入 `test_config_loader.gd`；V2-3/V2-4/V2-5a/V2-5b 为纯 view/场景层，逻辑零改动；V2-6 为逻辑层（AI 攻防/难度），ai_controller 单测从 6 增到 11；V2-7a 扩卡池 config_loader 8→10；V2-7b 多关卡 config_loader 10→11 + match 6→7（选关界面纯 view 层、逻辑零改动）。
+**测试现状**：121 个测试全部通过（config_loader **11** + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + battle_v2 12 + skill_system 11 + **player 10** + match **8** + **ai_controller 11** + smoke 3）。配置源表存在性已纳入 `test_config_loader.gd`；V2-3/V2-4/V2-5a/V2-5b 为纯 view/场景层，逻辑零改动；V2-6 为逻辑层（AI 攻防/难度），ai_controller 单测从 6 增到 11；V2-7a 扩卡池 config_loader 8→10；V2-7b 多关卡 config_loader 10→11 + match 6→7；V2-7c 组卡 match 7→8（Match.setup 加 player_deck 覆盖参数；选关/组卡界面纯 view 层）。
 
 **分支 / 远端**：开发在 **`develop`** 分支；`main` 为稳定线。远端 `origin` = https://github.com/jchensh/godot-clash-pusher （Public）。约定：用户说"提交"时才 commit + push。
 
@@ -754,3 +755,27 @@
 - `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` → **120/120 全过**（+1 config_loader +1 match，旧 118 零回归），SCRIPT ERROR = 0 ✅
 - headless 烟测（临时 harness，验后删）：`GameState.level_id="level_03"` → `battle_scene` 实跑 7s，日志 `MATCH START level_03 | AI=hard`、AI 部署**新卡** `mini_pekka_body`/`musketeer_body` 并击中公主（hp/1500 = level_03 塔血），零运行期报错 ✅；`level_select` / `main_menu` 场景 `_ready` 实跑（`--quit-after`）零报错 ✅
 - **GUI 视觉验收**：选关界面外观 / 4 关卡片排版属表现层，留用户实机过目（不阻塞本步逻辑+接线验收）。
+
+### V2-7c — 组卡界面（自由选 8 张，覆盖关卡默认卡组）  （本次提交）
+**前置决策**：见决策日志 34（组卡=自由选任意 8 张唯一卡、不限费用；所选卡组经 `GameState` 传递、覆盖关卡默认 `player_deck`）。
+
+**新增 / 修改**
+- `view/deck_builder.gd` + `.tscn`（新）：组卡界面。卡池从 `ConfigLoader` 动态读 14 张（兵牌/法术按类配色：troop 钢蓝 / spell 紫），点卡片切换加入/移出，选中描金边；上方 8 格当前卡组（点格移除）；计数 `N / 8`（满 8 变绿）；`BATTLE` 仅满 8 张可点（disabled 灰样式），`BACK` 回选关。预填：优先沿用本会话已组卡组，否则用所选关卡默认 `player_deck`（便于不改直接开战）。全英文（卡显示 `card_id` + 费用，不显示中文 name）、纯程序化、零素材。
+- `view/game_state.gd`：+ `static var player_deck: Array = []`（组卡界面写入；空=用关卡默认）。
+- `logic/match.gd`：`setup(level_id, player_deck_override := [])` 加可选第二参；非空则玩家卡组用覆盖、否则用关卡默认；**对手卡组永远用关卡 ai_deck**（不受玩家组卡影响）。加性、向后兼容（旧调用 = 空覆盖 = 原行为，旧测试零回归）。
+- `view/battle_scene.gd`：`setup(_level_id)` → `setup(_level_id, GameStateScript.player_deck)`。
+- `view/level_select.gd`：选关后目标 `battle_scene` → **`deck_builder`**（流程插入组卡步）。
+- `tests/test_match.gd`：+1 测 `test_setup_player_deck_override`（覆盖卡组 → 玩家手牌=覆盖前 4 张含新卡、对手卡组不受影响；空覆盖 → 回退关卡默认）。
+
+**范围边界**：逻辑层仅 `Match.setup` 加一个可选参数（+单测）；其余为 view 场景。最终流程闭环：菜单 → 选关 → **组卡** → 对局 → 结算。
+
+**决策**：见决策日志 34。补充：覆盖仅作用于**玩家**卡组（对手始终用关卡 `ai_deck`，保持关卡设计的对手强度）；持久化按决策 34 走 `GameState` 会话内静态变量、不落盘；UI 沿用零 CJK 字体（显示 card_id）。
+
+**踩坑与修复**
+- 无。`Deck.setup` 取 `card_ids.slice(0,4)` 为手牌，故端到端可用「玩家手牌 == 覆盖卡组前 4 张」精确断言覆盖是否生效。
+
+**验收**
+- `godot --headless --editor --path F:\godotProject --quit` → exit 0，`deck_builder.gd` 无解析/编译错误、`.uid` 生成 ✅
+- `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` → **121/121 全过**（+1 match，旧 120 零回归），SCRIPT ERROR = 0 ✅
+- headless 烟测（临时 harness，验后删）：① `deck_builder` 场景 `_ready` 实跑（`--quit-after`）零报错；② 设 `GameState.player_deck=[mini_pekka,musketeer,baby_dragon,skeletons,...]` + `level_02` → `battle_scene` 实跑，`match.player.deck.get_hand()` = `[mini_pekka,musketeer,baby_dragon,skeletons]`，证明组卡经 GameState→battle_scene→Match 端到端生效、零运行期报错 ✅
+- **GUI 视觉验收**：组卡界面外观/交互（点选/移除/满 8 开战）属表现层，留用户实机过目（逻辑+接线已验证，不阻塞）。

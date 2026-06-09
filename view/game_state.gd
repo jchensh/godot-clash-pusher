@@ -5,4 +5,5 @@
 # 用静态变量在场景切换间保持（不引入 autoload）；通过 preload 引用访问读写。
 extends RefCounted
 
-static var level_id := "level_01"   # 选关界面写入；battle_scene 读取后 match.setup(level_id)
+static var level_id := "level_01"     # 选关界面写入；battle_scene 读取后 match.setup(level_id)
+static var player_deck: Array = []    # 组卡界面写入的玩家卡组（8 张 card_id）；空=用关卡默认 player_deck

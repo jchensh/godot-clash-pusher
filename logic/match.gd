@@ -30,7 +30,7 @@ func _init(config_ = null) -> void:
 
 # 按关卡配置搭好一局：双方各 3 塔 + 3 lane（V2-1 拓扑：左公主/中王/右公主）、
 # 两个对称 Player、固定时钟。
-func setup(level_id: String = "level_01") -> void:
+func setup(level_id: String = "level_01", player_deck_override: Array = []) -> void:
 	var level: Dictionary = config.get_level(level_id)
 	ai_difficulty = String(level.get("ai_difficulty", "normal"))
 	battle = BattleScript.new()
@@ -39,7 +39,9 @@ func setup(level_id: String = "level_01") -> void:
 	clock = SimClockScript.new()
 	var emax := float(level.get("elixir_max", 10))
 	var regen := float(level.get("elixir_regen_rate", 1.0))
-	player = _make_player(UnitScript.OWNER_PLAYER, level.get("player_deck", []), emax, regen)
+	# 玩家卡组：组卡界面给了覆盖（非空）就用它，否则用关卡默认（决策 34，V2-7c）。
+	var player_deck_ids: Array = player_deck_override if not player_deck_override.is_empty() else level.get("player_deck", [])
+	player = _make_player(UnitScript.OWNER_PLAYER, player_deck_ids, emax, regen)
 	opponent = _make_player(UnitScript.OWNER_OPPONENT, level.get("ai_deck", []), emax, regen)
 
 func _make_player(owner_id: int, deck_ids: Array, emax: float, regen: float):

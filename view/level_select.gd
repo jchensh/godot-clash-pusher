@@ -9,7 +9,7 @@ extends Control
 
 const GameStateScript = preload("res://view/game_state.gd")
 const ConfigLoaderScript = preload("res://logic/config_loader.gd")
-const BATTLE_SCENE := "res://view/battle_scene.tscn"
+const DECK_BUILDER_SCENE := "res://view/deck_builder.tscn"
 const MENU_SCENE := "res://view/main_menu.tscn"
 
 # 难度 → 排序权重 / 配色 / 一句说明（与旧难度界面一致）。
@@ -64,7 +64,7 @@ func _level_title(level: Dictionary) -> String:
 
 func _choose(level_id: String) -> void:
 	GameStateScript.level_id = level_id
-	get_tree().change_scene_to_file(BATTLE_SCENE)
+	get_tree().change_scene_to_file(DECK_BUILDER_SCENE)   # 选关后先组卡，再进对局
 
 func _on_back() -> void:
 	get_tree().change_scene_to_file(MENU_SCENE)

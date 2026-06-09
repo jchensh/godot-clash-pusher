@@ -70,6 +70,22 @@ func test_setup_other_level_carries_its_difficulty_and_config() -> void:
 	blitz.setup("level_04")
 	assert_almost_eq(blitz.battle.match_duration, 120.0, 0.0001, "level_04 时长 120 流入 battle")
 
+func test_setup_player_deck_override() -> void:
+	# V2-7c：组卡界面给的 8 张覆盖关卡默认 player_deck；空覆盖回退默认。对手卡组不受影响。
+	var loader = ConfigLoaderScript.new()
+	loader.load_all()
+	var custom := ["mini_pekka", "musketeer", "skeletons", "baby_dragon", "lightning", "log", "knight", "giant"]
+	var m = MatchScript.new(loader)
+	m.setup("level_01", custom)
+	assert_eq(m.player.deck.total(), 8, "覆盖卡组共 8 张")
+	assert_eq(m.player.deck.get_hand(), custom.slice(0, 4), "玩家手牌=覆盖卡组前 4 张（含新卡）")
+	assert_eq(m.opponent.deck.total(), 8, "对手卡组不受玩家组卡影响")
+	# 空覆盖 → 回退关卡默认 player_deck
+	var m2 = MatchScript.new(loader)
+	m2.setup("level_01")
+	var default_deck: Array = loader.get_level("level_01").get("player_deck")
+	assert_eq(m2.player.deck.get_hand(), default_deck.slice(0, 4), "空覆盖回退关卡默认卡组")
+
 func test_update_stops_when_over() -> void:
 	var m = _match()
 	m.battle.opponent_king.take_damage(m.battle.opponent_king.max_hp)

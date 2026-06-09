@@ -89,7 +89,7 @@ func _ready() -> void:
 	loader.load_all()
 	match_obj = MatchScript.new(loader)
 	_level_id = GameStateScript.level_id                   # 选关界面所选关卡
-	match_obj.setup(_level_id)
+	match_obj.setup(_level_id, GameStateScript.player_deck) # 组卡界面所选卡组（空=用关卡默认）
 	_ai_diff = String(match_obj.ai_difficulty)             # 难度随关卡而定
 	match_obj.set_opponent_controller(AIControllerScript.new(match_obj, loader))  # 接入规则 AI（难度由关卡解析）
 	_build_field()
