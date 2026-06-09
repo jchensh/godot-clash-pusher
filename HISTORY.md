@@ -42,11 +42,12 @@
 | V2-2 | 3-lane 接通（Match+显示层+选 lane+AI 中路） | ✅ 完成（GUI 实机验收通过） | `a1af321` |
 | V2-3 | 程序化美术换皮（兵种造型/塔/背景） | ✅ 完成 | `190dc04` |
 | V2-4 | 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，仅 view 层） | ✅ 完成（视觉验收通过） | `55c2fb7` |
-| V2-5a | 主菜单 + 结算面板（场景闭环骨架，仅显示层） | ✅ 完成（视觉验收通过） | 本次提交 |
+| V2-5a | 主菜单 + 结算面板（场景闭环骨架，仅显示层） | ✅ 完成（视觉验收通过） | `6891f32` |
+| V2-5b | 战斗内 HUD 美化（顶部条/圣水分段/卡面/血条变色，仅显示层） | ✅ 完成（视觉验收通过） | 本次提交 |
 
-> **阶段进度（2026-06-10）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**A 模块（3-lane）已完成**（V2-1+V2-2）。**D 模块进行中**：V2-3 程序化换皮 + V2-4 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，均仅 view 层、逻辑零改动）已完成并通过视觉验收。配置体系已迁移为 JSON 运行时配置 + `GameConfig.xlsx` 人类策划工作簿镜像；agent 默认改 JSON，确认后同步 Excel。**V2-5（D 模块收尾）进行中**：按一步一确认拆 3 小步（5a 场景闭环骨架 / 5b 战斗内 UI 美化 / 5c 音频，**音频缓做、UI 保持全英文**，决策日志 32）；**V2-5a 主菜单 + 结算面板 + 菜单→对局→结算→菜单 闭环已完成并通过视觉验收**，下一步 V2-5b。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
+> **阶段进度（2026-06-10）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**A 模块（3-lane）已完成**（V2-1+V2-2）。**D 模块进行中**：V2-3 程序化换皮 + V2-4 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，均仅 view 层、逻辑零改动）已完成并通过视觉验收。配置体系已迁移为 JSON 运行时配置 + `GameConfig.xlsx` 人类策划工作簿镜像；agent 默认改 JSON，确认后同步 Excel。**V2-5（D 模块收尾）进行中**：按一步一确认拆 3 小步（5a 场景闭环骨架 / 5b 战斗内 UI 美化 / 5c 音频，**音频缓做、UI 保持全英文**，决策日志 32）；**V2-5a（菜单+结算闭环）与 V2-5b（战斗内 HUD 美化：顶部信息条/分段圣水条/卡面+费用徽章+选中框/塔血条变色/结算按钮样式）均已完成并通过视觉验收**；**5c 音频按决策 32 缓做**。至此 **D 模块除缓做音频外收尾完成**，按 A→D→B→C 下一步进入 **B 模块（V2-6 规则 AI 升级）**，或择期补 5c 音频。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
 
-**测试现状**：111 个测试全部通过（config_loader 8 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + battle_v2 12 + skill_system 11 + **player 10** + match 6 + ai_controller 6 + smoke 3）。配置源表存在性已纳入 `test_config_loader.gd`；V2-3/V2-4/V2-5a 为纯 view/场景层（换皮/动画特效/主菜单+结算闭环），逻辑零改动。
+**测试现状**：111 个测试全部通过（config_loader 8 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + battle_v2 12 + skill_system 11 + **player 10** + match 6 + ai_controller 6 + smoke 3）。配置源表存在性已纳入 `test_config_loader.gd`；V2-3/V2-4/V2-5a/V2-5b 为纯 view/场景层（换皮/动画特效/主菜单+结算闭环/HUD 美化），逻辑零改动。
 
 **分支 / 远端**：开发在 **`develop`** 分支；`main` 为稳定线。远端 `origin` = https://github.com/jchensh/godot-clash-pusher （Public）。约定：用户说"提交"时才 commit + push。
 
@@ -629,3 +630,27 @@
 - 两场景 headless 烟测（`--quit-after`）→ 0 运行期错误 ✅
 - 临时探针强制对局结束 → 结算面板 `visible` 切换正常、WIN/LOSE/DRAW 文案与比分（`Towers You 5200 Enemy 5200`）均无报错，验后即删、不入 git ✅
 - **GUI 视觉验收**：人工主观验收**通过**（2026-06-10，用户在编辑器实机确认闭环：菜单 → START → 对局 → 分胜负弹结算 → REMATCH 全新局 / MENU 回菜单）✅
+
+### V2-5b — 战斗内 HUD 美化（仅显示层）  （本次提交）
+**前置决策**：见决策日志 32（V2-5 拆 3 小步、音频缓做、UI 全英文）。本步做 **b 战斗内 HUD 美化**。
+
+**范围边界**：仅改 `view/battle_scene.gd`；`logic/*`、`ai/*`、`config/*`、`tests/*`、`view/main_menu.*` 零改动 → 单测仍 111/111。仍无外部素材、无新 `.import`、全英文。程序化样式（`StyleBoxFlat` 圆角/描边 + `ColorRect`/`Panel`/`Label`）。
+
+**修改（全部在 `view/battle_scene.gd`）**
+- **顶部信息条**（新）：屏幕顶 `YOU {王冠}`(蓝) · 倒计时 `m:ss`(中) · `{王冠} ENEMY`(红)。王冠 = 该方已拆掉的对方塔数（遍历 `opponent_towers`/`player_towers` 的 `is_destroyed()` 计数）；时间读 `battle.remaining_time()`。
+- **圣水条**：紫色填充 + 按 `elixir.maximum` 分段刻度 + 外框/槽底 + 左侧圆形数字徽章（`Panel` 圆角 stylebox + 居中 `Label`）。取代旧的单条+左上角小数字。
+- **手牌卡面**：`Button` 套 `StyleBoxFlat`（圆角/描边，normal/hover/pressed/disabled 四态）；左上角费用徽章（圣水紫圆 `Panel` + 数字 `Label`）；选中态用一层透明金边 `Panel`（`frame.visible`）取代旧的黄色 `modulate`；不可出牌走 disabled 灰样式 + 灰字色。卡名直接用 `card_id`。`card_buttons`(Button 数组) 改为 `card_slots`（`{btn,cost,frame}` 字典数组）。
+- **塔血条**：加外框 + 槽底，条高 8→10；填充色按血量比例变色（`_hp_color`：>50% 绿 / 25–50% 橙 / <25% 红），每帧在 `_sync_towers` 更新。
+- **结算面板按钮**：REMATCH（绿）/ MENU（灰蓝）套圆角描边样式（`_style_button`）。
+- 新增显示层小工具：`_sbflat()`（圆角填充 stylebox）、`_style_button()`、`_hp_color()`；`_build_hud` 拆为 `_build_topbar` / `_build_elixir` / `_build_cards`。
+
+**决策**：纯样式美化，不引入新交互/逻辑；选中态从 `modulate` 改为独立金边 `Panel`（modulate 会连带影响子节点/文字着色，金边层更干净）；费用/选中/可出牌状态每帧在 `_sync_hud` 同步（数据仍来自 `Player`，显示层只读）。**音频仍缓做**（决策 32）。
+
+**踩坑与修复**
+- 无（一次通过）。沿用既有经验：徽章/金边 `Panel` 设 `MOUSE_FILTER_IGNORE` 不挡按钮点击；`_build_hud` 在 `_ready` 内、`match_obj` 已 setup，可安全读 `elixir.maximum` 建分段。
+
+**验收**
+- `godot --headless --editor --path F:\godotProject --quit` → exit 0，`battle_scene.gd` 无解析/编译错误 ✅
+- `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` → **111/111 全过**（逻辑零改动，无新单测）✅
+- `battle_scene` headless 烟测 400 帧 → 每帧 `_sync_hud`（卡面/圣水/顶部条）+ `_sync_towers`（血条变色）0 运行期错误 ✅
+- **GUI 视觉验收**：人工主观验收**通过**（2026-06-10，用户在编辑器实机确认顶部条/圣水分段/卡面+费用徽章+选中框/塔血变色/结算按钮样式，且出牌/选牌/部署等交互未被破坏）✅

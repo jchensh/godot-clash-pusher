@@ -26,6 +26,13 @@ const DEPLOY_MAX := 0.5       # 落点限己方半场
 const COL_PLAYER := Color(0.35, 0.55, 1.0)
 const COL_OPPONENT := Color(1.0, 0.42, 0.38)
 
+# V2-5b HUD 美化配色（仅显示层）
+const COL_ELIXIR := Color(0.80, 0.33, 0.96)          # 圣水紫
+const COL_CARD_BG := Color(0.20, 0.24, 0.30)         # 卡面底
+const COL_CARD_BORDER := Color(0.45, 0.52, 0.60)     # 卡面描边
+const COL_SELECT := Color(1.0, 0.86, 0.30)           # 选中高亮（金）
+const COL_HUD_PANEL := Color(0.05, 0.07, 0.06, 0.85) # 顶/底信息条底
+
 # 程序化换皮（V2-3，仅显示层）：每个兵种一套形状+尺寸，队伍色仍区分敌我。
 # 阵营色作主体填充→看色辨敌我；形状/大小→看形辨兵种；朝向按推进方向翻转。
 const UNIT_VIS := {
@@ -63,10 +70,13 @@ var projectiles := []         # [{node,from,to,t,dur}]
 var effects := []             # [{node,t,dur,expand?,from_scale,to_scale,fade?,vel?,gravity,spin?}]
 var _ai_aoe_cd := 0.0         # AI 法术爆点推断节流
 var tower_bars := []          # [{tower, fill, full_w, fill_h, body, name, base_pos, last_hp, flash, shake, down}]
-var card_buttons := []
+var card_slots := []          # [{btn(Button), cost(Label), frame(Panel)}]
 var elixir_fill: ColorRect
 var elixir_full_w := 0.0
 var elixir_label: Label
+var time_label: Label
+var crown_player_label: Label
+var crown_opp_label: Label
 var result_layer: Control
 var result_title: Label
 var result_score: Label
@@ -141,6 +151,31 @@ func _label(text: String, pos: Vector2, font_size: int = 24, color: Color = Colo
 	add_child(l)
 	return l
 
+# 圆角填充样式（卡面 / 徽章 / 按钮通用）
+func _sbflat(bg: Color, radius: float, border_w: float = 0.0, border_col: Color = Color(0, 0, 0, 0)) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.set_corner_radius_all(int(radius))
+	if border_w > 0.0:
+		sb.set_border_width_all(int(border_w))
+		sb.border_color = border_col
+	return sb
+
+# 给按钮套一组 normal/hover/pressed 样式
+func _style_button(btn: Button, bg: Color, border: Color) -> void:
+	btn.add_theme_stylebox_override("normal", _sbflat(bg, 8, 2, border))
+	btn.add_theme_stylebox_override("hover", _sbflat(bg.lightened(0.12), 8, 2, border))
+	btn.add_theme_stylebox_override("pressed", _sbflat(bg.darkened(0.12), 8, 2, border))
+	btn.add_theme_color_override("font_color", Color(0.96, 0.97, 0.98))
+
+# 血条颜色：>50% 绿、25~50% 橙、<25% 红
+func _hp_color(ratio: float) -> Color:
+	if ratio <= 0.25:
+		return Color(0.95, 0.30, 0.25)
+	if ratio <= 0.5:
+		return Color(0.97, 0.75, 0.20)
+	return Color(0.30, 0.90, 0.30)
+
 func _build_field() -> void:
 	_rect(Color(0.09, 0.12, 0.10, 1.0), Vector2(0, 0), Vector2(720, 1280))   # 草绿底
 	var mid_y := _progress_to_y(DEPLOY_MAX)
@@ -197,35 +232,107 @@ func _add_tower(tower, pos: Vector2, color: Color, s: float, tname: String = "")
 		roof.color = color.lightened(0.12)
 		root.add_child(roof)
 	var bar_w := s * 2.2
-	var bar_h := 8.0
-	_rect(Color(0, 0, 0, 0.6), Vector2(pos.x - bar_w / 2, pos.y - s - 18), Vector2(bar_w, bar_h))
-	var fill := _rect(Color(0.3, 0.9, 0.3), Vector2(pos.x - bar_w / 2, pos.y - s - 18), Vector2(bar_w, bar_h))
+	var bar_h := 10.0
+	var bxp := pos.x - bar_w / 2.0
+	var byp := pos.y - s - 20.0
+	_rect(Color(0, 0, 0, 0.75), Vector2(bxp - 2, byp - 2), Vector2(bar_w + 4, bar_h + 4))   # 外框
+	_rect(Color(0.10, 0.10, 0.10, 0.9), Vector2(bxp, byp), Vector2(bar_w, bar_h))            # 槽底
+	var fill := _rect(Color(0.3, 0.9, 0.3), Vector2(bxp, byp), Vector2(bar_w, bar_h))
 	tower_bars.append({
 		"tower": tower, "fill": fill, "full_w": bar_w, "fill_h": bar_h, "body": root, "name": tname,
 		"base_pos": pos, "last_hp": float(tower.hp), "flash": 0.0, "shake": 0.0, "down": false,
 	})
 
 func _build_hud() -> void:
+	_build_topbar()
+	_build_elixir()
+	_build_cards()
+	_build_result_panel()
+
+# 顶部信息条：剩余时间（中）+ 王冠数（左=我方拆敌塔数 / 右=敌方拆我塔数）。
+func _build_topbar() -> void:
+	_rect(COL_HUD_PANEL, Vector2(0, 8), Vector2(720, 48))
+	crown_player_label = _label("YOU  0", Vector2(24, 16), 26, COL_PLAYER)
+	time_label = _label("0:00", Vector2(0, 14), 30, Color(1, 1, 1))
+	time_label.size = Vector2(720, 34)
+	time_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	crown_opp_label = _label("0  ENEMY", Vector2(0, 16), 26, COL_OPPONENT)
+	crown_opp_label.size = Vector2(696, 30)
+	crown_opp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+
+# 圣水条：分段刻度 + 左侧圆形数字徽章。
+func _build_elixir() -> void:
 	var ex := 24.0
-	var ey := 956.0
-	var ew := 720.0 - ex * 2.0
-	_rect(Color(0, 0, 0, 0.5), Vector2(ex, ey), Vector2(ew, 26))
+	var ey := 958.0
+	var bx := ex + 56.0                       # 条体起点（左侧数字徽章右边）
+	var ew := 720.0 - ex - bx                 # 条体宽
 	elixir_full_w = ew
-	elixir_fill = _rect(Color(0.7, 0.3, 0.95), Vector2(ex, ey), Vector2(0, 26))
-	elixir_label = _label("0", Vector2(ex + 6, ey - 2), 20)
+	_rect(Color(0, 0, 0, 0.55), Vector2(bx - 3, ey - 3), Vector2(ew + 6, 34))   # 外框
+	_rect(Color(0.14, 0.10, 0.16, 1.0), Vector2(bx, ey), Vector2(ew, 28))       # 槽底
+	elixir_fill = _rect(COL_ELIXIR, Vector2(bx, ey), Vector2(0, 28))
+	var emax: int = int(match_obj.player.elixir.maximum)
+	for i in range(1, emax):                  # 段位刻度
+		var sx: float = bx + ew * float(i) / float(emax)
+		_rect(Color(0, 0, 0, 0.45), Vector2(sx - 1, ey), Vector2(2, 28))
+	var badge := Panel.new()                  # 左侧圆形数字徽章
+	badge.position = Vector2(ex, ey - 8)
+	badge.size = Vector2(44, 44)
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	badge.add_theme_stylebox_override("panel", _sbflat(COL_ELIXIR, 22, 3, Color(0, 0, 0, 0.5)))
+	add_child(badge)
+	elixir_label = Label.new()
+	elixir_label.size = Vector2(44, 44)
+	elixir_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	elixir_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	elixir_label.add_theme_font_size_override("font_size", 26)
+	elixir_label.add_theme_color_override("font_color", Color(1, 1, 1))
+	elixir_label.text = "0"
+	elixir_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	badge.add_child(elixir_label)
+
+# 手牌卡面：圆角卡 + 左上角费用徽章 + 选中金框；不可出牌走 disabled 灰样式。
+func _build_cards() -> void:
 	var n := 4
-	var gap := 12.0
+	var gap := 14.0
 	var bw := (720.0 - gap * (n + 1)) / float(n)
-	var by := 1000.0
+	var bh := 196.0
+	var by := 1004.0
 	for i in n:
 		var btn := Button.new()
 		btn.position = Vector2(gap + i * (bw + gap), by)
-		btn.size = Vector2(bw, 210)
+		btn.size = Vector2(bw, bh)
 		btn.focus_mode = Control.FOCUS_NONE
+		btn.clip_text = true
+		btn.add_theme_font_size_override("font_size", 22)
+		btn.add_theme_color_override("font_color", Color(0.95, 0.96, 0.98))
+		btn.add_theme_color_override("font_disabled_color", Color(0.55, 0.58, 0.62))
+		btn.add_theme_stylebox_override("normal", _sbflat(COL_CARD_BG, 10, 2, COL_CARD_BORDER))
+		btn.add_theme_stylebox_override("hover", _sbflat(COL_CARD_BG.lightened(0.12), 10, 2, COL_CARD_BORDER))
+		btn.add_theme_stylebox_override("pressed", _sbflat(COL_CARD_BG.lightened(0.2), 10, 2, COL_SELECT))
+		btn.add_theme_stylebox_override("disabled", _sbflat(COL_CARD_BG.darkened(0.45), 10, 2, COL_CARD_BORDER.darkened(0.4)))
 		btn.pressed.connect(_on_card_pressed.bind(i))
 		add_child(btn)
-		card_buttons.append(btn)
-	_build_result_panel()
+		var badge := Panel.new()              # 费用徽章
+		badge.position = Vector2(6, 6)
+		badge.size = Vector2(40, 40)
+		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		badge.add_theme_stylebox_override("panel", _sbflat(COL_ELIXIR, 20, 2, Color(0, 0, 0, 0.5)))
+		btn.add_child(badge)
+		var cost_lbl := Label.new()
+		cost_lbl.size = Vector2(40, 40)
+		cost_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		cost_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		cost_lbl.add_theme_font_size_override("font_size", 22)
+		cost_lbl.add_theme_color_override("font_color", Color(1, 1, 1))
+		cost_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		badge.add_child(cost_lbl)
+		var frame := Panel.new()              # 选中金框
+		frame.size = Vector2(bw, bh)
+		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		frame.add_theme_stylebox_override("panel", _sbflat(Color(0, 0, 0, 0), 10, 5, COL_SELECT))
+		frame.visible = false
+		btn.add_child(frame)
+		card_slots.append({"btn": btn, "cost": cost_lbl, "frame": frame})
 
 # ---------- 每帧同步 ----------
 func _sync_units(delta: float) -> void:
@@ -436,6 +543,7 @@ func _sync_towers(delta: float) -> void:
 		var tower = t["tower"]
 		var ratio: float = (float(tower.hp) / float(tower.max_hp)) if tower.max_hp > 0.0 else 0.0
 		t["fill"].size = Vector2(t["full_w"] * clampf(ratio, 0.0, 1.0), t["fill_h"])
+		t["fill"].color = _hp_color(ratio)
 		# 受击：掉血 → 抖动 + 白色火花（按 flash 节流，避免每 tick 刷屏）
 		if float(tower.hp) < float(t["last_hp"]) - 0.001:
 			t["shake"] = TOWER_SHAKE_TIME
@@ -470,19 +578,42 @@ func _sync_towers(delta: float) -> void:
 
 func _sync_hud() -> void:
 	var p = match_obj.player
-	elixir_fill.size = Vector2(elixir_full_w * clampf(p.elixir.get_amount() / p.elixir.maximum, 0.0, 1.0), 26)
+	var b = match_obj.battle
+	# 圣水
+	var emax: float = float(p.elixir.maximum)
+	elixir_fill.size = Vector2(elixir_full_w * clampf(p.elixir.get_amount() / emax, 0.0, 1.0), 28)
 	elixir_label.text = str(p.elixir.get_int())
+	# 手牌卡面
 	var hand = p.deck.get_hand()
-	for i in card_buttons.size():
-		var btn = card_buttons[i]
+	for i in card_slots.size():
+		var slot = card_slots[i]
+		var btn: Button = slot["btn"]
+		var cost_lbl: Label = slot["cost"]
+		var frame: Panel = slot["frame"]
 		if i < hand.size() and hand[i] != null:
 			var cid := str(hand[i])
-			btn.text = "%s\n[%d]" % [cid, p.card_cost(cid)]
+			btn.text = cid
+			cost_lbl.text = str(p.card_cost(cid))
 			btn.disabled = not p.can_play(i)
-			btn.modulate = Color(1, 1, 0.5) if i == selected_card else Color.WHITE
+			frame.visible = (i == selected_card)
 		else:
 			btn.text = ""
+			cost_lbl.text = ""
 			btn.disabled = true
+			frame.visible = false
+	# 顶部信息条：剩余时间 + 王冠数（拆塔数）
+	var rem: float = b.remaining_time()
+	time_label.text = "%d:%02d" % [int(rem) / 60, int(rem) % 60]
+	var pc := 0
+	for t in b.opponent_towers:
+		if t.is_destroyed():
+			pc += 1
+	var oc := 0
+	for t in b.player_towers:
+		if t.is_destroyed():
+			oc += 1
+	crown_player_label.text = "YOU  %d" % pc
+	crown_opp_label.text = "%d  ENEMY" % oc
 
 # 结算面板（V2-5a 场景闭环骨架）：胜负标题 + 双方剩余塔血 + REMATCH / MENU。
 # 覆盖全屏 Control 并拦截点击——对局结束后只允许点这两个按钮。建于 _build_hud（隐藏），结束时显示。
@@ -540,6 +671,7 @@ func _build_result_panel() -> void:
 	rematch.size = Vector2(bw, bh)
 	rematch.focus_mode = Control.FOCUS_NONE
 	rematch.add_theme_font_size_override("font_size", 28)
+	_style_button(rematch, Color(0.18, 0.42, 0.26), Color(0.45, 0.85, 0.55))
 	rematch.pressed.connect(_on_rematch_pressed)
 	result_layer.add_child(rematch)
 	var menu := Button.new()
@@ -548,6 +680,7 @@ func _build_result_panel() -> void:
 	menu.size = Vector2(bw, bh)
 	menu.focus_mode = Control.FOCUS_NONE
 	menu.add_theme_font_size_override("font_size", 28)
+	_style_button(menu, Color(0.24, 0.28, 0.34), Color(0.5, 0.56, 0.64))
 	menu.pressed.connect(_on_menu_pressed)
 	result_layer.add_child(menu)
 
