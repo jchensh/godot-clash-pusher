@@ -67,7 +67,9 @@ var card_buttons := []
 var elixir_fill: ColorRect
 var elixir_full_w := 0.0
 var elixir_label: Label
-var banner: Label
+var result_layer: Control
+var result_title: Label
+var result_score: Label
 
 func _ready() -> void:
 	var loader = ConfigLoaderScript.new()
@@ -91,7 +93,7 @@ func _process(delta: float) -> void:
 	_sync_units(delta)
 	_sync_towers(delta)
 	_sync_hud()
-	_sync_banner()
+	_sync_result()
 	_update_projectiles(delta)
 	_update_effects(delta)
 	_update_dying(delta)
@@ -223,8 +225,7 @@ func _build_hud() -> void:
 		btn.pressed.connect(_on_card_pressed.bind(i))
 		add_child(btn)
 		card_buttons.append(btn)
-	banner = _label("", Vector2(150, 540), 64, Color(1, 1, 0.4))
-	banner.visible = false
+	_build_result_panel()
 
 # ---------- 每帧同步 ----------
 func _sync_units(delta: float) -> void:
@@ -483,21 +484,101 @@ func _sync_hud() -> void:
 			btn.text = ""
 			btn.disabled = true
 
-func _sync_banner() -> void:
-	if not match_obj.is_over():
+# 结算面板（V2-5a 场景闭环骨架）：胜负标题 + 双方剩余塔血 + REMATCH / MENU。
+# 覆盖全屏 Control 并拦截点击——对局结束后只允许点这两个按钮。建于 _build_hud（隐藏），结束时显示。
+func _build_result_panel() -> void:
+	result_layer = Control.new()
+	result_layer.position = Vector2.ZERO
+	result_layer.size = Vector2(720, 1280)
+	result_layer.mouse_filter = Control.MOUSE_FILTER_STOP
+	result_layer.visible = false
+	add_child(result_layer)
+	var backdrop := ColorRect.new()
+	backdrop.color = Color(0, 0, 0, 0.62)
+	backdrop.size = Vector2(720, 1280)
+	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	result_layer.add_child(backdrop)
+	var pw := 520.0
+	var ph := 420.0
+	var px := (720.0 - pw) / 2.0
+	var py := (1280.0 - ph) / 2.0
+	var border := ColorRect.new()
+	border.color = Color(0.85, 0.85, 0.5)
+	border.position = Vector2(px - 4, py - 4)
+	border.size = Vector2(pw + 8, ph + 8)
+	border.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	result_layer.add_child(border)
+	var panel := ColorRect.new()
+	panel.color = Color(0.12, 0.15, 0.13, 1.0)
+	panel.position = Vector2(px, py)
+	panel.size = Vector2(pw, ph)
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	result_layer.add_child(panel)
+	result_title = Label.new()
+	result_title.position = Vector2(px, py + 44)
+	result_title.size = Vector2(pw, 80)
+	result_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	result_title.add_theme_font_size_override("font_size", 64)
+	result_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	result_layer.add_child(result_title)
+	result_score = Label.new()
+	result_score.position = Vector2(px, py + 158)
+	result_score.size = Vector2(pw, 36)
+	result_score.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	result_score.add_theme_font_size_override("font_size", 26)
+	result_score.add_theme_color_override("font_color", Color(0.85, 0.9, 0.85))
+	result_score.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	result_layer.add_child(result_score)
+	var bw := 200.0
+	var bh := 72.0
+	var gap := 40.0
+	var bx := px + (pw - bw * 2.0 - gap) / 2.0
+	var by := py + ph - bh - 40.0
+	var rematch := Button.new()
+	rematch.text = "REMATCH"
+	rematch.position = Vector2(bx, by)
+	rematch.size = Vector2(bw, bh)
+	rematch.focus_mode = Control.FOCUS_NONE
+	rematch.add_theme_font_size_override("font_size", 28)
+	rematch.pressed.connect(_on_rematch_pressed)
+	result_layer.add_child(rematch)
+	var menu := Button.new()
+	menu.text = "MENU"
+	menu.position = Vector2(bx + bw + gap, by)
+	menu.size = Vector2(bw, bh)
+	menu.focus_mode = Control.FOCUS_NONE
+	menu.add_theme_font_size_override("font_size", 28)
+	menu.pressed.connect(_on_menu_pressed)
+	result_layer.add_child(menu)
+
+func _on_rematch_pressed() -> void:
+	get_tree().reload_current_scene()   # 重载 battle_scene → 全新一局
+
+func _on_menu_pressed() -> void:
+	get_tree().change_scene_to_file("res://view/main_menu.tscn")
+
+func _sync_result() -> void:
+	if not match_obj.is_over() or result_layer.visible:
 		return
-	banner.visible = true
 	var r: int = match_obj.get_result()
+	var title := "DRAW"
+	var col := Color(1, 1, 0.45)
 	if r == BattleScript.RESULT_PLAYER_WIN:
-		banner.text = "YOU WIN"
+		title = "YOU WIN"
+		col = Color(0.5, 1.0, 0.55)
 	elif r == BattleScript.RESULT_OPPONENT_WIN:
-		banner.text = "YOU LOSE"
-	else:
-		banner.text = "DRAW"
+		title = "YOU LOSE"
+		col = Color(1.0, 0.5, 0.5)
+	result_title.text = title
+	result_title.add_theme_color_override("font_color", col)
+	var b = match_obj.battle
+	var php: int = int(b.total_tower_hp(b.player_towers))
+	var ohp: int = int(b.total_tower_hp(b.opponent_towers))
+	result_score.text = "Towers    You %d    Enemy %d" % [php, ohp]
+	result_layer.visible = true
 	if not _result_logged:
 		_result_logged = true
-		var b = match_obj.battle
-		_log("RESULT %s | 我方塔血=%d 敌方塔血=%d" % [banner.text, int(b.total_tower_hp(b.player_towers)), int(b.total_tower_hp(b.opponent_towers))])
+		_log("RESULT %s | 我方塔血=%d 敌方塔血=%d" % [title, php, ohp])
 
 # ---------- 特效层（投射物 / 爆点 / 碎块；仅显示层，逻辑零关联） ----------
 # 远程投射物：从 from 飞到 to（快照位置），到达后留一缕命中烟。

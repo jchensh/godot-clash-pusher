@@ -42,10 +42,11 @@
 | V2-2 | 3-lane 接通（Match+显示层+选 lane+AI 中路） | ✅ 完成（GUI 实机验收通过） | `a1af321` |
 | V2-3 | 程序化美术换皮（兵种造型/塔/背景） | ✅ 完成 | `190dc04` |
 | V2-4 | 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，仅 view 层） | ✅ 完成（视觉验收通过） | `55c2fb7` |
+| V2-5a | 主菜单 + 结算面板（场景闭环骨架，仅显示层） | ✅ 完成（视觉验收通过） | 本次提交 |
 
-> **阶段进度（2026-06-09）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**A 模块（3-lane）已完成**（V2-1+V2-2）。**D 模块进行中**：V2-3 程序化换皮 + V2-4 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，均仅 view 层、逻辑零改动）已完成并通过视觉验收。配置体系已迁移为 JSON 运行时配置 + `GameConfig.xlsx` 人类策划工作簿镜像；agent 默认改 JSON，确认后同步 Excel。下一步 **V2-5**（UI 美化 + 音频 + 主菜单/结算闭环）。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
+> **阶段进度（2026-06-10）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**A 模块（3-lane）已完成**（V2-1+V2-2）。**D 模块进行中**：V2-3 程序化换皮 + V2-4 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，均仅 view 层、逻辑零改动）已完成并通过视觉验收。配置体系已迁移为 JSON 运行时配置 + `GameConfig.xlsx` 人类策划工作簿镜像；agent 默认改 JSON，确认后同步 Excel。**V2-5（D 模块收尾）进行中**：按一步一确认拆 3 小步（5a 场景闭环骨架 / 5b 战斗内 UI 美化 / 5c 音频，**音频缓做、UI 保持全英文**，决策日志 32）；**V2-5a 主菜单 + 结算面板 + 菜单→对局→结算→菜单 闭环已完成并通过视觉验收**，下一步 V2-5b。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
 
-**测试现状**：111 个测试全部通过（config_loader 8 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + battle_v2 12 + skill_system 11 + **player 10** + match 6 + ai_controller 6 + smoke 3）。配置源表存在性已纳入 `test_config_loader.gd`；V2-3/V2-4 为纯 view 层（换皮/动画特效），逻辑零改动。
+**测试现状**：111 个测试全部通过（config_loader 8 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + battle_v2 12 + skill_system 11 + **player 10** + match 6 + ai_controller 6 + smoke 3）。配置源表存在性已纳入 `test_config_loader.gd`；V2-3/V2-4/V2-5a 为纯 view/场景层（换皮/动画特效/主菜单+结算闭环），逻辑零改动。
 
 **分支 / 远端**：开发在 **`develop`** 分支；`main` 为稳定线。远端 `origin` = https://github.com/jchensh/godot-clash-pusher （Public）。约定：用户说"提交"时才 commit + push。
 
@@ -122,6 +123,10 @@
 > 31 为 **配置体系迁移到 Excel 源表**，用户 2026-06-09 确认。
 
 31. **配置工作流 = JSON / Excel 双入口，agent 默认 JSON 优先**：Godot 运行时仍读 `config/cards.json`、`config/units.json`、`config/levels.json`，避免引入 Excel 运行时解析依赖、也不改战斗逻辑。Codex / Claude 修改配置时优先直接改 JSON（更省上下文、路径更短、贴近运行时），确认没问题后运行 `tools/build_config.py --from-json` 把当前 JSON 覆写同步到 `config/GameConfig.xlsx`。人类策划仍可直接改 Excel，再运行 `tools/build_config.py` 生成 JSON。提交前统一跑 `tools/build_config.py --check` 与 Godot 单测。若 Excel 可能有用户尚未同步到 JSON 的手工改动，agent 不得直接 `--from-json` 覆盖，必须先询问。
+
+> 32 为 **V2-5（D 模块收尾）开工前提**，用户 2026-06-10 确认。
+
+32. **V2-5 拆 3 小步 + 音频缓做 + UI 保持全英文**：V2-5 原打包「UI 美化 + 音频 + 主菜单 + 结算闭环」，按「一步一确认」拆为 **V2-5a 场景闭环骨架（主菜单 + 结算面板 + 菜单→对局→结算→菜单）→ V2-5b 战斗内 UI 美化 → V2-5c 音频**，每小步停下做真人视觉验收。**音频本阶段缓做**（既不引入外部 CC0 音效素材、也不先做程序化合成），留到 a/b 之后单独处理；**UI 保持全英文**（延续 7b 决定，不导入 CJK 字体、零字体依赖）。理由同 V2-3/V2-4 零外部素材路线：先把场景闭环与可玩骨架立起来再逐步美化，避免一步铺太大、便于分段验收。
 
 ---
 
@@ -602,3 +607,25 @@
 **验收**
 - `uv run --with openpyxl python tools\build_config.py --check` → `config check ok`、exit 0（uv 首次解析依赖时有 openpyxl 依赖版本 warning，但不影响执行）✅
 - `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` → **111/111 全过**、exit 0 ✅
+
+### V2-5a — 主菜单 + 结算面板（场景闭环骨架，仅显示层）  （本次提交）
+**前置决策（用户 2026-06-10 确认）**：见决策日志 32（V2-5 拆 3 小步、音频缓做、UI 全英文）。本步只做 **a 场景闭环骨架**。
+
+**范围边界**：仅显示层 / 场景层；`logic/*`、`ai/*`、`config/*`、`tests/*` 零改动 → 单测仍 111/111。战斗内 HUD 美化是 V2-5b，音频已定缓做（V2-5c）。仍无外部素材、无新 `.import`、无授权负担。
+
+**新增 / 修改**
+- `view/main_menu.gd` + `view/main_menu.tscn`（新，**主场景**）：主菜单。深绿底 + 三 lane 暗条 + 上下蓝色带；标题 `CLASH PUSHER`、副标题 `3-LANE TOWER RUSH`；`START` → `change_scene_to_file(battle_scene)`、`QUIT` → `get_tree().quit()`。纯程序化绘制、全英文。
+- `view/battle_scene.gd`：把原本一行 `banner` Label 的胜负展示升级为**结算面板** `result_layer`（全屏 `Control` + `MOUSE_FILTER_STOP` + 压暗 backdrop，天然拦截身后卡牌点击）——胜负标题（YOU WIN / YOU LOSE / DRAW，按结果着色）+ 比分（`Towers You x Enemy y`，读 `battle.total_tower_hp`）+ `REMATCH`（`reload_current_scene` → 全新一局）/ `MENU`（`change_scene_to_file(main_menu)`）两按钮。`_build_result_panel()` 于 `_build_hud` 末尾建好并隐藏，`_sync_result()` 在对局结束首帧显示一次。删除旧 `banner` 与 `_sync_banner`。
+- `project.godot`：`run/main_scene` 由 `battle_scene.tscn` 改为 `main_menu.tscn`，串起 菜单→对局→结算→(再来一局 / 回菜单) 闭环。
+
+**决策**：见决策日志 32。补充：结算面板用「全屏 STOP Control + 子按钮」而非单 Label——覆盖层在 `visible=true` 时拦截身后输入、`visible=false` 时不参与输入，无副作用；REMATCH 用 `reload_current_scene()` 拿到全新一局（Match 重建、圣水归零、塔满血、手牌重置），MENU/START 用 `change_scene_to_file`——标准 Godot 场景切换，逻辑层无需参与、不持跨场景引用。
+
+**踩坑与修复**
+- 无（一次通过）。沿用既有显示层经验：跨场景按路径切换、不持引用；新文件先 `--headless --editor --quit` 导入生成 `.uid`；`project.godot` 仅主场景一行变更、无编辑器 churn。
+
+**验收**
+- `godot --headless --editor --path F:\godotProject --quit` → exit 0，`main_menu.gd` / `battle_scene.gd` 无解析/编译错误，`project.godot` 仅 `run/main_scene` 一行变更 ✅
+- `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` → **111/111 全过**（逻辑零改动，无新单测）✅
+- 两场景 headless 烟测（`--quit-after`）→ 0 运行期错误 ✅
+- 临时探针强制对局结束 → 结算面板 `visible` 切换正常、WIN/LOSE/DRAW 文案与比分（`Towers You 5200 Enemy 5200`）均无报错，验后即删、不入 git ✅
+- **GUI 视觉验收**：人工主观验收**通过**（2026-06-10，用户在编辑器实机确认闭环：菜单 → START → 对局 → 分胜负弹结算 → REMATCH 全新局 / MENU 回菜单）✅
