@@ -41,6 +41,48 @@ func test_levels_loaded() -> void:
 	assert_eq(lv.get("tower_hp").get("king"), 2400, "国王塔血量=2400")
 	assert_true((lv.get("player_deck") as Array).size() >= 1, "player_deck 非空")
 
+func test_v2_7a_expanded_pool() -> void:
+	# V2-7a 扩卡池：卡池扩到 ~14 卡 / ~9 单位，新增内容仍走三积木、零回归。
+	var loader = _make_loaded()
+	assert_true(loader.cards.size() >= 14, "卡池应扩到 >=14 张; 实际=%d" % loader.cards.size())
+	assert_true(loader.units.size() >= 9, "单位应扩到 >=9 个; 实际=%d" % loader.units.size())
+	for cid in ["mini_pekka", "musketeer", "skeletons", "baby_dragon", "lightning", "log"]:
+		assert_true(loader.has_card(cid), "应包含新卡 %s" % cid)
+	for uid in ["mini_pekka_body", "musketeer_body", "skeleton_body", "baby_dragon_body"]:
+		assert_true(loader.has_unit(uid), "应包含新单位 %s" % uid)
+
+func test_v2_7a_new_cards_well_formed() -> void:
+	# 新卡的技能积木结构正确：兵牌 spawn_unit + 数量；法术 direct/aoe。
+	var loader = _make_loaded()
+	var skeletons = loader.get_card("skeletons")
+	assert_eq(skeletons["skills"][0].get("type"), "spawn_unit", "skeletons 是 spawn_unit")
+	assert_eq(int(skeletons["skills"][0].get("count")), 4, "skeletons 生成 4 个骷髅")
+	var lightning = loader.get_card("lightning")
+	assert_eq(lightning["skills"][0].get("type"), "direct_damage", "lightning 是 direct_damage")
+	assert_eq(lightning["skills"][0].get("target"), "first_enemy_in_lane", "lightning 目标=first_enemy_in_lane")
+	var log_card = loader.get_card("log")
+	assert_eq(log_card["skills"][0].get("type"), "aoe_damage", "log 是 aoe_damage")
+	# 新单位关键数值（air 单位至少一个、近战反坦克 mini_pekka 高伤）。
+	assert_eq(loader.get_unit("baby_dragon_body").get("target_type"), "air", "小龙是空中单位")
+	assert_true(int(loader.get_unit("mini_pekka_body").get("damage")) >= 200, "迷你皮卡高单发伤害")
+
+func test_v2_7b_multi_level() -> void:
+	# V2-7b 多关卡：每关=独立遭遇战、自带难度；level_01 保持 normal 不变。
+	var loader = _make_loaded()
+	assert_true(loader.levels.size() >= 4, "关卡应扩到 >=4 个; 实际=%d" % loader.levels.size())
+	assert_eq(String(loader.get_level("level_01").get("ai_difficulty")), "normal", "level_01 仍为 normal（守住旧测试假设）")
+	var expect := {"level_02": "easy", "level_03": "hard", "level_04": "hard"}
+	for lid in expect:
+		assert_true(loader.has_level(lid), "应包含新关卡 %s" % lid)
+		var lv = loader.get_level(lid)
+		assert_eq(String(lv.get("ai_difficulty")), expect[lid], "%s 难度=%s" % [lid, expect[lid]])
+		assert_true(["easy", "normal", "hard"].has(String(lv.get("ai_difficulty"))), "%s 难度合法" % lid)
+		assert_eq((lv.get("player_deck") as Array).size(), 8, "%s player_deck 8 张" % lid)
+		assert_eq((lv.get("ai_deck") as Array).size(), 8, "%s ai_deck 8 张" % lid)
+	# 关卡数值差异化（节奏/时长）确实生效。
+	assert_almost_eq(float(loader.get_level("level_04").get("elixir_regen_rate")), 2.0, 0.0001, "闪电赛双倍圣水回速")
+	assert_eq(int(loader.get_level("level_04").get("match_duration")), 120, "闪电赛时长更短")
+
 func test_missing_dir_reports_error() -> void:
 	var loader = ConfigLoaderScript.new()
 	var ok = loader.load_all("res://config_does_not_exist")

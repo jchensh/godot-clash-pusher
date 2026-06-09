@@ -57,6 +57,19 @@ func test_update_drives_battle_and_units_advance() -> void:
 	m.update(1.0)
 	assert_true(lane.get_units()[0].progress > p0, "对局推进，骑士向敌塔前进")
 
+func test_setup_other_level_carries_its_difficulty_and_config() -> void:
+	# V2-7b：关卡=独立遭遇战，自带难度/时长。Match.setup 用所选关卡 id 即生效。
+	var loader = ConfigLoaderScript.new()
+	loader.load_all()
+	var hard = MatchScript.new(loader)
+	hard.setup("level_03")
+	assert_eq(String(hard.ai_difficulty), "hard", "level_03 难度=hard（供 AIController 解析）")
+	assert_eq(hard.player.deck.total(), 8, "关卡牌组接入玩家")
+	assert_eq(hard.opponent.deck.total(), 8, "关卡牌组接入对手")
+	var blitz = MatchScript.new(loader)
+	blitz.setup("level_04")
+	assert_almost_eq(blitz.battle.match_duration, 120.0, 0.0001, "level_04 时长 120 流入 battle")
+
 func test_update_stops_when_over() -> void:
 	var m = _match()
 	m.battle.opponent_king.take_damage(m.battle.opponent_king.max_hp)

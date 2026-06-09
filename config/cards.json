@@ -86,5 +86,71 @@
         "target": "first_enemy_in_lane"
       }
     ]
+  },
+  "mini_pekka": {
+    "name": "迷你皮卡",
+    "elixir_cost": 4,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "mini_pekka_body",
+        "count": 1
+      }
+    ]
+  },
+  "musketeer": {
+    "name": "火枪手",
+    "elixir_cost": 4,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "musketeer_body",
+        "count": 1
+      }
+    ]
+  },
+  "skeletons": {
+    "name": "骷髅海",
+    "elixir_cost": 2,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "skeleton_body",
+        "count": 4
+      }
+    ]
+  },
+  "baby_dragon": {
+    "name": "小龙",
+    "elixir_cost": 4,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "baby_dragon_body",
+        "count": 1
+      }
+    ]
+  },
+  "lightning": {
+    "name": "闪电",
+    "elixir_cost": 4,
+    "skills": [
+      {
+        "type": "direct_damage",
+        "damage": 280,
+        "target": "first_enemy_in_lane"
+      }
+    ]
+  },
+  "log": {
+    "name": "滚木",
+    "elixir_cost": 2,
+    "skills": [
+      {
+        "type": "aoe_damage",
+        "radius": 0.4,
+        "damage": 130
+      }
+    ]
   }
 }

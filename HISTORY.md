@@ -44,11 +44,13 @@
 | V2-4 | 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，仅 view 层） | ✅ 完成（视觉验收通过） | `55c2fb7` |
 | V2-5a | 主菜单 + 结算面板（场景闭环骨架，仅显示层） | ✅ 完成（视觉验收通过） | `6891f32` |
 | V2-5b | 战斗内 HUD 美化（顶部条/圣水分段/卡面/血条变色，仅显示层） | ✅ 完成（视觉验收通过） | `032dd5f` |
-| V2-6 | 规则 AI 升级（攻防结合 + 按 lane 选向 + 难度分级，逻辑层 + 单测） | ✅ 完成（单测覆盖） | 本次提交 |
+| V2-6 | 规则 AI 升级（攻防结合 + 按 lane 选向 + 难度分级，逻辑层 + 单测） | ✅ 完成（单测覆盖） | `e916a00` |
+| V2-7a | 扩卡池（+6 卡 / +4 单位 → 14 卡 / 9 单位，纯 JSON + 单测） | ✅ 完成（单测覆盖） | （本次提交） |
+| V2-7b | 多关卡（4 关）+ 选关界面（取代难度界面，关卡自带难度） | ✅ 完成（单测 + headless 烟测） | （本次提交） |
 
-> **阶段进度（2026-06-10）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**A 模块（3-lane）已完成**（V2-1+V2-2）。**D 模块进行中**：V2-3 程序化换皮 + V2-4 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，均仅 view 层、逻辑零改动）已完成并通过视觉验收。配置体系已迁移为 JSON 运行时配置 + `GameConfig.xlsx` 人类策划工作簿镜像；agent 默认改 JSON，确认后同步 Excel。**V2-5（D 模块收尾）进行中**：按一步一确认拆 3 小步（5a 场景闭环骨架 / 5b 战斗内 UI 美化 / 5c 音频，**音频缓做、UI 保持全英文**，决策日志 32）；**V2-5a（菜单+结算闭环）与 V2-5b（战斗内 HUD 美化：顶部信息条/分段圣水条/卡面+费用徽章+选中框/塔血条变色/结算按钮样式）均已完成并通过视觉验收**；**5c 音频按决策 32 缓做**。至此 **D 模块除缓做音频外收尾完成**。**B 模块 V2-6（规则 AI 升级：攻防结合 + 按 lane 选进攻方向 + `ai_difficulty` 难度 easy/normal/hard 分级，逻辑层 + 单测，决策 33）已完成**；并加了**难度选择界面**（主菜单→难度→对局，仅显示层）。下一步按 A→D→B→C 进入 **C 模块（V2-7 内容/数值）**，或择期补 5c 音频。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
+> **阶段进度（2026-06-10）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**A 模块（3-lane）已完成**（V2-1+V2-2）。**D 模块进行中**：V2-3 程序化换皮 + V2-4 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，均仅 view 层、逻辑零改动）已完成并通过视觉验收。配置体系已迁移为 JSON 运行时配置 + `GameConfig.xlsx` 人类策划工作簿镜像；agent 默认改 JSON，确认后同步 Excel。**V2-5（D 模块收尾）进行中**：按一步一确认拆 3 小步（5a 场景闭环骨架 / 5b 战斗内 UI 美化 / 5c 音频，**音频缓做、UI 保持全英文**，决策日志 32）；**V2-5a（菜单+结算闭环）与 V2-5b（战斗内 HUD 美化：顶部信息条/分段圣水条/卡面+费用徽章+选中框/塔血条变色/结算按钮样式）均已完成并通过视觉验收**；**5c 音频按决策 32 缓做**。至此 **D 模块除缓做音频外收尾完成**。**B 模块 V2-6（规则 AI 升级：攻防结合 + 按 lane 选进攻方向 + `ai_difficulty` 难度 easy/normal/hard 分级，逻辑层 + 单测，决策 33）已完成**；并加了**难度选择界面**（主菜单→难度→对局，仅显示层）。**C 模块 V2-7（内容/数值）进行中**：按一步一确认拆 3 小步（7a 扩卡池 / 7b 多关卡+选关 / 7c 组卡界面，决策 34）；**V2-7a 扩卡池（+6 卡 +4 单位 → 14 卡 / 9 单位，仍走三积木）+ V2-7b 多关卡（4 关、各自带难度/节奏/AI 卡组）+ 选关界面（取代难度选择界面）均已完成**（单测 120/120 + headless 烟测）。下一步 **V2-7c 组卡界面**（自由选 8 张），或择期补 5c 音频。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
 
-**测试现状**：116 个测试全部通过（config_loader 8 + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + battle_v2 12 + skill_system 11 + **player 10** + match 6 + **ai_controller 11** + smoke 3）。配置源表存在性已纳入 `test_config_loader.gd`；V2-3/V2-4/V2-5a/V2-5b 与难度选择界面为纯 view/场景层，逻辑零改动；V2-6 为逻辑层（AI 攻防/难度），ai_controller 单测从 6 增到 11。
+**测试现状**：120 个测试全部通过（config_loader **11** + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + battle_v2 12 + skill_system 11 + **player 10** + match **7** + **ai_controller 11** + smoke 3）。配置源表存在性已纳入 `test_config_loader.gd`；V2-3/V2-4/V2-5a/V2-5b 为纯 view/场景层，逻辑零改动；V2-6 为逻辑层（AI 攻防/难度），ai_controller 单测从 6 增到 11；V2-7a 扩卡池 config_loader 8→10；V2-7b 多关卡 config_loader 10→11 + match 6→7（选关界面纯 view 层、逻辑零改动）。
 
 **分支 / 远端**：开发在 **`develop`** 分支；`main` 为稳定线。远端 `origin` = https://github.com/jchensh/godot-clash-pusher （Public）。约定：用户说"提交"时才 commit + push。
 
@@ -133,6 +135,10 @@
 > 33 为 **V2-6（规则 AI 升级）开工前提**，用户 2026-06-10 确认（PLAN_V2 §4「难度分级差异维度」至此定稿）。
 
 33. **规则 AI = 攻防结合 + 按 lane 选向 + 难度 3 档（easy/normal/hard）4 维度**：难度从 `levels.json.ai_difficulty` 解析（`Match.setup` 存 `ai_difficulty`、`AIController` 读取，构造参数可覆盖便于单测；难度选择界面经 `GameState` 静态变量传入覆盖关卡值）。差异维度：①圣水阈值（easy 8 / normal 6 / hard 4）②出牌间隔（2.0 / 1.2 / 0.6 s）③是否防守（easy 否，normal/hard 是）④进攻选路（easy 固定中路，normal/hard 集火「守军塔血最低」的 lane）。**防守口径**：玩家单位 `progress ≥ 0.55`（越中线逼近 AI 塔）该 lane 受威胁，优先在塔前 `0.9` 空投最贵可用兵 body-block，防守优先于进攻。**进攻口径**：选目标 lane 出最贵可用兵；最贵可用为法术且场上有敌方单位时落在最前敌人处（不空放）。确定性无随机（延续决策 22）、tie-break 取小 index、仍走 `opponent.try_play_card`（玩家/AI 对称）。
+
+> 34 为 **V2-7（C 模块：内容/数值）开工前提**，用户 2026-06-10 确认（PLAN_V2 §4「V2-7 细化」至此定稿）。
+
+34. **V2-7 拆 3 小步 + 卡池适中 + 关卡=独立遭遇战 + 自由组卡 + 会话内持久化**：按「一步一确认」拆 **7a 扩卡池（纯 JSON + 单测）→ 7b 多关卡 + 选关界面 → 7c 组卡界面**。①**卡池适中**：+6 卡 / +4 单位 → 14 卡 / 9 单位，覆盖坦克/群攻/快攻/空军/远程/法术原型，仍只用 `spawn_unit`/`direct_damage`/`aoe_damage` 三积木、**不做空中/地面克制**（V2 范围外），新内容 = 新数值组合 + 法术调参（统一平衡留 V2-8）。②**关卡 = 独立遭遇战，自带难度**：每关携带 AI 卡组 + 塔血 + `ai_difficulty` + 圣水节奏；做「选关」界面，**取代现有难度选择界面**（难度内嵌进每关）。③**组卡 = 自由选任意 8 张唯一卡，不限费用**（原型阶段最简）。④**所选关卡/卡组经 `GameState` 静态变量跨场景传递**（与 `ai_difficulty` 一致、会话内有效、重启重置、不落盘）。最终流程：菜单 → 选关 → 组卡 → 对局 → 结算。
 
 ---
 
@@ -700,3 +706,51 @@
 - 难度界面 / 主菜单 headless 烟测 → 0 报错 ✅
 - 临时探针：`GameState=hard → battle._ai_diff=hard → AIController.get_difficulty()=hard`，确认难度经界面接到 AI；验后即删、不入 git ✅
 - **GUI 视觉验收**：人工实机确认菜单→难度→对局闭环 + AI 难度生效（2026-06-10，用户验收）✅
+
+### V2-7a — 扩卡池（+6 卡 / +4 单位，纯 JSON + 单测）  （待提交）
+**前置决策**：见决策日志 34（V2-7 拆 3 小步、卡池适中、关卡=遭遇战含难度、自由组卡、会话内持久化）。本步只做 **7a 扩卡池**（内容/配置层，零碰 view 与战斗逻辑）。
+
+**修改**
+- `config/units.json`：+4 单位——`mini_pekka_body`（反坦克爆发近战 700hp/320dmg/1.8s/move1.1/range0.05/ground）、`musketeer_body`（远程高 DPS 340/110/1.1/1.0/range0.35/ground）、`skeleton_body`（极廉价群体 40/40/1.0/1.3/0.04/ground）、`baby_dragon_body`（空中肉盾远程 900/80/1.6/1.0/0.18/air）。
+- `config/cards.json`：+6 卡——`mini_pekka`(4)/`musketeer`(4)/`baby_dragon`(4) 各 spawn 1、`skeletons`(2) spawn 4 骷髅、`lightning`(4) direct_damage 280、`log`(2) aoe_damage radius0.4/dmg130。命名沿用中文 `name`（UI 显示 card_id、不渲染中文、零字体依赖）。
+- `config/GameConfig.xlsx`：`build_config.py --from-json` 从新 JSON 重建（人类策划镜像）。
+- `tests/test_config_loader.gd`：+2 测——`test_v2_7a_expanded_pool`（卡池 ≥14 / 单位 ≥9 + 6 新卡 4 新单位存在）、`test_v2_7a_new_cards_well_formed`（skeletons spawn 4、lightning direct/target、log aoe、baby_dragon air、mini_pekka 高伤）。
+
+**范围边界**：仅 config + 单测；`logic/*`、`ai/*`、`view/*` 零改动。新卡暂未进任何卡组（`level_01` 牌组不变），故对局画面暂不变——接入留 7b/7c。`config_loader._validate` 的交叉引用（spawn_unit→unit、deck→card）对新内容天然生效。
+
+**决策**：见决策日志 34。新数值均为白膜占位、可调，统一平衡 pass 留 V2-8。
+
+**踩坑与修复**
+- 无。动 JSON 前先跑基线 `--check`（确认 JSON↔Excel 已同步、`--from-json` 不会覆盖未同步的手改，CLAUDE.md 安全协议）；编辑后 `--from-json` + `--check` 往返一致。数值刻意守 `build_config.py` 的 int/float 往返语义（hp/damage/count/elixir_cost 整数、attack_speed/move_speed/radius 带小数、`direct_damage.target` 仅 `first_enemy_in_lane`）。
+
+**验收**
+- `build_config.py --check`（基线 + 同步后两次）→ `config check ok`，JSON↔Excel 往返一致 ✅
+- `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` → **118/118 全过**（+2 config_loader，旧 116 零回归），SCRIPT ERROR / Parse Error 计数 = 0 ✅
+- 纯配置/逻辑层步骤，正确性由单测 + 配置校验覆盖（按纪律无需肉眼验收）✅
+
+### V2-7b — 多关卡 + 选关界面（关卡=独立遭遇战含难度）  （本次提交）
+**前置决策**：见决策日志 34（关卡=独立遭遇战、自带难度；选关界面取代难度界面；所选关卡经 `GameState` 跨场景传递）。
+
+**新增 / 修改**
+- `config/levels.json`：1 关 → **4 关**（level_01 原样不动，守住旧测试假设）。新增 `level_02`「训练场/EASY」（regen1.0、180s、塔2400/1400、基础 AI 卡组）、`level_03`「冠军竞技场/HARD」（regen1.2、180s、塔**2600/1500**、AI 卡组含新卡 mini_pekka/musketeer/baby_dragon/lightning）、`level_04`「闪电赛/HARD」（**regen2.0、120s** 快节奏、循环 AI 卡组）。各关携带独立 `ai_difficulty` + AI 卡组 + 塔血 + 圣水节奏；`player_deck` 暂统一为经典 8 张（7c 组卡再覆盖）。同步 `GameConfig.xlsx`。
+- `view/level_select.gd` + `.tscn`（新）：选关界面，**取代** `difficulty_select`。关卡从 `ConfigLoader` 动态读取（加关只改 JSON、界面自动出现），按难度档由易到难排；每关一张卡片 = 英文标题（难度档命名 TRAINING/ARENA/CHAMPION/BLITZ，避开 CJK 字体）+ 难度徽章（绿/蓝/红）+ 数值行（圣水节奏/时长/王塔血）+ 一句说明。选一关 → 写 `GameState.level_id` 进对局；BACK 回菜单。全英文、纯程序化、零外部素材。
+- `view/game_state.gd`：`ai_difficulty` 静态变量 → **`level_id`**（难度不再单独选，随关卡而定）。
+- `view/main_menu.gd`：`START` 目标 `difficulty_select.tscn` → `level_select.tscn`。
+- `view/battle_scene.gd`：`setup("level_01")` → `setup(GameState.level_id)`；`_ai_diff` 由 `GameState.ai_difficulty`（覆盖）改为读 `match.ai_difficulty`（关卡解析）；`AIController.new(match, loader)` 去掉难度覆盖参数（难度由关卡流入 `match.ai_difficulty`，AIController 自行解析）；顶部小字与起始日志改用 `_level_id`。
+- 删除 `view/difficulty_select.gd` / `.gd.uid` / `.tscn`（被选关界面取代）。
+- `tests/test_config_loader.gd`：+1 测 `test_v2_7b_multi_level`（≥4 关、新关难度/牌组合法、level_01 仍 normal、level_04 双倍圣水+120s 差异化生效）。
+- `tests/test_match.gd`：+1 测 `test_setup_other_level_carries_its_difficulty_and_config`（`setup("level_03")`→`ai_difficulty=hard` + 双方 8 张牌组；`setup("level_04")`→`battle.match_duration=120`）。
+
+**范围边界**：逻辑层零改动（`Match.setup` 本就读 `level.ai_difficulty` 存 `match.ai_difficulty`，AIController 本就在未给难度时读它——V2-6 已铺好）；新增仅 config + 2 view 场景 + 2 单测。新流程：菜单 → **选关** → 对局 → 结算（组卡 7c 后插在选关与对局之间）。
+
+**决策**：见决策日志 34。补充：选关界面**不显示中文 `name`**（零 CJK 字体延续），改用难度档英文标题；标题对 hard 关按圣水节奏 ≥1.5 分 BLITZ / 否则 CHAMPION（cosmetic，自包含于 view）。`GameState.ai_difficulty` 退役为 `level_id`，难度统一由关卡承载。
+
+**踩坑与修复**
+- 无。先确认 `level_01` 被多处测试断言（`test_ai_controller` 断言其 `=normal`、`test_battle/match/deck/skill_system` 用其牌组/塔血/时长）→ **完全不改 level_01，只新增关卡**，旧测试零回归。
+
+**验收**
+- `build_config.py --from-json` + `--check` → JSON↔Excel 往返一致（4 关）✅
+- `godot --headless --editor --path F:\godotProject --quit` → exit 0，新脚本无解析/编译错误、`level_select.gd.uid` 生成 ✅
+- `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` → **120/120 全过**（+1 config_loader +1 match，旧 118 零回归），SCRIPT ERROR = 0 ✅
+- headless 烟测（临时 harness，验后删）：`GameState.level_id="level_03"` → `battle_scene` 实跑 7s，日志 `MATCH START level_03 | AI=hard`、AI 部署**新卡** `mini_pekka_body`/`musketeer_body` 并击中公主（hp/1500 = level_03 塔血），零运行期报错 ✅；`level_select` / `main_menu` 场景 `_ready` 实跑（`--quit-after`）零报错 ✅
+- **GUI 视觉验收**：选关界面外观 / 4 关卡片排版属表现层，留用户实机过目（不阻塞本步逻辑+接线验收）。
