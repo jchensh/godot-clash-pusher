@@ -70,9 +70,9 @@
     "elixir_cost": 3,
     "skills": [
       {
-        "type": "direct_damage",
-        "damage": 150,
-        "target": "first_enemy_in_lane"
+        "type": "aoe_damage",
+        "radius": 0.5,
+        "damage": 140
       }
     ]
   },

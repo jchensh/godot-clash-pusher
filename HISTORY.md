@@ -47,11 +47,12 @@
 | V2-6 | 规则 AI 升级（攻防结合 + 按 lane 选向 + 难度分级，逻辑层 + 单测） | ✅ 完成（单测覆盖） | `e916a00` |
 | V2-7a | 扩卡池（+6 卡 / +4 单位 → 14 卡 / 9 单位，纯 JSON + 单测） | ✅ 完成（单测覆盖） | `dd2cbf1` |
 | V2-7b | 多关卡（4 关）+ 选关界面（取代难度界面，关卡自带难度） | ✅ 完成（单测 + headless 烟测） | `dd2cbf1` |
-| V2-7c | 组卡界面（自由选 8 张，覆盖关卡默认卡组） | ✅ 完成（单测 + headless 烟测） | （本次提交） |
+| V2-7c | 组卡界面（自由选 8 张，覆盖关卡默认卡组） | ✅ 完成（单测 + headless 烟测） | `dcdb97e` |
+| V2-8 | 数值平衡 pass（轻量：arrows→AOE + baby_dragon 提速，纯配置） | ✅ 完成（单测 + harness 测量；难度曲线交真人验收） | （本次提交） |
 
-> **阶段进度（2026-06-10）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**A 模块（3-lane）已完成**（V2-1+V2-2）。**D 模块进行中**：V2-3 程序化换皮 + V2-4 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，均仅 view 层、逻辑零改动）已完成并通过视觉验收。配置体系已迁移为 JSON 运行时配置 + `GameConfig.xlsx` 人类策划工作簿镜像；agent 默认改 JSON，确认后同步 Excel。**V2-5（D 模块收尾）进行中**：按一步一确认拆 3 小步（5a 场景闭环骨架 / 5b 战斗内 UI 美化 / 5c 音频，**音频缓做、UI 保持全英文**，决策日志 32）；**V2-5a（菜单+结算闭环）与 V2-5b（战斗内 HUD 美化：顶部信息条/分段圣水条/卡面+费用徽章+选中框/塔血条变色/结算按钮样式）均已完成并通过视觉验收**；**5c 音频按决策 32 缓做**。至此 **D 模块除缓做音频外收尾完成**。**B 模块 V2-6（规则 AI 升级：攻防结合 + 按 lane 选进攻方向 + `ai_difficulty` 难度 easy/normal/hard 分级，逻辑层 + 单测，决策 33）已完成**；并加了**难度选择界面**（主菜单→难度→对局，仅显示层）。**C 模块 V2-7（内容/数值）**：按一步一确认拆 3 小步（7a 扩卡池 / 7b 多关卡+选关 / 7c 组卡界面，决策 34）。**V2-7a 扩卡池（+6 卡 +4 单位 → 14 卡 / 9 单位，仍走三积木）+ V2-7b 多关卡（4 关、各自带难度/节奏/AI 卡组）+ 选关界面（取代难度选择界面）+ V2-7c 组卡界面（自由选 8 张、经 `GameState.player_deck` 覆盖关卡默认）均已完成**（单测 121/121 + headless 烟测），至此 **V2-7（扩卡池+组卡+多关卡）收尾完成**。新流程：菜单 → 选关 → 组卡 → 对局 → 结算。下一步 **V2-8 数值平衡 pass**，或择期补 5c 音频。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
+> **阶段进度（2026-06-10）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**A 模块（3-lane）已完成**（V2-1+V2-2）。**D 模块进行中**：V2-3 程序化换皮 + V2-4 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，均仅 view 层、逻辑零改动）已完成并通过视觉验收。配置体系已迁移为 JSON 运行时配置 + `GameConfig.xlsx` 人类策划工作簿镜像；agent 默认改 JSON，确认后同步 Excel。**V2-5（D 模块收尾）进行中**：按一步一确认拆 3 小步（5a 场景闭环骨架 / 5b 战斗内 UI 美化 / 5c 音频，**音频缓做、UI 保持全英文**，决策日志 32）；**V2-5a（菜单+结算闭环）与 V2-5b（战斗内 HUD 美化：顶部信息条/分段圣水条/卡面+费用徽章+选中框/塔血条变色/结算按钮样式）均已完成并通过视觉验收**；**5c 音频按决策 32 缓做**。至此 **D 模块除缓做音频外收尾完成**。**B 模块 V2-6（规则 AI 升级：攻防结合 + 按 lane 选进攻方向 + `ai_difficulty` 难度 easy/normal/hard 分级，逻辑层 + 单测，决策 33）已完成**；并加了**难度选择界面**（主菜单→难度→对局，仅显示层）。**C 模块 V2-7（内容/数值）**：按一步一确认拆 3 小步（7a 扩卡池 / 7b 多关卡+选关 / 7c 组卡界面，决策 34）。**V2-7a 扩卡池（+6 卡 +4 单位 → 14 卡 / 9 单位，仍走三积木）+ V2-7b 多关卡（4 关、各自带难度/节奏/AI 卡组）+ 选关界面（取代难度选择界面）+ V2-7c 组卡界面（自由选 8 张、经 `GameState.player_deck` 覆盖关卡默认）均已完成**（单测 121/121 + headless 烟测），至此 **V2-7（扩卡池+组卡+多关卡）收尾完成**。新流程：菜单 → 选关 → 组卡 → 对局 → 结算。**C 模块 V2-8（数值平衡 pass，决策 35）已完成**：轻量改动，重点保「对局节奏 + 难度曲线」。用临时 headless harness（AIController 驱动 AI 侧 + 镜像控制器驱动玩家侧、多变体取胜率，验后删不入 git）测量得：①对局节奏健康（多变体 75–100% 拆王塔决胜）；②难度曲线无法用 AI-vs-AI proxy 测量（难度档在 proxy 下倒挂、proxy ≠ 真人）→ 交真人实机验收（清单见 V2-8 逐步历史）；③单卡强度印证 swarm/mini_pekka/giant 为破防引擎（不削）、baby_dragon 为废兵。据此**仅改两张卡**（纯配置）：`arrows` 单体 150 → AOE radius0.5/140（补中号群清生态位；意外消除了对称对局的 0-0 僵局、节奏更利落）、`baby_dragon_body` 攻速 1.6→1.3（DPS 50→62）。**至此 V2 施工图（V2-1～V2-8）主线全部完成**；剩 5c 音频缓做。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
 
-**测试现状**：121 个测试全部通过（config_loader **11** + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + battle_v2 12 + skill_system 11 + **player 10** + match **8** + **ai_controller 11** + smoke 3）。配置源表存在性已纳入 `test_config_loader.gd`；V2-3/V2-4/V2-5a/V2-5b 为纯 view/场景层，逻辑零改动；V2-6 为逻辑层（AI 攻防/难度），ai_controller 单测从 6 增到 11；V2-7a 扩卡池 config_loader 8→10；V2-7b 多关卡 config_loader 10→11 + match 6→7；V2-7c 组卡 match 7→8（Match.setup 加 player_deck 覆盖参数；选关/组卡界面纯 view 层）。
+**测试现状**：121 个测试全部通过（config_loader **11** + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + battle_v2 12 + skill_system 11 + **player 10** + match **8** + **ai_controller 11** + smoke 3）。配置源表存在性已纳入 `test_config_loader.gd`；V2-3/V2-4/V2-5a/V2-5b 为纯 view/场景层，逻辑零改动；V2-6 为逻辑层（AI 攻防/难度），ai_controller 单测从 6 增到 11；V2-7a 扩卡池 config_loader 8→10；V2-7b 多关卡 config_loader 10→11 + match 6→7；V2-7c 组卡 match 7→8（Match.setup 加 player_deck 覆盖参数；选关/组卡界面纯 view 层）。V2-8 数值平衡为纯配置，测试数不变（121）：`test_skill_system` 3 个 direct_damage 机制用例由 `arrows`（已改 AOE）改指向 `lightning`（仍 direct_damage 280），arrows 的 AOE 行为由既有 aoe 机制用例覆盖。
 
 **分支 / 远端**：开发在 **`develop`** 分支；`main` 为稳定线。远端 `origin` = https://github.com/jchensh/godot-clash-pusher （Public）。约定：用户说"提交"时才 commit + push。
 
@@ -140,6 +141,10 @@
 > 34 为 **V2-7（C 模块：内容/数值）开工前提**，用户 2026-06-10 确认（PLAN_V2 §4「V2-7 细化」至此定稿）。
 
 34. **V2-7 拆 3 小步 + 卡池适中 + 关卡=独立遭遇战 + 自由组卡 + 会话内持久化**：按「一步一确认」拆 **7a 扩卡池（纯 JSON + 单测）→ 7b 多关卡 + 选关界面 → 7c 组卡界面**。①**卡池适中**：+6 卡 / +4 单位 → 14 卡 / 9 单位，覆盖坦克/群攻/快攻/空军/远程/法术原型，仍只用 `spawn_unit`/`direct_damage`/`aoe_damage` 三积木、**不做空中/地面克制**（V2 范围外），新内容 = 新数值组合 + 法术调参（统一平衡留 V2-8）。②**关卡 = 独立遭遇战，自带难度**：每关携带 AI 卡组 + 塔血 + `ai_difficulty` + 圣水节奏；做「选关」界面，**取代现有难度选择界面**（难度内嵌进每关）。③**组卡 = 自由选任意 8 张唯一卡，不限费用**（原型阶段最简）。④**所选关卡/卡组经 `GameState` 静态变量跨场景传递**（与 `ai_difficulty` 一致、会话内有效、重启重置、不落盘）。最终流程：菜单 → 选关 → 组卡 → 对局 → 结算。
+
+> 35 为 **V2-8（数值平衡 pass）方法与落地**，用户 2026-06-10 确认（PLAN_V2 §3 C「V2-8 数值平衡」至此落地）。
+
+35. **V2-8 = 轻量数值平衡；数据驱动测量、proxy 不可调难度、难度曲线交真人**：用户定**轻量改动**（只治明显废牌/超模牌，不重构费用曲线），优先保**对局节奏 + 关卡难度曲线**。测量用临时 headless harness（`tools/_balance_probe.gd`，AIController 驱动 AI 侧 + 几何镜像控制器驱动玩家侧、同一套 DIFF；多变体扰动出牌相位+卡序取胜率；**验后即删、不入 git**）。三结论：①**对局节奏健康**——带扰动多变体 75–100% 靠拆王塔决胜、时长 40–120s，唯一 0-0 平局仅出现在「完全对称」人造对照组；②**难度曲线无法用 AI-vs-AI proxy 测量**——难度档在 proxy 下倒挂（镜像玩家钻 hard AI「低阈值+反应式防守」浪费圣水的空子；而 easy AI「攒满砸大兵」朴实难缠），**proxy ≠ 真人**（真人打 easy 关慢/单路/不防守会觉得简单，打 hard 关反应快/会防守/多路会觉得难）→ 难度曲线**交真人实机验收**（清单见 V2-8 逐步历史），本步不靠 proxy 调；③**单卡 raw 强度**印证 skeletons/goblins/mini_pekka/giant 为破防引擎（**不削**，否则增平局）、baby_dragon 为明显废兵。据此**仅改两张卡（纯配置）**：**arrows** `direct_damage 150@3`（被 lightning/fireball 双压、无生态位）→ `aoe_damage radius0.5/140@3`（补「中号群清」：log 小→arrows 中→fireball 全场；**意外收益**：经典卡组里 AOE 箭雨清掉防守群兵，对称对局 0-0 僵局消失、全部拆王塔决胜，直接改善节奏）；**baby_dragon_body** 攻速 `1.6→1.3`（DPS 50→62，让 4 费空中远程兵在混合卡组站得住）。swarm/mini_pekka/zap 及各关卡配置（塔血/回速/时长/难度档/AI 卡组）**本轮不动**——各关数值的调整待真人难度反馈后另起一轮。view 层零改动（`battle_scene._play_spell_fx` 按技能类型派发，arrows 改 AOE 自动走爆点 FX）。
 
 ---
 
@@ -778,4 +783,42 @@
 - `godot --headless --editor --path F:\godotProject --quit` → exit 0，`deck_builder.gd` 无解析/编译错误、`.uid` 生成 ✅
 - `godot --headless --path F:\godotProject --script res://tests/test_runner.gd` → **121/121 全过**（+1 match，旧 120 零回归），SCRIPT ERROR = 0 ✅
 - headless 烟测（临时 harness，验后删）：① `deck_builder` 场景 `_ready` 实跑（`--quit-after`）零报错；② 设 `GameState.player_deck=[mini_pekka,musketeer,baby_dragon,skeletons,...]` + `level_02` → `battle_scene` 实跑，`match.player.deck.get_hand()` = `[mini_pekka,musketeer,baby_dragon,skeletons]`，证明组卡经 GameState→battle_scene→Match 端到端生效、零运行期报错 ✅
+
+### V2-8 — 数值平衡 pass（轻量：arrows→AOE + baby_dragon 提速，纯配置）  （本次提交，macOS）
+**前置决策**：见决策日志 35（轻量、重点对局节奏+难度曲线、proxy 不可调难度、仅改两张卡）。
+
+**测量方法**：临时 headless harness `tools/_balance_probe.gd`（**已删、不入 git**）。用真 `AIController` 驱动 AI(opponent) 侧，写一个几何镜像控制器（部署 0.1、威胁线 0.45、进攻打 end 端塔）驱动 player 侧、同一套 DIFF 难度参数；跑三组：①多变体胜率（固定玩家牌组、只变关卡、扰动出牌相位+卡序 16 变体）→ 难度曲线；②对称对局（双方同牌组同难度）→ 节奏；③单卡 ×8 刷塔 → raw 强度。结论见决策 35（节奏健康 / 难度 proxy 不可读 / 单卡印证）。
+
+**修改**
+- `config/cards.json`：`arrows` `direct_damage 150 / first_enemy_in_lane` → `aoe_damage radius 0.5 / damage 140`（费用仍 3）。
+- `config/units.json`：`baby_dragon_body.attack_speed` 1.6 → 1.3（DPS 50→62）。
+- `config/GameConfig.xlsx`：`uv run --with openpyxl python tools/build_config.py --from-json` 从新 JSON 重建（人类策划镜像）。
+- `tests/test_skill_system.gd`：3 个 `direct_damage` 机制用例（`test_direct_damage_player/opponent_hits_frontmost_enemy`、`test_direct_damage_no_enemy_is_noop`）由 `arrows`（已改 AOE）改指向 `lightning`（仍 direct_damage 280），断言中招血 150→20；arrows 的 AOE 行为由既有 `test_aoe_*` 用例覆盖。
+- view 层**零改动**：`battle_scene._play_spell_fx` 按技能类型派发（卡有 `aoe_damage` 块 → 自动走爆点 FX），arrows 改 AOE 后自动正确显示爆点；`_spawn_arrows` 仍由 lightning（else 分支）复用。
+
+**范围边界**：仅 config（2 JSON + Excel 同步）+ 1 测试文件；`logic/*`、`ai/*`、`view/*` 零改动。swarm/mini_pekka/zap 及各关卡塔血/回速/时长/难度档/AI 卡组本轮不动。
+
+**决策**：见决策日志 35。
+
+**踩坑与修复**
+- 无。改 JSON 前先用 harness 建基线；arrows 改 AOE 经核查显示层 FX 按技能类型自动派发（无错配/报错）、`test_ai_controller`/`test_player` 不受影响（arrows 仍为「无 spawn 法术」、费用不变）。
+- 本机（macOS）`uv` 未装 → 按 `docs/ENVIRONMENT.md` macOS 路径 `brew install uv`（走代理 `127.0.0.1:7897`），再用 `uv run --with openpyxl python tools/build_config.py --from-json/--check` 同步并校验 Excel。
+
+**验收**
+- `uv run --with openpyxl python tools/build_config.py --from-json` + `--check` → `config check ok`，JSON↔Excel 往返一致 ✅
+- `HOME=/private/tmp/godot-home godot --headless --path . --script res://tests/test_runner.gd` → **121/121 全过**（test_skill_system 3 用例改指向 lightning 后零回归）✅
+- harness 复测：arrows→AOE 后对称对局的 0-0 僵局消失、全部拆王塔决胜（35–120s），节奏健康；难度曲线 proxy 倒挂/噪声确认（交真人）✅
+- **难度曲线**：按决策 35 交真人实机验收（清单见下），本步不靠 proxy 调。
+
+**V2-8 难度曲线 — 真人实机验收清单（交用户）**
+逐关在 Godot 编辑器里打一局（菜单 → 选关 → 组卡用默认 → 对局），按下表回报手感：
+
+| 关卡 | 难度档 | 期望手感 | 通过标准 |
+|---|---|---|---|
+| level_02 训练场 | easy | 最简单：AI 慢、只走中路、不防守 | 轻松取胜、有「练手」感 |
+| level_01 新手关 | normal | 入门：AI 会防守+选路，节奏中等 | 需认真打但能赢 |
+| level_03 冠军竞技场 | hard | 难：AI 强卡组(含新卡)+高塔血+反应快 | 有挑战、要打法才赢、不必败 |
+| level_04 闪电赛 | hard | 快节奏：双倍圣水、120s 限时 | 手忙脚乱但刺激、能在限时内决胜 |
+
+反馈格式：每关「胜/负、时长感受、太易/适中/太难、AI 哪里蠢或哪里强」。据反馈再决定是否调各关 `ai_difficulty`/`tower_hp`/`elixir_regen_rate`/`match_duration`/AI 卡组（届时为下一轮配置调整）。
 - **GUI 视觉验收**：组卡界面外观/交互（点选/移除/满 8 开战）属表现层，留用户实机过目（逻辑+接线已验证，不阻塞）。

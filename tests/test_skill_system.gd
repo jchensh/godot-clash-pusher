@@ -65,8 +65,8 @@ func test_direct_damage_player_hits_frontmost_enemy() -> void:
 	var skill = ctx[3]
 	var front = _add_unit(lane, UnitScript.OWNER_OPPONENT, 0.3)   # 离玩家塔(0)更近 → first
 	var back = _add_unit(lane, UnitScript.OWNER_OPPONENT, 0.6)
-	skill.play_card("arrows", UnitScript.OWNER_PLAYER, 0)         # arrows: direct_damage 150
-	assert_almost_eq(front.hp, 150.0, 0.0001, "最逼近玩家塔的敌人中招")
+	skill.play_card("lightning", UnitScript.OWNER_PLAYER, 0)      # lightning: direct_damage 280
+	assert_almost_eq(front.hp, 20.0, 0.0001, "最逼近玩家塔的敌人中招")
 	assert_almost_eq(back.hp, 300.0, 0.0001, "较后的敌人不中招")
 
 func test_direct_damage_opponent_hits_frontmost_enemy() -> void:
@@ -75,8 +75,8 @@ func test_direct_damage_opponent_hits_frontmost_enemy() -> void:
 	var skill = ctx[3]
 	var back = _add_unit(lane, UnitScript.OWNER_PLAYER, 0.4)
 	var front = _add_unit(lane, UnitScript.OWNER_PLAYER, 0.7)     # 离对手塔(1)更近 → first
-	skill.play_card("arrows", UnitScript.OWNER_OPPONENT, 0)
-	assert_almost_eq(front.hp, 150.0, 0.0001, "最逼近对手塔的敌人中招")
+	skill.play_card("lightning", UnitScript.OWNER_OPPONENT, 0)    # lightning: direct_damage 280
+	assert_almost_eq(front.hp, 20.0, 0.0001, "最逼近对手塔的敌人中招")
 	assert_almost_eq(back.hp, 300.0, 0.0001, "较后的敌人不中招")
 
 func test_direct_damage_no_enemy_is_noop() -> void:
@@ -84,7 +84,7 @@ func test_direct_damage_no_enemy_is_noop() -> void:
 	var lane = ctx[2]
 	var skill = ctx[3]
 	var friendly = _add_unit(lane, UnitScript.OWNER_PLAYER, 0.5)   # 只有己方
-	var ok = skill.play_card("arrows", UnitScript.OWNER_PLAYER, 0)
+	var ok = skill.play_card("lightning", UnitScript.OWNER_PLAYER, 0)
 	assert_true(ok, "卡存在")
 	assert_almost_eq(friendly.hp, 300.0, 0.0001, "无敌方 → 空放，不误伤己方")
 
