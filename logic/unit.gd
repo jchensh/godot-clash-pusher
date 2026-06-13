@@ -20,7 +20,12 @@ var damage: float = 0.0
 var attack_speed: float = 1.0      # 攻击间隔（秒/次）
 var move_speed: float = 0.0        # tile/秒
 var attack_range: float = 0.0      # tile 距离
+var aggro_radius: float = 0.0      # tile：敌方单位进此半径 → 分心转火（CR 仇恨，V3-1c）
+var body_radius: float = 0.0       # tile：软推挤体积半径（V3-1d）
 var target_type: String = "ground" # 单位自身类型：ground / air
+
+# 当前索敌目标（Unit 或 Tower，运行时由 Arena 每 tick 设置；攻击/显示用）。
+var current_target = null
 
 var _attack_cooldown: float = 0.0
 
@@ -49,7 +54,10 @@ func setup(
 	attack_speed = maxf(float(config.get("attack_speed", 1.0)), 0.0)
 	move_speed = maxf(float(config.get("move_speed", 0.0)), 0.0)
 	attack_range = maxf(float(config.get("attack_range", 0.0)), 0.0)
+	aggro_radius = maxf(float(config.get("aggro_radius", 0.0)), 0.0)
+	body_radius = maxf(float(config.get("body_radius", 0.0)), 0.0)
 	target_type = str(config.get("target_type", "ground"))
+	current_target = null
 	_attack_cooldown = 0.0
 
 func is_enemy(other: Unit) -> bool:

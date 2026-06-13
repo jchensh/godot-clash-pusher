@@ -39,6 +39,8 @@ UNIT_HEADERS = [
     "attack_interval_s",
     "move_speed_tiles_per_s",
     "attack_range_tiles",
+    "aggro_radius_tiles",
+    "body_radius_tiles",
     "unit_type",
     "notes",
 ]
@@ -187,6 +189,8 @@ def build_json_from_workbook(workbook_path: Path = WORKBOOK_PATH) -> tuple[dict[
             "attack_speed": _number_float(row.get("attack_interval_s"), f"unit {unit_id}.attack_interval_s"),
             "move_speed": _number_float(row.get("move_speed_tiles_per_s"), f"unit {unit_id}.move_speed_tiles_per_s"),
             "attack_range": attack_range,
+            "aggro_radius": _number_float(row.get("aggro_radius_tiles"), f"unit {unit_id}.aggro_radius_tiles"),
+            "body_radius": _number_float(row.get("body_radius_tiles"), f"unit {unit_id}.body_radius_tiles"),
             "target_type": unit_type,
         }
 
@@ -344,6 +348,8 @@ def workbook_from_json(workbook_path: Path = WORKBOOK_PATH) -> None:
                 unit.get("attack_speed", ""),
                 unit.get("move_speed", ""),
                 unit.get("attack_range", ""),
+                unit.get("aggro_radius", ""),
+                unit.get("body_radius", ""),
                 unit.get("target_type", ""),
                 "",
             ]

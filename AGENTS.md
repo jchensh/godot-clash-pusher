@@ -133,4 +133,10 @@ claude mcp remove godot-ai -s user   # 卸载注册（不删插件）
   - **V3-1 = 2D 战斗 reboot（头号工程，取代 lane）**：河 + 左右双桥 + 己方半场自由落点 + 流场绕桥寻路 + 完整 CR 仇恨/分心 + 软推挤碰撞 + 塔会反击。拆 8 小步（a 场地地形 / b 移动寻路 / c 仇恨 / d 软分离+攻击 / e 塔反击 / f 技能 2D[已并入 b] / g AI 2D / h 显示层 2D）。**策略=推倒重来（决策 37）**：V3-1b 即删 lane（量纲 1D→2D），AI/view 暂搁置到 V3-1g/h。
     - V3-1a ✅ 场地与地形：`config/arena.json` + 新 `logic/arena.gd`（地形/塔占位/落点合法性）+ `Battle.build_arena` + `tests/test_arena.gd`。
     - V3-1b ✅ 推倒重来：`Unit` 2D + `arena` 流场绕桥移动 + 删 lane + `skill_system`/`battle`/`match`/`player` 2D + `units`/`cards` 量纲改 tile。AI 搁置（V3-1g）、view 暂坏（V3-1h）。单测 101/101。
-  - **Now**：执行 **V3-1c**（目标获取 + 完整 CR 仇恨/分心）。
+    - V3-1c ✅ 目标获取 + 完整 CR 仇恨/分心：`unit` +`aggro_radius`/`current_target`；`arena.tick` 加索敌（aggro 内转火直追 / 否则锁最近敌塔，每 tick 重选回锁）。单测 107/107。
+    - V3-1d ✅ 软推挤碰撞 + 接敌攻击：`unit` +`body_radius`；`arena.tick` 五段化（冷却/索敌移动/软分离/攻击/清死）——单位有体积互挤、首击免费掉血、能削塔、同 tick 互伤。单测 111/111。
+    - V3-1e ✅ 塔会反击 + 塔毁流场重算：`tower` +战斗数值+冷却；`arena.tick` 加塔攻击；`arena.json` +`tower_combat`。单测 114/114。
+    - V3-1f ✅ SkillSystem 2D（已并入 V3-1b，槽空）。
+    - V3-1g ✅ AIController 2D 重写：2D 部署/威胁/防守/集火最弱塔侧/难度分级；test_ai_controller 加回。单测 121/121。
+    - V3-1h ✅ 显示层 2D 接通（仅 view，整体重写）：tile↔屏幕、地形/桥/塔/自由移动单位/塔火/HUD/结算、tap 落点出牌、AI 自驱。编辑器导入 + 6s headless 零错误；画面/手感留真人验收。
+  - **V3-1 收官**（lane 彻底移除，单测 121/121）。**Now**：等用户实机验收 V3-1h，通过后进 **V3-2 空军**（飞兵越河 + 对空克制）。

@@ -10,6 +10,10 @@
       ]
     },
     "deploy": { "player_y_min": 17.0, "enemy_y_max": 15.0 },
+    "tower_combat": {
+      "king":     { "damage": 50, "attack_range": 7.0, "attack_speed": 1.0 },
+      "princess": { "damage": 50, "attack_range": 7.5, "attack_speed": 0.8 }
+    },
     "towers": {
       "player": {
         "king":           { "x": 9.0,  "y": 29.0, "fw": 4, "fh": 4 },

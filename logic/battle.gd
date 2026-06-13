@@ -59,12 +59,13 @@ func build_arena(level: Dictionary, arena_cfg: Dictionary):
 	arena.setup(arena_cfg)
 
 	var towers_cfg: Dictionary = arena_cfg.get("towers", {})
-	_build_side_towers(UnitScript.OWNER_PLAYER, towers_cfg.get("player", {}), king_hp, princess_hp)
-	_build_side_towers(UnitScript.OWNER_OPPONENT, towers_cfg.get("enemy", {}), king_hp, princess_hp)
+	var combat_cfg: Dictionary = arena_cfg.get("tower_combat", {})
+	_build_side_towers(UnitScript.OWNER_PLAYER, towers_cfg.get("player", {}), king_hp, princess_hp, combat_cfg)
+	_build_side_towers(UnitScript.OWNER_OPPONENT, towers_cfg.get("enemy", {}), king_hp, princess_hp, combat_cfg)
 	arena.build_flow_fields()
 	return arena
 
-func _build_side_towers(owner_id: int, side_cfg: Dictionary, king_hp: float, princess_hp: float) -> void:
+func _build_side_towers(owner_id: int, side_cfg: Dictionary, king_hp: float, princess_hp: float, combat_cfg: Dictionary) -> void:
 	for key in side_cfg:
 		var t: Dictionary = side_cfg[key]
 		var is_king: bool = String(key).begins_with("king")
@@ -74,6 +75,10 @@ func _build_side_towers(owner_id: int, side_cfg: Dictionary, king_hp: float, pri
 		tower.pos = Vector2(float(t.get("x", 0.0)), float(t.get("y", 0.0)))
 		tower.fw = int(t.get("fw", 3))
 		tower.fh = int(t.get("fh", 3))
+		var combat: Dictionary = combat_cfg.get(kind, {})
+		tower.damage = float(combat.get("damage", 0.0))
+		tower.attack_range = float(combat.get("attack_range", 0.0))
+		tower.attack_speed = float(combat.get("attack_speed", 1.0))
 		if owner_id == UnitScript.OWNER_PLAYER:
 			add_player_tower(tower)
 		else:

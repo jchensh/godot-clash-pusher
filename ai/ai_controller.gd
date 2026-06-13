@@ -1,31 +1,30 @@
-# AIController —— 规则 AI（PLAN §4 AI 层；V2-6 攻防结合 + 难度分级）。
+# AIController —— 规则 AI（V3 2D 重构）。
 #
-# 攻防结合、按 lane 选方向、难度分级（决策日志 33）。确定性、无随机。
-# 一律经对称入口 opponent.try_play_card 向逻辑层发指令——与玩家走同一条出牌路径
-# （PLAN §3 对称性）。本身不碰渲染、不碰圣水回涨（那是 Match/Player）。
+# 攻防结合、按「侧」选向、难度分级（决策日志 33，2D 化）。确定性、无随机。
+# 一律经对称入口 opponent.try_play_card(hand_index, pos) 向逻辑层发指令——与玩家同路径。
+# 本身不碰渲染、不碰圣水回涨（那是 Match/Player）。
 #
-# AI = match.opponent（OWNER_OPPONENT）：塔在 progress 1，单位部署 progress 0.9 往 0 推、
-# 攻击玩家塔（lane.tower_at_start，侧路公主毁则 lane.king_at_start 兜底）。
-# 玩家单位从 0 往 1 推，progress 越大越逼近 AI 塔——故 progress >= THREAT_LINE 视为威胁。
+# AI = match.opponent（OWNER_OPPONENT）：塔在上方(y 小)，单位部署己方半场(y<=enemy_y_max)、
+# 向 y 增大方向推进打玩家塔。玩家单位 y 越小越逼近 AI 塔 → y<=THREAT_LINE 视为威胁。
 extends RefCounted
 class_name AIController
 
-# 难度档位参数表（决策日志 33）：
-#   threshold  圣水攒到此值(get_int)才考虑出牌
-#   cooldown   两次出牌最小间隔（秒）
-#   defends    是否做防守（受威胁 lane 优先空投拦截兵）
-#   smart_lane 进攻是否选「守军塔血最低」的 lane 集火（否则固定中路）
+# 难度档位（决策日志 33）：threshold 出牌圣水阈值 / cooldown 出牌最小间隔 /
+# defends 是否防守 / smart 进攻是否集火最弱塔侧（否则固定中路）。
 const DIFF := {
-	"easy":   {"threshold": 8, "cooldown": 2.0, "defends": false, "smart_lane": false},
-	"normal": {"threshold": 6, "cooldown": 1.2, "defends": true,  "smart_lane": true},
-	"hard":   {"threshold": 4, "cooldown": 0.6, "defends": true,  "smart_lane": true},
+	"easy":   {"threshold": 8, "cooldown": 2.0, "defends": false, "smart": false},
+	"normal": {"threshold": 6, "cooldown": 1.2, "defends": true,  "smart": true},
+	"hard":   {"threshold": 4, "cooldown": 0.6, "defends": true,  "smart": true},
 }
 const DEFAULT_DIFF := "normal"
 
-const DEPLOY_PROGRESS := 0.9     # 兵部署位：AI 塔(progress 1)前、己方半场 [0.5,1.0]
-const THREAT_LINE := 0.55        # 玩家单位 progress >= 此值 → 越过中线、威胁 AI 塔
-const FALLBACK_LANE := 1         # easy 固定中路；找不到目标塔时的兜底
-const LANES := [0, 1, 2]
+const OWNER_PLAYER := 0
+const OWNER_OPPONENT := 1
+const DEPLOY_Y := 12.0       # AI 进攻部署 y（己方半场 y<=15，靠前推进）
+const THREAT_LINE := 14.0    # 玩家单位 y <= 此 → 越河进 AI 半场、威胁 AI 塔
+const DEFEND_Y_MIN := 10.0   # 防守空投 y 钳制（避开自家塔占位 / 河）
+const DEFEND_Y_MAX := 14.0
+const FALLBACK_X := 9.0      # easy 固定中路 x
 
 var match_ref      # Match：读战局、经 opponent 出牌
 var config         # ConfigLoader
@@ -38,7 +37,6 @@ func _init(match_ = null, config_ = null, difficulty: String = "") -> void:
 	config = config_
 	_diff_name = difficulty
 
-# 解析难度参数（首次用时；构造未指定则读 match.ai_difficulty，再不行用默认）。
 func _resolve_params() -> void:
 	if not _params.is_empty():
 		return
@@ -63,7 +61,7 @@ func tick(dt: float) -> void:
 	if _decide():
 		_cooldown = float(_params["cooldown"])
 
-# 决策一次，返回是否出了牌：防守优先，其次进攻。
+# 决策一次：防守优先，其次进攻。
 func _decide() -> bool:
 	if match_ref == null or config == null:
 		return false
@@ -72,19 +70,19 @@ func _decide() -> bool:
 		return false
 	if me.elixir.get_int() < int(_params["threshold"]):
 		return false
-	# 1) 防守（normal/hard）：受威胁最大的 lane 空投拦截兵。
+	# 1) 防守（normal/hard）：越河威胁 AI 的玩家单位处空投拦截兵。
 	if bool(_params["defends"]):
-		var dlane := _most_threatened_lane(me.owner_id)
-		if dlane >= 0 and _deploy_best_troop(me, dlane):
-			return true
-		# 没合适的兵 → 落到进攻逻辑（其中法术会落在威胁处，也算防守削兵）。
+		var threat = _most_threatening_player_unit()
+		if threat != null:
+			var dpos := Vector2(float(threat.pos.x), clampf(float(threat.pos.y), DEFEND_Y_MIN, DEFEND_Y_MAX))
+			if _deploy_best_troop(me, dpos):
+				return true
 	# 2) 进攻。
 	return _attack(me)
 
-# 进攻：选 lane（智能档=集火最弱敌塔，easy=固定中路）出最贵可用兵；
-# 若最贵可用是法术且场上有敌方单位，则落在最前敌人处（不空放）。
+# 进攻：最贵可用兵 → 部署在进攻侧；最贵可用是法术且场上有玩家单位 → 落在最前玩家单位处。
 func _attack(me) -> bool:
-	var spell_target = _lead_enemy_anywhere(me.owner_id)   # {lane, prog} 或 null
+	var spell_pos = _lead_player_unit_pos()   # Vector2 或 null
 	var hand: Array = me.deck.get_hand()
 	var best_index := -1
 	var best_cost := -1
@@ -93,7 +91,7 @@ func _attack(me) -> bool:
 			continue
 		var card: Dictionary = config.get_card(str(hand[i]))
 		var is_spell: bool = not _has_spawn(card)
-		if is_spell and spell_target == null:
+		if is_spell and spell_pos == null:
 			continue
 		var cost: int = me.card_cost(str(hand[i]))
 		if cost > best_cost:
@@ -103,51 +101,19 @@ func _attack(me) -> bool:
 		return false
 	var chosen: Dictionary = config.get_card(str(hand[best_index]))
 	if _has_spawn(chosen):
-		return me.try_play_card(best_index, _attack_lane(me.owner_id), DEPLOY_PROGRESS)
-	return me.try_play_card(best_index, int(spell_target["lane"]), float(spell_target["prog"]))
+		return me.try_play_card(best_index, _attack_pos())
+	return me.try_play_card(best_index, spell_pos)
 
-# 进攻 lane：智能档选「守军塔血最低」的 lane（集火，tie-break 取小 index）；easy 固定中路。
-func _attack_lane(my_owner: int) -> int:
-	if not bool(_params["smart_lane"]):
-		return FALLBACK_LANE
-	var best_lane := -1
-	var best_hp := INF
-	for li in LANES:
-		var lane = match_ref.battle.get_lane(li)
-		if lane == null:
-			continue
-		var hp := _target_tower_hp(lane, my_owner)
-		if hp >= 0.0 and hp < best_hp:
-			best_hp = hp
-			best_lane = li
-	return best_lane if best_lane >= 0 else FALLBACK_LANE
+# 进攻部署点：智能档 = 集火「最弱玩家塔」所在的 x 侧；easy = 固定中路。
+func _attack_pos() -> Vector2:
+	if not bool(_params["smart"]):
+		return Vector2(FALLBACK_X, DEPLOY_Y)
+	var t = _weakest_player_tower()
+	var x: float = FALLBACK_X if t == null else float(t.pos.x)
+	return Vector2(x, DEPLOY_Y)
 
-# AI 在该 lane 实际会攻击的玩家塔血：主塔(progress 0 端)活着取主塔，否则取兜底王塔；都没有返回 -1。
-func _target_tower_hp(lane, my_owner: int) -> float:
-	var primary = lane.tower_at_start
-	if primary != null and primary.is_alive() and primary.owner_id != my_owner:
-		return float(primary.hp)
-	var king = lane.king_at_start
-	if king != null and king.is_alive() and king.owner_id != my_owner:
-		return float(king.hp)
-	return -1.0
-
-# 防守目标 lane：玩家单位 progress >= THREAT_LINE 的 lane 中、最逼近 AI 塔者；无则 -1。
-func _most_threatened_lane(my_owner: int) -> int:
-	var best_lane := -1
-	var best_prog := -1.0
-	for li in LANES:
-		var lane = match_ref.battle.get_lane(li)
-		if lane == null:
-			continue
-		var lead := _lead_enemy_progress(lane, my_owner)
-		if lead >= THREAT_LINE and lead > best_prog:
-			best_prog = lead
-			best_lane = li
-	return best_lane
-
-# 在 lane_index 空投「出得起的最贵兵」（防守用 body-block）。返回是否出牌成功。
-func _deploy_best_troop(me, lane_index: int) -> bool:
+# 在 pos 空投「出得起的最贵兵」（防守 body-block 用）。返回是否出牌成功。
+func _deploy_best_troop(me, pos: Vector2) -> bool:
 	var hand: Array = me.deck.get_hand()
 	var best_index := -1
 	var best_cost := -1
@@ -162,7 +128,7 @@ func _deploy_best_troop(me, lane_index: int) -> bool:
 			best_index = i
 	if best_index < 0:
 		return false
-	return me.try_play_card(best_index, lane_index, DEPLOY_PROGRESS)
+	return me.try_play_card(best_index, pos)
 
 func _has_spawn(card: Dictionary) -> bool:
 	for sk in card.get("skills", []):
@@ -170,28 +136,45 @@ func _has_spawn(card: Dictionary) -> bool:
 			return true
 	return false
 
-# 全场最逼近 AI 塔的敌方(玩家)单位：返回 {lane, prog}，无则 null。
-func _lead_enemy_anywhere(my_owner: int):
-	var best_lane := -1
-	var best_prog := -1.0
-	for li in LANES:
-		var lane = match_ref.battle.get_lane(li)
-		if lane == null:
-			continue
-		var lead := _lead_enemy_progress(lane, my_owner)
-		if lead > best_prog:
-			best_prog = lead
-			best_lane = li
-	if best_lane < 0 or best_prog < 0.0:
-		return null
-	return {"lane": best_lane, "prog": best_prog}
+func _player_units() -> Array:
+	var out: Array = []
+	if match_ref == null or match_ref.battle == null or match_ref.battle.arena == null:
+		return out
+	for u in match_ref.battle.arena.get_units():
+		if u.owner_id == OWNER_PLAYER and u.is_alive():
+			out.append(u)
+	return out
 
-# 该 lane 中最逼近 AI 塔(progress 1)的敌方(玩家)单位 progress；无敌方单位返回 -1.0。
-func _lead_enemy_progress(lane, my_owner: int) -> float:
-	var best := -1.0
-	for u in lane.get_units():
-		if u.owner_id == my_owner or not u.is_alive():
-			continue
-		if float(u.progress) > best:
-			best = float(u.progress)
+# 最威胁 AI 的玩家单位：越过威胁线(y<=THREAT_LINE)且最逼近 AI 塔(y 最小)者；无则 null。
+func _most_threatening_player_unit():
+	var best = null
+	var best_y := INF
+	for u in _player_units():
+		var y: float = float(u.pos.y)
+		if y <= THREAT_LINE and y < best_y:
+			best_y = y
+			best = u
+	return best
+
+# 全场最逼近 AI 塔(y 最小)的玩家单位位置（法术目标）；无则 null。
+func _lead_player_unit_pos():
+	var best = null
+	var best_y := INF
+	for u in _player_units():
+		var y: float = float(u.pos.y)
+		if y < best_y:
+			best_y = y
+			best = u
+	return best.pos if best != null else null
+
+# 存活玩家塔中塔血最低者（集火）；tie-break = player_towers 先序。
+func _weakest_player_tower():
+	var best = null
+	var best_hp := INF
+	if match_ref == null or match_ref.battle == null:
+		return null
+	for t in match_ref.battle.player_towers:
+		if t.is_alive() and float(t.hp) < best_hp:
+			best_hp = float(t.hp)
+			best = t
 	return best

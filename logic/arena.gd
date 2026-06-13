@@ -18,6 +18,7 @@ const OWNER_PLAYER := 0
 const OWNER_OPPONENT := 1
 const _EPSILON := 0.000001
 const _NEIGHBORS := [Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0)]
+const _SEPARATION_PASSES := 2   # 每 tick 软分离迭代趟数
 
 var grid_w: int = 0
 var grid_h: int = 0
@@ -116,7 +117,8 @@ func get_units() -> Array:
 func build_flow_fields() -> void:
 	_flow.clear()
 	for t in towers:
-		_flow[t] = _bfs_to_tower(t)
+		if t.is_alive():
+			_flow[t] = _bfs_to_tower(t)
 
 # 塔毁后占位释放、路径改变 → 重算（V3-1e 接通塔被摧毁时调用）。
 func rebuild_flow_fields() -> void:
@@ -157,21 +159,166 @@ func _bfs_to_tower(tower) -> PackedInt32Array:
 			q.append(Vector2i(nx, ny))
 	return dist
 
-# —— 逐 tick 推进（V3-1b：移动 + 寻路；攻击/分离见 V3-1d+）——
-
+# —— 逐 tick 推进（V3-1b 移动/寻路 + V3-1c 仇恨/分心 + V3-1d 软分离/接敌攻击）——
+# 顺序：①冷却 ②索敌+移动(到射程停) ③软推挤分离 ④攻击结算(收集后统一应用) ⑤清死。
 func tick(dt: float) -> void:
 	if dt <= 0.0:
 		return
 	for u in units:
+		u.tick_cooldown(dt)
+	for t in towers:
+		t.tick_cooldown(dt)
+
+	for u in units:
 		if not u.is_alive():
 			continue
-		var target = nearest_enemy_tower(u)
+		var target = _acquire_target(u)
+		u.current_target = target
 		if target == null:
 			continue
-		if _reached_tower(u, target):
-			continue   # 到达攻击距离 → 停下（攻击在 V3-1d/e 接）
-		_step_toward(u, target, dt)
-	_remove_dead()
+		if _in_attack_range(u, target):
+			continue   # 到达攻击距离 → 停下（交给攻击阶段）
+		_move_toward(u, target, dt)
+
+	_separate()
+
+	# 攻击结算（收集后统一应用）：单位 + 塔反击（V3-1e）。
+	var attacks: Array = []
+	for u in units:
+		if not u.is_alive():
+			continue
+		var target = u.current_target
+		if not _target_alive(target):
+			continue
+		if _in_attack_range(u, target) and u.can_attack():
+			attacks.append({"target": target, "damage": float(u.damage)})
+			u.mark_attacked()
+	for t in towers:
+		if not t.is_alive() or t.damage <= 0.0:
+			continue
+		var victim = _nearest_enemy_unit_to_tower(t)
+		if victim != null and t.can_attack():
+			attacks.append({"target": victim, "damage": float(t.damage)})
+			t.mark_attacked()
+	for a in attacks:
+		a["target"].take_damage(a["damage"])
+
+	_remove_dead()   # 塔的摧毁由 Battle._check_victory 处理；这里只清死亡单位
+
+	# 塔被摧毁 → 占位释放、路径改变 → 重算流场（一次性：重算后死塔退出 _flow，不再触发）。
+	for t in towers:
+		if t.is_destroyed() and _flow.has(t):
+			_rebuild_tower_rects()
+			build_flow_fields()
+			break
+
+# 射程内最逼近该塔的存活敌方单位；无则 null。
+func _nearest_enemy_unit_to_tower(tower):
+	var best = null
+	var best_d := INF
+	var r: float = float(tower.attack_range) + _EPSILON
+	for u in units:
+		if not u.is_alive() or u.owner_id == tower.owner_id:
+			continue
+		var d: float = (tower.pos as Vector2).distance_to(u.pos as Vector2)
+		if d <= r and d < best_d:
+			best_d = d
+			best = u
+	return best
+
+# 用存活塔重建占位（死塔占位释放为地面，供流场绕行/通过）。
+func _rebuild_tower_rects() -> void:
+	_tower_rects.clear()
+	for t in towers:
+		if t.is_alive():
+			add_tower_footprint(t.pos.x, t.pos.y, t.fw, t.fh)
+
+# 索敌（V3-1c）：aggro_radius 内有敌方单位 → 最近者（分心）；否则默认锁最近敌塔。
+func _acquire_target(unit):
+	var enemy_unit = _nearest_enemy_unit_in_aggro(unit)
+	if enemy_unit != null:
+		return enemy_unit
+	return nearest_enemy_tower(unit)
+
+# 目标（Unit 或 Tower）是否在攻击距离内：塔目标加塔半径（占位边缘）。
+func _in_attack_range(unit, target) -> bool:
+	if target == null:
+		return false
+	var reach: float = float(unit.attack_range) + _EPSILON
+	if target is Tower:
+		reach += _tower_radius(target)
+	return (unit.pos as Vector2).distance_to(target.pos as Vector2) <= reach
+
+func _target_alive(target) -> bool:
+	return target != null and target.is_alive()
+
+# 向目标推进：塔目标走流场绕桥；单位目标直线趋向（近距）。
+func _move_toward(unit, target, dt: float) -> void:
+	if target is Tower:
+		_step_toward(unit, target, dt)
+	else:
+		_step_toward_point(unit, target.pos, dt)
+
+# 软推挤分离（V3-1d）：固定顺序遍历单位对，重叠则沿连心线各推开半个重叠量。
+# 确定性（i<j 固定序、固定趟数）；推后不进水/塔/出界。完全重叠用确定性方向兜底。
+func _separate() -> void:
+	var n := units.size()
+	for _pass in _SEPARATION_PASSES:
+		for i in range(n):
+			var a = units[i]
+			if not a.is_alive():
+				continue
+			for j in range(i + 1, n):
+				var b = units[j]
+				if not b.is_alive():
+					continue
+				var min_d: float = float(a.body_radius) + float(b.body_radius)
+				if min_d <= 0.0:
+					continue
+				var delta: Vector2 = (b.pos as Vector2) - (a.pos as Vector2)
+				var d: float = delta.length()
+				if d > min_d:
+					continue
+				if d <= _EPSILON:
+					delta = Vector2(0.001 * float(i + 1), 0.001 * float(j + 1))
+					d = delta.length()
+				var push: Vector2 = delta.normalized() * ((min_d - d) * 0.5)
+				_apply_push(a, -push)
+				_apply_push(b, push)
+
+func _apply_push(unit, push: Vector2) -> void:
+	var np: Vector2 = (unit.pos as Vector2) + push
+	var tt := tile_type_at(np)
+	if tt == TILE_WATER or tt == TILE_TOWER or tt == TILE_OOB:
+		return
+	unit.pos = np
+
+# aggro_radius 内最逼近的存活敌方单位（分心目标）；无则 null。确定性 tie-break = units 顺序。
+func _nearest_enemy_unit_in_aggro(unit):
+	var r: float = float(unit.aggro_radius)
+	if r <= 0.0:
+		return null
+	var best = null
+	var best_d := INF
+	for o in units:
+		if o.owner_id == unit.owner_id or not o.is_alive():
+			continue
+		var d: float = unit.pos.distance_to(o.pos)
+		if d <= r and d < best_d:
+			best_d = d
+			best = o
+	return best
+
+# 直线趋向某点（分心追单位用）；安全网不踏水/出界。
+func _step_toward_point(unit, point: Vector2, dt: float) -> void:
+	var dir: Vector2 = point - (unit.pos as Vector2)
+	if dir.length() <= _EPSILON:
+		return
+	var np: Vector2 = (unit.pos as Vector2) + dir.normalized() * float(unit.move_speed) * dt
+	var tt := tile_type_at(np)
+	if tt == TILE_WATER or tt == TILE_OOB:
+		return
+	unit.pos = np
 
 # 该单位当前应推进的目标敌塔：流场距离最近的存活敌塔（不可达则欧氏兜底）。
 func nearest_enemy_tower(unit):
@@ -201,9 +348,6 @@ func nearest_enemy_tower(unit):
 
 func _tower_radius(tower) -> float:
 	return maxf(float(tower.fw), float(tower.fh)) / 2.0
-
-func _reached_tower(unit, tower) -> bool:
-	return unit.pos.distance_to(tower.pos) <= float(unit.attack_range) + _tower_radius(tower) + _EPSILON
 
 func _step_toward(unit, tower, dt: float) -> void:
 	var dir := Vector2.ZERO

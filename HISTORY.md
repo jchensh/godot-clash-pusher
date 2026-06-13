@@ -899,3 +899,78 @@
 - `build_config.py --from-json` + `--check` → `config check ok`（量纲列改名后往返一致）✅
 - 流场寻路（单测断言）：地面兵从 (4,20) 自动绕左桥过河、全程不踏水、停在敌方左公主塔攻击距离内；对手兵对称反向过河 ✅
 - 逻辑层步骤，正确性由单测覆盖（按纪律无需肉眼验收；2D 画面验收在 V3-1h）。
+
+### V3-1c — 目标获取 + 完整 CR 仇恨/分心（逻辑+单测）  （本次提交）
+**前置决策**：见决策日志 36（仇恨=完整 CR 式：默认锁最近敌塔、敌方单位进 `aggro_radius` 转火、可拉扯/风筝、目标死/离开回锁）。
+
+**新增 / 修改**
+- `logic/unit.gd`：+`aggro_radius`（tile，配置读）+ `current_target`（运行时索敌目标，Unit 或 Tower；攻击/显示用）。
+- `logic/arena.gd`：`tick` 加索敌层——`_nearest_enemy_unit_in_aggro`（aggro_radius 内最近存活敌兵）；有则 `current_target`=该兵 + 直线趋向（`_step_toward_point`，到 attack_range 停）；否则默认锁最近敌塔（流场绕桥，沿用 V3-1b）。**每 tick 重选** → 目标死/离开自动回锁。确定性 tie-break = units 顺序。
+- `config/units.json`：每单位 +`aggro_radius`（近战 5.0 / 远程·空军 5.5）。
+- `tools/build_config.py`：`UNIT_HEADERS` + 读/写 +`aggro_radius_tiles` 列；`GameConfig.xlsx` 经 `--from-json` 重建、`--check` 通过。
+- `tests/test_arena.gd`：+6 仇恨测试（默认锁塔 / 进半径分心 / 半径外忽略 / 目标死回锁 / 侧边拉扯追击 / 选最近敌兵）。
+
+**范围边界**：仅 logic + config + 单测。**索敌只决定「打谁/走向谁」，单位还不会真正掉血**（接敌攻击 = V3-1d）。分心目标的「只攻建筑」型单位（巨人式 `targets_only_buildings`）按 PLAN_V3 §5 待细化**暂不引入**（当前所有兵都会被分心；该行为在 d/e 接入攻击/塔火前不可观测，故推迟到 V3-1d/e 或 V3-3 再定）。AI/view 仍搁置（V3-1g/h）。
+
+**踩坑与修复**
+- 无新坑。沿用 V3-1b 类型标注经验（无类型 `unit` 参数 → `var r/d: float`、`unit.pos as Vector2`）。新增 unit 字段 `aggro_radius` 必须同步进 Excel 管线（否则 `--check` 失败）。
+
+**验收**
+- `HOME=/private/tmp/godot-home godot --headless --path . --script res://tests/test_runner.gd` → **107/107 全过**（+6 aggro，旧 101 零回归）✅
+- `build_config.py --from-json` + `--check` → `config check ok`（+aggro 列往返一致）✅
+- 仇恨行为由单测覆盖：默认锁塔 / 进 aggro 转火 / 半径外忽略 / 目标死回锁 / 侧边拉扯追击(距离缩小) / 选最近敌兵 ✅
+
+### V3-1d — 软推挤碰撞 + 接敌攻击（逻辑+单测）  （与 V3-1c 同批待提交）
+**前置决策**：见决策日志 36（碰撞=软推挤：体积半径 + 确定性分离，不用物理引擎）。
+
+**新增 / 修改**
+- `logic/unit.gd`：+`body_radius`（tile，配置读）。
+- `logic/arena.gd`：`tick` 重构为 5 段——①冷却 ②索敌+移动(到射程停) ③**软推挤分离** `_separate`（固定 i<j 序、2 趟、沿连心线各推半个重叠、完全重叠确定性兜底、推后不进水/塔/出界）④**攻击结算** `_in_attack_range` + 收集后统一 `take_damage`（首击免费沿用 `can_attack`；目标可为 Unit 或 Tower——**单位现在能削塔**，王塔归零经 `Battle._check_victory` 判胜负）⑤清死。统一 `_acquire_target`/`_move_toward`/`_in_attack_range`（`target is Tower` 区分流场 vs 直线、塔目标加塔半径）。删旧 `_reached_tower`。
+- `config/units.json`：每单位 +`body_radius`（群兵 0.35 / 普通 0.45–0.55 / 巨人 0.8 / 小龙 0.7）。
+- `tools/build_config.py`：+`body_radius_tiles` 列（读/写）；Excel `--from-json` + `--check` 通过。
+- `tests/test_arena.gd`：+4 测（重叠被推开≈体积和、攻击敌兵首击 -50、攻击敌塔总塔血下降、双方同 tick 互伤）。
+
+**范围边界**：仅 logic + config + 单测。**塔本身还不会主动反击**（=V3-1e）；塔被单位摧毁后**流场暂不重算**（`rebuild_flow_fields` 已备、V3-1e 接通；当前死塔退出索敌、单位改打活塔、路径绕过死塔占位，正确但非最优）。巨人「只攻建筑」仍按 §5 暂缓。AI/view 仍搁置（V3-1g/h）。
+
+**踩坑与修复**
+- 无新坑。`target is Tower`（全局 class_name）区分塔/兵目标、免类型耦合；分离与攻击均确定性（固定序、收集后统一应用）。新增 `body_radius` 同步进 Excel 管线（否则 `--check` 失败）。
+
+**验收**
+- `HOME=/private/tmp/godot-home godot --headless --path . --script res://tests/test_runner.gd` → **111/111 全过**（+4，旧 107 零回归）✅
+- `build_config.py --from-json` + `--check` → `config check ok` ✅
+- 战斗链路由单测覆盖：重叠被推开 / 接敌首击掉血 / 单位削塔 / 双方同 tick 互伤 ✅
+
+### V3-1e — 塔会反击 + 塔毁流场重算（逻辑+单测）  （本批待提交）
+**前置决策**：见决策日志 36（塔反击是 CR 防御核心）。
+**新增 / 修改**
+- `logic/tower.gd`：+`damage`/`attack_range`/`attack_speed` + 冷却（`tick_cooldown`/`can_attack`/`mark_attacked`，与 Unit 同口径）。
+- `logic/arena.gd`：`tick` +塔冷却推进 + **塔攻击**（射程内最近敌方单位、收集后统一结算）；塔被摧毁 → `_rebuild_tower_rects`（死塔占位释放为地面）+ `build_flow_fields`（跳死塔，一次性触发）。+`_nearest_enemy_unit_to_tower`。
+- `config/arena.json`：+`tower_combat`（king/princess 各 damage/attack_range/attack_speed；结构性、不进 Excel）。
+- `logic/battle.gd`：`build_arena` 读 `tower_combat` 设塔战斗数值（`_build_side_towers` 加 combat 参）。
+- `tests/test_arena.gd`：+3（塔打射程内敌兵 / 不打己方·射程外 / 塔毁占位释放重算）；移动测试改高血量（扛塔火走完全程）、两单位互攻测试移到中场无塔火区（y17）。
+**验收**：单测 **114/114**；`config check ok`。塔反击/塔毁重算由单测覆盖。
+
+### V3-1f — SkillSystem 2D 化  （已于 V3-1b 完成）
+推倒重来删 lane 时 `skill_system` 被迫一并 2D 化（决策 37），本槽空出，无独立改动。
+
+### V3-1g — AIController 2D 重写（逻辑+单测）  （本批待提交）
+**前置决策**：见决策日志 33（攻防结合 + 按向选 + 难度分级）2D 化。
+**新增 / 修改**
+- `ai/ai_controller.gd`：从死代码重写为 2D。难度表 `DIFF`(threshold/cooldown/defends/smart) 沿用；`_decide` 防守优先（`_most_threatening_player_unit`：玩家单位 `y<=THREAT_LINE` 越河威胁 → 在其 x 处 `clampf(y,10,14)` 空投最贵兵）→ 否则 `_attack`（最贵可用兵 → `_attack_pos`：智能档集火 `_weakest_player_tower` 的 x 侧、easy 固定中路 x=9；法术落 `_lead_player_unit_pos`）。经 `opponent.try_play_card(idx, pos)`，确定性无随机。
+- `tests/test_ai_controller.gd`（重新加回，7 测）：难度解析(关卡/覆盖)、阈值门控、出最贵兵入场、冷却、easy 阈值高于 hard、受威胁防守空投(投在威胁 x 附近)、集火最弱塔侧(x≈最弱塔)。
+**验收**：单测 **121/121**（+7）。
+
+### V3-1h — 显示层 2D 接通（仅 view，真人实机验收）  （本批待提交）
+**前置决策**：见决策日志 36/37（2D 场地、tap 落点）。
+**新增 / 修改**
+- `view/battle_scene.gd`：**整体重写为 2D**。tile↔屏幕映射（`_t2s`/`_s2t`/`_field_rect`）；`_draw` 画地形（地面/河/双桥 + 己方半场部署区提示）+ 6 塔（按 owner 色/血条变色/王塔标记/摧毁灰块）+ 自由移动单位（队伍色圆 + 空军白环 + 血条）+ 顶栏（王冠/倒计时）+ 圣水条；手牌 `Button`×4（费用/置灰/选中高亮）；结算面板（WIN/LOSE/DRAW + 比分 + REMATCH/MENU）。两段式出牌：点卡选中 → 点己方半场落点 `player.try_play_card(_s2t(click))`；对手由 `AIController` 自驱（`set_opponent_controller`）。读 `GameState.level_id`/`player_deck`。
+**范围边界**：仅 view（+本批其它子步的逻辑）。lane 时代 FX（投射物/受击闪白/爆点/塔碎块等）**未移植**，留 V3-4/V3-7 随美术重做。
+**验收**
+- `godot --headless --editor --path . --quit` → exit 0，`battle_scene.gd` 无解析错误、`.uid` 重生 ✅
+- `timeout 6 godot --headless --path . res://view/battle_scene.tscn` → 6s 实跑（`_ready`→`_process`(match.update→AI→arena.tick)→`_draw`）**零运行期错误** ✅
+- 单测仍 **121/121**（逻辑零回归）✅
+- **画面/手感留真人实机验收**：这是 2D 重构后**首次可玩**——菜单→选关→组卡→对局，应能在己方半场任意点出兵、看兵绕桥推进/转火/挤压/塔互射、拆塔分胜负。验收清单见下。
+
+> **V3-1（2D 战斗核心 reboot）收官**：a 场地 → b 移动寻路 → c 仇恨/分心 → d 软分离+攻击 → e 塔反击 → f(并入 b) → g AI 2D → h 显示层 2D。lane 模型已彻底移除。单测 **121/121**。下一步 **V3-2 空军（飞兵越河 + 对空克制）**。
+
+**V3-1h 真人实机验收清单（交用户）**：在编辑器运行（主场景 main_menu）→ 选关 → 组卡(默认即可) → 对局，确认：① 场地能看出河 + 左右双桥 + 双方各 3 塔；② 己方半场任意点能出兵、越界/水/塔上不能出；③ 地面兵自动**绕到桥**过河、不走水；④ 兵接敌会**转火打架**、能互相**挤开/堵路**；⑤ 兵靠近敌塔时**塔会开火**反击；⑥ 拆掉王塔/超时比塔血能正常**分胜负**并弹结算（REMATCH/MENU 可用）。回报「通过/哪条不对」。
