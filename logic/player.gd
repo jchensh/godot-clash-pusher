@@ -9,9 +9,6 @@ class_name Player
 
 const UnitScript = preload("res://logic/unit.gd")
 
-const DEPLOY_HALF_MAX := 0.5     # 己方半场上界：玩家可部署 [0,0.5]，对手 [0.5,1.0]（决策 26）
-const _EPSILON := 0.000001
-
 var owner_id: int = 0
 var elixir            # Elixir
 var deck              # Deck
@@ -47,10 +44,10 @@ func can_play(hand_index: int) -> bool:
 		return false
 	return elixir.get_int() >= card_cost(card_id)
 
-# 尝试出第 hand_index 格手牌到 (lane_index, target_progress)。
-# 圣水不足/下标非法/兵牌落点越界己方半场 → 返回 false 且不改任何状态；
+# 尝试出第 hand_index 格手牌到 2D 落点 pos（tile 空间）。
+# 圣水不足/下标非法/兵牌落点非法（越界己方半场或落在水/塔）→ 返回 false 且不改任何状态；
 # 成功 → 扣圣水、循环卡组、触发技能。
-func try_play_card(hand_index: int, lane_index: int, target_progress: float = 0.0) -> bool:
+func try_play_card(hand_index: int, pos: Vector2 = Vector2.ZERO) -> bool:
 	if deck == null or elixir == null or skill_system == null:
 		return false
 	var hand: Array = deck.get_hand()
@@ -59,15 +56,15 @@ func try_play_card(hand_index: int, lane_index: int, target_progress: float = 0.
 	var card_id = hand[hand_index]
 	if card_id == null:
 		return false
-	if not _deploy_allowed(card_id, target_progress):
-		return false   # 兵牌落点须在己方半场（决策 26）；纯法术不受限
+	if not _deploy_allowed(card_id, pos):
+		return false   # 兵牌落点须在己方半场且为可走地面（决策 26 / 36）；纯法术不受限
 	var cost := card_cost(card_id)
 	if elixir.get_int() < cost:
 		return false
 	if not elixir.spend(float(cost)):
 		return false
 	deck.play(hand_index)
-	skill_system.play_card(card_id, owner_id, lane_index, target_progress)
+	skill_system.play_card(card_id, owner_id, pos)
 	return true
 
 # 该卡是否会生成单位（含 spawn_unit 积木）。纯伤害法术（fireball/arrows/zap）返回 false。
@@ -79,10 +76,12 @@ func _spawns_troops(card_id) -> bool:
 			return true
 	return false
 
-# 部署是否合法（决策 26）：纯法术不限半场；兵牌落点须落在出牌方己方半场。
-func _deploy_allowed(card_id, target_progress: float) -> bool:
+# 部署是否合法（决策 26 / 36）：纯法术不限；兵牌落点须落在出牌方己方半场且为可走地面（非水/塔）。
+# 校验委托给 Arena.can_deploy（2D 场地权威）。
+func _deploy_allowed(card_id, pos: Vector2) -> bool:
 	if not _spawns_troops(card_id):
 		return true
-	if owner_id == UnitScript.OWNER_PLAYER:
-		return target_progress <= DEPLOY_HALF_MAX + _EPSILON
-	return target_progress >= DEPLOY_HALF_MAX - _EPSILON
+	var arena = skill_system.battle.arena if skill_system != null and skill_system.battle != null else null
+	if arena == null:
+		return true   # 无 arena（理论不应发生）→ 不拦截，交由上层
+	return arena.can_deploy(owner_id, pos)

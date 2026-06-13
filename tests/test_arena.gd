@@ -92,3 +92,59 @@ func test_deploy_enemy_symmetric() -> void:
 	assert_true(arena.can_deploy(UnitScript.OWNER_OPPONENT, Vector2(9, 8)), "对手可在其半场部署")
 	assert_false(arena.can_deploy(UnitScript.OWNER_OPPONENT, Vector2(9, 20)), "对手不可越界到玩家半场")
 	assert_false(arena.can_deploy(UnitScript.OWNER_OPPONENT, Vector2(9, 3)), "对手不可在自家塔占位部署")
+
+# —— 移动 + 流场寻路绕桥（V3-1b 核心）——
+
+func _move_cfg(move_speed: float = 3.0, attack_range: float = 1.0) -> Dictionary:
+	return {
+		"hp": 100.0, "damage": 0.0, "attack_speed": 1.0,
+		"move_speed": move_speed, "attack_range": attack_range, "target_type": "ground",
+	}
+
+func test_ground_unit_routes_over_bridge_without_touching_water() -> void:
+	var ctx = _battle_arena()
+	var battle = ctx[0]
+	var arena = ctx[1]
+	var u = UnitScript.new("runner", UnitScript.OWNER_PLAYER, _move_cfg(), Vector2(4, 20))
+	arena.add_unit(u)
+	var min_y: float = u.pos.y
+	var touched_water := false
+	for i in 300:
+		battle.step(0.1)
+		min_y = minf(min_y, u.pos.y)
+		if arena.tile_type_at(u.pos) == ArenaScript.TILE_WATER:
+			touched_water = true
+	assert_false(touched_water, "地面兵全程不踏水（只经桥过河）")
+	assert_true(min_y < 14.0, "越过河到达敌方半场(y<14); 实际 min_y=%.1f" % min_y)
+
+func test_ground_unit_reaches_enemy_tower_and_stops() -> void:
+	var ctx = _battle_arena()
+	var battle = ctx[0]
+	var arena = ctx[1]
+	var u = UnitScript.new("runner", UnitScript.OWNER_PLAYER, _move_cfg(), Vector2(4, 20))
+	arena.add_unit(u)
+	for i in 300:
+		battle.step(0.1)
+	var princess := Vector2(4.5, 8.0)   # 敌方左公主塔
+	assert_true(u.pos.distance_to(princess) <= 3.0,
+		"停在敌方左公主塔攻击距离内; dist=%.2f pos=(%.1f,%.1f)" % [u.pos.distance_to(princess), u.pos.x, u.pos.y])
+	var before: Vector2 = u.pos
+	for i in 10:
+		battle.step(0.1)
+	assert_true(u.pos.distance_to(before) < 0.5, "到达后停下（位置稳定）")
+
+func test_opponent_unit_routes_downward_over_bridge() -> void:
+	var ctx = _battle_arena()
+	var battle = ctx[0]
+	var arena = ctx[1]
+	var u = UnitScript.new("o", UnitScript.OWNER_OPPONENT, _move_cfg(), Vector2(4, 12))
+	arena.add_unit(u)
+	var max_y: float = u.pos.y
+	var touched_water := false
+	for i in 300:
+		battle.step(0.1)
+		max_y = maxf(max_y, u.pos.y)
+		if arena.tile_type_at(u.pos) == ArenaScript.TILE_WATER:
+			touched_water = true
+	assert_false(touched_water, "对手兵也只经桥过河")
+	assert_true(max_y > 18.0, "对手兵越河到达玩家半场(y>18); 实际 max_y=%.1f" % max_y)

@@ -60,7 +60,7 @@
     "skills": [
       {
         "type": "aoe_damage",
-        "radius": 1.5,
+        "radius": 3.0,
         "damage": 300
       }
     ]
@@ -71,7 +71,7 @@
     "skills": [
       {
         "type": "aoe_damage",
-        "radius": 0.5,
+        "radius": 2.5,
         "damage": 140
       }
     ]
@@ -148,7 +148,7 @@
     "skills": [
       {
         "type": "aoe_damage",
-        "radius": 0.4,
+        "radius": 2.0,
         "damage": 130
       }
     ]

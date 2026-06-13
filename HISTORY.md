@@ -52,7 +52,7 @@
 
 > **阶段进度（2026-06-10）**：V1 已收官（Step 0–8）。**V2 进行中**，顺序 **A（3-lane）→ D（换皮）→ B（AI 深度）→ C（内容/数值）**，权威规划见 [PLAN_V2.md](PLAN_V2.md)。**A 模块（3-lane）已完成**（V2-1+V2-2）。**D 模块进行中**：V2-3 程序化换皮 + V2-4 动画与特效（攻击/受击/死亡/投射物/AOE爆点/塔摧毁，均仅 view 层、逻辑零改动）已完成并通过视觉验收。配置体系已迁移为 JSON 运行时配置 + `GameConfig.xlsx` 人类策划工作簿镜像；agent 默认改 JSON，确认后同步 Excel。**V2-5（D 模块收尾）进行中**：按一步一确认拆 3 小步（5a 场景闭环骨架 / 5b 战斗内 UI 美化 / 5c 音频，**音频缓做、UI 保持全英文**，决策日志 32）；**V2-5a（菜单+结算闭环）与 V2-5b（战斗内 HUD 美化：顶部信息条/分段圣水条/卡面+费用徽章+选中框/塔血条变色/结算按钮样式）均已完成并通过视觉验收**；**5c 音频按决策 32 缓做**。至此 **D 模块除缓做音频外收尾完成**。**B 模块 V2-6（规则 AI 升级：攻防结合 + 按 lane 选进攻方向 + `ai_difficulty` 难度 easy/normal/hard 分级，逻辑层 + 单测，决策 33）已完成**；并加了**难度选择界面**（主菜单→难度→对局，仅显示层）。**C 模块 V2-7（内容/数值）**：按一步一确认拆 3 小步（7a 扩卡池 / 7b 多关卡+选关 / 7c 组卡界面，决策 34）。**V2-7a 扩卡池（+6 卡 +4 单位 → 14 卡 / 9 单位，仍走三积木）+ V2-7b 多关卡（4 关、各自带难度/节奏/AI 卡组）+ 选关界面（取代难度选择界面）+ V2-7c 组卡界面（自由选 8 张、经 `GameState.player_deck` 覆盖关卡默认）均已完成**（单测 121/121 + headless 烟测），至此 **V2-7（扩卡池+组卡+多关卡）收尾完成**。新流程：菜单 → 选关 → 组卡 → 对局 → 结算。**C 模块 V2-8（数值平衡 pass，决策 35）已完成**：轻量改动，重点保「对局节奏 + 难度曲线」。用临时 headless harness（AIController 驱动 AI 侧 + 镜像控制器驱动玩家侧、多变体取胜率，验后删不入 git）测量得：①对局节奏健康（多变体 75–100% 拆王塔决胜）；②难度曲线无法用 AI-vs-AI proxy 测量（难度档在 proxy 下倒挂、proxy ≠ 真人）→ 交真人实机验收（清单见 V2-8 逐步历史）；③单卡强度印证 swarm/mini_pekka/giant 为破防引擎（不削）、baby_dragon 为废兵。据此**仅改两张卡**（纯配置）：`arrows` 单体 150 → AOE radius0.5/140（补中号群清生态位；意外消除了对称对局的 0-0 僵局、节奏更利落）、`baby_dragon_body` 攻速 1.6→1.3（DPS 50→62）。**至此 V2 施工图（V2-1～V2-8）主线全部完成**；剩 5c 音频缓做。**V2 不做**空中/地面克制。全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
 
-> **V3 启动（2026-06-10）**：用户判断 3-lane 简化丢失了 CR「兵自由走位的轻 RTS」核心乐趣，决定**重构战斗核心为 2D 场地**（河 + 双桥 + 己方半场自由落点 + 流场绕桥 + 完整仇恨 + 软推挤 + 塔反击，取代 lane），并做成**买断制单机**（短战役 + Roguelite、2D 卡通精灵）。方向见决策 36，权威规划见 [PLAN_V3.md](PLAN_V3.md)。**V3-1（2D 战斗 reboot）** 为头号工程、拆 8 小步，用绞杀式迁移（arena 与 lane 并存、单测全程绿、末步删 lane）。本机开发环境已切 macOS（见 `docs/ENVIRONMENT.md` + 各命令用 `HOME=/private/tmp/godot-home` 隔离、push/下载走代理 `127.0.0.1:7897`）。
+> **V3 启动（2026-06-10）**：用户判断 3-lane 简化丢失了 CR「兵自由走位的轻 RTS」核心乐趣，决定**重构战斗核心为 2D 场地**（河 + 双桥 + 己方半场自由落点 + 流场绕桥 + 完整仇恨 + 软推挤 + 塔反击，取代 lane），并做成**买断制单机**（短战役 + Roguelite、2D 卡通精灵）。方向见决策 36，权威规划见 [PLAN_V3.md](PLAN_V3.md)。**V3-1（2D 战斗 reboot）** 为头号工程、拆 8 小步；重构策略 V3-1b 起改为**推倒重来**（决策 37：直接删 lane、量纲 1D→2D，AI/view 暂搁置到 V3-1g/h）。本机开发环境已切 macOS（见 `docs/ENVIRONMENT.md` + 各命令用 `HOME=/private/tmp/godot-home` 隔离、push/下载走代理 `127.0.0.1:7897`）。
 
 **测试现状**：121 个测试全部通过（config_loader **11** + elixir 10 + sim_clock 6 + deck 9 + unit 6 + lane 8 + tower 6 + battle 10 + battle_v2 12 + skill_system 11 + **player 10** + match **8** + **ai_controller 11** + smoke 3）。配置源表存在性已纳入 `test_config_loader.gd`；V2-3/V2-4/V2-5a/V2-5b 为纯 view/场景层，逻辑零改动；V2-6 为逻辑层（AI 攻防/难度），ai_controller 单测从 6 增到 11；V2-7a 扩卡池 config_loader 8→10；V2-7b 多关卡 config_loader 10→11 + match 6→7；V2-7c 组卡 match 7→8（Match.setup 加 player_deck 覆盖参数；选关/组卡界面纯 view 层）。V2-8 数值平衡为纯配置，测试数不变（121）：`test_skill_system` 3 个 direct_damage 机制用例由 `arrows`（已改 AOE）改指向 `lightning`（仍 direct_damage 280），arrows 的 AOE 行为由既有 aoe 机制用例覆盖。
 
@@ -150,7 +150,11 @@
 
 > 36 为 **V3（战斗核心 2D 重构 + 买断制单机）方向锁定**，用户 2026-06-10 确认。
 
-36. **V3 = 战斗核心 2D reboot + 混合主轴 + 2D 卡通精灵**：用户判断「3-lane + 无自由地形」的简化丢失了皇室战争「兵自由走位的轻 RTS」核心乐趣，要求向 CR 看齐重构。锁定四大取舍：①**战斗模型 2D 化（取代 lane）**——河 + 左右双桥、每方 2 公主 1 王、**己方半场任意落点**、地面兵流场绕桥、空军越河（**首版先全地面**、空军 V3-2）；②**仇恨 = 完整 CR 式**（默认锁最近敌塔、敌方单位进 `aggro_radius` 转火，可拉扯/风筝）；③**出兵领土 = 固定己方半场**（不做破塔扩张领土，留后续）；④**碰撞 = 软推挤**（体积半径 + 确定性分离，**不用物理引擎**、可单测）。**单机主轴 = 混合**（5–6 关脚本短战役兼新手教学 → Roguelite 终盘：3 act / draft 三选一 / relic=JSON 数值修正器 / 永久死亡 / 局间 meta 解锁，复用 `Match`/`Battle`/`AIController`/JSON 管线）。**美术 = 2D 卡通精灵**（静态精灵 + 现有 tween 鞭 动画、素材包打底）。施工图 + 程序重构设计见 [PLAN_V3.md](PLAN_V3.md)。**改 CLAUDE.md 硬性 DO-NOT**：1D lane 进度 → 抽象 2D 场地坐标（tile 空间）；「不用物理引擎」保留（自写确定性软分离）。**重构策略 = 绞杀式（strangler）**：新 `arena.gd` 与旧 `lane.gd` 并存、逐子步迁移、**单测全程绿**，待 V3-1h 全通后再删 lane.gd 及 lane 单测。
+36. **V3 = 战斗核心 2D reboot + 混合主轴 + 2D 卡通精灵**：用户判断「3-lane + 无自由地形」的简化丢失了皇室战争「兵自由走位的轻 RTS」核心乐趣，要求向 CR 看齐重构。锁定四大取舍：①**战斗模型 2D 化（取代 lane）**——河 + 左右双桥、每方 2 公主 1 王、**己方半场任意落点**、地面兵流场绕桥、空军越河（**首版先全地面**、空军 V3-2）；②**仇恨 = 完整 CR 式**（默认锁最近敌塔、敌方单位进 `aggro_radius` 转火，可拉扯/风筝）；③**出兵领土 = 固定己方半场**（不做破塔扩张领土，留后续）；④**碰撞 = 软推挤**（体积半径 + 确定性分离，**不用物理引擎**、可单测）。**单机主轴 = 混合**（5–6 关脚本短战役兼新手教学 → Roguelite 终盘：3 act / draft 三选一 / relic=JSON 数值修正器 / 永久死亡 / 局间 meta 解锁，复用 `Match`/`Battle`/`AIController`/JSON 管线）。**美术 = 2D 卡通精灵**（静态精灵 + 现有 tween 鞭 动画、素材包打底）。施工图 + 程序重构设计见 [PLAN_V3.md](PLAN_V3.md)。**改 CLAUDE.md 硬性 DO-NOT**：1D lane 进度 → 抽象 2D 场地坐标（tile 空间）；「不用物理引擎」保留（自写确定性软分离）。**重构策略 = 绞杀式（strangler）**：新 `arena.gd` 与旧 `lane.gd` 并存、逐子步迁移、**单测全程绿**，待 V3-1h 全通后再删 lane.gd 及 lane 单测。（⚠️ 此条 V3-1b 起被决策 37 覆盖为「推倒重来」。）
+
+> 37 为 **V3-1b 重构策略改「推倒重来」+ AI 搁置**，用户 2026-06-10 确认（覆盖决策 36 的绞杀式）。
+
+37. **V3-1b = 推倒重来（rip-out），非绞杀式**：摸查发现 `move_speed`/`attack_range` 量纲在 lane(0~1) 与 2D(tile) 冲突、且共用同一 Unit 字段——保并存需在 units 上挂双份字段（用户否决）。故改**推倒重来**：直接改 tile 量纲、**删 `lane.gd`**。因仅 `battle.gd` preload lane（`view/*`、`ai_controller` 是运行时动态调用、解析不受影响），删 lane 的连带原子 = Unit 2D + arena 移动 + battle 去 lane + **`skill_system` 2D（原 V3-1f 被迫提前并入 V3-1b）** + config/units/cards 量纲 + match/player 2D + 删改相关单测。**AI 暂搁置**（`ai_controller.gd` 留死代码、删 `test_ai_controller`，V3-1g 2D 重写时加回）；**view 暂坏**（解析通过、不运行，V3-1h 接通）。代价：V3-1b~g 期间无可玩画面、只有 headless 单测（用户已接受）。
 
 ---
 
@@ -832,7 +836,7 @@
 
 ## V3 — 战斗核心 2D 重构 + 买断制单机（进行中）
 
-> 方向见决策日志 36，权威规划见 [PLAN_V3.md](PLAN_V3.md)。头号工程 **V3-1 = 2D 战斗 reboot**（取代 lane），拆 8 小步（a 场地地形 / b 移动寻路 / c 仇恨 / d 软分离+攻击 / e 塔反击 / f 技能 2D / g AI 2D / h 显示层 2D）。**绞杀式迁移**：新 `arena.gd` 与旧 `lane.gd` 并存、逐步迁移、单测全程绿，V3-1h 全通后再删 lane。坐标改抽象 2D tile 空间（CLAUDE.md 硬性 DO-NOT 已相应修订）。
+> 方向见决策日志 36，权威规划见 [PLAN_V3.md](PLAN_V3.md)。头号工程 **V3-1 = 2D 战斗 reboot**（取代 lane），拆 8 小步（a 场地地形 / b 移动寻路 / c 仇恨 / d 软分离+攻击 / e 塔反击 / f 技能 2D[已并入 b] / g AI 2D / h 显示层 2D）。**策略=推倒重来（决策 37，弃绞杀）**：V3-1b 即删 lane（量纲 1D→2D），AI/view 暂搁置到 V3-1g/h；其余子步仍逐步推进、单测护栏。坐标改抽象 2D tile 空间（CLAUDE.md 硬性 DO-NOT 已相应修订）。
 
 ### V3-1a — 场地与地形（新 Arena + Battle.build_arena + 落点合法性，逻辑+单测）  （本次提交）
 **前置决策**：见决策日志 36（2D 场地、河+双桥、每方 2 公主 1 王、固定己方半场落点）。本步只做**地形 + 塔占位 + 落点合法性（纯查询）**；单位移动/寻路/tick 见 V3-1b+。
@@ -858,3 +862,40 @@
 - `godot --headless --editor --path . --quit` → exit 0、`Arena` 类注册、新 `.uid` 生成、零解析/编译错误 ✅
 - 纯逻辑层步骤，正确性由单测覆盖（按纪律无需肉眼验收）✅
 - **GUI 视觉验收**：组卡界面外观/交互（点选/移除/满 8 开战）属表现层，留用户实机过目（逻辑+接线已验证，不阻塞）。
+
+### V3-1b — 2D 单位移动 + 流场绕桥寻路（推倒重来：删 lane，逻辑+单测）  （本次提交）
+**前置决策**：见决策日志 37（推倒重来、删 lane、`skill_system` 2D 提前、AI 搁置）。
+
+**新增 / 修改（逻辑）**
+- `logic/unit.gd`：1D → 2D。移除 `progress/lane_index/get_direction/move_to`，改 `pos:Vector2`；`move_speed`=tile/秒、`attack_range`=tile 距离（量纲改）；+`is_enemy/distance_to`。
+- `logic/arena.gd`：+`units`/`towers`/`_flow`；`add_tower`(存引用+占位)、`add_unit`/`get_units`；**流场寻路** `build_flow_fields`/`_bfs_to_tower`（对每塔 BFS 距离场，4 邻、地面可走）；`tick(dt)`=逐单位选最近敌塔(流场距离)→沿梯度走、自动绕到最近桥过河→到 `attack_range+塔半径` 停（攻击留 V3-1d）；安全网不踏水/出界。
+- `logic/battle.gd`：删 `lane.gd` preload / `lanes` / `add_lane`/`get_lane` / `build_v1_single_lane` / `build_v2_three_lanes`；`build_arena` 改 `arena.add_tower` + `arena.build_flow_fields`；`step`→`arena.tick`。
+- `logic/skill_system.gd`：2D 化（原 V3-1f 提前）。`play_card(card_id, owner, pos:Vector2)`；spawn 在 pos（count>1 确定性散布避免完全重叠）；`direct_damage`=最逼近 pos 的敌方单位；`aoe_damage`=pos 圆心、tile 欧氏半径。
+- `logic/player.gd`：`try_play_card(hand_index, pos)`；`_deploy_allowed` 委托 `arena.can_deploy`（地面 + 己方半场）。
+- `logic/match.gd`：`setup` 改 `build_arena(level, config.get_arena("default"))`。
+- `logic/config_loader.gd`：`attack_range` 校验 `0~1` → `≥0`（tile 量纲、无上限）。
+
+**配置**
+- `config/units.json`：`move_speed`(tile/秒)/`attack_range`(tile) 全改 tile 量纲（近战 ~1.0–1.2、archer 4.5、musketeer 5.5；giant 1.1 / goblin 2.6 tile/秒等）。
+- `config/cards.json`：3 个 AOE `radius` 改 tile（fireball 1.5→3.0、arrows 0.5→2.5、log 0.4→2.0）。
+- `tools/build_config.py`：Excel 列 `move_speed_lane_per_s`→`move_speed_tiles_per_s`、`attack_range_lane_ratio`→`attack_range_tiles`，去 0~1 校验（改 ≥0、attack_range 用 float）。`GameConfig.xlsx` 经 `--from-json` 重建、`--check` 通过。
+
+**删除**
+- `logic/lane.gd`（+uid）；`tests/test_lane.gd`、`tests/test_battle_v2.gd`（lane 拓扑）、`tests/test_ai_controller.gd`（AI 搁置，V3-1g 加回）（+uids）。
+
+**测试（重写 + 新增）**
+- 重写 `test_unit`（2D 位置/血量/冷却）、`test_battle`（arena 胜负——直接削塔验规则，单位攻击塔留 V3-1d）、`test_skill_system`（2D spawn/aoe/direct）、`test_match`（出牌→arena 单位 y 减小推进）、`test_player`（2D 落点半场/地面校验）。
+- `test_arena` +3 移动测试：地面兵绕桥过河**全程不踏水**、到敌塔停下、对手兵对称反向过河。
+
+**范围边界 / 现状**：游戏**暂无可玩画面**——`view/*` 与 `ai/ai_controller.gd` 仍引用旧 API（运行时坏、解析通过），分别留 V3-1h（显示层 2D）/ V3-1g（AI 2D）重写。本步正确性由 headless 单测覆盖。
+
+**踩坑与修复**
+- GDScript 类型推断：遍历无类型 const `_NEIGHBORS`（Vector2i）与无类型 `unit` 参数 → `:=` 推断失败；给循环变量标 `for off: Vector2i`、距离/坐标用显式 `var d: float`/`var min_y: float` 等。
+- `build_config.py` 自带 `attack_range 0~1` 校验阻断 `--check` → 同步去除 + 列改 tile 语义。
+
+**验收**
+- `HOME=/private/tmp/godot-home godot --headless --path . --script res://tests/test_runner.gd` → **101/101 全过**（删 3 测试文件共 33 测；重写若干 + 新增 arena 移动测；预检 res://logic 编译通过）✅
+- `godot --headless --editor --path . --quit` → exit 0：`view/*`、`ai_controller` 解析通过（仅运行时坏，符合预期）、`.uid` 重生 ✅
+- `build_config.py --from-json` + `--check` → `config check ok`（量纲列改名后往返一致）✅
+- 流场寻路（单测断言）：地面兵从 (4,20) 自动绕左桥过河、全程不踏水、停在敌方左公主塔攻击距离内；对手兵对称反向过河 ✅
+- 逻辑层步骤，正确性由单测覆盖（按纪律无需肉眼验收；2D 画面验收在 V3-1h）。

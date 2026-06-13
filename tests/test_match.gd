@@ -48,14 +48,14 @@ func test_update_is_frame_rate_independent() -> void:
 
 func test_update_drives_battle_and_units_advance() -> void:
 	var m = _match()
-	m.update(5.0)                                   # 攒到 5 圣水
-	var ok = m.player.try_play_card(0, 0, 0.1)      # 出骑士（费 3）
+	m.update(5.0)                                       # 攒到 5 圣水
+	var ok = m.player.try_play_card(0, Vector2(9, 20))  # 出骑士（费 3）到己方半场
 	assert_true(ok, "出牌成功")
-	var lane = m.battle.get_lane(0)
-	assert_eq(lane.get_units().size(), 1, "骑士入场")
-	var p0: float = lane.get_units()[0].progress
+	var units = m.battle.arena.get_units()
+	assert_eq(units.size(), 1, "骑士入场")
+	var y0: float = units[0].pos.y
 	m.update(1.0)
-	assert_true(lane.get_units()[0].progress > p0, "对局推进，骑士向敌塔前进")
+	assert_true(units[0].pos.y < y0, "对局推进，骑士向敌塔(y 减小)前进")
 
 func test_setup_other_level_carries_its_difficulty_and_config() -> void:
 	# V2-7b：关卡=独立遭遇战，自带难度/时长。Match.setup 用所选关卡 id 即生效。

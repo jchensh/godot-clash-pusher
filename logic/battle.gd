@@ -13,7 +13,6 @@ extends RefCounted
 class_name Battle
 
 const TowerScript = preload("res://logic/tower.gd")
-const LaneScript = preload("res://logic/lane.gd")
 const UnitScript = preload("res://logic/unit.gd")
 const ArenaScript = preload("res://logic/arena.gd")
 
@@ -32,8 +31,7 @@ var player_towers: Array = []     # Tower
 var opponent_towers: Array = []   # Tower
 var player_king = null            # 玩家王塔（胜负关键）
 var opponent_king = null          # 对手王塔
-var lanes: Array = []             # Lane（V2 1D 模型；V3 2D 重构期间与 arena 并存）
-var arena = null                  # Arena（V3 2D 场地；V3-1 重构逐步接管）
+var arena = null                  # Arena（V3 2D 场地：地形/单位/塔/流场/tick）
 
 func _init(match_duration_: float = 0.0) -> void:
 	match_duration = maxf(match_duration_, 0.0)
@@ -48,82 +46,9 @@ func add_opponent_tower(tower) -> void:
 	if tower.is_king():
 		opponent_king = tower
 
-func add_lane(lane) -> void:
-	lanes.append(lane)
-
-func get_lane(lane_index: int):
-	for lane in lanes:
-		if lane.lane_index == lane_index:
-			return lane
-	return null
-
-# 便捷搭建：按 level 配置建一个 V1 单 lane 对局
-# （双方各 1 王 + 2 公主；单 lane 两端接双方王塔）。返回该 lane 供调用方部署单位。
-func build_v1_single_lane(level: Dictionary):
-	match_duration = float(level.get("match_duration", 0.0))
-	var tower_hp: Dictionary = level.get("tower_hp", {})
-	var king_hp := float(tower_hp.get("king", 0.0))
-	var princess_hp := float(tower_hp.get("princess", 0.0))
-
-	var p_king = TowerScript.new(TowerScript.KIND_KING, UnitScript.OWNER_PLAYER, king_hp)
-	add_player_tower(p_king)
-	add_player_tower(TowerScript.new(TowerScript.KIND_PRINCESS, UnitScript.OWNER_PLAYER, princess_hp))
-	add_player_tower(TowerScript.new(TowerScript.KIND_PRINCESS, UnitScript.OWNER_PLAYER, princess_hp))
-
-	var o_king = TowerScript.new(TowerScript.KIND_KING, UnitScript.OWNER_OPPONENT, king_hp)
-	add_opponent_tower(o_king)
-	add_opponent_tower(TowerScript.new(TowerScript.KIND_PRINCESS, UnitScript.OWNER_OPPONENT, princess_hp))
-	add_opponent_tower(TowerScript.new(TowerScript.KIND_PRINCESS, UnitScript.OWNER_OPPONENT, princess_hp))
-
-	var lane = LaneScript.new(0)
-	lane.set_towers(p_king, o_king)   # end0(progress 0)=玩家王塔, end1(progress 1)=对手王塔
-	add_lane(lane)
-	return lane
-
-# 便捷搭建：按 level 配置建一个 V2 三 lane 对局（PLAN_V2 §3 A）。
-# 拓扑：lane 0 左→公主、lane 1 中→王、lane 2 右→公主；双方各 1 王 + 2 公主。
-# 侧路（0/2）挂兜底王塔：公主塔被摧毁后该 lane 单位转打王塔（皇室战争式）。
-# 6 塔全部计入 player/opponent_towers，胜负与超时比塔血规则与 V1 一致。返回 lanes 数组。
-func build_v2_three_lanes(level: Dictionary) -> Array:
-	match_duration = float(level.get("match_duration", 0.0))
-	var tower_hp: Dictionary = level.get("tower_hp", {})
-	var king_hp := float(tower_hp.get("king", 0.0))
-	var princess_hp := float(tower_hp.get("princess", 0.0))
-
-	var p_king = TowerScript.new(TowerScript.KIND_KING, UnitScript.OWNER_PLAYER, king_hp)
-	var p_left = TowerScript.new(TowerScript.KIND_PRINCESS, UnitScript.OWNER_PLAYER, princess_hp)
-	var p_right = TowerScript.new(TowerScript.KIND_PRINCESS, UnitScript.OWNER_PLAYER, princess_hp)
-	add_player_tower(p_king)
-	add_player_tower(p_left)
-	add_player_tower(p_right)
-
-	var o_king = TowerScript.new(TowerScript.KIND_KING, UnitScript.OWNER_OPPONENT, king_hp)
-	var o_left = TowerScript.new(TowerScript.KIND_PRINCESS, UnitScript.OWNER_OPPONENT, princess_hp)
-	var o_right = TowerScript.new(TowerScript.KIND_PRINCESS, UnitScript.OWNER_OPPONENT, princess_hp)
-	add_opponent_tower(o_king)
-	add_opponent_tower(o_left)
-	add_opponent_tower(o_right)
-
-	var lane_left = LaneScript.new(0)
-	lane_left.set_towers(p_left, o_left)
-	lane_left.set_king_fallback(p_king, o_king)
-	add_lane(lane_left)
-
-	var lane_mid = LaneScript.new(1)
-	lane_mid.set_towers(p_king, o_king)   # 中路主塔即王塔，无需兜底
-	add_lane(lane_mid)
-
-	var lane_right = LaneScript.new(2)
-	lane_right.set_towers(p_right, o_right)
-	lane_right.set_king_fallback(p_king, o_king)
-	add_lane(lane_right)
-
-	return lanes
-
 # 便捷搭建：按 level + arena 配置建一个 V3 2D 场地对局（PLAN_V3 §4）。
-# 建 2D 地形 + 双方各 3 塔（2 公主 + 1 王，按 arena 塔位摆放、注册占位）。
+# 建 2D 地形 + 双方各 3 塔（2 公主 + 1 王，按 arena 塔位摆放、注册占位）+ 流场。
 # 胜负与超时比塔血规则沿用 V1/V2（6 塔全部计入 player/opponent_towers）。返回 Arena。
-# V3-1a：只建地形与塔；单位移动/寻路/tick 见后续小步。
 func build_arena(level: Dictionary, arena_cfg: Dictionary):
 	match_duration = float(level.get("match_duration", 0.0))
 	var tower_hp: Dictionary = level.get("tower_hp", {})
@@ -136,6 +61,7 @@ func build_arena(level: Dictionary, arena_cfg: Dictionary):
 	var towers_cfg: Dictionary = arena_cfg.get("towers", {})
 	_build_side_towers(UnitScript.OWNER_PLAYER, towers_cfg.get("player", {}), king_hp, princess_hp)
 	_build_side_towers(UnitScript.OWNER_OPPONENT, towers_cfg.get("enemy", {}), king_hp, princess_hp)
+	arena.build_flow_fields()
 	return arena
 
 func _build_side_towers(owner_id: int, side_cfg: Dictionary, king_hp: float, princess_hp: float) -> void:
@@ -152,7 +78,7 @@ func _build_side_towers(owner_id: int, side_cfg: Dictionary, king_hp: float, pri
 			add_player_tower(tower)
 		else:
 			add_opponent_tower(tower)
-		arena.add_tower_footprint(tower.pos.x, tower.pos.y, tower.fw, tower.fh)
+		arena.add_tower(tower)
 
 func is_over() -> bool:
 	return result != RESULT_ONGOING
@@ -166,12 +92,12 @@ func total_tower_hp(side_towers: Array) -> float:
 		sum += float(t.hp)
 	return sum
 
-# 推进一个逻辑步（dt 秒）：先结算各 lane，再计时与胜负。对局已结束则不再推进。
+# 推进一个逻辑步（dt 秒）：先结算 arena（单位移动/寻路等），再计时与胜负。对局已结束则不再推进。
 func step(dt: float) -> void:
 	if dt <= 0.0 or is_over():
 		return
-	for lane in lanes:
-		lane.tick(dt)
+	if arena != null:
+		arena.tick(dt)
 	elapsed += dt
 	_check_victory()
 

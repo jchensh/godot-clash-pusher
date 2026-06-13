@@ -37,8 +37,8 @@ UNIT_HEADERS = [
     "hp",
     "damage",
     "attack_interval_s",
-    "move_speed_lane_per_s",
-    "attack_range_lane_ratio",
+    "move_speed_tiles_per_s",
+    "attack_range_tiles",
     "unit_type",
     "notes",
 ]
@@ -176,15 +176,16 @@ def build_json_from_workbook(workbook_path: Path = WORKBOOK_PATH) -> tuple[dict[
         unit_type = _text(row.get("unit_type"))
         if unit_type not in UNIT_TYPES:
             raise ConfigError(f"unit {unit_id} unit_type must be one of {UNIT_TYPES}")
-        attack_range = _number(row.get("attack_range_lane_ratio"), f"unit {unit_id}.attack_range_lane_ratio")
-        if float(attack_range) < 0.0 or float(attack_range) > 1.0:
-            raise ConfigError(f"unit {unit_id}.attack_range_lane_ratio must be 0.0..1.0")
+        # V3：attack_range / move_speed 量纲改为 tile（attack_range ≥0，无上限；非 lane 比例）。
+        attack_range = _number_float(row.get("attack_range_tiles"), f"unit {unit_id}.attack_range_tiles")
+        if attack_range < 0.0:
+            raise ConfigError(f"unit {unit_id}.attack_range_tiles must be >= 0")
         units[unit_id] = {
             "name": _text(row.get("name")),
             "hp": _number(row.get("hp"), f"unit {unit_id}.hp"),
             "damage": _number(row.get("damage"), f"unit {unit_id}.damage"),
             "attack_speed": _number_float(row.get("attack_interval_s"), f"unit {unit_id}.attack_interval_s"),
-            "move_speed": _number_float(row.get("move_speed_lane_per_s"), f"unit {unit_id}.move_speed_lane_per_s"),
+            "move_speed": _number_float(row.get("move_speed_tiles_per_s"), f"unit {unit_id}.move_speed_tiles_per_s"),
             "attack_range": attack_range,
             "target_type": unit_type,
         }

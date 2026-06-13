@@ -64,12 +64,13 @@ func _validate() -> void:
 		for f in ["hp", "damage", "attack_speed", "move_speed", "attack_range", "target_type"]:
 			if not u.has(f):
 				errors.append("unit '%s' 缺少 %s" % [id, f])
+		# V3：attack_range 量纲改为 tile 距离（≥0，无上限）；move_speed 为 tile/秒。
 		if u.has("attack_range"):
 			var attack_range = u.get("attack_range")
 			if not _is_number(attack_range):
 				errors.append("unit '%s' 的 attack_range 应为数字" % id)
-			elif float(attack_range) < 0.0 or float(attack_range) > 1.0:
-				errors.append("unit '%s' 的 attack_range 应在 0.0~1.0 之间" % id)
+			elif float(attack_range) < 0.0:
+				errors.append("unit '%s' 的 attack_range 应 ≥ 0" % id)
 		if u.has("target_type") and not ["ground", "air"].has(str(u.get("target_type"))):
 			errors.append("unit '%s' 的 target_type 应为 ground 或 air" % id)
 

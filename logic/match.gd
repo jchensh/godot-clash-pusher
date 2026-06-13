@@ -28,13 +28,13 @@ var ai_difficulty := "normal"    # 关卡 AI 难度（V2-6）：供 AIController
 func _init(config_ = null) -> void:
 	config = config_
 
-# 按关卡配置搭好一局：双方各 3 塔 + 3 lane（V2-1 拓扑：左公主/中王/右公主）、
+# 按关卡配置搭好一局：2D 场地（河+双桥+地形）+ 双方各 3 塔（2 公主 1 王）、
 # 两个对称 Player、固定时钟。
 func setup(level_id: String = "level_01", player_deck_override: Array = []) -> void:
 	var level: Dictionary = config.get_level(level_id)
 	ai_difficulty = String(level.get("ai_difficulty", "normal"))
 	battle = BattleScript.new()
-	battle.build_v2_three_lanes(level)
+	battle.build_arena(level, config.get_arena("default"))
 	skill_system = SkillSystemScript.new(config, battle)
 	clock = SimClockScript.new()
 	var emax := float(level.get("elixir_max", 10))

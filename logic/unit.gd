@@ -1,7 +1,8 @@
-# Unit —— 场上单位的纯逻辑运行时状态。
+# Unit —— 场上单位的纯逻辑运行时状态（V3 2D 重构）。
 #
-# 位置使用 lane 进度 0.0~1.0；OWNER_PLAYER 从 0 向 1 推进，
-# OWNER_OPPONENT 从 1 向 0 推进。这里不关心像素、节点或动画。
+# 位置使用抽象 2D 场地坐标 pos:Vector2（tile 空间，非屏幕像素）；移动/寻路/朝向
+# 由 Arena 据流场与目标决定，Unit 自身只持状态。不关心像素、节点或动画。
+# 量纲（V3）：move_speed = tile/秒；attack_range = tile 距离；attack_speed = 攻击间隔(秒/次)。
 extends RefCounted
 class_name Unit
 
@@ -11,15 +12,14 @@ const _EPSILON := 0.000001
 
 var unit_id: String = ""
 var owner_id: int = OWNER_PLAYER
-var lane_index: int = 0
-var progress: float = 0.0
+var pos: Vector2 = Vector2.ZERO    # 抽象 2D 场地坐标（tile 空间）
 
 var hp: float = 0.0
 var max_hp: float = 0.0
 var damage: float = 0.0
-var attack_speed: float = 1.0      # V1 解释为攻击间隔（秒/次）
-var move_speed: float = 0.0        # lane 进度/秒
-var attack_range: float = 0.0      # lane 进度比例
+var attack_speed: float = 1.0      # 攻击间隔（秒/次）
+var move_speed: float = 0.0        # tile/秒
+var attack_range: float = 0.0      # tile 距离
 var target_type: String = "ground" # 单位自身类型：ground / air
 
 var _attack_cooldown: float = 0.0
@@ -27,36 +27,30 @@ var _attack_cooldown: float = 0.0
 func _init(
 		unit_id_: String = "",
 		owner_id_: int = OWNER_PLAYER,
-		lane_index_: int = 0,
 		config: Dictionary = {},
-		progress_: float = 0.0
+		pos_: Vector2 = Vector2.ZERO
 ) -> void:
 	if not unit_id_.is_empty() or not config.is_empty():
-		setup(unit_id_, owner_id_, lane_index_, config, progress_)
+		setup(unit_id_, owner_id_, config, pos_)
 
 func setup(
 		unit_id_: String,
 		owner_id_: int,
-		lane_index_: int,
 		config: Dictionary,
-		progress_: float = 0.0
+		pos_: Vector2 = Vector2.ZERO
 ) -> void:
 	unit_id = unit_id_
 	owner_id = owner_id_
-	lane_index = lane_index_
-	progress = clampf(progress_, 0.0, 1.0)
+	pos = pos_
 
 	max_hp = maxf(float(config.get("hp", 0.0)), 0.0)
 	hp = max_hp
 	damage = maxf(float(config.get("damage", 0.0)), 0.0)
 	attack_speed = maxf(float(config.get("attack_speed", 1.0)), 0.0)
 	move_speed = maxf(float(config.get("move_speed", 0.0)), 0.0)
-	attack_range = clampf(float(config.get("attack_range", 0.0)), 0.0, 1.0)
+	attack_range = maxf(float(config.get("attack_range", 0.0)), 0.0)
 	target_type = str(config.get("target_type", "ground"))
 	_attack_cooldown = 0.0
-
-func get_direction() -> int:
-	return 1 if owner_id == OWNER_PLAYER else -1
 
 func is_enemy(other: Unit) -> bool:
 	return other != null and owner_id != other.owner_id
@@ -80,5 +74,5 @@ func can_attack() -> bool:
 func mark_attacked() -> void:
 	_attack_cooldown = attack_speed
 
-func move_to(next_progress: float) -> void:
-	progress = clampf(next_progress, 0.0, 1.0)
+func distance_to(p: Vector2) -> float:
+	return pos.distance_to(p)

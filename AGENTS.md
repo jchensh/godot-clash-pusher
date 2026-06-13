@@ -130,6 +130,7 @@ claude mcp remove godot-ai -s user   # 卸载注册（不删插件）
   - V2-7 ✅ 扩卡池（14 卡/9 单位）+ 多关卡（4 关）+ 选关界面 + 组卡界面（决策 34）。流程：菜单→选关→组卡→对局→结算。
   - V2-8 ✅ 数值平衡 pass（轻量，纯配置；决策 35）：仅改 `arrows`（→AOE）、`baby_dragon`（提速）。难度曲线交真人实机验收。**至此 V2 主线全部完成**；剩 5c 音频缓做。
 - **V3 启动**（2026-06-10）：**战斗核心 2D 重构** + 做成买断制单机（短战役 + Roguelite，2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)（决策日志 36）。
-  - **V3-1 = 2D 战斗 reboot（头号工程，取代 lane）**：河 + 左右双桥 + 己方半场自由落点 + 流场绕桥寻路 + 完整 CR 仇恨/分心 + 软推挤碰撞 + 塔会反击。拆 8 小步（a 场地地形 / b 移动寻路 / c 仇恨 / d 软分离+攻击 / e 塔反击 / f 技能 2D / g AI 2D / h 显示层 2D）。绞杀式迁移：新 `arena.gd` 与旧 `lane.gd` 并存、单测全程绿，V3-1h 后删 lane。
-    - V3-1a ✅ 场地与地形：`config/arena.json` + 新 `logic/arena.gd`（地形/塔占位/落点合法性）+ `Battle.build_arena` + `tests/test_arena.gd`。单测 132/132，与 lane 并存。
-  - **Now**：执行 **V3-1b**（移动 + 流场寻路绕桥；`Unit` 加 2D 字段，`move_speed`/`attack_range` 量纲 lane 比例→tile）。
+  - **V3-1 = 2D 战斗 reboot（头号工程，取代 lane）**：河 + 左右双桥 + 己方半场自由落点 + 流场绕桥寻路 + 完整 CR 仇恨/分心 + 软推挤碰撞 + 塔会反击。拆 8 小步（a 场地地形 / b 移动寻路 / c 仇恨 / d 软分离+攻击 / e 塔反击 / f 技能 2D[已并入 b] / g AI 2D / h 显示层 2D）。**策略=推倒重来（决策 37）**：V3-1b 即删 lane（量纲 1D→2D），AI/view 暂搁置到 V3-1g/h。
+    - V3-1a ✅ 场地与地形：`config/arena.json` + 新 `logic/arena.gd`（地形/塔占位/落点合法性）+ `Battle.build_arena` + `tests/test_arena.gd`。
+    - V3-1b ✅ 推倒重来：`Unit` 2D + `arena` 流场绕桥移动 + 删 lane + `skill_system`/`battle`/`match`/`player` 2D + `units`/`cards` 量纲改 tile。AI 搁置（V3-1g）、view 暂坏（V3-1h）。单测 101/101。
+  - **Now**：执行 **V3-1c**（目标获取 + 完整 CR 仇恨/分心）。

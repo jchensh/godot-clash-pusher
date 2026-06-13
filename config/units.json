@@ -4,8 +4,8 @@
     "hp": 600,
     "damage": 75,
     "attack_speed": 1.2,
-    "move_speed": 1.0,
-    "attack_range": 0.05,
+    "move_speed": 1.6,
+    "attack_range": 1.2,
     "target_type": "ground"
   },
   "archer_body": {
@@ -13,8 +13,8 @@
     "hp": 120,
     "damage": 40,
     "attack_speed": 1.0,
-    "move_speed": 1.0,
-    "attack_range": 0.25,
+    "move_speed": 1.6,
+    "attack_range": 4.5,
     "target_type": "ground"
   },
   "giant_body": {
@@ -22,8 +22,8 @@
     "hp": 2000,
     "damage": 120,
     "attack_speed": 1.5,
-    "move_speed": 0.6,
-    "attack_range": 0.05,
+    "move_speed": 1.1,
+    "attack_range": 1.2,
     "target_type": "ground"
   },
   "goblin_body": {
@@ -31,8 +31,8 @@
     "hp": 80,
     "damage": 50,
     "attack_speed": 1.1,
-    "move_speed": 1.4,
-    "attack_range": 0.04,
+    "move_speed": 2.6,
+    "attack_range": 1.0,
     "target_type": "ground"
   },
   "minion_body": {
@@ -40,8 +40,8 @@
     "hp": 90,
     "damage": 35,
     "attack_speed": 1.0,
-    "move_speed": 1.2,
-    "attack_range": 0.06,
+    "move_speed": 2.2,
+    "attack_range": 2.0,
     "target_type": "air"
   },
   "mini_pekka_body": {
@@ -49,8 +49,8 @@
     "hp": 700,
     "damage": 320,
     "attack_speed": 1.8,
-    "move_speed": 1.1,
-    "attack_range": 0.05,
+    "move_speed": 2.0,
+    "attack_range": 1.2,
     "target_type": "ground"
   },
   "musketeer_body": {
@@ -58,8 +58,8 @@
     "hp": 340,
     "damage": 110,
     "attack_speed": 1.1,
-    "move_speed": 1.0,
-    "attack_range": 0.35,
+    "move_speed": 1.6,
+    "attack_range": 5.5,
     "target_type": "ground"
   },
   "skeleton_body": {
@@ -67,8 +67,8 @@
     "hp": 40,
     "damage": 40,
     "attack_speed": 1.0,
-    "move_speed": 1.3,
-    "attack_range": 0.04,
+    "move_speed": 2.4,
+    "attack_range": 1.0,
     "target_type": "ground"
   },
   "baby_dragon_body": {
@@ -76,8 +76,8 @@
     "hp": 900,
     "damage": 80,
     "attack_speed": 1.3,
-    "move_speed": 1.0,
-    "attack_range": 0.18,
+    "move_speed": 1.8,
+    "attack_range": 3.0,
     "target_type": "air"
   }
 }

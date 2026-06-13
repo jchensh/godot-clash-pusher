@@ -137,4 +137,6 @@ claude mcp remove godot-ai -s user   # 卸载注册（不删插件）
   - V2-8 ✅ 数值平衡 pass（轻量，纯配置；决策 35）：harness 测量得「节奏健康 / 难度曲线 proxy 不可读交真人 / swarm 不削、baby_dragon 废兵」。**仅改两张卡**：`arrows` 单体 150→AOE r0.5/140（补中号群清、顺带消除对称对局 0-0 僵局）、`baby_dragon_body` 攻速 1.6→1.3（DPS 50→62）。单测 121/121、Excel 已同步。**难度曲线交真人实机验收**（清单见 HISTORY V2-8）。**至此 V2 主线（V2-1～V2-8）全部完成**；剩 5c 音频缓做。
 - **V3 启动**（2026-06-10）：**战斗核心 2D 重构** + 做成买断制单机（短战役 + Roguelite，2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)（决策日志 36）。
   - **V3-1 = 2D 战斗 reboot（头号工程，取代 lane）**：河 + 左右双桥 + 己方半场自由落点 + 流场绕桥寻路 + 完整 CR 仇恨/分心 + 软推挤碰撞 + 塔会反击。拆 8 小步（a 场地地形 / b 移动寻路 / c 仇恨 / d 软分离+攻击 / e 塔反击 / f 技能 2D / g AI 2D / h 显示层 2D）。
-  - **Now**：执行 **V3-1a**（场地与地形：`config/arena.json` + 新 `logic/arena.gd` + `Battle.build_arena` + `tests/test_arena.gd`；与旧 lane 系统**并存不删**，待 V3-1h 全通后再拆 lane，保持单测全程绿）。
+  - V3-1a ✅ 场地与地形：`config/arena.json` + 新 `logic/arena.gd`（地形/塔占位/落点合法性）+ `Battle.build_arena` + `tests/test_arena.gd`。
+  - V3-1b ✅ **推倒重来**（决策 37：弃绞杀改 rip-out）：`Unit` 2D 化 + `arena` 流场绕桥移动/寻路 + **删 lane**（`lane.gd` 及 lane/battle_v2/ai_controller 测试删除）；连带 **`skill_system` 2D（原 V3-1f 提前）** + `battle`/`match`/`player` 2D + `units`/`cards` 量纲改 tile（+`build_config.py` 列名）。AI 暂搁置（死代码，V3-1g 重写）、view 暂坏（V3-1h 接通）。单测 101/101。
+  - **Now**：执行 **V3-1c**（目标获取 + 完整 CR 仇恨/分心）。
