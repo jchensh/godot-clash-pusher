@@ -2,10 +2,10 @@
 
 竖屏「皇室战争式对推小游戏」，**Godot 4.x / GDScript**。玩家 vs 规则 AI，圣水 + 循环卡组部署单位，沿 lane 互推、推塔决胜。V1 纯 2D 白膜，先 Windows 跑通再导出安卓。
 
-> **编码前必读**：[PLAN_GRAND.md](PLAN_GRAND.md)（全项目 roadmap）→ [PLAN_V2.md](PLAN_V2.md)（**当前阶段权威规划**）；[PLAN_V1.md](PLAN_V1.md) 是已完成的 V1 规格（存档备查）。本文件只是操作手册，当前阶段规格以 PLAN_V2.md 为准。
+> **编码前必读**：[PLAN_GRAND.md](PLAN_GRAND.md)（全项目 roadmap）→ [PLAN_V3.md](PLAN_V3.md)（**当前阶段权威规划**）；[PLAN_V2.md](PLAN_V2.md) / [PLAN_V1.md](PLAN_V1.md) 是已完成阶段的规格（存档备查）。本文件只是操作手册，当前阶段规格以 PLAN_V3.md 为准。
 
 ## 开发纪律（最高优先级）
-- **一步一确认**：严格按 PLAN_V2.md 的施工图步骤顺序；**每完成一步停下等用户确认**，再进下一步，不要一次做多步。
+- **一步一确认**：严格按 PLAN_V3.md 的施工图步骤顺序；**每完成一步停下等用户确认**，再进下一步，不要一次做多步。
 - **每步一次 git commit**，message 描述本步内容（如 `step2: elixir system + unit tests`）。
 - **每步同时更新 [HISTORY.md](HISTORY.md)**：记录新增/修改文件、决策、踩坑与修复、验收结果，随该步一起 commit。它是跨对话的进度与历史真相源。
 - **第 0~6 步是纯逻辑层，必须配单元测试，测试通过才算完成。**
@@ -14,8 +14,8 @@
 - **需实机操作验证的（点界面、看画面/动画/手感等表现层行为），优先让真人验收**：AI 不要自己去驱动鼠标点引擎窗口跑（低效、易错）。正确做法 = AI 写好**可执行的测试用例**（开什么场景、点哪、预期看到什么、判定通过的标准），用户在 Godot 编辑器里执行后回报 通过/不通过；AI 据反馈修。能 headless 单测覆盖的逻辑仍走单测，**只有真正需要肉眼看画面的才交给真人**。进入表现层（D 模块 V2-3+）后这类验收会很多。
 
 ## 硬性 DO-NOT
-- ❌ 不用物理引擎（`RigidBody2D`/`Area2D`）做 lane 碰撞——用「队列前后关系」纯逻辑判断。
-- ❌ 逻辑层禁用屏幕像素坐标——单位位置一律 `0.0~1.0` 的 lane 进度（**0=己方塔，1=敌方塔**）。
+- ❌ 不用物理引擎（`RigidBody2D`/`Area2D`）做单位碰撞——用**自写的确定性 2D 软分离**（固定顺序遍历推开重叠），纯逻辑、可单测。（V3 前为 1D「队列前后关系」，2D 重构后改此。）
+- ❌ 逻辑层禁用**渲染/屏幕像素坐标**——单位位置用**抽象 2D 场地坐标**（tile 空间，view 负责映射）。（V3 前为 `0.0~1.0` 的 1D lane 进度，2D 重构后改此；详见 PLAN_V3 §4。）
 - ❌ 游戏速度禁绑渲染帧率——圣水/时间/推进用**固定逻辑 tick** 结算，显示层做插值。
 - ❌ 不过度设计，不写用不到的「未来扩展」代码。
 - ❌ 不擅自删改与当前任务无关的代码/注释。
@@ -44,6 +44,7 @@
   ```
 - `tools/build_config.py --from-json` 会覆盖 `GameConfig.xlsx`。如果发现 Excel 可能有用户尚未同步到 JSON 的改动，agent 必须先停下询问，不要直接覆盖。
 - agent 修改配置时必须遵守：先改 JSON，再 `--from-json` 同步 Excel，再跑 `--check` 和 Godot 单测；如果用户只要求分析方案，不要擅自生成或改配置。
+- **结构性配置 `config/arena.json`（V3 新增）**：2D 场地几何（网格/河/桥/塔位），由 `ConfigLoader` 统一读取，但**非平衡数值、不进 Excel 镜像**（不经 `build_config.py`）。
 - 当前工作簿 sheet 约定：
   - `Units`：单位基础数值。`attack_interval_s` 会生成到 JSON 的 `attack_speed` 字段，语义是「攻击间隔（秒/次）」。
   - `Cards`：卡牌主表，控制 `card_id`、名称、费用、启用状态。
@@ -58,7 +59,7 @@
 /logic   逻辑层（不依赖 Godot 渲染）
 /view    显示层脚本与场景
 /ai      AIController
-/config  GameConfig.xlsx（策划源表）+ cards.json / units.json / levels.json（生成产物）
+/config  GameConfig.xlsx（策划源表）+ cards.json / units.json / levels.json（生成产物）+ arena.json（V3 2D 场地，结构性）
 /tests   单元测试（test_*.gd） + test_runner.gd + test_case.gd
 /tools   配置生成脚本等项目工具
 ```
@@ -120,12 +121,15 @@ claude mcp remove godot-ai -s user   # 卸载注册（不删插件）
 - Step 6 ✅ `SkillSystem` 三积木（spawn_unit / direct_damage / aoe_damage）
 - Step 7 ✅ 显示层 MVP（白膜方块 + 手牌 UI + 圣水条 + 血条；单 lane 跑通；7a Player/Match 逻辑 + 7b Godot 画面）
 - Step 8 ✅ `AIController` 规则 AI（简单进攻型；对手自驱出牌、一局正常分胜负）
-- Step 9 ⏸ 安卓导出（缓做，移至 V2 后续；编辑器内即可体验/开发）
-- **V1 收官**。现进入 **V2**（顺序 A→D→B→C，权威规划见 PLAN_V2.md）：
-  - V2-1 ✅ 3-lane 逻辑层：`Battle.build_v2_three_lanes` + `Lane` 侧路公主倒后转打王塔（决策日志 24–25）。
-  - V2-2 ✅ 3-lane 接通：`Match` 改 3 lane、显示层 3 道/6 塔、tap-to-place 选 lane、`Player` 部署半场校验、AI 固定中路（决策日志 26–28）。A 模块（3-lane）完成。
-  - V2-3 ✅ 程序化美术换皮（仅 view 层）：兵种按形状/大小/朝向区分、塔造型(王城垛/公主尖顶)、河道木桥背景；逻辑零改动、视觉验收通过。
-  - V2-4 ✅ 完成（视觉验收通过，`55c2fb7`）：动画与特效（仅 view 层，逻辑零改动，路线 A 纯显示层还原）——受击闪白、攻击顶刺、死亡消散、远程投射物（弓箭手）、AOE/法术爆点（玩家精确/AI 推断）、塔受击抖动+摧毁碎块。编译通过、单测仍 110/110、headless 强制触发全 FX 路径零报错、人工视觉验收通过。
-  - V2-5 ✅ D 模块收尾：5a 主菜单 + 结算闭环、5b 战斗内 HUD 美化均完成并通过视觉验收；5c 音频按决策日志 32 缓做。
-  - V2-6 ✅ 规则 AI 升级：攻防结合、按 lane 选向、easy/normal/hard 难度分级（逻辑层 + 单测）；另加主菜单→难度选择→对局流程。单测 116/116。
-  - **Now：V2-7**（C 模块）扩卡池 + 组卡（玩家可选卡组）+ 多关卡；或择期补 V2-5c 音频。
+- Step 9 ⏸ 安卓导出（缓做，移至 V3-9；编辑器内即可体验/开发）
+- **V1 收官**。**V2**（顺序 A→D→B→C，规格见 PLAN_V2.md）**已全部完成**：
+  - V2-1 ✅ 3-lane 逻辑层；V2-2 ✅ 3-lane 接通（A 模块完成）。
+  - V2-3 ✅ 程序化美术换皮；V2-4 ✅ 动画与特效（仅 view 层、视觉验收通过）。
+  - V2-5 ✅ D 模块收尾：5a 主菜单+结算闭环、5b 战斗内 HUD 美化（5c 音频缓做，决策 32）。
+  - V2-6 ✅ 规则 AI 升级（攻防结合+选向+难度分级，决策 33）。
+  - V2-7 ✅ 扩卡池（14 卡/9 单位）+ 多关卡（4 关）+ 选关界面 + 组卡界面（决策 34）。流程：菜单→选关→组卡→对局→结算。
+  - V2-8 ✅ 数值平衡 pass（轻量，纯配置；决策 35）：仅改 `arrows`（→AOE）、`baby_dragon`（提速）。难度曲线交真人实机验收。**至此 V2 主线全部完成**；剩 5c 音频缓做。
+- **V3 启动**（2026-06-10）：**战斗核心 2D 重构** + 做成买断制单机（短战役 + Roguelite，2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)（决策日志 36）。
+  - **V3-1 = 2D 战斗 reboot（头号工程，取代 lane）**：河 + 左右双桥 + 己方半场自由落点 + 流场绕桥寻路 + 完整 CR 仇恨/分心 + 软推挤碰撞 + 塔会反击。拆 8 小步（a 场地地形 / b 移动寻路 / c 仇恨 / d 软分离+攻击 / e 塔反击 / f 技能 2D / g AI 2D / h 显示层 2D）。绞杀式迁移：新 `arena.gd` 与旧 `lane.gd` 并存、单测全程绿，V3-1h 后删 lane。
+    - V3-1a ✅ 场地与地形：`config/arena.json` + 新 `logic/arena.gd`（地形/塔占位/落点合法性）+ `Battle.build_arena` + `tests/test_arena.gd`。单测 132/132，与 lane 并存。
+  - **Now**：执行 **V3-1b**（移动 + 流场寻路绕桥；`Unit` 加 2D 字段，`move_speed`/`attack_range` 量纲 lane 比例→tile）。

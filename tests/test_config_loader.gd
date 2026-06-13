@@ -83,6 +83,17 @@ func test_v2_7b_multi_level() -> void:
 	assert_almost_eq(float(loader.get_level("level_04").get("elixir_regen_rate")), 2.0, 0.0001, "闪电赛双倍圣水回速")
 	assert_eq(int(loader.get_level("level_04").get("match_duration")), 120, "闪电赛时长更短")
 
+func test_v3_arena_config_loaded() -> void:
+	# V3：arena.json 纳入 ConfigLoader 统一入口，含 default 场地（grid/river/deploy/towers）。
+	var loader = _make_loaded()
+	assert_false(loader.arena.is_empty(), "arena.json 应被加载")
+	var a = loader.get_arena("default")
+	assert_false(a.is_empty(), "应有 default 场地")
+	for f in ["grid", "river", "deploy", "towers"]:
+		assert_true(a.has(f), "arena.default 应含 %s" % f)
+	assert_true(int((a.get("grid") as Dictionary).get("w", 0)) > 0, "网格宽>0")
+	assert_true(int((a.get("grid") as Dictionary).get("h", 0)) > 0, "网格高>0")
+
 func test_missing_dir_reports_error() -> void:
 	var loader = ConfigLoaderScript.new()
 	var ok = loader.load_all("res://config_does_not_exist")

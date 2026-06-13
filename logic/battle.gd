@@ -15,6 +15,7 @@ class_name Battle
 const TowerScript = preload("res://logic/tower.gd")
 const LaneScript = preload("res://logic/lane.gd")
 const UnitScript = preload("res://logic/unit.gd")
+const ArenaScript = preload("res://logic/arena.gd")
 
 const RESULT_ONGOING := 0
 const RESULT_PLAYER_WIN := 1
@@ -31,7 +32,8 @@ var player_towers: Array = []     # Tower
 var opponent_towers: Array = []   # Tower
 var player_king = null            # 玩家王塔（胜负关键）
 var opponent_king = null          # 对手王塔
-var lanes: Array = []             # Lane
+var lanes: Array = []             # Lane（V2 1D 模型；V3 2D 重构期间与 arena 并存）
+var arena = null                  # Arena（V3 2D 场地；V3-1 重构逐步接管）
 
 func _init(match_duration_: float = 0.0) -> void:
 	match_duration = maxf(match_duration_, 0.0)
@@ -117,6 +119,40 @@ func build_v2_three_lanes(level: Dictionary) -> Array:
 	add_lane(lane_right)
 
 	return lanes
+
+# 便捷搭建：按 level + arena 配置建一个 V3 2D 场地对局（PLAN_V3 §4）。
+# 建 2D 地形 + 双方各 3 塔（2 公主 + 1 王，按 arena 塔位摆放、注册占位）。
+# 胜负与超时比塔血规则沿用 V1/V2（6 塔全部计入 player/opponent_towers）。返回 Arena。
+# V3-1a：只建地形与塔；单位移动/寻路/tick 见后续小步。
+func build_arena(level: Dictionary, arena_cfg: Dictionary):
+	match_duration = float(level.get("match_duration", 0.0))
+	var tower_hp: Dictionary = level.get("tower_hp", {})
+	var king_hp := float(tower_hp.get("king", 0.0))
+	var princess_hp := float(tower_hp.get("princess", 0.0))
+
+	arena = ArenaScript.new()
+	arena.setup(arena_cfg)
+
+	var towers_cfg: Dictionary = arena_cfg.get("towers", {})
+	_build_side_towers(UnitScript.OWNER_PLAYER, towers_cfg.get("player", {}), king_hp, princess_hp)
+	_build_side_towers(UnitScript.OWNER_OPPONENT, towers_cfg.get("enemy", {}), king_hp, princess_hp)
+	return arena
+
+func _build_side_towers(owner_id: int, side_cfg: Dictionary, king_hp: float, princess_hp: float) -> void:
+	for key in side_cfg:
+		var t: Dictionary = side_cfg[key]
+		var is_king: bool = String(key).begins_with("king")
+		var kind: String = TowerScript.KIND_KING if is_king else TowerScript.KIND_PRINCESS
+		var hp: float = king_hp if is_king else princess_hp
+		var tower = TowerScript.new(kind, owner_id, hp)
+		tower.pos = Vector2(float(t.get("x", 0.0)), float(t.get("y", 0.0)))
+		tower.fw = int(t.get("fw", 3))
+		tower.fh = int(t.get("fh", 3))
+		if owner_id == UnitScript.OWNER_PLAYER:
+			add_player_tower(tower)
+		else:
+			add_opponent_tower(tower)
+		arena.add_tower_footprint(tower.pos.x, tower.pos.y, tower.fw, tower.fh)
 
 func is_over() -> bool:
 	return result != RESULT_ONGOING

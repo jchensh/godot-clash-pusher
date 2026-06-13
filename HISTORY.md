@@ -827,4 +827,34 @@
 | level_04 闪电赛 | hard | 快节奏：双倍圣水、120s 限时 | 手忙脚乱但刺激、能在限时内决胜 |
 
 反馈格式：每关「胜/负、时长感受、太易/适中/太难、AI 哪里蠢或哪里强」。据反馈再决定是否调各关 `ai_difficulty`/`tower_hp`/`elixir_regen_rate`/`match_duration`/AI 卡组（届时为下一轮配置调整）。
+
+---
+
+## V3 — 战斗核心 2D 重构 + 买断制单机（进行中）
+
+> 方向见决策日志 36，权威规划见 [PLAN_V3.md](PLAN_V3.md)。头号工程 **V3-1 = 2D 战斗 reboot**（取代 lane），拆 8 小步（a 场地地形 / b 移动寻路 / c 仇恨 / d 软分离+攻击 / e 塔反击 / f 技能 2D / g AI 2D / h 显示层 2D）。**绞杀式迁移**：新 `arena.gd` 与旧 `lane.gd` 并存、逐步迁移、单测全程绿，V3-1h 全通后再删 lane。坐标改抽象 2D tile 空间（CLAUDE.md 硬性 DO-NOT 已相应修订）。
+
+### V3-1a — 场地与地形（新 Arena + Battle.build_arena + 落点合法性，逻辑+单测）  （本次提交）
+**前置决策**：见决策日志 36（2D 场地、河+双桥、每方 2 公主 1 王、固定己方半场落点）。本步只做**地形 + 塔占位 + 落点合法性（纯查询）**；单位移动/寻路/tick 见 V3-1b+。
+
+**新增 / 修改**
+- `config/arena.json`（新）：场地几何 `default`——网格 `18×32`、河 `y[15,17)`、左右双桥 `x{3,4}&{13,14}`、落点边界（玩家 `y>=17` / 对手 `y<=15`）、双方 6 塔位与占位（王 4×4、公主 3×3；公主 x=4.5/13.5 关于中线 x=9 对称、与桥对齐）。**结构性配置，不进 Excel 镜像**。
+- `logic/arena.gd`（新）：2D 场地。tile 类型 `GROUND/WATER/TOWER/OOB`、`tile_type(_at)`、`is_ground_walkable(_at)`、`add_tower_footprint`、`can_deploy(owner,pos)`（地面 + 己方半场）。纯查询、确定性、不用物理引擎。
+- `logic/battle.gd`：+`ArenaScript` preload、+`arena` 字段、+`build_arena(level, arena_cfg)`（建 2D 地形 + 6 塔、注册占位，胜负规则沿用）、+`_build_side_towers`。**保留 `build_v2_three_lanes`（与 arena 并存，游戏当前仍跑 lane）**。
+- `logic/tower.gd`：+`pos:Vector2`/`fw`/`fh`（加性，lane 阶段不用）。
+- `logic/config_loader.gd`：load_all 纳入 `arena.json`、轻校验（default 含 grid/river/deploy/towers）、+`get_arena(id)`。
+- `tests/test_arena.gd`（新，10 测）：网格尺寸、河水阻挡、双桥可走、空地可走、越界、塔占位阻挡、6 塔构建、玩家/对手落点半场校验、塔占位拒绝部署。
+- `tests/test_config_loader.gd`：+1 测 `test_v3_arena_config_loaded`（arena.json 已加载、default 含必需字段）。
+
+**范围边界**：纯逻辑层 + 配置 + 单测；`view/*`、`ai/*`、`skill_system`、`lane.gd`、`unit.gd` 零改动。游戏运行仍走旧 lane 路径（Match 调 `build_v2_three_lanes`），arena 为新增并存模块、暂未接入对局主流程。
+
+**决策**：见决策日志 36。补充：arena 几何走独立 `arena.json`（结构性、非平衡数值，不进 `build_config.py`/Excel 镜像）；塔占位用 floor 取整 + 半整数公主中心保证左右对称且与桥对齐；`can_deploy` 只管「地面 + 己方半场」，纯法术不受限属上层 `Player` 职责（V3-1f/g 接）。
+
+**踩坑与修复**
+- 无。`attack_range` 在 config_loader 仍校验 `0~1`（lane 量纲）——V3-1a 不动 units，故不受影响；2D 量纲转换留 V3-1b/d。
+
+**验收**
+- `HOME=/private/tmp/godot-home godot --headless --path . --script res://tests/test_runner.gd` → **132/132 全过**（+10 arena +1 config_loader，旧 121 零回归）✅
+- `godot --headless --editor --path . --quit` → exit 0、`Arena` 类注册、新 `.uid` 生成、零解析/编译错误 ✅
+- 纯逻辑层步骤，正确性由单测覆盖（按纪律无需肉眼验收）✅
 - **GUI 视觉验收**：组卡界面外观/交互（点选/移除/满 8 开战）属表现层，留用户实机过目（逻辑+接线已验证，不阻塞）。

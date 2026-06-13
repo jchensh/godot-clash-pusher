@@ -13,14 +13,16 @@ const DEFAULT_CONFIG_DIR := "res://config"
 var cards: Dictionary = {}
 var units: Dictionary = {}
 var levels: Dictionary = {}
+var arena: Dictionary = {}      # V3：2D 场地配置（arena.json），结构性、不进 Excel 镜像
 var errors: Array[String] = []
 
-# 读入三张配置；全部成功且校验无误返回 true，否则 false（详情见 errors）。
+# 读入配置；全部成功且校验无误返回 true，否则 false（详情见 errors）。
 func load_all(config_dir: String = DEFAULT_CONFIG_DIR) -> bool:
 	errors.clear()
 	cards = _load_json_dict(config_dir.path_join("cards.json"))
 	units = _load_json_dict(config_dir.path_join("units.json"))
 	levels = _load_json_dict(config_dir.path_join("levels.json"))
+	arena = _load_json_dict(config_dir.path_join("arena.json"))
 	_validate()
 	return errors.is_empty()
 
@@ -80,6 +82,16 @@ func _validate() -> void:
 			if not lv.has(f):
 				errors.append("level '%s' 缺少 %s" % [id, f])
 
+	# arena.json（V3）：至少有 default 场地，含 grid/river/deploy/towers。
+	if arena.is_empty() or not arena.has("default"):
+		errors.append("arena.json 缺少 default 场地配置")
+	elif typeof(arena.get("default")) != TYPE_DICTIONARY:
+		errors.append("arena.default 应为对象")
+	else:
+		for f in ["grid", "river", "deploy", "towers"]:
+			if not (arena["default"] as Dictionary).has(f):
+				errors.append("arena.default 缺少 %s" % f)
+
 	# 交叉引用：spawn_unit.unit_id 必须在 units 中；deck 中的 card 必须在 cards 中。
 	for cid in cards:
 		var card = cards[cid]
@@ -115,6 +127,9 @@ func get_unit(id: String) -> Dictionary:
 
 func get_level(id: String) -> Dictionary:
 	return levels.get(id, {})
+
+func get_arena(id: String = "default") -> Dictionary:
+	return arena.get(id, {})
 
 func has_card(id: String) -> bool:
 	return cards.has(id)
