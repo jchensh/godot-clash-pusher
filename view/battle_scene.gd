@@ -158,9 +158,13 @@ func _draw_units(a) -> void:
 		var c := _t2s(u.pos)
 		var vis: Dictionary = UNIT_VIS.get(u.unit_id, {"r": 0.5})
 		var rad: float = float(vis["r"]) * ur
+		var flying: bool = u.target_type == "air"
+		if flying:
+			draw_circle(c + Vector2(0, ur * 0.5), rad * 0.6, Color(0, 0, 0, 0.25))  # 地面影子
+			c -= Vector2(0, ur * 0.7)                                                # 单位上浮
 		draw_circle(c, rad, base)
 		draw_arc(c, rad, 0.0, TAU, 20, base.darkened(0.4), 2.0)
-		if u.target_type == "air":
+		if flying:
 			draw_arc(c, rad + 3.0, 0.0, TAU, 20, Color(1, 1, 1, 0.7), 1.5)
 		var ratio: float = clampf(u.hp / u.max_hp, 0.0, 1.0)
 		if ratio < 1.0:

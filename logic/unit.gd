@@ -22,7 +22,8 @@ var move_speed: float = 0.0        # tile/秒
 var attack_range: float = 0.0      # tile 距离
 var aggro_radius: float = 0.0      # tile：敌方单位进此半径 → 分心转火（CR 仇恨，V3-1c）
 var body_radius: float = 0.0       # tile：软推挤体积半径（V3-1d）
-var target_type: String = "ground" # 单位自身类型：ground / air
+var target_type: String = "ground" # 单位自身类型：ground / air（决定谁能打我 + 是否飞行）
+var attack_targets: String = "ground" # 我能攻击的目标类型：ground / air / both（V3-2 对空克制）
 
 # 当前索敌目标（Unit 或 Tower，运行时由 Arena 每 tick 设置；攻击/显示用）。
 var current_target = null
@@ -57,11 +58,20 @@ func setup(
 	aggro_radius = maxf(float(config.get("aggro_radius", 0.0)), 0.0)
 	body_radius = maxf(float(config.get("body_radius", 0.0)), 0.0)
 	target_type = str(config.get("target_type", "ground"))
+	attack_targets = str(config.get("attack_targets", "ground"))
 	current_target = null
 	_attack_cooldown = 0.0
 
 func is_enemy(other: Unit) -> bool:
 	return other != null and owner_id != other.owner_id
+
+# 飞行单位（V3-2）：忽略地形（直线越河），且只有「能打空」的来源可命中。
+func is_flying() -> bool:
+	return target_type == "air"
+
+# 我能否攻击 type 类型（ground/air）的目标。建筑(塔)不受此限，由调用方处理。
+func can_hit_type(t: String) -> bool:
+	return attack_targets == "both" or attack_targets == t
 
 func is_alive() -> bool:
 	return hp > 0.0

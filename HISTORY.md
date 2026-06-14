@@ -974,3 +974,28 @@
 > **V3-1（2D 战斗核心 reboot）收官**：a 场地 → b 移动寻路 → c 仇恨/分心 → d 软分离+攻击 → e 塔反击 → f(并入 b) → g AI 2D → h 显示层 2D。lane 模型已彻底移除。单测 **121/121**。下一步 **V3-2 空军（飞兵越河 + 对空克制）**。
 
 **V3-1h 真人实机验收清单（交用户）**：在编辑器运行（主场景 main_menu）→ 选关 → 组卡(默认即可) → 对局，确认：① 场地能看出河 + 左右双桥 + 双方各 3 塔；② 己方半场任意点能出兵、越界/水/塔上不能出；③ 地面兵自动**绕到桥**过河、不走水；④ 兵接敌会**转火打架**、能互相**挤开/堵路**；⑤ 兵靠近敌塔时**塔会开火**反击；⑥ 拆掉王塔/超时比塔血能正常**分胜负**并弹结算（REMATCH/MENU 可用）。回报「通过/哪条不对」。
+
+---
+
+## V3-2 — 空军：飞兵越河 + 对空克制（逻辑+config+view+单测）  （待提交）
+**前置决策**：见决策日志 36（首版先全地面、空军作为 V3-2 紧随）。
+
+**新增 / 修改**
+- `logic/unit.gd`：+`attack_targets`(ground/air/both) + `is_flying()`(派生自 `target_type=="air"`，不加冗余字段) + `can_hit_type(t)`。
+- `logic/arena.gd`：①索敌按 `can_hit_type` 过滤——纯地面兵**不锁/不打**空军（也不被其分心）；②飞行单位 `_step_fly` **直线越河、忽略地形**（只挡出界）；③软分离**仅同层**（空/地不同层互不挤）、`_apply_push` 飞行可越水/塔。**塔不按类型过滤**（towers 命中空地皆可 = 对空安全网，CR 口径）。
+- `config/units.json`：每单位 +`attack_targets`（近战/giant=ground；archer/musketeer/minion/baby_dragon=both）。
+- `tools/build_config.py`：+`attack_targets` 列（`ATTACK_TARGETS` 枚举 + 校验 + Units 表下拉）；`GameConfig.xlsx` 同步。
+- `view/battle_scene.gd`：飞兵画在上层（单位上浮 + 地面投影），辨识空/地。
+- `tests/test_arena.gd`：+5（飞兵直线越水过河 / 纯地面打不到空军 / 对空兵(both)命中空军 / 塔对空 / 空地不互挤）。
+
+**范围边界**：仅 logic + config + view + 单测。巨人「只攻建筑」(`targets_only_buildings`) 仍按 §5 暂缓。`is_flying` 由 `target_type` 派生（不引入冗余配置）。飞兵「按 ground 流场距离选目标」是小近似（飞行移动已直线，目标选择沿用流场最近，足够；如需精确改欧氏留后续）。
+
+**踩坑与修复**
+- 无逻辑坑。两处 GDScript 类型推断（`var flying: bool`、测试里塔火干扰）按既有经验处理；对空测试单位需放「双方塔火射程外」的中场(y17 一带)纯测单位互攻。
+
+**验收**
+- `HOME=/private/tmp/godot-home godot --headless --path . --script res://tests/test_runner.gd` → **126/126 全过**（+5）✅
+- `godot --headless --editor --path . --quit` → exit 0、无解析错误 ✅
+- `timeout 6 godot --headless --path . res://view/battle_scene.tscn` → 6s 实跑零运行期错误 ✅
+- `build_config.py --from-json` + `--check` → `config check ok`（+attack_targets 列往返一致）✅
+- 对空克制由单测覆盖：飞兵越水 / 地面无法对空 / 对空兵与塔可打空 / 空地不互挤。表现层（飞兵上浮显示）留真人验收。

@@ -302,3 +302,72 @@ func test_tower_death_frees_footprint_and_rebuilds_flow() -> void:
 	prin.take_damage(prin.max_hp)
 	arena.tick(0.1)
 	assert_eq(arena.tile_type(4, 24), ArenaScript.TILE_GROUND, "塔毁后占位释放为地面（流场重算）")
+
+# —— 空军：飞兵越河 + 对空克制（V3-2）——
+
+func _fly_cfg(move: float = 2.0, atk: String = "both", dmg: float = 0.0, hp: float = 100000.0) -> Dictionary:
+	return {
+		"hp": hp, "damage": dmg, "attack_speed": 1.0, "move_speed": move, "attack_range": 1.0,
+		"aggro_radius": 5.0, "body_radius": 0.4, "target_type": "air", "attack_targets": atk,
+	}
+
+func test_flying_unit_crosses_water_directly() -> void:
+	var ctx = _battle_arena()
+	var battle = ctx[0]
+	var arena = ctx[1]
+	var f = UnitScript.new("fly", UnitScript.OWNER_PLAYER, _fly_cfg(3.0), Vector2(9, 20))
+	arena.add_unit(f)
+	var min_y: float = f.pos.y
+	var over_water := false
+	for i in 300:
+		battle.step(0.1)
+		min_y = minf(min_y, f.pos.y)
+		if arena.tile_type_at(f.pos) == ArenaScript.TILE_WATER:
+			over_water = true
+	assert_true(over_water, "飞兵直线越河（曾飞在水面上，而非走桥）")
+	assert_true(min_y < 14.0, "飞兵越河到敌方半场(y<14); min_y=%.1f" % min_y)
+
+func test_ground_only_cannot_target_air() -> void:
+	var arena = _battle_arena()[1]
+	# g：attack_targets 默认 ground（_fighter 不设 → ground）。
+	var g = _fighter(arena, UnitScript.OWNER_PLAYER, Vector2(9, 17), 50.0, 100.0, 1.0, 5.0, 0.0, 0.0)
+	var air = UnitScript.new("air", UnitScript.OWNER_OPPONENT, _fly_cfg(0.0, "both", 0.0, 300.0), Vector2(9, 17.5))
+	arena.add_unit(air)
+	arena.tick(0.1)
+	assert_true(g.current_target != air, "纯地面兵不锁空军（打不到）")
+	assert_almost_eq(air.hp, 300.0, 0.0001, "纯地面兵打不到空军")
+
+func test_anti_air_unit_hits_air() -> void:
+	var arena = _battle_arena()[1]
+	var cfg := {
+		"hp": 100.0, "damage": 50.0, "attack_speed": 1.0, "move_speed": 0.0, "attack_range": 2.0,
+		"aggro_radius": 5.0, "body_radius": 0.0, "target_type": "ground", "attack_targets": "both",
+	}
+	var aa = UnitScript.new("aa", UnitScript.OWNER_PLAYER, cfg, Vector2(9, 17.0))
+	arena.add_unit(aa)
+	# air 放 (9,17.5)：在 aa 射程(2.0)内，但在双方塔火射程外（避免塔火干扰）。
+	var air = UnitScript.new("air", UnitScript.OWNER_OPPONENT, _fly_cfg(0.0, "ground", 0.0, 300.0), Vector2(9, 17.5))
+	arena.add_unit(air)
+	arena.tick(0.1)
+	assert_eq(aa.current_target, air, "对空兵(both)锁定空军")
+	assert_almost_eq(air.hp, 250.0, 0.0001, "对空兵命中空军 -50")
+
+func test_tower_hits_air_unit() -> void:
+	var arena = _battle_arena()[1]
+	var air = UnitScript.new("air", UnitScript.OWNER_OPPONENT, _fly_cfg(0.0, "both", 0.0, 300.0), Vector2(4.5, 27.0))
+	arena.add_unit(air)
+	arena.tick(0.1)
+	assert_true(air.hp < 300.0, "塔对空：towers 命中射程内飞兵; hp=%.0f" % air.hp)
+
+func test_air_and_ground_do_not_separate() -> void:
+	var arena = _battle_arena()[1]
+	var gcfg := {
+		"hp": 100.0, "damage": 0.0, "attack_speed": 1.0, "move_speed": 0.0, "attack_range": 1.0,
+		"aggro_radius": 0.0, "body_radius": 0.5, "target_type": "ground", "attack_targets": "ground",
+	}
+	var g = UnitScript.new("g", UnitScript.OWNER_PLAYER, gcfg, Vector2(9, 20.0))
+	arena.add_unit(g)
+	var air = UnitScript.new("a", UnitScript.OWNER_PLAYER, _fly_cfg(0.0, "both", 0.0, 100.0), Vector2(9, 20.1))
+	arena.add_unit(air)
+	arena.tick(0.1)
+	assert_true(g.pos.distance_to(air.pos) < 0.5, "空/地不同层，不互相推挤")

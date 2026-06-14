@@ -252,12 +252,24 @@ func _in_attack_range(unit, target) -> bool:
 func _target_alive(target) -> bool:
 	return target != null and target.is_alive()
 
-# 向目标推进：塔目标走流场绕桥；单位目标直线趋向（近距）。
+# 向目标推进：飞行单位直线越河（忽略地形）；地面单位塔目标走流场绕桥、单位目标直线趋向。
 func _move_toward(unit, target, dt: float) -> void:
-	if target is Tower:
+	if unit.is_flying():
+		_step_fly(unit, target.pos, dt)
+	elif target is Tower:
 		_step_toward(unit, target, dt)
 	else:
 		_step_toward_point(unit, target.pos, dt)
+
+# 飞行直线趋向（V3-2）：忽略水/塔（飞在上层），只挡出界。
+func _step_fly(unit, point: Vector2, dt: float) -> void:
+	var dir: Vector2 = point - (unit.pos as Vector2)
+	if dir.length() <= _EPSILON:
+		return
+	var np: Vector2 = (unit.pos as Vector2) + dir.normalized() * float(unit.move_speed) * dt
+	if tile_type_at(np) == TILE_OOB:
+		return
+	unit.pos = np
 
 # 软推挤分离（V3-1d）：固定顺序遍历单位对，重叠则沿连心线各推开半个重叠量。
 # 确定性（i<j 固定序、固定趟数）；推后不进水/塔/出界。完全重叠用确定性方向兜底。
@@ -272,6 +284,8 @@ func _separate() -> void:
 				var b = units[j]
 				if not b.is_alive():
 					continue
+				if a.is_flying() != b.is_flying():
+					continue   # V3-2：空/地不同层，互不挤
 				var min_d: float = float(a.body_radius) + float(b.body_radius)
 				if min_d <= 0.0:
 					continue
@@ -289,8 +303,10 @@ func _separate() -> void:
 func _apply_push(unit, push: Vector2) -> void:
 	var np: Vector2 = (unit.pos as Vector2) + push
 	var tt := tile_type_at(np)
-	if tt == TILE_WATER or tt == TILE_TOWER or tt == TILE_OOB:
+	if tt == TILE_OOB:
 		return
+	if not unit.is_flying() and (tt == TILE_WATER or tt == TILE_TOWER):
+		return   # 地面兵不进水/塔；飞行兵可越（上层）
 	unit.pos = np
 
 # aggro_radius 内最逼近的存活敌方单位（分心目标）；无则 null。确定性 tie-break = units 顺序。
@@ -303,6 +319,8 @@ func _nearest_enemy_unit_in_aggro(unit):
 	for o in units:
 		if o.owner_id == unit.owner_id or not o.is_alive():
 			continue
+		if not unit.can_hit_type(o.target_type):
+			continue   # V3-2：打不到的类型（如纯地面 vs 空军）不分心、不锁
 		var d: float = unit.pos.distance_to(o.pos)
 		if d <= r and d < best_d:
 			best_d = d

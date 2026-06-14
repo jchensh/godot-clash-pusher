@@ -139,4 +139,6 @@ claude mcp remove godot-ai -s user   # 卸载注册（不删插件）
     - V3-1f ✅ SkillSystem 2D（已并入 V3-1b，槽空）。
     - V3-1g ✅ AIController 2D 重写：2D 部署/威胁/防守/集火最弱塔侧/难度分级；test_ai_controller 加回。单测 121/121。
     - V3-1h ✅ 显示层 2D 接通（仅 view，整体重写）：tile↔屏幕、地形/桥/塔/自由移动单位/塔火/HUD/结算、tap 落点出牌、AI 自驱。编辑器导入 + 6s headless 零错误；画面/手感留真人验收。
-  - **V3-1 收官**（lane 彻底移除，单测 121/121）。**Now**：等用户实机验收 V3-1h，通过后进 **V3-2 空军**（飞兵越河 + 对空克制）。
+  - **V3-1 收官**（lane 彻底移除，单测 121/121）。
+  - V3-2 ✅ 空军：`unit` +`attack_targets`/`is_flying()`/`can_hit_type`；`arena` 索敌按可攻类型过滤(纯地面打不到空军)、飞兵直线越河、软分离仅同层；塔对空。units +attack_targets、build_config +列、view 飞兵上浮。单测 126/126。
+  - **Now**：V3-1h+V3-2 画面留真人验收；之后进 **V3-3 新技能积木**。

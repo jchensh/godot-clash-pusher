@@ -42,6 +42,7 @@ UNIT_HEADERS = [
     "aggro_radius_tiles",
     "body_radius_tiles",
     "unit_type",
+    "attack_targets",
     "notes",
 ]
 CARD_HEADERS = ["card_id", "name", "elixir_cost", "category", "enabled", "notes"]
@@ -83,6 +84,7 @@ DECK_HEADERS = [
 
 SKILL_TYPES = ["spawn_unit", "direct_damage", "aoe_damage"]
 UNIT_TYPES = ["ground", "air"]
+ATTACK_TARGETS = ["ground", "air", "both"]   # 该单位能攻击的目标类型（V3-2 对空克制）
 TARGETS = ["first_enemy_in_lane"]
 SIDES = ["player", "ai"]
 DIFFICULTIES = ["easy", "normal", "hard"]
@@ -178,6 +180,9 @@ def build_json_from_workbook(workbook_path: Path = WORKBOOK_PATH) -> tuple[dict[
         unit_type = _text(row.get("unit_type"))
         if unit_type not in UNIT_TYPES:
             raise ConfigError(f"unit {unit_id} unit_type must be one of {UNIT_TYPES}")
+        attack_targets = _text(row.get("attack_targets")) or "ground"
+        if attack_targets not in ATTACK_TARGETS:
+            raise ConfigError(f"unit {unit_id} attack_targets must be one of {ATTACK_TARGETS}")
         # V3：attack_range / move_speed 量纲改为 tile（attack_range ≥0，无上限；非 lane 比例）。
         attack_range = _number_float(row.get("attack_range_tiles"), f"unit {unit_id}.attack_range_tiles")
         if attack_range < 0.0:
@@ -192,6 +197,7 @@ def build_json_from_workbook(workbook_path: Path = WORKBOOK_PATH) -> tuple[dict[
             "aggro_radius": _number_float(row.get("aggro_radius_tiles"), f"unit {unit_id}.aggro_radius_tiles"),
             "body_radius": _number_float(row.get("body_radius_tiles"), f"unit {unit_id}.body_radius_tiles"),
             "target_type": unit_type,
+            "attack_targets": attack_targets,
         }
 
     cards: dict[str, Any] = {}
@@ -351,10 +357,12 @@ def workbook_from_json(workbook_path: Path = WORKBOOK_PATH) -> None:
                 unit.get("aggro_radius", ""),
                 unit.get("body_radius", ""),
                 unit.get("target_type", ""),
+                unit.get("attack_targets", ""),
                 "",
             ]
         )
     _add_list_validation(ws_units, "unit_type", UNIT_TYPES)
+    _add_list_validation(ws_units, "attack_targets", ATTACK_TARGETS)
 
     ws_cards = wb.create_sheet("Cards")
     _setup_sheet(ws_cards, CARD_HEADERS, {"card_id": 16, "name": 14, "category": 14, "notes": 26})
