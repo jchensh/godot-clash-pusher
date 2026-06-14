@@ -192,3 +192,26 @@ If it is disconnected:
 - Do not use MCP writes to bypass `PLAN_V2.md` or the one-step-at-a-time
   confirmation discipline.
 - Visual quality and game feel still require human verification in the editor.
+
+---
+
+## godot-ai MCP — 操作细节（从 CLAUDE.md 迁入，按需查）
+
+> 使用守则（默认不主动用 / 写操作先确认 / 不替代真人验收）在 CLAUDE.md。这里是管理命令与画面/FX 验收协议。
+
+**前提**：server 由 Godot 编辑器插件提供，**只有编辑器开着时可用**，关掉即断；**先开编辑器再开 agent 会话**，顺序反了需新开会话重连。注册信息在用户级配置（非项目内）。
+
+**管理 / 排查**
+```bash
+claude mcp list            # 看连接状态（godot-ai ✓ Connected 即正常）
+claude mcp get godot-ai
+claude mcp remove godot-ai -s user   # 卸载注册（不删插件）
+```
+界面里 `/mcp` 也能看状态；Godot「项目设置→插件」启停 `godot_ai`。
+
+**画面 / FX 验收协议（V2-4 教训，别让用户陪打）**
+- **一次性载全工具**：开头一个 ToolSearch 拿全 `editor_state / project_run / project_manage / editor_screenshot / game_manage / logs_read`；用 **`editor_screenshot source="game"`** 截运行中游戏（2D 工程别用默认 `viewport` 源，会因无 Node3D 报错）。
+- **干净启动序列**：`project_manage(op=stop)` → `editor_state`（等 `is_playing=false`）→ `project_run(autosave=false)` → 轮询 `editor_state` 到 `game_capture_ready=true` 才截图。
+- **不碰运气抓 <0.3s 瞬时 FX、不让用户手动陪打**：写**临时(不提交)验收 harness**把 FX 摆好定格够久（`Engine.time_scale≈0.15` 慢放/暂停/循环），在已知时刻截图，验后删。
+- **用日志掐时机**：`logs_read(source="game")` 拿运行中 stdout（SPAWN/DEATH/TOWER HIT 等），据此对准关键事件截图。
+- **`game_manage input_mouse` 坐标不可靠**（被映射到桌面全局多屏坐标）：交互走代码钩子/harness 或让用户点。

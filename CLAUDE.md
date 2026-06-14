@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-竖屏「皇室战争式对推小游戏」，**Godot 4.x / GDScript**。玩家 vs 规则 AI，圣水 + 循环卡组部署单位，沿 lane 互推、推塔决胜。V1 纯 2D 白膜，先 Windows 跑通再导出安卓。
+竖屏「皇室战争式对推小游戏」，**Godot 4.6.3 / GDScript**，**macOS 开发**。玩家 vs 规则 AI，圣水 + 循环卡组、**2D 场地自由部署、绕桥推塔决胜**（V3 起为 2D 战斗核心，做成买断制单机：短战役 + Roguelite）。
 
 > **编码前必读**：[PLAN_GRAND.md](PLAN_GRAND.md)（全项目 roadmap）→ [PLAN_V3.md](PLAN_V3.md)（**当前阶段权威规划**）；[PLAN_V2.md](PLAN_V2.md) / [PLAN_V1.md](PLAN_V1.md) 是已完成阶段的规格（存档备查）。本文件只是操作手册，当前阶段规格以 PLAN_V3.md 为准。
 
@@ -26,32 +26,15 @@
 - 数值/卡牌**走配置，不硬编码**。Godot 运行时读取 `config/cards.json`、`config/units.json`、`config/levels.json`；`config/GameConfig.xlsx` 是给人类策划读改的工作簿镜像。
 
 ## 配置工作流（JSON / Excel 双入口）
-- **agent 默认改 JSON**：Codex / Claude 做配置、数值、卡牌、关卡调整时，优先直接编辑 `config/cards.json`、`config/units.json`、`config/levels.json`，因为这是 Godot 实际读取路径，也更省上下文和操作成本。
-- agent 确认 JSON 配置正确后，用当前 JSON 覆写同步 Excel：
-  ```powershell
-  uv run --with openpyxl python tools/build_config.py --from-json
+- **agent 默认改 JSON**：直接编辑 `config/cards.json` / `units.json` / `levels.json`（Godot 运行时读取路径，省上下文）。`config/arena.json` 是 V3 2D 场地结构性配置，**不进 Excel 镜像**。
+- 改完 JSON → 同步并校验 Excel（下载 openpyxl 走代理）：
+  ```bash
+  uv run --with openpyxl python tools/build_config.py --from-json   # JSON → 重建 GameConfig.xlsx
+  uv run --with openpyxl python tools/build_config.py --check       # 校验 JSON↔Excel 一致（提交前必跑）
   ```
-  这会从 `config/*.json` 重建 `config/GameConfig.xlsx`，让人类之后仍能用 Excel 查看和继续改。
-- **人类策划可以直接改 Excel**：如果用户自己在 `GameConfig.xlsx` 里调数值，改完后运行：
-  ```powershell
-  uv run --with openpyxl python tools/build_config.py
-  ```
-  这会从 Excel 重新生成 `config/cards.json`、`config/units.json`、`config/levels.json`。
-- 提交前必须校验 JSON 与 Excel 已同步：
-  ```powershell
-  uv run --with openpyxl python tools/build_config.py --check
-  godot --headless --path F:\godotProject --script res://tests/test_runner.gd
-  ```
-- `tools/build_config.py --from-json` 会覆盖 `GameConfig.xlsx`。如果发现 Excel 可能有用户尚未同步到 JSON 的改动，agent 必须先停下询问，不要直接覆盖。
-- agent 修改配置时必须遵守：先改 JSON，再 `--from-json` 同步 Excel，再跑 `--check` 和 Godot 单测；如果用户只要求分析方案，不要擅自生成或改配置。
-- 当前工作簿 sheet 约定：
-  - `Units`：单位基础数值。`attack_interval_s` 会生成到 JSON 的 `attack_speed` 字段，语义是「攻击间隔（秒/次）」。
-  - `Cards`：卡牌主表，控制 `card_id`、名称、费用、启用状态。
-  - `CardSkills`：一行一个技能积木，按 `card_id + order` 聚合成 JSON 的 `skills` 数组。
-  - `Levels`：关卡主表，包含圣水、时长、AI 难度、塔血。
-  - `Decks`：每关玩家/AI 的 8 张卡组。
-  - `Balance_View`：公式视图，辅助看 DPS 等派生指标；不导出。
-  - `_Enums`：下拉枚举源，隐藏表；不导出。
+  人类策划直接改 Excel 后，用无参 `build_config.py` 反向生成 JSON。
+- ⚠️ `--from-json` 会覆盖 `GameConfig.xlsx`；若疑似 Excel 有用户未同步到 JSON 的手改，**先停下询问**，别直接覆盖。只分析方案时不擅自改配置。
+- 工作簿 sheet：`Units`（单位数值；`attack_interval_s`→JSON `attack_speed`）/ `Cards` / `CardSkills`（一行一积木，按 `card_id+order` 聚合）/ `Levels` / `Decks` / `Balance_View`（公式视图，不导出）/ `_Enums`（隐藏，不导出）。
 
 ## 目录布局
 ```
@@ -64,46 +47,20 @@
 ```
 
 ## 工具链 / 常用命令
-引擎：**Godot 4.6.3 stable（标准 GDScript 构建）**。已加入用户 PATH（经 `~\bin\godot.cmd` shim，指向 WinGet 安装的 `_console.exe`）。新终端中 `godot` 直接可用。
+引擎：**Godot 4.6.3 stable**（**macOS / Homebrew**，`godot` 直接可用）。
 
-```powershell
-godot --version                                   # 确认可用
-godot --headless --quit --path F:\godotProject    # 验证工程能打开/导入
-godot --headless --script res://tests/test_runner.gd   # 跑全部单元测试（CI/逻辑层验收）
-godot --path F:\godotProject -e                   # 打开编辑器 GUI
+```bash
+HOME=/private/tmp/godot-home godot --headless --path . --script res://tests/test_runner.gd  # 跑全部单测
+HOME=/private/tmp/godot-home godot --headless --editor --path . --quit                      # 验证导入/生成 .uid
+godot --path . -e                                                                           # 打开编辑器 GUI
 ```
-> 测试用**自写轻量 runner**（零外部依赖）：`tests/test_runner.gd` 自动发现 `test_*.gd`、跑 `test_*` 方法、汇总并以 exit 0/1 返回。新测试文件 `extends "res://tests/test_case.gd"`。
-
-IDE：**VS Code**（默认）。装 `geequlim.godot-tools` 扩展（`.vscode/extensions.json` 已推荐）；F5 用 `.vscode/launch.json` 的「Debug Godot Project」启动调试。
+> 测试用自写轻量 runner（零依赖）：自动发现 `tests/test_*.gd`、跑 `test_*`、exit 0/1。新测试 `extends "res://tests/test_case.gd"`。
+> push / `brew` / `uv` 等下载走代理：`HTTPS_PROXY=http://127.0.0.1:7897`。IDE = VS Code（`geequlim.godot-tools`，F5 调试）。
 
 ## godot-ai MCP（编辑器联动，**辅助工具**）
-项目装了 `godot-ai` 插件（`addons/godot_ai/`），在 **Godot 编辑器内**起一个 MCP server（`http://127.0.0.1:8000/mcp`），让 AI 能直接读写引擎：看场景树、建/改节点、改脚本、跑测试、截图等（工具名 `mcp__godot-ai__*`，如 `editor_state` / `scene_get_hierarchy` / `node_create` / `script_patch` / `test_run` / `editor_screenshot`）。
-
-**前提条件**
-- server 本体由 Godot 插件提供：**只有 Godot 编辑器开着时才可用**，关掉就断。
-- 注册信息在用户级 `~\.claude.json`（scope=user，全局生效），非项目内。
-- **必须先开 Godot 编辑器，再开 Claude Code 会话**；顺序反了当前会话连不上，需新开会话重连。
-
-**管理 / 排查**
-```powershell
-claude mcp list            # 看所有 MCP 与连接状态（godot-ai ✓ Connected 即正常）
-claude mcp get godot-ai    # 看详情
-claude mcp remove godot-ai -s user   # 卸载注册（不删插件）
-```
-界面里敲 `/mcp` 也能看状态；Godot 那边在「项目设置→插件」启停 `godot_ai`。
-
-**使用守则（重要）**
-- ❌ **不主动用**——默认当辅助工具，**仅当用户明确叫我用时才用**，绝不自行驱动引擎。
-- ✅ 被叫到时：**只读操作**（看场景树/截图/读日志/跑测试）可直接做。
-- ⚠️ **写操作**（建节点/改脚本/改属性等会改工程的）先按"一步一确认"跟用户确认再动手。
-- 这条与上面「实机/画面验收交给真人」纪律一致：MCP 是补充手段，不替代真人肉眼验收。
-
-**画面/FX 验收用 MCP 时的协议（V2-4 教训，别让用户陪打）**
-- **一次性载全工具**：开头一个 ToolSearch 把 `editor_state / project_run / project_manage / editor_screenshot / game_manage / logs_read` 全拿到；认准 **`editor_screenshot source="game"`** 截运行中游戏（2D 工程别用默认 `viewport` 源，会因无 Node3D 报错）。
-- **干净启动序列**（避开缓存滞后/截图桥未就绪）：`project_manage(op=stop)` → `editor_state`（刷新缓存，等 `is_playing=false`）→ `project_run(autosave=false)` → 轮询 `editor_state` 到 `game_capture_ready=true` 才截图。
-- **不被动碰运气抓 <0.3s 瞬时 FX、绝不让用户手动延长对局陪打**：写**临时(不提交)验收 harness**把要看的 FX 摆好并定格够久（`Engine.time_scale≈0.15` 慢放／暂停／循环），在已知时刻截图，验后删（headless 探针的"有画面"版）。
-- **用日志掐时机**：`logs_read(source="game")` 能拿到运行中游戏 stdout（`battle_scene._log` 的 SPAWN/DEATH/TOWER HIT 都在那），据此把截图对准关键事件。
-- **`game_manage input_mouse` 坐标不可靠**：position 被映射到桌面全局坐标（多屏），点不准卡牌/落点；要交互走代码钩子/harness 或让用户点。
+`addons/godot_ai/` 在 **Godot 编辑器开着时**起本地 MCP server（`127.0.0.1:8000/mcp`），让 AI 读写引擎（场景树/节点/脚本/截图/跑测试，工具名 `mcp__godot-ai__*`）。
+**使用守则**：❌ 默认不主动用，仅用户明确叫用才用、绝不自行驱动引擎；✅ 被叫到时只读操作（看树/截图/读日志/跑测试）可直接做；⚠️ 写操作先按「一步一确认」。MCP 是补充手段，不替代真人肉眼验收。
+> 安装/注册、管理命令、**画面/FX 验收协议**（截图序列/临时 harness 定格/日志掐时机）→ 见 [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
 ## 分支 / 提交 / 推送约定
 - **开发在 `develop` 分支进行**；`main` 为稳定线，远端 `origin` = https://github.com/jchensh/godot-clash-pusher 。
@@ -111,41 +68,12 @@ claude mcp remove godot-ai -s user   # 卸载注册（不删插件）
 - 仍遵守"一步一确认"：每步做完先停下报告，待用户说提交再 commit+push。
 
 ## 当前进度
-- Step 0 ✅ 脚手架 + git + 工具链
-- Step 1 ✅ `ConfigLoader` + 三张 JSON 配置
-- Step 2 ✅ `Elixir` 圣水系统 + `SimClock` 固定逻辑 tick（10Hz / `TICK_DELTA=0.1s`）
-- Step 3 ✅ `Deck` 循环卡组（8 库 + 4 手，出一张补一张）
-- Step 4 ✅ `Unit` + `Lane` 推进与碰撞（纯逻辑）
-- Step 5 ✅ `Tower` + `Battle` 胜负判定（三塔制；王塔归零判负；超时比塔血）
-- Step 6 ✅ `SkillSystem` 三积木（spawn_unit / direct_damage / aoe_damage）
-- Step 7 ✅ 显示层 MVP（白膜方块 + 手牌 UI + 圣水条 + 血条；单 lane 跑通；7a Player/Match 逻辑 + 7b Godot 画面）
-- Step 8 ✅ `AIController` 规则 AI（简单进攻型；对手自驱出牌、一局正常分胜负）
-- Step 9 ⏸ 安卓导出（缓做，移至 V2 后续；编辑器内即可体验/开发）
-- **V1 收官**。现进入 **V2**（顺序 A→D→B→C，权威规划见 PLAN_V2.md）：
-  - V2-1 ✅ 3-lane 逻辑层：`Battle.build_v2_three_lanes` + `Lane` 侧路公主倒后转打王塔（决策日志 24–25）。
-  - V2-2 ✅ 3-lane 接通：`Match` 改 3 lane、显示层 3 道/6 塔、tap-to-place 选 lane、`Player` 部署半场校验、AI 固定中路（决策日志 26–28）。A 模块（3-lane）完成。
-  - V2-3 ✅ 程序化美术换皮（仅 view 层）：兵种按形状/大小/朝向区分、塔造型(王城垛/公主尖顶)、河道木桥背景；逻辑零改动、单测 110/110。待用户视觉验收。
-  - V2-4 ✅ 完成（视觉验收通过，`55c2fb7`）：动画与特效（仅 view 层，逻辑零改动，路线 A 纯显示层还原）——受击闪白、攻击顶刺、死亡消散、远程投射物（弓箭手）、AOE/法术爆点（玩家精确/AI 推断）、塔受击抖动+摧毁碎块。编译通过、单测仍 110/110、headless 强制触发全 FX 路径零报错、人工视觉验收通过。
-  - V2-5 🔄（D 模块收尾）按一步一确认拆 3 小步：5a 场景闭环骨架 / 5b 战斗内 UI 美化 / 5c 音频（**音频本阶段缓做**；UI 保持全英文）。决策日志 32。
-    - V2-5a ✅ 主菜单（`main_menu.tscn`）+ 结算面板（胜负/比分/REMATCH/MENU）+ 菜单→对局→结算→菜单 闭环（仅显示层，视觉验收通过）。
-    - V2-5b ✅ 战斗内 HUD 美化：顶部信息条（王冠/倒计时）、分段圣水条+数字徽章、卡面（费用徽章/选中金框/可出牌灰态）、塔血条按血量变色、结算按钮样式（仅显示层，逻辑零改动、单测 111/111、视觉验收通过）。**5c 音频缓做**（决策 32）。D 模块除音频外收尾完成。
-  - V2-6 ✅（B 模块）规则 AI 升级：攻防结合（受威胁 lane 优先空投拦截兵）+ 按 lane 选进攻方向（集火最弱敌塔）+ `ai_difficulty` 难度 easy/normal/hard 分级（阈值/间隔/是否防守/选路 4 维度），逻辑层 + 单测（决策 33）。另加**难度选择界面**（主菜单→难度→对局，仅显示层）。
-  - V2-7 🔄（C 模块 内容/数值）按一步一确认拆 3 小步（决策 34）：7a 扩卡池 / 7b 多关卡+选关（关卡=独立遭遇战含难度，取代难度界面）/ 7c 组卡界面（自由选 8 张）。
-    - V2-7a ✅ 扩卡池：+6 卡 / +4 单位 → **14 卡 / 9 单位**（坦克/群攻/快攻/空军/远程/法术原型，仍走三积木、不做空地克制），纯 JSON + Excel 同步 + 单测。
-    - V2-7b ✅ 多关卡（1→**4 关**，各自带难度/节奏/AI 卡组）+ 选关界面（`level_select`，按难度档卡片，**取代难度选择界面**；难度内嵌进关卡、经 `GameState.level_id` 传递）。逻辑零改动 + headless 烟测（level_03 AI 部署新卡零报错）。
-    - V2-7c ✅ 组卡界面（`deck_builder`，卡池动态读取、自由选 8 张唯一卡、预填关卡默认；经 `GameState.player_deck` 覆盖关卡默认，`Match.setup` 加可选覆盖参数、仅作用玩家卡组）。单测 **121/121** + 端到端烟测（自定义卡组进对局玩家手牌生效）。**至此 V2-7 收尾完成**，流程：菜单→选关→组卡→对局→结算。
-  - V2-8 ✅ 数值平衡 pass（轻量，纯配置；决策 35）：harness 测量得「节奏健康 / 难度曲线 proxy 不可读交真人 / swarm 不削、baby_dragon 废兵」。**仅改两张卡**：`arrows` 单体 150→AOE r0.5/140（补中号群清、顺带消除对称对局 0-0 僵局）、`baby_dragon_body` 攻速 1.6→1.3（DPS 50→62）。单测 121/121、Excel 已同步。**难度曲线交真人实机验收**（清单见 HISTORY V2-8）。**至此 V2 主线（V2-1～V2-8）全部完成**；剩 5c 音频缓做。
-- **V3 启动**（2026-06-10）：**战斗核心 2D 重构** + 做成买断制单机（短战役 + Roguelite，2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)（决策日志 36）。
-  - **V3-1 = 2D 战斗 reboot（头号工程，取代 lane）**：河 + 左右双桥 + 己方半场自由落点 + 流场绕桥寻路 + 完整 CR 仇恨/分心 + 软推挤碰撞 + 塔会反击。拆 8 小步（a 场地地形 / b 移动寻路 / c 仇恨 / d 软分离+攻击 / e 塔反击 / f 技能 2D / g AI 2D / h 显示层 2D）。
-  - V3-1a ✅ 场地与地形：`config/arena.json` + 新 `logic/arena.gd`（地形/塔占位/落点合法性）+ `Battle.build_arena` + `tests/test_arena.gd`。
-  - V3-1b ✅ **推倒重来**（决策 37：弃绞杀改 rip-out）：`Unit` 2D 化 + `arena` 流场绕桥移动/寻路 + **删 lane**（`lane.gd` 及 lane/battle_v2/ai_controller 测试删除）；连带 **`skill_system` 2D（原 V3-1f 提前）** + `battle`/`match`/`player` 2D + `units`/`cards` 量纲改 tile（+`build_config.py` 列名）。AI 暂搁置（死代码，V3-1g 重写）、view 暂坏（V3-1h 接通）。单测 101/101。
-  - V3-1c ✅ 目标获取 + **完整 CR 仇恨/分心**：`unit` +`aggro_radius`/`current_target`；`arena.tick` 加索敌——aggro 内有敌兵则转火直追、否则默认锁最近敌塔（流场），每 tick 重选(死/离开回锁)。units +aggro_radius（Excel 同步）。单测 107/107。（巨人式「只攻建筑」按 §5 暂不引入。）
-  - V3-1d ✅ **软推挤碰撞 + 接敌攻击**：`unit` +`body_radius`；`arena.tick` 五段化（冷却/索敌移动/软分离/攻击结算/清死）——单位有体积互相挤(确定性)、到射程首击免费按冷却掉血、**单位能削塔**(王塔归零判胜负)、双方同 tick 同步互伤。units +body_radius。单测 111/111。
-  - V3-1e ✅ **塔会反击 + 塔毁流场重算**：`tower` +damage/range/attack_speed+冷却；`arena.tick` 加塔攻击(射程内最近敌兵)、塔毁释放占位+重算流场；`arena.json` +`tower_combat`。单测 114/114。
-  - V3-1f ✅ SkillSystem 2D（已于 V3-1b 完成，槽空）。
-  - V3-1g ✅ **AIController 2D 重写**：2D 部署/威胁评估(玩家单位越 THREAT_LINE)/防守空投/进攻集火最弱玩家塔侧/难度分级；重新加回 test_ai_controller(7 测)。单测 121/121。
-  - V3-1h ✅ **显示层 2D 接通**（仅 view）：`battle_scene` 整体重写——tile↔屏幕映射、画地形(河/双桥)+6 塔+自由移动单位+塔火、顶栏/圣水/手牌/结算、tap 选卡→点己方半场落点出牌、AI 自驱。编辑器导入 exit0 + 6s headless 实跑零错误；**画面/手感留真人实机验收**（首次可玩 2D 重构；清单见 HISTORY V3-1h）。lane 时代 FX 未移植（留 V3-4/V3-7）。
-  - **V3-1（2D 战斗核心 reboot）收官**，lane 模型彻底移除、单测 121/121。
-  - V3-2 ✅ **空军（飞兵越河 + 对空克制）**：`unit` +`attack_targets`(ground/air/both)/`is_flying()`(派生 target_type==air)/`can_hit_type`；`arena` 索敌按 can_hit_type 过滤(纯地面打不到空军)、飞兵直线越河忽略地形、软分离仅同层；塔不过滤(对空网)。units +attack_targets、build_config +列、view 飞兵上浮显示。单测 126/126。
-  - V3-3 ✅ **新技能积木**（择优 2 个）：**亡语召唤** `on_death_spawn`（unit +death_spawn_*；arena 死亡裂兵；新卡 `golem` 死裂 2 哥布林）+ **治疗术** `aoe_heal`（治友军，新卡 `heal`）。→ **16 卡/10 单位**。config_loader +death_spawn 交叉校验、build_config +aoe_heal/+death_spawn 列。单测 129/129。（slow/击退/建筑留后续）
-  - **Now**：V3-1h/V3-2/V3-3 画面留真人实机验收；逻辑通过后进 **V3-4 Roguelite 主轴**（run/节点地图/连战/draft/relic/boss/存档）。
+> 完整进度总览表 + 决策日志 + 当前阶段逐步见 [HISTORY.md](HISTORY.md)；V1/V2 详细历史归档于 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。这里只放一句话现状。
+
+- **V1 / V2 全部完成**（机制白膜 → 3-lane + 程序化换皮 + AI 难度 + 扩内容/数值平衡；详见归档）。
+- **V3 进行中**（战斗核心 2D 重构 + 买断制单机，权威规划 [PLAN_V3.md](PLAN_V3.md)，方向见决策 36/37）：
+  - V3-1 ✅ **2D 战斗 reboot**（取代 lane：地形/流场绕桥/仇恨分心/软推挤+攻击/塔反击/AI 2D/显示层 2D）
+  - V3-2 ✅ 空军（飞兵越河 + 对空克制 `attack_targets`）
+  - V3-3 ✅ 新技能积木（亡语召唤 `golem` / 治疗术 `heal`）→ 16 卡 / 10 单位
+  - 单测 **129/129**；**V3-1h / V3-2 / V3-3 的画面·手感留真人实机验收**（首次可玩 2D 重构）。
+- **Now**：下一步 **V3-4 Roguelite 主轴**（run / 节点地图 / 连战 / draft 三选一 / relic / boss / 存档）。

@@ -1,5 +1,7 @@
 # PLAN_V2.md — V2 规划：把游戏做深、做像
 
+> ⚠️ **已完成·存档·通常不必读**：本阶段已收尾，本文件仅作历史规格备查。当前阶段权威规划见 [PLAN_V3.md](PLAN_V3.md)，进度见 [HISTORY.md](HISTORY.md)。
+
 > 本文件是 **V2 阶段的权威规划**。V1（单 lane 白膜可玩 demo）已完成，历史规格见 [PLAN_V1.md](PLAN_V1.md)；全局 roadmap 见 [PLAN_GRAND.md](PLAN_GRAND.md)。
 > **开发纪律沿用 V1**：一步一确认、每步 commit、逻辑层步骤必配单元测试、数值/卡牌走 JSON、逻辑/显示彻底分离、玩家与 AI 对称、不过度设计。
 
