@@ -141,4 +141,5 @@ claude mcp remove godot-ai -s user   # 卸载注册（不删插件）
     - V3-1h ✅ 显示层 2D 接通（仅 view，整体重写）：tile↔屏幕、地形/桥/塔/自由移动单位/塔火/HUD/结算、tap 落点出牌、AI 自驱。编辑器导入 + 6s headless 零错误；画面/手感留真人验收。
   - **V3-1 收官**（lane 彻底移除，单测 121/121）。
   - V3-2 ✅ 空军：`unit` +`attack_targets`/`is_flying()`/`can_hit_type`；`arena` 索敌按可攻类型过滤(纯地面打不到空军)、飞兵直线越河、软分离仅同层；塔对空。units +attack_targets、build_config +列、view 飞兵上浮。单测 126/126。
-  - **Now**：V3-1h+V3-2 画面留真人验收；之后进 **V3-3 新技能积木**。
+  - V3-3 ✅ 新技能积木：亡语召唤 `on_death_spawn`（新卡 `golem` 死裂 2 哥布林）+ 治疗术 `aoe_heal`（新卡 `heal`）。16 卡/10 单位。单测 129/129。
+  - **Now**：V3-1h/2/3 画面留真人验收；之后进 **V3-4 Roguelite 主轴**。

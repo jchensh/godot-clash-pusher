@@ -50,6 +50,8 @@ func _execute_block(block: Dictionary, owner_id: int, pos: Vector2) -> void:
 			_direct_damage(block, owner_id, pos)
 		"aoe_damage":
 			_aoe_damage(block, owner_id, pos)
+		"aoe_heal":
+			_aoe_heal(block, owner_id, pos)
 		_:
 			pass   # 未知积木类型：忽略
 
@@ -64,7 +66,11 @@ func _spawn_unit(block: Dictionary, owner_id: int, pos: Vector2) -> void:
 	var count := maxi(int(block.get("count", 1)), 0)
 	for i in count:
 		var offset: Vector2 = _SPREAD[i % _SPREAD.size()]
-		arena.add_unit(UnitScript.new(unit_id, owner_id, unit_cfg, pos + offset))
+		var u = UnitScript.new(unit_id, owner_id, unit_cfg, pos + offset)
+		# 亡语召唤（V3-3）：注入被召唤单位的配置模板，使 Arena 死亡时无需 ConfigLoader 即可生成。
+		if u.death_spawn_id != "":
+			u.death_spawn_config = config.get_unit(u.death_spawn_id)
+		arena.add_unit(u)
 
 func _direct_damage(block: Dictionary, owner_id: int, pos: Vector2) -> void:
 	var target = _nearest_enemy_to(pos, owner_id)
@@ -83,6 +89,19 @@ func _aoe_damage(block: Dictionary, owner_id: int, center: Vector2) -> void:
 			continue   # 只打存活敌方
 		if u.pos.distance_to(center) <= radius + _EPSILON:
 			u.take_damage(damage)
+
+# 治疗术（V3-3）：治疗范围内存活友军（damage 字段复用为治疗量）。
+func _aoe_heal(block: Dictionary, owner_id: int, center: Vector2) -> void:
+	var arena = _arena()
+	if arena == null:
+		return
+	var radius := float(block.get("radius", 0.0))
+	var amount := float(block.get("damage", 0.0))
+	for u in arena.get_units():
+		if u.owner_id != owner_id or not u.is_alive():
+			continue   # 只治友军
+		if u.pos.distance_to(center) <= radius + _EPSILON:
+			u.heal(amount)
 
 # 最逼近 pos 的存活敌方单位；无则 null。
 func _nearest_enemy_to(pos: Vector2, owner_id: int):

@@ -95,6 +95,26 @@ func test_aoe_hits_enemies_within_radius() -> void:
 	assert_almost_eq(at_edge.hp, 200.0, 0.0001, "范围边界敌人中招")
 	assert_almost_eq(outside.hp, 300.0, 0.0001, "范围外敌人不中招")
 
+func test_aoe_heal_heals_allies_not_enemies() -> void:
+	var ctx = _setup_battle()
+	var battle = ctx[1]
+	var skill = ctx[2]
+	var ally = _add_unit(battle, UnitScript.OWNER_PLAYER, Vector2(9, 12), 300.0)
+	ally.take_damage(200.0)   # 300 → 100
+	var foe = _add_unit(battle, UnitScript.OWNER_OPPONENT, Vector2(9, 12), 300.0)
+	skill.play_card("heal", UnitScript.OWNER_PLAYER, Vector2(9, 12))   # aoe_heal r3 / 150
+	assert_almost_eq(ally.hp, 250.0, 0.0001, "友军被治 +150")
+	assert_almost_eq(foe.hp, 300.0, 0.0001, "敌方不被治")
+
+func test_aoe_heal_caps_at_max_hp() -> void:
+	var ctx = _setup_battle()
+	var battle = ctx[1]
+	var skill = ctx[2]
+	var ally = _add_unit(battle, UnitScript.OWNER_PLAYER, Vector2(9, 12), 300.0)
+	ally.take_damage(50.0)    # 300 → 250
+	skill.play_card("heal", UnitScript.OWNER_PLAYER, Vector2(9, 12))   # +150 但封顶
+	assert_almost_eq(ally.hp, 300.0, 0.0001, "治疗不超过最大血量")
+
 func test_aoe_excludes_friendly() -> void:
 	var ctx = _setup_battle()
 	var battle = ctx[1]

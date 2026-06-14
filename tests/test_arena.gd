@@ -7,6 +7,7 @@ const ArenaScript = preload("res://logic/arena.gd")
 const BattleScript = preload("res://logic/battle.gd")
 const ConfigLoaderScript = preload("res://logic/config_loader.gd")
 const UnitScript = preload("res://logic/unit.gd")
+const SkillSystemScript = preload("res://logic/skill_system.gd")
 
 func _loader():
 	var loader = ConfigLoaderScript.new()
@@ -371,3 +372,21 @@ func test_air_and_ground_do_not_separate() -> void:
 	arena.add_unit(air)
 	arena.tick(0.1)
 	assert_true(g.pos.distance_to(air.pos) < 0.5, "空/地不同层，不互相推挤")
+
+# —— 亡语召唤（V3-3，on_death_spawn）——
+
+func test_on_death_spawn_summons_units() -> void:
+	var loader = _loader()
+	var battle = BattleScript.new()
+	var arena = battle.build_arena(loader.get_level("level_01"), loader.get_arena("default"))
+	var skill = SkillSystemScript.new(loader, battle)
+	skill.play_card("golem", UnitScript.OWNER_PLAYER, Vector2(9, 20))   # 石头人：亡语裂 2 哥布林
+	assert_eq(arena.get_units().size(), 1, "石头人入场")
+	var golem = arena.get_units()[0]
+	golem.take_damage(golem.max_hp)            # 击杀
+	arena.tick(0.1)                            # _remove_dead → 亡语生成
+	var goblins := 0
+	for u in arena.get_units():
+		if u.unit_id == "goblin_body":
+			goblins += 1
+	assert_eq(goblins, 2, "石头人亡语：死后裂出 2 哥布林")

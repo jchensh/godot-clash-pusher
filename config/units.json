@@ -106,5 +106,19 @@
     "body_radius": 0.7,
     "target_type": "air",
     "attack_targets": "both"
+  },
+  "golem_body": {
+    "name": "石头人",
+    "hp": 3000,
+    "damage": 100,
+    "attack_speed": 1.6,
+    "move_speed": 1.0,
+    "attack_range": 1.2,
+    "aggro_radius": 5.0,
+    "body_radius": 0.85,
+    "target_type": "ground",
+    "attack_targets": "ground",
+    "death_spawn_unit": "goblin_body",
+    "death_spawn_count": 2
   }
 }

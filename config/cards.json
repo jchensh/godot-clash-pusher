@@ -152,5 +152,27 @@
         "damage": 130
       }
     ]
+  },
+  "golem": {
+    "name": "石头人",
+    "elixir_cost": 7,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "golem_body",
+        "count": 1
+      }
+    ]
+  },
+  "heal": {
+    "name": "治疗术",
+    "elixir_cost": 3,
+    "skills": [
+      {
+        "type": "aoe_heal",
+        "radius": 3.0,
+        "damage": 150
+      }
+    ]
   }
 }

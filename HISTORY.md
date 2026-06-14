@@ -999,3 +999,26 @@
 - `timeout 6 godot --headless --path . res://view/battle_scene.tscn` → 6s 实跑零运行期错误 ✅
 - `build_config.py --from-json` + `--check` → `config check ok`（+attack_targets 列往返一致）✅
 - 对空克制由单测覆盖：飞兵越水 / 地面无法对空 / 对空兵与塔可打空 / 空地不互挤。表现层（飞兵上浮显示）留真人验收。
+
+---
+
+## V3-3 — 新技能积木：亡语召唤 + 治疗术（逻辑+config+单测）  （待提交）
+**前置决策**：PLAN_V3 §3/§5（2–3 个新积木择优）。选**接入最干净、价值最高**的两个；slow/stun（需状态系统）、knockback（需新列）、建筑（需生成计时）留后续。
+
+**新增 / 修改**
+- **亡语召唤 `on_death_spawn`**（单位行为）：`unit` +`death_spawn_id`/`death_spawn_count`/`death_spawn_config`（config 模板由 `SkillSystem` 生成时注入 → `Arena` 死亡处理无需依赖 ConfigLoader）；`arena._remove_dead` 死亡时在原地裂出 N 个（确定性散布、append 后下 tick 生效）。新单位 `golem_body`（坦克 hp3000，死后裂 2× `goblin_body`）+ 卡 `golem`(费7)。
+- **治疗术 `aoe_heal`**（法术块）：`unit` +`heal()`（仅活体、不超 max）；`skill_system` +`_aoe_heal`（治范围内**友军**，复用 `damage` 字段为治疗量）；卡 `heal`(费3, r3/150)。
+- `logic/config_loader.gd`：+`death_spawn_unit` 交叉引用校验。
+- `tools/build_config.py`：`SKILL_TYPES` +`aoe_heal`（复用 radius/damage 列，写侧通用无需改）；`UNIT_HEADERS` +`death_spawn_unit`/`death_spawn_count`（可选列，仅填了才写入 JSON）；Excel 同步。
+- `config/units.json` +`golem_body`；`config/cards.json` +`golem`/+`heal` → **16 卡 / 10 单位**。
+- `tests`：`test_skill_system` +2（治友不治敌 / 治疗封顶）；`test_arena` +1（石头人亡语死裂 2 哥布林，经真 `golem` 卡 + skill_system 端到端）。
+
+**范围边界**：仍走数据驱动积木、与现有积木可叠。巨人「只攻建筑」仍按 §5 暂缓。view 未为 `golem`/`heal` 专门换形（golem 用默认圆，heal 无专属 FX）——美术/FX 留 V3-4/V3-7。`is_flying`/`death_spawn` 量纲与列均经 Excel 往返校验。
+
+**踩坑与修复**
+- 无逻辑坑。`aoe_heal` 复用 `damage` 列（=治疗量），写侧 CardSkills 是通用列映射故零改；`death_spawn` 用「仅非空才写 JSON」保 Excel↔JSON 往返一致（多数单位无此键）。
+
+**验收**
+- `HOME=/private/tmp/godot-home godot --headless --path . --script res://tests/test_runner.gd` → **129/129 全过**（+3）✅
+- `build_config.py --from-json` + `--check` → `config check ok`（+aoe_heal / +death_spawn 两列往返一致）✅
+- 新积木由单测覆盖：亡语裂兵 / 治友不治敌 / 治疗封顶。

@@ -107,6 +107,14 @@ func _validate() -> void:
 				if not units.has(uid):
 					errors.append("card '%s' 的 spawn_unit 引用了不存在的 unit '%s'" % [cid, str(uid)])
 
+	# 交叉引用：unit.death_spawn_unit（亡语召唤，V3-3）必须在 units 中。
+	for uid in units:
+		var u = units[uid]
+		if typeof(u) == TYPE_DICTIONARY and u.has("death_spawn_unit"):
+			var dsid = str(u.get("death_spawn_unit", ""))
+			if not units.has(dsid):
+				errors.append("unit '%s' 的 death_spawn_unit 引用了不存在的 unit '%s'" % [uid, dsid])
+
 	for lid in levels:
 		var lv = levels[lid]
 		if typeof(lv) != TYPE_DICTIONARY:

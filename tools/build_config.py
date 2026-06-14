@@ -43,6 +43,8 @@ UNIT_HEADERS = [
     "body_radius_tiles",
     "unit_type",
     "attack_targets",
+    "death_spawn_unit",
+    "death_spawn_count",
     "notes",
 ]
 CARD_HEADERS = ["card_id", "name", "elixir_cost", "category", "enabled", "notes"]
@@ -82,7 +84,7 @@ DECK_HEADERS = [
     "notes",
 ]
 
-SKILL_TYPES = ["spawn_unit", "direct_damage", "aoe_damage"]
+SKILL_TYPES = ["spawn_unit", "direct_damage", "aoe_damage", "aoe_heal"]
 UNIT_TYPES = ["ground", "air"]
 ATTACK_TARGETS = ["ground", "air", "both"]   # 该单位能攻击的目标类型（V3-2 对空克制）
 TARGETS = ["first_enemy_in_lane"]
@@ -199,6 +201,11 @@ def build_json_from_workbook(workbook_path: Path = WORKBOOK_PATH) -> tuple[dict[
             "target_type": unit_type,
             "attack_targets": attack_targets,
         }
+        # 亡语召唤（V3-3，可选）：仅当填了 death_spawn_unit 才写入。
+        ds_unit = _text(row.get("death_spawn_unit"))
+        if ds_unit:
+            units[unit_id]["death_spawn_unit"] = ds_unit
+            units[unit_id]["death_spawn_count"] = int(_number(row.get("death_spawn_count"), f"unit {unit_id}.death_spawn_count"))
 
     cards: dict[str, Any] = {}
     card_enabled: dict[str, bool] = {}
@@ -247,6 +254,12 @@ def build_json_from_workbook(workbook_path: Path = WORKBOOK_PATH) -> tuple[dict[
                 raise ConfigError(f"skill {card_id}.radius must be >= 0")
             block["radius"] = radius
             block["damage"] = _number(row.get("damage"), f"skill {card_id}.damage")
+        elif skill_type == "aoe_heal":
+            radius = _number(row.get("radius"), f"skill {card_id}.radius")
+            if float(radius) < 0.0:
+                raise ConfigError(f"skill {card_id}.radius must be >= 0")
+            block["radius"] = radius
+            block["damage"] = _number(row.get("damage"), f"skill {card_id}.damage")   # damage 字段复用为治疗量
 
         skills_by_card.setdefault(card_id, []).append((order, block))
 
@@ -358,6 +371,8 @@ def workbook_from_json(workbook_path: Path = WORKBOOK_PATH) -> None:
                 unit.get("body_radius", ""),
                 unit.get("target_type", ""),
                 unit.get("attack_targets", ""),
+                unit.get("death_spawn_unit", ""),
+                unit.get("death_spawn_count", ""),
                 "",
             ]
         )

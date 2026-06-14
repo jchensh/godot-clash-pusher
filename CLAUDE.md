@@ -147,4 +147,5 @@ claude mcp remove godot-ai -s user   # 卸载注册（不删插件）
   - V3-1h ✅ **显示层 2D 接通**（仅 view）：`battle_scene` 整体重写——tile↔屏幕映射、画地形(河/双桥)+6 塔+自由移动单位+塔火、顶栏/圣水/手牌/结算、tap 选卡→点己方半场落点出牌、AI 自驱。编辑器导入 exit0 + 6s headless 实跑零错误；**画面/手感留真人实机验收**（首次可玩 2D 重构；清单见 HISTORY V3-1h）。lane 时代 FX 未移植（留 V3-4/V3-7）。
   - **V3-1（2D 战斗核心 reboot）收官**，lane 模型彻底移除、单测 121/121。
   - V3-2 ✅ **空军（飞兵越河 + 对空克制）**：`unit` +`attack_targets`(ground/air/both)/`is_flying()`(派生 target_type==air)/`can_hit_type`；`arena` 索敌按 can_hit_type 过滤(纯地面打不到空军)、飞兵直线越河忽略地形、软分离仅同层；塔不过滤(对空网)。units +attack_targets、build_config +列、view 飞兵上浮显示。单测 126/126。
-  - **Now**：V3-1h+V3-2 画面留真人实机验收（飞兵/对空）；逻辑通过后进 **V3-3 新技能积木**（2–3 个：亡语/减速·眩晕/击退/治疗·光环/建筑 择优）。
+  - V3-3 ✅ **新技能积木**（择优 2 个）：**亡语召唤** `on_death_spawn`（unit +death_spawn_*；arena 死亡裂兵；新卡 `golem` 死裂 2 哥布林）+ **治疗术** `aoe_heal`（治友军，新卡 `heal`）。→ **16 卡/10 单位**。config_loader +death_spawn 交叉校验、build_config +aoe_heal/+death_spawn 列。单测 129/129。（slow/击退/建筑留后续）
+  - **Now**：V3-1h/V3-2/V3-3 画面留真人实机验收；逻辑通过后进 **V3-4 Roguelite 主轴**（run/节点地图/连战/draft/relic/boss/存档）。

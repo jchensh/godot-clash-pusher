@@ -9,6 +9,9 @@
 extends RefCounted
 class_name Arena
 
+const UnitScript = preload("res://logic/unit.gd")
+const _DEATH_SPREAD := [Vector2(0, 0), Vector2(0.6, 0.6), Vector2(-0.6, 0.6), Vector2(0.6, -0.6), Vector2(-0.6, -0.6)]
+
 const TILE_OOB := -1      # 出界
 const TILE_GROUND := 0    # 地面（可走、可部署）
 const TILE_WATER := 1     # 水（地面不可走、不可部署；空军 V3-2 可越）
@@ -401,6 +404,15 @@ func _in_grid(t: Vector2i) -> bool:
 	return t.x >= 0 and t.x < grid_w and t.y >= 0 and t.y < grid_h
 
 func _remove_dead() -> void:
+	var spawns: Array = []
 	for i in range(units.size() - 1, -1, -1):
-		if not units[i].is_alive():
+		var u = units[i]
+		if not u.is_alive():
+			# 亡语召唤（V3-3）：死亡时在原地裂出 death_spawn_count 个单位。
+			if u.death_spawn_count > 0 and u.death_spawn_id != "" and not (u.death_spawn_config as Dictionary).is_empty():
+				for k in u.death_spawn_count:
+					var off: Vector2 = _DEATH_SPREAD[k % _DEATH_SPREAD.size()]
+					spawns.append(UnitScript.new(u.death_spawn_id, u.owner_id, u.death_spawn_config, (u.pos as Vector2) + off))
 			units.remove_at(i)
+	for s in spawns:
+		units.append(s)
