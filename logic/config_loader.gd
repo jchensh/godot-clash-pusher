@@ -14,6 +14,7 @@ var cards: Dictionary = {}
 var units: Dictionary = {}
 var levels: Dictionary = {}
 var arena: Dictionary = {}      # V3：2D 场地配置（arena.json），结构性、不进 Excel 镜像
+var run: Dictionary = {}        # V3-4：Roguelite run 结构（run.json），结构性、不进 Excel 镜像
 var errors: Array[String] = []
 
 # 读入配置；全部成功且校验无误返回 true，否则 false（详情见 errors）。
@@ -23,6 +24,7 @@ func load_all(config_dir: String = DEFAULT_CONFIG_DIR) -> bool:
 	units = _load_json_dict(config_dir.path_join("units.json"))
 	levels = _load_json_dict(config_dir.path_join("levels.json"))
 	arena = _load_json_dict(config_dir.path_join("arena.json"))
+	run = _load_json_dict(config_dir.path_join("run.json"))
 	_validate()
 	return errors.is_empty()
 
@@ -93,6 +95,37 @@ func _validate() -> void:
 			if not (arena["default"] as Dictionary).has(f):
 				errors.append("arena.default 缺少 %s" % f)
 
+	# run.json（V3-4 Roguelite）：至少有 default，含非空 acts；每个节点 type 合法、
+	# level_id 必须在 levels 中；starter_deck（若有）的卡必须在 cards 中。
+	if run.is_empty() or not run.has("default"):
+		errors.append("run.json 缺少 default run 配置")
+	elif typeof(run.get("default")) != TYPE_DICTIONARY:
+		errors.append("run.default 应为对象")
+	else:
+		var rd: Dictionary = run["default"]
+		if not (rd.has("acts") and typeof(rd["acts"]) == TYPE_ARRAY and not (rd["acts"] as Array).is_empty()):
+			errors.append("run.default 缺少非空 acts 数组")
+		else:
+			for act in (rd["acts"] as Array):
+				if typeof(act) != TYPE_DICTIONARY:
+					continue
+				var act_nodes = act.get("nodes", [])
+				if typeof(act_nodes) != TYPE_ARRAY:
+					errors.append("run.default 某 act 缺少 nodes 数组")
+					continue
+				for n in act_nodes:
+					if typeof(n) != TYPE_DICTIONARY:
+						continue
+					if not ["battle", "elite", "boss"].has(String(n.get("type", ""))):
+						errors.append("run 节点 type 非法: '%s'" % str(n.get("type", "")))
+					if not levels.has(String(n.get("level_id", ""))):
+						errors.append("run 节点引用了不存在的 level '%s'" % str(n.get("level_id", "")))
+		var starter = rd.get("starter_deck", [])
+		if typeof(starter) == TYPE_ARRAY:
+			for cid in starter:
+				if not cards.has(cid):
+					errors.append("run.default 的 starter_deck 引用了不存在的 card '%s'" % str(cid))
+
 	# 交叉引用：spawn_unit.unit_id 必须在 units 中；deck 中的 card 必须在 cards 中。
 	for cid in cards:
 		var card = cards[cid]
@@ -139,6 +172,9 @@ func get_level(id: String) -> Dictionary:
 
 func get_arena(id: String = "default") -> Dictionary:
 	return arena.get(id, {})
+
+func get_run(id: String = "default") -> Dictionary:
+	return run.get(id, {})
 
 func has_card(id: String) -> bool:
 	return cards.has(id)

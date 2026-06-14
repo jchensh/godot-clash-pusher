@@ -49,10 +49,11 @@
 | V3-1 | **2D 战斗核心 reboot**（取代 lane：地形/流场绕桥/仇恨/软分离+攻击/塔反击/AI/显示层，a–h） | ✅ 完成（单测；画面待真人验收） | `ed08c37`/`4f7aaa8`/`816968a` |
 | V3-2 | 空军（飞兵越河 + 对空克制 `attack_targets`） | ✅ 完成（单测；画面待真人验收） | `7ad503d` |
 | V3-3 | 新技能积木（亡语召唤 `golem` / 治疗术 `heal`）→ 16 卡 / 10 单位 | ✅ 完成（单测） | `73f99c1` |
+| V3-4a | Roguelite 骨架：RunState + 节点地图（线性连战链）+ 连战流转（二元永久死亡） | ✅ 完成（单测 + headless 跑通一条 run） | 待提交 |
 
-> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot，取代 lane）+ V3-2（空军）+ V3-3（新积木）已完成**；**V3-1h/V3-2/V3-3 的画面/手感留真人实机验收**。下一步 **V3-4 Roguelite 主轴**。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
+> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot，取代 lane）+ V3-2（空军）+ V3-3（新积木）+ V3-4a（Roguelite 骨架）已完成**；**V3-1h/V3-2/V3-3 的画面/手感留真人实机验收**。下一步 **V3-4b draft 三选一**。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
 
-**测试**：129/129（macOS，`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
+**测试**：144/144（macOS，`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
 ---
 
@@ -137,6 +138,10 @@
 > 37 为 **V3-1b 重构策略改「推倒重来」+ AI 搁置**，用户 2026-06-10 确认（覆盖决策 36 的绞杀式）。
 
 37. **V3-1b = 推倒重来（rip-out），非绞杀式**：摸查发现 `move_speed`/`attack_range` 量纲在 lane(0~1) 与 2D(tile) 冲突、且共用同一 Unit 字段——保并存需在 units 上挂双份字段（用户否决）。故改**推倒重来**：直接改 tile 量纲、**删 `lane.gd`**。因仅 `battle.gd` preload lane（`view/*`、`ai_controller` 是运行时动态调用、解析不受影响），删 lane 的连带原子 = Unit 2D + arena 移动 + battle 去 lane + **`skill_system` 2D（原 V3-1f 被迫提前并入 V3-1b）** + config/units/cards 量纲 + match/player 2D + 删改相关单测。**AI 暂搁置**（`ai_controller.gd` 留死代码、删 `test_ai_controller`，V3-1g 2D 重写时加回）；**view 暂坏**（解析通过、不运行，V3-1h 接通）。代价：V3-1b~g 期间无可玩画面、只有 headless 单测（用户已接受）。
+
+> 38 为 **V3-4a（Roguelite 骨架）参数与流转口径**，用户 2026-06-15 确认（PLAN_V3 §5「Roguelite 参数：act/战数/map 形态，V3-4 前定」至此为 4a 定稿）。
+
+38. **V3-4a = 线性连战链 + 二元永久死亡 + 3 act × 3 战**：①**节点地图形态 = 线性连战链**（节点按 act 展开成一条扁平链、依次连战、无分叉；节点带 `type(battle/elite/boss)` 与 `act` 标签供 V3-4d 差异化与 view 分组，4a 所有节点同跑普通战斗；分叉/程序化地图留后续，同一 `RunMap` 接口承载、流转不必改）。②**败北模型 = 二元永久死亡**——只有【玩家胜】推进，**对手胜或平局**立即整局失败（draw 视为「未取胜」→ 必须明确取胜才过关；该口径用户已知，可后续否决）；战斗未结束(ONGOING)喂入为防御性 no-op。③**run 规模 = 3 act × 3 战 = 9 节点**（act 数沿用决策 36 锁定的 3；每 act 末节点标记为 boss；战数全走 `run.json` 可调）。④**遭遇来源 = run 节点引用现有 `levels.json` 的 level_id**（复用 `Match.setup(level_id, player_deck_override)` 现成逻辑：用该关 AI 侧/塔/时长，玩家卡组用 run 卡组覆盖；零额外接口；当前仅 4 关先复用，富遭遇池留内容步）。⑤**起始 run 卡组 = 玩家在 deck_builder 选的卡组**，空则用 `run.json` 的 `starter_deck`（与 V2-7c 的 `player_deck_override` 同口径）。⑥**确定性**：`RunState` 带 `seed` 字段但 4a 地图按 config 确定性展开、不实际跑随机（保单测可复现，seed 留后续程序化）；`relics` 字段空置留 V3-4c。⑦**`run.json` 为结构性配置、不进 Excel 镜像**（比照 `arena.json`，`build_config.py`/`--check` 不涉及）。⑧**view 接入（菜单→run→对局→下一节点）不在 4a**——4a 仅 logic+config+单测（对齐 PLAN_V3 §3 「4a 验收 = 单测 + headless 跑通一条 run」），最简 view 留后续小步。
 
 ---
 
@@ -328,3 +333,36 @@
 - `HOME=/private/tmp/godot-home godot --headless --path . --script res://tests/test_runner.gd` → **129/129 全过**（+3）✅
 - `build_config.py --from-json` + `--check` → `config check ok`（+aoe_heal / +death_spawn 两列往返一致）✅
 - 新积木由单测覆盖：亡语裂兵 / 治友不治敌 / 治疗封顶。
+
+---
+
+## V3-4 — Roguelite 主轴（进行中）
+
+> 方向见决策日志 36，权威规划见 [PLAN_V3.md](PLAN_V3.md) §3。拆 4 小步：a run 状态+节点地图+连战链 / b draft 三选一 / c relic / d boss+meta+存档。逻辑+单测为主、配最简 view。
+
+### V3-4a — Roguelite 骨架：RunState + 节点地图 + 连战流转（逻辑+config+单测）  （待提交）
+**前置决策**：见决策日志 38（线性连战链 / 二元永久死亡 / 3 act × 3 战；遭遇引用现有 level；起始卡组用 deck_builder 选的卡组）。
+
+**新增**
+- `config/run.json`（新，结构性、**不进 Excel 镜像**——比照 `arena.json`）：`default` run = `starter_deck`(8) + `acts`(3)×`nodes`(3)；每节点 `{type: battle/elite/boss, level_id}`，引用现有 `levels.json` 关卡（act 末为 boss；当前仅 4 关复用，富遭遇池留内容步）。
+- `logic/run_map.gd`（`RunMap`）：把 `run.json` 的 acts 结构**展开成扁平节点链** `nodes`（每项 `{type, level_id, act, index_in_act}`）；`size()`/`node_at(i)`（越界返空）。纯数据、确定性。
+- `logic/run_state.gd`（`RunState`）：run 可变状态——`deck`(run 工作卡组，draft V3-4b 改写) / `map`(RunMap) / `cursor` / `status`(ONGOING/WON/LOST) / `wins` / `seed`(预留) / `relics`(预留 V3-4c)。`advance(battle_result)` 流转：仅 `RESULT_PLAYER_WIN` 推进（走完末节点 → WON），`OPPONENT_WIN`/`DRAW` → LOST（永久死亡），`ONGOING` → no-op。`current_node()`/`is_over()`。`_init` 对传入卡组 `duplicate()`（不回写配置）。
+
+**修改**
+- `logic/config_loader.gd`：`load_all` 纳入 `run.json` → `run` 字段；`_validate` 加 run 校验（default 含非空 acts；节点 `type` 合法、`level_id` 必须在 levels 中；`starter_deck` 卡必须在 cards 中）；+`get_run(id="default")`。
+- `tests/test_config_loader.gd`：+1（`test_v3_run_config_loaded`：run 已加载、default 含 starter_deck(8)+acts(3)、交叉引用无错）。
+
+**测试（新增）**
+- `tests/test_run_map.gd`（4）：acts 展开成 9 节点链 / 节点带 type+act 标签(act 末为 boss) / 越界返空 / 所有节点 level 存在。
+- `tests/test_run_state.gd`（10）：初态 / 卡组是独立副本 / 胜推进 / 9 连胜→通关(且通关后 advance 无副作用) / 对手胜→永久死亡 / **平局→永久死亡** / ONGOING→no-op / 中途败北止步保留胜场 / **headless 全胜跑通一条 run（真 `Match` 逐节点建场跑 tick + 强制结果喂回 advance → RUN_WON）** / headless 首战败北→RUN_LOST 不推进。
+
+**范围边界 / 现状**：仅 logic + config + 单测。**菜单→run→对局→下一节点的 view 接入不在 4a**（4a 验收 = 单测 + headless 跑通；最简 view 留后续小步）。draft（改写 run 卡组）= V3-4b；relic = V3-4c；boss/精英差异化 + meta + 存档 = V3-4d（4a 仅给节点打 `type` 标签备用）。
+
+**踩坑与修复**
+- 无逻辑坑。`config_loader.gd` 内 `_validate` 缩进为 Tab，编辑时按既有 Tab 缩进对齐。run.json 结构性、不入 Excel，故 `build_config.py` 零改、`--check` 不涉及。
+
+**验收**
+- `HOME=/private/tmp/godot-home godot --headless --path . --script res://tests/test_runner.gd` → **144/144 全过**（+15：RunMap 4 + RunState 10 + ConfigLoader 1；旧 129 零回归），exit 0 ✅
+- `godot --headless --editor --path . --quit` → `RunMap`/`RunState` 类注册、`.uid` 生成、零解析错误 ✅
+- `build_config.py --check` → `config check ok`（未动 units/cards/levels，Excel 无漂移）✅
+- run 推进 / 胜负流转 / 连战链 / headless 跑通一条 run（全胜→通关、首败→失败）均由单测覆盖。纯逻辑步骤，按纪律无需肉眼验收。

@@ -94,6 +94,18 @@ func test_v3_arena_config_loaded() -> void:
 	assert_true(int((a.get("grid") as Dictionary).get("w", 0)) > 0, "网格宽>0")
 	assert_true(int((a.get("grid") as Dictionary).get("h", 0)) > 0, "网格高>0")
 
+func test_v3_run_config_loaded() -> void:
+	# V3-4a：run.json 纳入 ConfigLoader 统一入口，含 default（starter_deck + 非空 acts）。
+	var loader = _make_loaded()
+	assert_false(loader.run.is_empty(), "run.json 应被加载")
+	var r = loader.get_run("default")
+	assert_false(r.is_empty(), "应有 default run")
+	assert_true((r.get("starter_deck") as Array).size() == 8, "starter_deck 8 张")
+	var acts = r.get("acts") as Array
+	assert_eq(acts.size(), 3, "3 个 act（决策 36）")
+	# 每个节点引用的 level 必须真实存在（交叉校验已在 load_all 跑过，这里再断言无错）。
+	assert_true(loader.errors.is_empty(), "run 交叉引用应有效; errors=%s" % str(loader.errors))
+
 func test_missing_dir_reports_error() -> void:
 	var loader = ConfigLoaderScript.new()
 	var ok = loader.load_all("res://config_does_not_exist")
