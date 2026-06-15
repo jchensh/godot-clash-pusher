@@ -53,8 +53,9 @@
 | V3-4b | 战间 draft 三选一（确定性候选、改写本 run 卡组、卡组可增长） | ✅ 完成（单测） | 待提交 |
 | V3-4c | relic 系统（JSON 数值修正器、effective level 不污染 base、起手圣水） | ✅ 完成（单测） | 待提交 |
 | V3-4d | boss/精英节点难度修正 + 局间 meta 解锁 + 存档（user:// 往返）+ 最简 run view | ✅ 完成（单测 + headless smoke；引擎内流程交真人验收） | 待提交 |
+| V3-6a | 拖拽部署（CR 式）+ 落点 ghost/合法红绿 + 半场高亮 + 落地涟漪 + 入场缩放（仅 view） | ✅ 代码完成（headless smoke + 单测 172/172 零回归；手感待真人验收） | 待提交 |
 
-> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。下一步 **V3-6 交互与游戏手感**（V3-5 短战役 + 新手引导按决策 40 推迟到 V3-6/V3-7 之后执行）。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
+> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）进行中**：V3-6a（拖拽部署 + 落点反馈，仅 view）代码完成、手感待真人验收；下一步 V3-6b（战斗 juice：插值/受击数字/顿帧/震屏）。V3-5 短战役 + 新手引导按决策 40 推迟到 V3-6/V3-7 之后执行。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
 
 **测试**：172/172（macOS，`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
@@ -153,6 +154,10 @@
 > 40 为 **V3 后半段施工顺序调整**，用户 2026-06-16 确认。
 
 40. **V3-5（短战役 + 新手引导）推迟到 V3-6（手感）+ V3-7（美术）之后**：原 PLAN_V3 §3 顺序为 5→6→7。用户判断脚本化战役与新手引导应建立在**已成形的交互手感 + 精灵美术**之上——否则对着白膜画面 + 粗糙控制写教学覆盖层与关卡脚本，等手感/美术落地后必返工。**步骤 ID 不重编号**（V3-5/6/7 标签不变，避免跨文档引用错位），仅改执行先后：**执行顺序 = V3-6 → V3-7 → V3-5 → V3-8 → V3-9**。PLAN_V3 §3 表格已按新序重排并加注；下一步由 V3-5 改为 **V3-6（交互与游戏手感）**。
+
+> 41 为 **V3-6（交互与游戏手感）范围与拆步**，用户 2026-06-16 确认。参考业界 UI/UX 范例：皇室战争（拖拽部署/卡片抬起/落点提示/分段圣水/胜利演出）、Vlambeer《The Art of Screenshake》+《Juice it or Lose it》（顿帧/震屏/缓动）、Brawl Stars（受击数字）、Slay the Spire（奖励/relic 揭示）、Apple HIG（≥44pt 触控/拇指区）。
+
+41. **V3-6 = 纯显示层（零逻辑改，沿用决策 30 路线 A）+ 拆 4 个真人验收 gate**：所有手感经显示层逐帧 diff 逻辑状态实现（hp 降→受击数字、新兵→入场、塔 hp→0→爆破），**不动逻辑、无新单测、全交真人验收**。**部署交互 = 拖拽（CR 式）**（用户选定，取代原两段式 tap）：按手牌→拖到场上(落点抬到手指上方避免遮挡)→松手落子；拖拽中画落点 ghost + 合法绿/非法红 + 己方半场高亮。**拆步（执行序 6a→6b→6c→6d，每步一 gate）**：**6a** 部署交互 + 落点 ghost/红绿 + 半场高亮 + 落地涟漪 + 入场缩放；**6b** 战斗 juice（10Hz→60fps 移动插值、受击闪白 + 浮动伤害数字、命中顿帧、震屏、攻击命中 stub FX）；**6c** 圣水/HUD 反馈（分段圣水条 + 满槽脉动、卡牌冷却扫光 + 下一张预览、可用/不可用态、王冠/倒计时强调）；**6d** 胜负与 run 总结演出（王冠落入、胜负 sting、塔爆破序列、结算面板动画；roguelite 奖励/relic 揭示）。**白膜上做**：6a–6d 装的是「手感系统」（插值/伤害数字生成器/震屏/ghost），V3-7 再贴精灵/粒子皮，**近零返工**。
 
 ---
 
@@ -430,3 +435,33 @@
 5. 连胜通关最后 BOSS → 弹 **RUN CLEARED** + 统计（Runs won / Bosses beaten）+ 若达成则显示 **Unlocked: …**；
 6. 中途点 **MENU** 离开再进 ROGUELITE → 能**续上同一条 run**（存档）；点 **NEW RUN** → 重开一条新 run；通关/败北后回菜单再进 → 开新 run（旧档已清）。
 回报「通过/哪条不对」。
+
+---
+
+## V3-6 — 交互与游戏手感（进行中）
+
+> 方向见 PLAN_V3 §3，范围/拆步见决策日志 41。纯显示层（零逻辑改，决策 30 路线 A），拆 4 个真人验收 gate：6a 部署交互 → 6b 战斗 juice → 6c 圣水/HUD → 6d 胜负/run 总结。全部在白膜上装「手感系统」，V3-7 再贴精灵皮。
+
+### V3-6a — 拖拽部署 + 落点反馈（仅 view）  （待提交）
+**前置决策**：见决策日志 41（拖拽部署 CR 式、纯显示层）。
+
+**修改（仅 `view/battle_scene.gd`，零逻辑改）**
+- **拖拽部署**取代两段式 tap：手牌 `Button` 由 `pressed` 改 `button_down`(开始拖)/`button_up`(松手落子)；拖拽中每帧读 `get_viewport().get_mouse_position()`。落点经 `_drop_tile_from` **抬到手指上方** `DROP_LIFT_TILES=1.6` tile（拇指不遮挡）。松手在 HUD/顶栏 → 取消；在场上 → `player.try_play_card(sc, drop_tile)`（出牌路径不变、玩家/AI 仍对称）。出不起的牌 `disabled` → `button_down` 不触发，**拖不动**。
+- **落点 ghost**（`_draw_drag_ghost`，仅拖拽中）：`_card_info` 解析卡 `skills` 判类型——spawn→画 `count` 个兵剪影（半径取 `UNIT_VIS`、确定性环形散布）；`aoe_damage/aoe_heal`→画 AOE 半径圈；`direct_damage`→画准星。**合法绿/非法红**：spawn 用 `arena.can_deploy(0, drop_tile)`（与逻辑同一校验，所见即所得）、法术恒绿（不受半场限，沿用决策 26）。
+- **己方半场高亮**（`_draw_deploy_hint`）：仅拖兵牌时，部署区叠加绿色脉动（`sin(_elapsed*6)`）。
+- **落地涟漪**（`_fx` 列表 + `_draw_fx`/`_cull_fx`）：成功落子在落点压一条扩散淡出环（`POOF_DUR=0.40s`）。
+- **入场缩放**（`_seen: instance_id→首见时刻` + `_pop_scale`）：新单位半径从 0.35 ease-out 弹到 1.0（`POP_DUR=0.22s`），AI 兵同享；每帧剔除已死 id。
+- **卡牌抬起**：拖拽中源卡上移 14px + 金色高亮（`_card_base_pos` 存基位）。
+- 顺带补 `UNIT_VIS["golem_body"]`（V3-3 遗漏，原为默认 0.5 圈）。
+
+**范围边界**：仅 view，逻辑/config/单测零改。受击数字/插值/顿帧/震屏在 6b；分段圣水/冷却扫光在 6c；胜负演出在 6d。FX 全程序化白膜（无外部素材），V3-7 贴皮。
+
+**踩坑与修复**
+- `var id := u.get_instance_id()`：无类型 `u`（遍历无类型数组）→ 类型推断失败（沿用既有 GDScript 坑）。改 `var id: int = ...`。
+
+**验收**
+- `Godot_..._console.exe --headless --path . res://view/battle_scene.tscn --quit-after 300` → 改后零脚本/运行期错误（退出期 ObjectDB/resource leak 警告为 `--quit-after` 强退的善性 teardown，非本步代码）✅
+- `... --script res://tests/test_runner.gd` → **172/172 全过**（仅改 view，逻辑零回归）✅
+- **拖拽手感 + 落点反馈 + 涟漪/入场缩放留真人实机验收**（清单见下）。
+
+**V3-6a 真人实机验收清单（交用户）**：F5 运行（编辑器已开，Play 读盘最新脚本）→ ROGUELITE/任意关进战斗，确认：① 按兵牌拖到场上有**兵剪影 ghost**（数量正确、抬在手指上方），松手落子；② ghost/落点环 **己方半场地面=绿、敌方半场/水/塔=红**，拖兵牌时己方半场**脉动高亮**；③ 法术：火球/箭/滚木拖出 **AOE 圈**、电击/闪电出**准星**，且**敌方半场也绿**（可放）；④ 出不起的牌**置灰拖不动**，拖动的卡**抬起高亮**；⑤ 松手在 HUD/非法处=**取消**（不扣圣水不出兵）；⑥ 成功落子有**涟漪**、新兵（含 AI 兵）**弹入**；⑦ 胜负结算/CONTINUE 仍正常。回报「通过/哪条不对」。

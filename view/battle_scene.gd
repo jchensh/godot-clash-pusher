@@ -1,10 +1,11 @@
-# BattleScene —— 显示层（V3 2D 白膜）。
+# BattleScene —— 显示层（V3 2D；V3-6a 起加交互手感）。
 #
 # 只读 Match/Arena 的逻辑状态作画；出牌一律经 player.try_play_card（玩家/AI 对称）。
 # 抽象 tile 空间 → 屏幕像素的映射只活在本层（_t2s/_s2t）。
 # y=0 敌方底线(屏上)、y=grid_h 玩家底线(屏下)；河横贯中部、左右双桥。
-# 两段式出牌：先点手牌选中 → 再点己方半场落点（tile 空间，经 Arena.can_deploy 校验）。
-# 美术/动画/特效在 V3-4 / V3-7 重做，本步只求功能可见（场地/兵自由走位/塔互射/胜负）。
+# 出牌 = 拖拽部署（CR 式，决策 41）：按手牌→拖到场上(落点抬到手指上方)→松手落子；
+#   拖拽中画落点 ghost(兵剪影/AOE 圈/直伤准星)+合法绿/非法红 + 己方半场高亮；成功落子有涟漪、新兵入场缩放。
+# 仍为白膜：精灵/粒子/受击数字等在 V3-6b+/V3-7 接续；本步只做部署交互与落点反馈。
 extends Node2D
 
 const ConfigLoaderScript = preload("res://logic/config_loader.gd")
@@ -27,6 +28,12 @@ const COL_PLAYER := Color(0.35, 0.60, 1.0)
 const COL_OPPONENT := Color(1.0, 0.42, 0.38)
 const COL_ELIXIR := Color(0.80, 0.33, 0.96)
 const COL_PANEL := Color(0.05, 0.07, 0.06, 0.88)
+const COL_OK := Color(0.45, 1.0, 0.55)        # 落点合法（ghost/高亮）
+const COL_BAD := Color(1.0, 0.42, 0.40)       # 落点非法
+
+const DROP_LIFT_TILES := 1.6                   # 落点抬到手指上方（拇指不遮挡，CR 式）
+const POP_DUR := 0.22                          # 新单位入场缩放时长（秒）
+const POOF_DUR := 0.40                         # 落地涟漪时长（秒）
 
 # 兵种白膜外形（半径 tile，按队伍色填充；空军画环标记）。
 const UNIT_VIS := {
@@ -39,6 +46,7 @@ const UNIT_VIS := {
 	"minion_body":     {"r": 0.45},
 	"goblin_body":     {"r": 0.4},
 	"skeleton_body":   {"r": 0.38},
+	"golem_body":      {"r": 0.85},
 }
 
 var match_obj
@@ -47,6 +55,12 @@ var _font: Font
 var selected_card := -1
 var _card_btns: Array = []
 var _result_layer: Control
+var _dragging := false
+var _drag_screen := Vector2.ZERO
+var _elapsed := 0.0
+var _fx: Array = []           # 落地涟漪：[{pos:Vector2(tile), t0:float, dur:float}]
+var _seen: Dictionary = {}    # 单位 instance_id → 首见 _elapsed（入场缩放）
+var _card_base_pos: Array = []
 
 @onready var _vw: float = float(get_viewport_rect().size.x)
 @onready var _vh: float = float(get_viewport_rect().size.y)
@@ -75,8 +89,12 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if match_obj == null:
 		return
+	_elapsed += delta
 	if not match_obj.is_over():
 		match_obj.update(delta)
+	if _dragging:
+		_drag_screen = get_viewport().get_mouse_position()
+	_cull_fx()
 	_sync_cards()
 	if match_obj.is_over() and not _result_layer.visible:
 		_show_result()
@@ -110,8 +128,11 @@ func _draw() -> void:
 	var a = match_obj.battle.arena
 	draw_rect(Rect2(0, 0, _vw, _vh), COL_BG)
 	_draw_terrain(a)
+	_draw_deploy_hint(a)
 	_draw_towers()
 	_draw_units(a)
+	_draw_fx()
+	_draw_drag_ghost(a)
 	_draw_topbar()
 	_draw_elixir()
 
@@ -163,13 +184,18 @@ func _draw_towers() -> void:
 func _draw_units(a) -> void:
 	var tp := _tile_px()
 	var ur: float = (tp.x + tp.y) * 0.5
+	var cur := {}
 	for u in a.get_units():
 		if not u.is_alive():
 			continue
+		var id: int = u.get_instance_id()
+		cur[id] = true
+		if not _seen.has(id):
+			_seen[id] = _elapsed
 		var base: Color = COL_PLAYER if u.owner_id == 0 else COL_OPPONENT
 		var c := _t2s(u.pos)
 		var vis: Dictionary = UNIT_VIS.get(u.unit_id, {"r": 0.5})
-		var rad: float = float(vis["r"]) * ur
+		var rad: float = float(vis["r"]) * ur * _pop_scale(id)
 		var flying: bool = u.target_type == "air"
 		if flying:
 			draw_circle(c + Vector2(0, ur * 0.5), rad * 0.6, Color(0, 0, 0, 0.25))  # 地面影子
@@ -183,6 +209,9 @@ func _draw_units(a) -> void:
 			var bw := rad * 2.0
 			draw_rect(Rect2(c.x - rad, c.y - rad - 6.0, bw, 3.0), Color(0, 0, 0, 0.5))
 			draw_rect(Rect2(c.x - rad, c.y - rad - 6.0, bw * ratio, 3.0), _hp_color(ratio))
+	for k in _seen.keys():
+		if not cur.has(k):
+			_seen.erase(k)
 
 func _draw_topbar() -> void:
 	draw_rect(Rect2(0, 0, _vw, TOPBAR_H), COL_PANEL)
@@ -220,16 +249,101 @@ func _crowns(towers: Array) -> int:
 func _text(pos: Vector2, s: String, col: Color, size: int) -> void:
 	draw_string(_font, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
 
-# —— 出牌交互 ——
-func _unhandled_input(event: InputEvent) -> void:
-	if match_obj == null or match_obj.is_over() or selected_card < 0:
+# —— 出牌交互（拖拽部署，CR 式：按卡→拖到场上→松手落子，决策 41）——
+# 落点抬到手指上方（拇指不遮挡）。
+func _drop_tile_from(screen: Vector2) -> Vector2:
+	var lift: float = _tile_px().y * DROP_LIFT_TILES
+	return _s2t(screen + Vector2(0.0, -lift))
+
+# 卡牌出什么：spawn=生成兵（含 unit_id/count）；否则法术（radius>0=AOE 圈、=0=直伤准星）。
+func _card_info(cid) -> Dictionary:
+	for sk in loader.get_card(cid).get("skills", []):
+		if typeof(sk) != TYPE_DICTIONARY:
+			continue
+		var t = sk.get("type")
+		if t == "spawn_unit":
+			return {"spawn": true, "unit_id": str(sk.get("unit_id")), "count": int(sk.get("count", 1)), "radius": 0.0}
+		elif t == "aoe_damage" or t == "aoe_heal":
+			return {"spawn": false, "unit_id": "", "count": 0, "radius": float(sk.get("radius", 1.0))}
+		elif t == "direct_damage":
+			return {"spawn": false, "unit_id": "", "count": 0, "radius": 0.0}
+	return {"spawn": false, "unit_id": "", "count": 0, "radius": 0.0}
+
+# 拖拽中：场上画落点 ghost（兵剪影 / AOE 圈 / 直伤准星）+ 合法绿/非法红。
+func _draw_drag_ghost(a) -> void:
+	if not _dragging or selected_card < 0 or match_obj.is_over():
 		return
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		if event.position.y < TOPBAR_H or event.position.y > _vh - HUD_BOTTOM_H:
-			return
-		var pos := _s2t(event.position)
-		if match_obj.player.try_play_card(selected_card, pos):
-			selected_card = -1
+	var hand: Array = match_obj.player.deck.get_hand()
+	if selected_card >= hand.size() or hand[selected_card] == null:
+		return
+	var info: Dictionary = _card_info(str(hand[selected_card]))
+	var drop_tile: Vector2 = _drop_tile_from(_drag_screen)
+	var tp := _tile_px()
+	var ur: float = (tp.x + tp.y) * 0.5
+	var legal: bool = a.can_deploy(0, drop_tile) if info["spawn"] else true
+	var col: Color = COL_OK if legal else COL_BAD
+	var c: Vector2 = _t2s(drop_tile)
+	draw_arc(c, ur * 0.9, 0.0, TAU, 28, col, 2.5)   # 落点标记环
+	if info["spawn"]:
+		var n: int = maxi(1, int(info["count"]))
+		var vr: float = float(UNIT_VIS.get(info["unit_id"], {"r": 0.5})["r"]) * ur
+		for i in n:
+			var off := Vector2.ZERO
+			if n > 1:
+				var ang: float = float(i) / n * TAU
+				off = Vector2(cos(ang), sin(ang)) * (vr * 0.9)
+			var gc: Vector2 = c + off
+			draw_circle(gc, vr, Color(col.r, col.g, col.b, 0.35))
+			draw_arc(gc, vr, 0.0, TAU, 20, col, 2.0)
+	elif info["radius"] > 0.0:
+		var rr: float = float(info["radius"]) * ur
+		draw_circle(c, rr, Color(col.r, col.g, col.b, 0.12))
+		draw_arc(c, rr, 0.0, TAU, 40, col, 2.0)
+	else:
+		draw_line(c - Vector2(ur, 0), c + Vector2(ur, 0), col, 2.0)
+		draw_line(c - Vector2(0, ur), c + Vector2(0, ur), col, 2.0)
+
+# 拖拽兵牌时高亮己方半场可部署区（轻微脉动）。
+func _draw_deploy_hint(a) -> void:
+	if not _dragging or selected_card < 0:
+		return
+	var hand: Array = match_obj.player.deck.get_hand()
+	if selected_card >= hand.size() or hand[selected_card] == null:
+		return
+	if not _card_info(str(hand[selected_card]))["spawn"]:
+		return
+	var fr := _field_rect()
+	var y0: float = _t2s(Vector2(0, a.deploy_player_y_min)).y
+	var pulse: float = 0.12 + 0.06 * (0.5 + 0.5 * sin(_elapsed * 6.0))
+	draw_rect(Rect2(fr.position.x, y0, fr.size.x, fr.position.y + fr.size.y - y0),
+			Color(COL_OK.r, COL_OK.g, COL_OK.b, pulse))
+
+# 落地涟漪。
+func _draw_fx() -> void:
+	var tp := _tile_px()
+	var ur: float = (tp.x + tp.y) * 0.5
+	for f in _fx:
+		var p: float = clampf((_elapsed - f["t0"]) / f["dur"], 0.0, 1.0)
+		var c: Vector2 = _t2s(f["pos"])
+		draw_arc(c, ur * (0.3 + 1.3 * p), 0.0, TAU, 32, Color(1, 1, 1, (1.0 - p) * 0.7), 2.0 + 2.0 * (1.0 - p))
+
+func _cull_fx() -> void:
+	if _fx.is_empty():
+		return
+	var keep: Array = []
+	for f in _fx:
+		if _elapsed - f["t0"] < f["dur"]:
+			keep.append(f)
+	_fx = keep
+
+# 入场缩放：新兵从 0.35 弹到 1.0（ease-out）。
+func _pop_scale(id: int) -> float:
+	var t0: float = _seen.get(id, _elapsed)
+	var p: float = (_elapsed - t0) / POP_DUR
+	if p >= 1.0:
+		return 1.0
+	var s: float = clampf(p, 0.0, 1.0)
+	return 0.35 + 0.65 * (1.0 - pow(1.0 - s, 3.0))
 
 # —— HUD：手牌 ——
 func _build_cards() -> void:
@@ -239,13 +353,35 @@ func _build_cards() -> void:
 		var b := Button.new()
 		b.position = Vector2(16.0 + i * (bw + 16.0), _vh - HUD_BOTTOM_H + 40.0)
 		b.size = Vector2(bw, HUD_BOTTOM_H - 56.0)
-		b.pressed.connect(_on_card_pressed.bind(i))
+		b.button_down.connect(_on_card_down.bind(i))
+		b.button_up.connect(_on_card_up.bind(i))
 		add_child(b)
 		_card_btns.append(b)
+		_card_base_pos.append(b.position)
 	_sync_cards()
 
-func _on_card_pressed(i: int) -> void:
-	selected_card = i if selected_card != i else -1
+# 按下卡牌 = 开始拖拽（disabled 卡不会触发 button_down，出不起的牌拖不动）。
+func _on_card_down(i: int) -> void:
+	if match_obj == null or match_obj.is_over():
+		return
+	selected_card = i
+	_dragging = true
+	_drag_screen = get_viewport().get_mouse_position()
+
+# 松手 = 落子：在场上且合法则出牌 + 涟漪；落在 HUD/非法处则取消。
+func _on_card_up(i: int) -> void:
+	var was_dragging := _dragging
+	var sc := selected_card
+	_dragging = false
+	selected_card = -1
+	if not was_dragging or sc != i or match_obj == null or match_obj.is_over():
+		return
+	var screen: Vector2 = get_viewport().get_mouse_position()
+	if screen.y < TOPBAR_H or screen.y > _vh - HUD_BOTTOM_H:
+		return   # 松手在 HUD/顶栏 → 取消
+	var drop_tile: Vector2 = _drop_tile_from(screen)
+	if match_obj.player.try_play_card(sc, drop_tile):
+		_fx.append({"pos": drop_tile, "t0": _elapsed, "dur": POOF_DUR})
 
 func _sync_cards() -> void:
 	if match_obj == null:
@@ -253,9 +389,13 @@ func _sync_cards() -> void:
 	var hand: Array = match_obj.player.deck.get_hand()
 	for i in _card_btns.size():
 		var b: Button = _card_btns[i]
+		var lifted: bool = _dragging and i == selected_card
+		if i < _card_base_pos.size():
+			b.position.y = _card_base_pos[i].y - (14.0 if lifted else 0.0)
 		if i >= hand.size() or hand[i] == null:
 			b.text = ""
 			b.disabled = true
+			b.modulate = Color.WHITE
 			continue
 		var cid := str(hand[i])
 		b.text = "%s\n%d" % [cid, match_obj.player.card_cost(cid)]
