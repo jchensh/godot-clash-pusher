@@ -54,7 +54,7 @@
 | V3-4c | relic 系统（JSON 数值修正器、effective level 不污染 base、起手圣水） | ✅ 完成（单测） | 待提交 |
 | V3-4d | boss/精英节点难度修正 + 局间 meta 解锁 + 存档（user:// 往返）+ 最简 run view | ✅ 完成（单测 + headless smoke；引擎内流程交真人验收） | 待提交 |
 
-> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。下一步 **V3-5 短战役 + 新手引导**。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
+> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。下一步 **V3-6 交互与游戏手感**（V3-5 短战役 + 新手引导按决策 40 推迟到 V3-6/V3-7 之后执行）。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
 
 **测试**：172/172（macOS，`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
@@ -149,6 +149,10 @@
 > 39 为 **V3-4b/c/d 一批做完 + 配最简可玩 view**，用户 2026-06-15 确认（要求一口气开发完并在 V3-4 全完成后给「人工引擎内验收清单」）。
 
 39. **V3-4b/c/d 一批做完 + 配最简可玩 view**：本批含让 run 引擎内可玩的最简 view（否则无可人工验收的东西）。各子步口径——**4b draft**：每场胜后三选一，候选 = 卡池中**不在 run 卡组**的卡、**确定性 seeded 洗牌**取 3（`RunRewards`，同 seed 同结果）；选中 → **追加**进 run 卡组（卡组可增长、不替换、去重），故 **`Deck` 放宽**为 ≥HAND_SIZE+1（不再硬限 8）；可 SKIP。**平局/对手胜不给 draft**（沿用决策 38 永久死亡）。**4c relic**：relic = JSON 数值修正器（`relics.json`，结构性、不进 Excel），经 `RunModifiers.effective_level` 作用于 level 的**深拷贝 effective 副本**（圣水回速/上限/**起手圣水**、对局时长、王/公主塔血），**绝不污染 ConfigLoader 基础配置**；多源**顺序叠加** `val=val*mult+add`；relic 奖励在 **elite/boss 胜**后给（普通节点给卡 draft）；**单位级 relic（兵伤/血）留后续**（需注入 SkillSystem 生成路径，本批不做）。`Match.setup` +`modifiers` 形参（空=行为同前、起手圣水仍 0），起手圣水经 `Elixir` 第三参注入。**4d boss/精英 + meta + 存档**：boss/elite 节点经 `run.json.node_modifiers` 用同一修正器引擎**抬塔血**（elite ×1.25 / boss 王×1.5·公主×1.4）实现差异化（AI 难度仍随所引用关卡，不另调）；**meta = 局间持久统计**（runs_started/won、bosses_defeated）驱动**解锁**——relic 上挂 `unlock:{stat:阈值}` 门控，满足才进可用池（`MetaProgress.available_relics`）；**存档落 `user://`**（`SaveSystem`：meta 持久 + run 可续跑，run 地图不存盘由 config 重建后 `load_dict` 恢复进度）。**view = 最简**：`run_scene` 节点链中枢（打节点→回来推进→给奖励→结算）+ `battle_scene` run 模式（读 `GameState.run` 建场、CONTINUE 回中枢）+ 主菜单 ROGUELITE 入口；run 真正可玩，但**引擎内流程/手感交真人验收**。**踩坑**：①新类的 `static from_dict` 引用自身 `class_name` 在 .uid/全局注册前会被 test runner 预检判失败 → 改为**实例方法 `load_dict`、不引用自身 class_name**（合 HISTORY「不依赖 class_name 全局注册」）；②`--script` 的 `_initialize` 期 `add_child` **不触发 `_ready`** → headless smoke 须显式调 `_ready()`（非代码 bug）；③杀进程留下的 `user://` 半档会污染下次 smoke → smoke 前清档。
+
+> 40 为 **V3 后半段施工顺序调整**，用户 2026-06-16 确认。
+
+40. **V3-5（短战役 + 新手引导）推迟到 V3-6（手感）+ V3-7（美术）之后**：原 PLAN_V3 §3 顺序为 5→6→7。用户判断脚本化战役与新手引导应建立在**已成形的交互手感 + 精灵美术**之上——否则对着白膜画面 + 粗糙控制写教学覆盖层与关卡脚本，等手感/美术落地后必返工。**步骤 ID 不重编号**（V3-5/6/7 标签不变，避免跨文档引用错位），仅改执行先后：**执行顺序 = V3-6 → V3-7 → V3-5 → V3-8 → V3-9**。PLAN_V3 §3 表格已按新序重排并加注；下一步由 V3-5 改为 **V3-6（交互与游戏手感）**。
 
 ---
 
