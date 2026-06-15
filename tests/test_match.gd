@@ -86,6 +86,23 @@ func test_setup_player_deck_override() -> void:
 	var default_deck: Array = loader.get_level("level_01").get("player_deck")
 	assert_eq(m2.player.deck.get_hand(), default_deck.slice(0, 4), "空覆盖回退关卡默认卡组")
 
+func test_setup_applies_modifiers_without_polluting_config() -> void:
+	# V3-4c：relic/节点 修正器经 Match.setup → effective level；抬高塔血、起手圣水，base 不变。
+	var loader = ConfigLoaderScript.new()
+	loader.load_all()
+	var base_king: float = float(loader.get_level("level_01").get("tower_hp").get("king"))
+	var mods := [{"tower_hp_king": {"mult": 1.5}}, {"elixir_start": {"add": 5}}]
+	var m = MatchScript.new(loader)
+	m.setup("level_01", [], mods)
+	assert_almost_eq(m.battle.player_king.max_hp, base_king * 1.5, 0.5, "王塔血按 ×1.5 修正")
+	assert_almost_eq(m.player.elixir.get_amount(), 5.0, 0.0001, "起手圣水 = +5 修正")
+	# base 配置未被污染（下一次无修正 setup 回到原值）。
+	assert_almost_eq(float(loader.get_level("level_01").get("tower_hp").get("king")), base_king, 0.0001, "ConfigLoader 基础塔血未被改")
+	var m2 = MatchScript.new(loader)
+	m2.setup("level_01")
+	assert_almost_eq(m2.battle.player_king.max_hp, base_king, 0.5, "无修正回到基础塔血")
+	assert_almost_eq(m2.player.elixir.get_amount(), 0.0, 0.0001, "无修正起手圣水仍 0")
+
 func test_update_stops_when_over() -> void:
 	var m = _match()
 	m.battle.opponent_king.take_damage(m.battle.opponent_king.max_hp)

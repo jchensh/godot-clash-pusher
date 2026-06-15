@@ -51,3 +51,35 @@ func advance(battle_result: int) -> void:
 			status = RUN_WON
 	else:
 		status = RUN_LOST   # 对手胜 / 平局 → 二元永久死亡
+
+# draft 选中的卡追加进 run 卡组（V3-4b）；下一场 Match 用 run 卡组建 Deck → 带入下一战。
+func add_card(card_id) -> void:
+	if card_id != null and not (card_id in deck):
+		deck.append(card_id)
+
+# relic 奖励追加进 run（V3-4c）；不重复持有。
+func add_relic(relic_id) -> void:
+	if relic_id != null and not (relic_id in relics):
+		relics.append(relic_id)
+
+# —— 存档序列化（V3-4d；地图不存盘，由 config 重建后 load_dict 恢复进度） ——
+func to_dict() -> Dictionary:
+	return {
+		"deck": deck.duplicate(),
+		"cursor": cursor,
+		"status": status,
+		"wins": wins,
+		"seed": seed,
+		"relics": relics.duplicate(),
+	}
+
+# 从 dict 恢复进度（地图由 _init 注入；实例方法不引用自身 class_name，避免新脚本预检踩坑）。
+func load_dict(d: Dictionary) -> void:
+	var dk = d.get("deck", [])
+	deck = (dk as Array).duplicate() if typeof(dk) == TYPE_ARRAY else []
+	cursor = int(d.get("cursor", 0))
+	status = int(d.get("status", RUN_ONGOING))
+	wins = int(d.get("wins", 0))
+	seed = int(d.get("seed", 0))
+	var rel = d.get("relics", [])
+	relics = (rel as Array).duplicate() if typeof(rel) == TYPE_ARRAY else []

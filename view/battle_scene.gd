@@ -12,6 +12,8 @@ const MatchScript = preload("res://logic/match.gd")
 const BattleScript = preload("res://logic/battle.gd")
 const AIControllerScript = preload("res://ai/ai_controller.gd")
 const GameStateScript = preload("res://view/game_state.gd")
+const RunModifiersScript = preload("res://logic/run_modifiers.gd")
+const RunSceneScene := "res://view/run_scene.tscn"
 
 const TOPBAR_H := 54.0
 const HUD_BOTTOM_H := 176.0
@@ -54,7 +56,17 @@ func _ready() -> void:
 	loader = ConfigLoaderScript.new()
 	loader.load_all()
 	match_obj = MatchScript.new(loader)
-	match_obj.setup(GameStateScript.level_id, GameStateScript.player_deck)
+	var run = GameStateScript.run
+	if run != null and not run.is_over():
+		# Roguelite 模式：当前节点 level_id + run 卡组 + relic/节点难度修正器。
+		var node: Dictionary = run.current_node()
+		var mods: Array = RunModifiersScript.relic_mods(run.relics, loader.relics)
+		var nm: Dictionary = RunModifiersScript.node_mod(loader.get_run("default"), String(node.get("type", "battle")))
+		if not nm.is_empty():
+			mods.append(nm)
+		match_obj.setup(String(node.get("level_id")), run.deck, mods)
+	else:
+		match_obj.setup(GameStateScript.level_id, GameStateScript.player_deck)
 	match_obj.set_opponent_controller(AIControllerScript.new(match_obj, loader))
 	_build_cards()
 	_build_result_panel()
@@ -289,8 +301,11 @@ func _show_result() -> void:
 	sub.size = Vector2(300, 30)
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_result_layer.add_child(sub)
-	_result_btn("REMATCH", _vh * 0.58, _on_rematch)
-	_result_btn("MENU", _vh * 0.58 + 70.0, _on_menu)
+	if GameStateScript.run != null:
+		_result_btn("CONTINUE", _vh * 0.58, _on_run_continue)   # Roguelite：回 run 中枢推进/给奖励/结算
+	else:
+		_result_btn("REMATCH", _vh * 0.58, _on_rematch)
+		_result_btn("MENU", _vh * 0.58 + 70.0, _on_menu)
 
 func _result_btn(txt: String, y: float, cb: Callable) -> void:
 	var b := Button.new()
@@ -299,6 +314,10 @@ func _result_btn(txt: String, y: float, cb: Callable) -> void:
 	b.size = Vector2(240, 56)
 	b.pressed.connect(cb)
 	_result_layer.add_child(b)
+
+func _on_run_continue() -> void:
+	GameStateScript.run_last_result = match_obj.get_result()
+	get_tree().change_scene_to_file(RunSceneScene)
 
 func _on_rematch() -> void:
 	get_tree().reload_current_scene()

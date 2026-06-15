@@ -15,6 +15,7 @@ const ElixirScript = preload("res://logic/elixir.gd")
 const DeckScript = preload("res://logic/deck.gd")
 const SimClockScript = preload("res://logic/sim_clock.gd")
 const UnitScript = preload("res://logic/unit.gd")
+const RunModifiersScript = preload("res://logic/run_modifiers.gd")
 
 var config            # ConfigLoader
 var battle            # Battle
@@ -30,8 +31,10 @@ func _init(config_ = null) -> void:
 
 # 按关卡配置搭好一局：2D 场地（河+双桥+地形）+ 双方各 3 塔（2 公主 1 王）、
 # 两个对称 Player、固定时钟。
-func setup(level_id: String = "level_01", player_deck_override: Array = []) -> void:
-	var level: Dictionary = config.get_level(level_id)
+# modifiers（V3-4c）：relic / 节点难度修正器数组；经 RunModifiers 作用于 **effective level 副本**，
+# 不污染 ConfigLoader 基础配置。空数组 = 行为与改前一致（起手圣水仍 0）。
+func setup(level_id: String = "level_01", player_deck_override: Array = [], modifiers: Array = []) -> void:
+	var level: Dictionary = RunModifiersScript.effective_level(config.get_level(level_id), modifiers)
 	ai_difficulty = String(level.get("ai_difficulty", "normal"))
 	battle = BattleScript.new()
 	battle.build_arena(level, config.get_arena("default"))
@@ -39,13 +42,14 @@ func setup(level_id: String = "level_01", player_deck_override: Array = []) -> v
 	clock = SimClockScript.new()
 	var emax := float(level.get("elixir_max", 10))
 	var regen := float(level.get("elixir_regen_rate", 1.0))
+	var estart := float(level.get("elixir_start", 0.0))   # 默认 0（决策日志 7）；relic「起手圣水」可抬高
 	# 玩家卡组：组卡界面给了覆盖（非空）就用它，否则用关卡默认（决策 34，V2-7c）。
 	var player_deck_ids: Array = player_deck_override if not player_deck_override.is_empty() else level.get("player_deck", [])
-	player = _make_player(UnitScript.OWNER_PLAYER, player_deck_ids, emax, regen)
-	opponent = _make_player(UnitScript.OWNER_OPPONENT, level.get("ai_deck", []), emax, regen)
+	player = _make_player(UnitScript.OWNER_PLAYER, player_deck_ids, emax, regen, estart)
+	opponent = _make_player(UnitScript.OWNER_OPPONENT, level.get("ai_deck", []), emax, regen, estart)
 
-func _make_player(owner_id: int, deck_ids: Array, emax: float, regen: float):
-	var elixir = ElixirScript.new(emax, regen, 0.0)   # 起始圣水 0（决策日志 7）
+func _make_player(owner_id: int, deck_ids: Array, emax: float, regen: float, estart: float = 0.0):
+	var elixir = ElixirScript.new(emax, regen, estart)
 	var deck = DeckScript.new(deck_ids)
 	return PlayerScript.new(owner_id, elixir, deck, config, skill_system)
 

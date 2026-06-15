@@ -1,15 +1,17 @@
 # Deck —— 循环卡组（皇室战争式）。玩家与 AI 共用。
 #
-# 一副 8 张牌：4 张在手（可出，格位固定），其余 4 张在队列等待。
+# 4 张在手（可出，格位固定），其余在队列等待。
 # 出牌规则：打出手牌某一格 → 该格由队首（下一张）补上 → 打出的牌回到队尾。
 # 纯逻辑：只搬运 card id，不关心圣水/数值（那些在 Player / ConfigLoader）。
 #
-# V1 不洗牌（确定性循环，利于测试）；如需开局随机化，后续再加可选 seeded shuffle。
+# 牌组大小：标准对局 8 张（DECK_SIZE）；**V3-4b Roguelite draft 后卡组可增长**，
+# 故只要求 ≥ HAND_SIZE+1（手满 4 + 队列 ≥1 才能循环），不再硬限定 8。
+# 不洗牌（确定性循环，利于测试）；如需开局随机化，后续再加可选 seeded shuffle。
 extends RefCounted
 class_name Deck
 
 const HAND_SIZE := 4
-const DECK_SIZE := 8
+const DECK_SIZE := 8       # 标准对局牌组大小（参考值；draft 后实际大小可更大）
 
 var _hand: Array = []      # 固定 HAND_SIZE 格，存 card id
 var _queue: Array = []     # 等待队列；front=下一张要补的，back=刚打出的回到这
@@ -18,10 +20,11 @@ func _init(card_ids: Array = []) -> void:
 	if not card_ids.is_empty():
 		setup(card_ids)
 
-# 用一副牌（card id 列表，应恰好 DECK_SIZE 张）初始化：前 HAND_SIZE 张进手牌，其余进队列。
+# 用一副牌（card id 列表）初始化：前 HAND_SIZE 张进手牌，其余进队列。
+# 至少 HAND_SIZE+1 张（手满 + 队列 ≥1）才能正常循环；不足则 push_error（仍尽力切分）。
 func setup(card_ids: Array) -> void:
-	if card_ids.size() != DECK_SIZE:
-		push_error("Deck 需要恰好 %d 张牌，收到 %d 张" % [DECK_SIZE, card_ids.size()])
+	if card_ids.size() < HAND_SIZE + 1:
+		push_error("Deck 至少需要 %d 张牌（%d 手 + ≥1 循环），收到 %d 张" % [HAND_SIZE + 1, HAND_SIZE, card_ids.size()])
 	_hand = card_ids.slice(0, HAND_SIZE)
 	_queue = card_ids.slice(HAND_SIZE)
 

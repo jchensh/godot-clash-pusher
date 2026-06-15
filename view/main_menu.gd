@@ -5,6 +5,7 @@
 extends Control
 
 const LEVEL_SELECT_SCENE := "res://view/level_select.tscn"
+const RUN_SCENE := "res://view/run_scene.tscn"
 
 func _ready() -> void:
 	_build()
@@ -22,13 +23,17 @@ func _build() -> void:
 	_center_label("CLASH PUSHER", 348, 84, Color(1.0, 0.92, 0.5))
 	_center_label("3-LANE TOWER RUSH", 470, 30, Color(0.8, 0.85, 0.85))
 	# 主按钮
-	_menu_button("START", 720, _on_start_pressed)
-	_menu_button("QUIT", 866, _on_quit_pressed)
+	_menu_button("START", 656, _on_start_pressed)
+	_menu_button("ROGUELITE", 788, _on_run_pressed)
+	_menu_button("QUIT", 920, _on_quit_pressed)
 	# 脚注
-	_center_label("V2 prototype - white-box", 1186, 20, Color(0.55, 0.6, 0.55))
+	_center_label("V3 prototype - 2D reboot", 1186, 20, Color(0.55, 0.6, 0.55))
 
 func _on_start_pressed() -> void:
 	get_tree().change_scene_to_file(LEVEL_SELECT_SCENE)   # 先选关（关卡自带难度），再进对局
+
+func _on_run_pressed() -> void:
+	get_tree().change_scene_to_file(RUN_SCENE)            # Roguelite：run 中枢（续跑已有存档 / 否则新开）
 
 func _on_quit_pressed() -> void:
 	get_tree().quit()

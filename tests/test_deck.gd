@@ -61,6 +61,23 @@ func test_get_hand_returns_copy() -> void:
 	h[0] = "HACKED"
 	assert_eq(d.get_hand()[0], "c0", "get_hand 返回副本，外部修改不影响内部")
 
+func test_variable_size_deck_for_draft() -> void:
+	# V3-4b：draft 后 run 卡组可增长到 >8。Deck 应支持任意 ≥5 张：手牌仍 4、其余进队列、正常循环。
+	var big := ["c0", "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9"]
+	var d = DeckScript.new(big)
+	assert_eq(d.total(), 10, "10 张牌组总数 10")
+	assert_eq(d.get_hand(), ["c0", "c1", "c2", "c3"], "手牌仍取前 4")
+	assert_eq(d.peek_next(), "c4", "队首=第 5 张")
+	# 循环不变量：多次出牌后集合不变（无丢失/重复）。
+	var original := big.duplicate()
+	original.sort()
+	for n in 23:
+		d.play(n % DeckScript.HAND_SIZE)
+		var all := d.get_hand()
+		all.append_array(d._queue)
+		all.sort()
+		assert_eq(all, original, "增长卡组第 %d 次出牌后集合不变" % n)
+
 func test_with_real_config_deck() -> void:
 	# 与 ConfigLoader 集成：用 level_01 的真实 8 张牌组驱动 Deck。
 	var loader = ConfigLoaderScript.new()

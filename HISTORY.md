@@ -49,11 +49,14 @@
 | V3-1 | **2D 战斗核心 reboot**（取代 lane：地形/流场绕桥/仇恨/软分离+攻击/塔反击/AI/显示层，a–h） | ✅ 完成（单测；画面待真人验收） | `ed08c37`/`4f7aaa8`/`816968a` |
 | V3-2 | 空军（飞兵越河 + 对空克制 `attack_targets`） | ✅ 完成（单测；画面待真人验收） | `7ad503d` |
 | V3-3 | 新技能积木（亡语召唤 `golem` / 治疗术 `heal`）→ 16 卡 / 10 单位 | ✅ 完成（单测） | `73f99c1` |
-| V3-4a | Roguelite 骨架：RunState + 节点地图（线性连战链）+ 连战流转（二元永久死亡） | ✅ 完成（单测 + headless 跑通一条 run） | 待提交 |
+| V3-4a | Roguelite 骨架：RunState + 节点地图（线性连战链）+ 连战流转（二元永久死亡） | ✅ 完成（单测 + headless 跑通一条 run） | `9a6fc55` |
+| V3-4b | 战间 draft 三选一（确定性候选、改写本 run 卡组、卡组可增长） | ✅ 完成（单测） | 待提交 |
+| V3-4c | relic 系统（JSON 数值修正器、effective level 不污染 base、起手圣水） | ✅ 完成（单测） | 待提交 |
+| V3-4d | boss/精英节点难度修正 + 局间 meta 解锁 + 存档（user:// 往返）+ 最简 run view | ✅ 完成（单测 + headless smoke；引擎内流程交真人验收） | 待提交 |
 
-> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot，取代 lane）+ V3-2（空军）+ V3-3（新积木）+ V3-4a（Roguelite 骨架）已完成**；**V3-1h/V3-2/V3-3 的画面/手感留真人实机验收**。下一步 **V3-4b draft 三选一**。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
+> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。下一步 **V3-5 短战役 + 新手引导**。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
 
-**测试**：144/144（macOS，`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
+**测试**：172/172（macOS，`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
 ---
 
@@ -142,6 +145,10 @@
 > 38 为 **V3-4a（Roguelite 骨架）参数与流转口径**，用户 2026-06-15 确认（PLAN_V3 §5「Roguelite 参数：act/战数/map 形态，V3-4 前定」至此为 4a 定稿）。
 
 38. **V3-4a = 线性连战链 + 二元永久死亡 + 3 act × 3 战**：①**节点地图形态 = 线性连战链**（节点按 act 展开成一条扁平链、依次连战、无分叉；节点带 `type(battle/elite/boss)` 与 `act` 标签供 V3-4d 差异化与 view 分组，4a 所有节点同跑普通战斗；分叉/程序化地图留后续，同一 `RunMap` 接口承载、流转不必改）。②**败北模型 = 二元永久死亡**——只有【玩家胜】推进，**对手胜或平局**立即整局失败（draw 视为「未取胜」→ 必须明确取胜才过关；该口径用户已知，可后续否决）；战斗未结束(ONGOING)喂入为防御性 no-op。③**run 规模 = 3 act × 3 战 = 9 节点**（act 数沿用决策 36 锁定的 3；每 act 末节点标记为 boss；战数全走 `run.json` 可调）。④**遭遇来源 = run 节点引用现有 `levels.json` 的 level_id**（复用 `Match.setup(level_id, player_deck_override)` 现成逻辑：用该关 AI 侧/塔/时长，玩家卡组用 run 卡组覆盖；零额外接口；当前仅 4 关先复用，富遭遇池留内容步）。⑤**起始 run 卡组 = 玩家在 deck_builder 选的卡组**，空则用 `run.json` 的 `starter_deck`（与 V2-7c 的 `player_deck_override` 同口径）。⑥**确定性**：`RunState` 带 `seed` 字段但 4a 地图按 config 确定性展开、不实际跑随机（保单测可复现，seed 留后续程序化）；`relics` 字段空置留 V3-4c。⑦**`run.json` 为结构性配置、不进 Excel 镜像**（比照 `arena.json`，`build_config.py`/`--check` 不涉及）。⑧**view 接入（菜单→run→对局→下一节点）不在 4a**——4a 仅 logic+config+单测（对齐 PLAN_V3 §3 「4a 验收 = 单测 + headless 跑通一条 run」），最简 view 留后续小步。
+
+> 39 为 **V3-4b/c/d 一批做完 + 配最简可玩 view**，用户 2026-06-15 确认（要求一口气开发完并在 V3-4 全完成后给「人工引擎内验收清单」）。
+
+39. **V3-4b/c/d 一批做完 + 配最简可玩 view**：本批含让 run 引擎内可玩的最简 view（否则无可人工验收的东西）。各子步口径——**4b draft**：每场胜后三选一，候选 = 卡池中**不在 run 卡组**的卡、**确定性 seeded 洗牌**取 3（`RunRewards`，同 seed 同结果）；选中 → **追加**进 run 卡组（卡组可增长、不替换、去重），故 **`Deck` 放宽**为 ≥HAND_SIZE+1（不再硬限 8）；可 SKIP。**平局/对手胜不给 draft**（沿用决策 38 永久死亡）。**4c relic**：relic = JSON 数值修正器（`relics.json`，结构性、不进 Excel），经 `RunModifiers.effective_level` 作用于 level 的**深拷贝 effective 副本**（圣水回速/上限/**起手圣水**、对局时长、王/公主塔血），**绝不污染 ConfigLoader 基础配置**；多源**顺序叠加** `val=val*mult+add`；relic 奖励在 **elite/boss 胜**后给（普通节点给卡 draft）；**单位级 relic（兵伤/血）留后续**（需注入 SkillSystem 生成路径，本批不做）。`Match.setup` +`modifiers` 形参（空=行为同前、起手圣水仍 0），起手圣水经 `Elixir` 第三参注入。**4d boss/精英 + meta + 存档**：boss/elite 节点经 `run.json.node_modifiers` 用同一修正器引擎**抬塔血**（elite ×1.25 / boss 王×1.5·公主×1.4）实现差异化（AI 难度仍随所引用关卡，不另调）；**meta = 局间持久统计**（runs_started/won、bosses_defeated）驱动**解锁**——relic 上挂 `unlock:{stat:阈值}` 门控，满足才进可用池（`MetaProgress.available_relics`）；**存档落 `user://`**（`SaveSystem`：meta 持久 + run 可续跑，run 地图不存盘由 config 重建后 `load_dict` 恢复进度）。**view = 最简**：`run_scene` 节点链中枢（打节点→回来推进→给奖励→结算）+ `battle_scene` run 模式（读 `GameState.run` 建场、CONTINUE 回中枢）+ 主菜单 ROGUELITE 入口；run 真正可玩，但**引擎内流程/手感交真人验收**。**踩坑**：①新类的 `static from_dict` 引用自身 `class_name` 在 .uid/全局注册前会被 test runner 预检判失败 → 改为**实例方法 `load_dict`、不引用自身 class_name**（合 HISTORY「不依赖 class_name 全局注册」）；②`--script` 的 `_initialize` 期 `add_child` **不触发 `_ready`** → headless smoke 须显式调 `_ready()`（非代码 bug）；③杀进程留下的 `user://` 半档会污染下次 smoke → smoke 前清档。
 
 ---
 
@@ -366,3 +373,56 @@
 - `godot --headless --editor --path . --quit` → `RunMap`/`RunState` 类注册、`.uid` 生成、零解析错误 ✅
 - `build_config.py --check` → `config check ok`（未动 units/cards/levels，Excel 无漂移）✅
 - run 推进 / 胜负流转 / 连战链 / headless 跑通一条 run（全胜→通关、首败→失败）均由单测覆盖。纯逻辑步骤，按纪律无需肉眼验收。
+
+### V3-4b — 战间 draft 三选一（逻辑+单测）  （本批待提交）
+**前置决策**：见决策日志 39（确定性候选、追加进 run 卡组、卡组可增长、可 SKIP）。
+**新增 / 修改**
+- `logic/run_rewards.gd`（`RunRewards`，新）：`offer_cards`/`offer_relics`——从池中剔除已持有、seeded Fisher-Yates 确定性取 N（同 seed 同结果，零随机副作用）。
+- `logic/run_state.gd`：+`add_card`（追加进 run 卡组、去重）/`add_relic`（去重）。
+- `logic/deck.gd`：放宽 `setup` 为 ≥`HAND_SIZE`+1（不再硬限 8），支持 draft 后卡组增长；标准对局仍 8。
+- `tests`：`test_run_rewards`(6)、`test_deck`+1（10 张增长卡组循环不变量）、`test_run_state`+3（加卡增长去重 / 加 relic 去重 / **draft 卡带入下一场 Match**）。
+
+### V3-4c — relic 系统：JSON 数值修正器（逻辑+config+单测）  （本批待提交）
+**前置决策**：见决策日志 39（effective level 深拷贝、不污染 base、起手圣水、单位级 relic 留后续）。
+**新增 / 修改**
+- `logic/run_modifiers.gd`（`RunModifiers`，新）：`effective_level(base, mod_sources)`——深拷贝后顺序叠加 `val=val*mult+add`（圣水回速/上限/起手、时长、王/公主塔血），**base 不变**；`relic_mods`（relic id→mods 数组）；`node_mod`（节点难度修正查表）。
+- `config/relics.json`（新，结构性、不进 Excel）：7 个 relic（含 2 个 `unlock` 门控）。
+- `logic/match.gd`：`setup` +`modifiers` 形参（经 `effective_level` 作用，空=行为同前）；起手圣水 `elixir_start` 经 `Elixir` 第三参注入（`_make_player` +`estart`）。
+- `logic/config_loader.gd`：载入 `relics.json` + 校验（每 relic 含 mods 对象）+ `get_relic`。
+- `tests`：`test_run_modifiers`(7)、`test_match`+1（修正器抬塔血/起手圣水且不污染 base）、`test_config_loader`+1（relics 加载）。
+
+### V3-4d — boss/精英 + 局间 meta 解锁 + 存档 + 最简 run view（逻辑+config+view+单测）  （本批待提交）
+**前置决策**：见决策日志 39（节点难度走同一修正器引擎、meta 门控解锁 relic、user:// 往返、view 最简）。
+**新增 / 修改（逻辑+config）**
+- `logic/meta_progress.gd`（`MetaProgress`，新）：局间统计（runs_started/won、bosses_defeated）+ `available_relics`/`unlocked_ids`（按 relic 的 `unlock:{stat:阈值}` 解算）+ `load_dict`/`to_dict`。
+- `logic/save_system.gd`（`SaveSystem`，新）：`user://` 存读 meta（持久）+ run（可续跑，地图由 config 重建后 `load_dict` 恢复进度）；路径可注入（单测用临时档）。
+- `logic/run_state.gd`：+`to_dict`/`load_dict`（序列化，不引用自身 class_name）。
+- `config/run.json`：+`node_modifiers`（elite/boss 抬塔血）。
+- `tests`：`test_meta_progress`(5)、`test_save_system`(4)、`test_run_modifiers`+1（node_mod）、`test_run_state`+1（to/load_dict 往返）。
+**新增 / 修改（view，最简可玩）**
+- `view/run_scene.gd`+`.tscn`（新）：run 节点链中枢——画连战链(完成/当前/boss 标记)+run 卡组/relic 摘要；处理回传战斗结果(推进/记 boss/给奖励/结算+存盘)；FIGHT→battle、奖励三选一覆盖层(卡/relic)、结算覆盖层(通关/败北+解锁展示)、NEW RUN/MENU。
+- `view/battle_scene.gd`：run 模式——读 `GameState.run` 当前节点 level_id+run 卡组+relic/节点修正建场；结算改 CONTINUE 回 run 中枢（写 `run_last_result`）。
+- `view/game_state.gd`：+`run`/`run_last_result`/`meta` 静态变量（run 模式握手）。
+- `view/main_menu.gd`：+ROGUELITE 入口（→ run_scene，续档/新开）。
+
+**范围边界 / 现状**：4b/c/d 一批完成。单位级 relic、分叉地图、富遭遇池、deck-builder 选 run 起始卡组、UI 美术/FX 均留后续。view 为白膜最简，**run 引擎内流程/手感交真人验收**。
+
+**踩坑与修复**
+- 新类 `static from_dict` 引用自身 `class_name`：.uid/全局注册前被 test runner 预检判失败 → 改实例方法 `load_dict`（不引用自身 class_name）。
+- headless smoke：`--script` 的 `_initialize` 期 `add_child` 不触发 `_ready` → 须显式调 `_ready()`（非代码 bug）；杀进程残留 `user://` 半档会污染下次 smoke → smoke 前清档。
+
+**验收**
+- `HOME=/private/tmp/godot-home godot --headless --path . --script res://tests/test_runner.gd` → **172/172 全过**（+28：rewards 6 + modifiers 8 + meta 5 + save 4 + deck 1 + run_state 4 + config 1 + match 1；旧 144 零回归），exit 0 ✅
+- `godot --headless --editor --path . --quit` → exit 0、新类注册、`.uid` 生成、零解析错误 ✅
+- `build_config.py --check` → `config check ok`（relics.json/run.json 结构性、未动 Excel 镜像）✅
+- headless smoke（显式 `_ready()`）：run 中枢建 9 节点/8 卡 run；battle run 模式用节点 level+run 卡组建场（boss 节点王塔 2600×1.5=3900 ✓）；胜后回中枢推进+给奖励（普通→卡 draft 3 选 1；boss→记 boss+relic 奖励，含解锁的 giants_blood）✓。
+- **run 引擎内完整流程/手感留真人实机验收**（清单见下）。
+
+**V3-4 真人实机验收清单（交用户）**：编辑器运行主场景 → 主菜单点 **ROGUELITE**，确认：
+1. 进入 run 中枢，看到 **9 个节点的连战链**（Act 1/2/3，每 act 末 BOSS 红标）、当前节点高亮、底部显示 **run 卡组(8)** 与 **RELICS (none)**；
+2. 点 **FIGHT** 进战斗，确认用的是 run 卡组、能正常打（绕桥/转火/塔互射/拆塔）；
+3. 战斗结束点 **CONTINUE** 回中枢：**胜** → 普通节点弹 **DRAFT A CARD 三选一**，选 1 张后回中枢、卡组 +1、当前节点推进；**败/平** → 弹 **RUN OVER** 结算 → BACK TO MENU；
+4. 打到 **BOSS/ELITE 节点**：该战更硬（塔血更高），**胜后弹 CHOOSE A RELIC 三选一**，选 1 个后中枢 RELICS 出现该 relic，且后续战斗能感到 relic 生效（如起手圣水/塔更肉/回速更快）；
+5. 连胜通关最后 BOSS → 弹 **RUN CLEARED** + 统计（Runs won / Bosses beaten）+ 若达成则显示 **Unlocked: …**；
+6. 中途点 **MENU** 离开再进 ROGUELITE → 能**续上同一条 run**（存档）；点 **NEW RUN** → 重开一条新 run；通关/败北后回菜单再进 → 开新 run（旧档已清）。
+回报「通过/哪条不对」。

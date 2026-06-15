@@ -127,3 +127,48 @@ func test_headless_run_aborts_on_loss() -> void:
 	run.advance(m.get_result())
 	assert_eq(run.status, RunStateScript.RUN_LOST, "首战败北 → run 失败")
 	assert_eq(run.cursor, 0, "失败不推进")
+
+# ---------- draft / relic / 序列化（V3-4b/c/d） ----------
+
+func test_add_card_grows_deck_and_dedups() -> void:
+	var run = _make_run()
+	var before: int = run.deck.size()
+	run.add_card("mini_pekka")
+	assert_eq(run.deck.size(), before + 1, "draft 选中的卡追加进 run 卡组")
+	assert_true("mini_pekka" in run.deck, "卡组含新卡")
+	run.add_card("mini_pekka")
+	assert_eq(run.deck.size(), before + 1, "重复 draft 同卡不二次加入")
+
+func test_add_relic_dedups() -> void:
+	var run = _make_run()
+	run.add_relic("elixir_surge")
+	run.add_relic("elixir_surge")
+	assert_eq(run.relics.size(), 1, "同 relic 不重复持有")
+
+func test_draft_card_carried_into_next_match() -> void:
+	# 4b 验收：draft 结果带入下一场——run 卡组追加的卡出现在下一场 Match 的玩家牌组里。
+	var loader = _loader()
+	var run = _make_run(loader)
+	run.advance(BattleScript.RESULT_PLAYER_WIN)   # 过第 1 节点
+	run.add_card("lightning")                     # starter 里没有 lightning
+	var node := run.current_node()
+	var m = MatchScript.new(loader)
+	m.setup(String(node.get("level_id")), run.deck)
+	assert_eq(m.player.deck.total(), run.deck.size(), "下一场牌组大小=run 卡组（含 draft 卡）")
+	var all: Array = m.player.deck.get_hand()
+	all.append_array(m.player.deck._queue)
+	assert_true("lightning" in all, "draft 的 lightning 进入下一场牌组")
+
+func test_to_from_dict_round_trip() -> void:
+	var run = _make_run()
+	run.advance(BattleScript.RESULT_PLAYER_WIN)
+	run.add_card("musketeer")
+	run.add_relic("big_reservoir")
+	var r2 = RunStateScript.new(run.map)
+	r2.load_dict(run.to_dict())
+	assert_eq(r2.cursor, run.cursor, "cursor 往返")
+	assert_eq(r2.wins, run.wins, "wins 往返")
+	assert_eq(r2.status, run.status, "status 往返")
+	assert_eq(r2.seed, run.seed, "seed 往返")
+	assert_eq(r2.deck, run.deck, "deck 往返")
+	assert_eq(r2.relics, run.relics, "relics 往返")

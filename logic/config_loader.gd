@@ -15,6 +15,7 @@ var units: Dictionary = {}
 var levels: Dictionary = {}
 var arena: Dictionary = {}      # V3：2D 场地配置（arena.json），结构性、不进 Excel 镜像
 var run: Dictionary = {}        # V3-4：Roguelite run 结构（run.json），结构性、不进 Excel 镜像
+var relics: Dictionary = {}     # V3-4c：relic 修正器池（relics.json），结构性、不进 Excel 镜像
 var errors: Array[String] = []
 
 # 读入配置；全部成功且校验无误返回 true，否则 false（详情见 errors）。
@@ -25,6 +26,7 @@ func load_all(config_dir: String = DEFAULT_CONFIG_DIR) -> bool:
 	levels = _load_json_dict(config_dir.path_join("levels.json"))
 	arena = _load_json_dict(config_dir.path_join("arena.json"))
 	run = _load_json_dict(config_dir.path_join("run.json"))
+	relics = _load_json_dict(config_dir.path_join("relics.json"))
 	_validate()
 	return errors.is_empty()
 
@@ -126,6 +128,15 @@ func _validate() -> void:
 				if not cards.has(cid):
 					errors.append("run.default 的 starter_deck 引用了不存在的 card '%s'" % str(cid))
 
+	# relics.json（V3-4c）：每个 relic 须为对象且含 mods 对象（数值修正器）。
+	for rid in relics:
+		var rdef = relics[rid]
+		if typeof(rdef) != TYPE_DICTIONARY:
+			errors.append("relic '%s' 应为对象" % str(rid))
+			continue
+		if typeof(rdef.get("mods")) != TYPE_DICTIONARY:
+			errors.append("relic '%s' 缺少 mods 对象" % str(rid))
+
 	# 交叉引用：spawn_unit.unit_id 必须在 units 中；deck 中的 card 必须在 cards 中。
 	for cid in cards:
 		var card = cards[cid]
@@ -175,6 +186,9 @@ func get_arena(id: String = "default") -> Dictionary:
 
 func get_run(id: String = "default") -> Dictionary:
 	return run.get(id, {})
+
+func get_relic(id: String) -> Dictionary:
+	return relics.get(id, {})
 
 func has_card(id: String) -> bool:
 	return cards.has(id)

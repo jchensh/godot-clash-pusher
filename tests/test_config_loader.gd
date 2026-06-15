@@ -106,6 +106,15 @@ func test_v3_run_config_loaded() -> void:
 	# 每个节点引用的 level 必须真实存在（交叉校验已在 load_all 跑过，这里再断言无错）。
 	assert_true(loader.errors.is_empty(), "run 交叉引用应有效; errors=%s" % str(loader.errors))
 
+func test_v3_relics_config_loaded() -> void:
+	# V3-4c：relics.json 纳入 ConfigLoader；每个 relic 含 mods 对象。
+	var loader = _make_loaded()
+	assert_false(loader.relics.is_empty(), "relics.json 应被加载")
+	assert_true(loader.relics.has("elixir_surge"), "应含 elixir_surge")
+	var r = loader.get_relic("elixir_surge")
+	assert_true(typeof(r.get("mods")) == TYPE_DICTIONARY, "relic 含 mods 对象")
+	assert_true(loader.errors.is_empty(), "relic 校验无错; errors=%s" % str(loader.errors))
+
 func test_missing_dir_reports_error() -> void:
 	var loader = ConfigLoaderScript.new()
 	var ok = loader.load_all("res://config_does_not_exist")
