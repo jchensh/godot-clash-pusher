@@ -54,9 +54,10 @@
 | V3-4c | relic 系统（JSON 数值修正器、effective level 不污染 base、起手圣水） | ✅ 完成（单测） | 待提交 |
 | V3-4d | boss/精英节点难度修正 + 局间 meta 解锁 + 存档（user:// 往返）+ 最简 run view | ✅ 完成（单测 + headless smoke；引擎内流程交真人验收） | 待提交 |
 | V3-6a | 拖拽部署（CR 式）+ 落点 ghost/合法红绿 + 半场高亮 + 落地涟漪 + 入场缩放（仅 view） | ✅ 完成（单测 172/172；**真人实机 7/7 验收通过 2026-06-16**） | `1999797` |
-| V3-6b | 战斗 juice：移动插值 + 受击闪白 + 浮动伤害数字 + 命中顿帧 + 震屏 + 命中火花（仅 view） | 🚧 代码完成（headless smoke + 单测 172/172 零回归；手感待真人验收） | 待提交 |
+| V3-6b | 战斗 juice：移动插值 + 受击闪白 + 浮动伤害数字 + 命中顿帧 + 震屏 + 命中火花（仅 view） | ✅ 代码完成（单测 172/172 零回归；手感待真人验收） | `8a09953` |
+| V3-6c | HUD 反馈：分段圣水条 + 满槽脉动 + 卡面自绘(费用/不可用扫光/选中) + 下一张预览 + 王冠/倒计时强调（仅 view） | 🚧 代码完成（headless smoke + 单测 172/172 零回归；外观待真人验收） | 待提交 |
 
-> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）进行中**：V3-6a（拖拽部署 + 落点反馈）**真人 7/7 验收通过**；V3-6b（战斗 juice：移动插值/受击闪白+伤害数字/顿帧/震屏/火花，仅 view）代码完成、手感待真人验收；下一步 V3-6c（圣水/HUD 反馈）。V3-5 短战役 + 新手引导按决策 40 推迟到 V3-6/V3-7 之后执行。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
+> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）进行中**：V3-6a（拖拽部署 + 落点反馈）**真人 7/7 验收通过**；V3-6b（战斗 juice，仅 view）代码完成、手感待真人验收；V3-6c（圣水/HUD 反馈：分段圣水条/卡面自绘/下一张预览/王冠倒计时，仅 view）代码完成、外观待真人验收；下一步 V3-6d（胜负与 run 总结演出）。V3-5 短战役 + 新手引导按决策 40 推迟到 V3-6/V3-7 之后执行。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
 
 **测试**：172/172（macOS，`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
@@ -491,3 +492,26 @@
 - **战斗手感留真人实机验收**（清单见下）。
 
 **V3-6b 真人实机验收清单（交用户）**：F5 运行 → 任意战斗，确认：① 兵移动**丝滑**不再 10Hz 跳格（尤其过桥/转向）；② 被打的兵/塔**闪白**、冒**伤害数字**（数值合理、上浮淡出）；③ 治疗术给友军冒**绿 +数字**；④ 法术（火球/闪电）等大伤害命中有**顿帧**（极短卡顿）+ **震屏**，且**只有战场抖、顶栏/圣水/手牌不抖**；⑤ **塔被摧毁**时明显**震屏 + 大涟漪**；⑥ 震屏时**落点仍准**（拖拽出兵不偏）；⑦ 帧率正常、无报错。回报「通过/哪条不对」。
+
+### V3-6c — 圣水/HUD 反馈（仅 view）  （待提交）
+**前置决策**：见决策日志 41（纯显示层 HUD：分段圣水/满槽脉动/卡牌可用态扫光/下一张预览/王冠倒计时强调）。
+
+**修改（仅 `view/battle_scene.gd`，零逻辑改）**
+- **分段圣水条**（`_draw_elixir` 重写）：按 `elixir.maximum`（relic 可改，四舍五入取整）画 N 段 pip，满格逐段填、当前段按小数部分部分填；`is_full()` → 满槽紫色**脉动**（`sin(_elapsed*8)`）。左侧留位给「下一张」chip。
+- **下一张预览**（`_draw_next_chip`）：读 `deck.peek_next()`，圣水条右侧画 NEXT chip（卡名截断 + 费用珠）。
+- **卡面自绘**（`_draw_cards` + 透明 Button）：手牌 Button 改为**纯输入热区**（`StyleBoxEmpty` 覆盖 normal/hover/pressed/disabled/focus、`focus_mode=NONE`、清空 text），卡面由父 `_draw` 自绘（底板 + 卡名 + 费用珠 + 选中金框/拖拽抬起）→ 便于 V3-7 贴皮。**不可用「扫光」**：出不起的牌压暗罩，暗罩高度随 `圣水/费用` 进度从底部回落（CR 式蓄费提示）。`_sync_cards` 简化为只设 `disabled`（出不起/空格不可拖，沿用 6a）。
+- **王冠 + 倒计时强调**（`_draw_topbar` 重写）：左右各画 **3 个王冠**（`_draw_crown` 多边形剪影，按拆塔数填实/描边）取代纯数字；倒计时 ≤30s **红色脉动 + 放大**。
+- 底部新增 HUD 底板矩形。
+
+**范围边界**：仅 view，逻辑/config/单测零改。卡面/王冠/圣水珠均程序化白膜（V3-7 贴精灵/UI kit）。胜负与 run 总结演出在 6d。
+
+**踩坑与修复**
+- `var cost := match_obj.player.card_cost(nx)`：`match_obj` 无类型 → 方法返回值为 Variant、`:=` 推断失败。改 `var cost: int =`（沿用既有坑）。
+- 卡面在父 `_draw` 画、Button 为透明子节点覆于其上：故 Button 必须 `StyleBoxEmpty` 全覆盖（含 hover/pressed/focus）+ 清 text，否则默认样式遮住自绘卡面。
+
+**验收**
+- `Godot_..._console.exe --headless --path . res://view/battle_scene.tscn --quit-after 360` → 零脚本/运行期错误 ✅
+- `... --script res://tests/test_runner.gd` → **172/172 全过**（仅改 view，逻辑零回归）✅
+- **HUD 外观/反馈留真人实机验收**（清单见下）。
+
+**V3-6c 真人实机验收清单（交用户）**：F5 运行 → 任意战斗，确认：① 圣水条是**分段 pip**、随回涨逐格填、**满 10 格时脉动**；② 圣水条旁有 **NEXT** 预览（下一张卡名 + 费用珠）且随出牌更新；③ 手牌为**自绘卡面**（卡名 + 费用珠 + 选中金框 + 拖拽抬起）；④ 出不起的牌有**暗罩扫光**、随圣水接近费用**从底部回落**到点亮，且**仍拖不动**直到够费；⑤ 顶栏左右各 **3 王冠**、按拆塔**点亮**；⑥ 倒计时 **≤30s 变红脉动放大**；⑦ 帧率正常、无报错、出牌/拖拽仍正常。回报「通过/哪条不对」。

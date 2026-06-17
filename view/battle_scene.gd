@@ -6,6 +6,7 @@
 # 出牌 = 拖拽部署（CR 式，决策 41）：按手牌→拖到场上(落点抬到手指上方)→松手落子；
 #   拖拽中画落点 ghost(兵剪影/AOE 圈/直伤准星)+合法绿/非法红 + 己方半场高亮；成功落子有涟漪、新兵入场缩放。
 # V3-6b 加战斗 juice：移动插值(10Hz→60fps)/受击闪白+浮动伤害数字/命中顿帧/震屏/命中火花（全显示层派生）。
+# V3-6c 加 HUD 反馈：分段圣水条+满槽脉动、卡面自绘(费用/不可用扫光/选中)+下一张预览、王冠/倒计时强调。
 # 仍为白膜：精灵/粒子皮在 V3-7 接续。
 extends Node2D
 
@@ -50,6 +51,11 @@ const SHAKE_TOWER := 12.0                       # 塔被摧毁震屏
 const SHAKE_HIT_DMG := 80.0                     # 触发小震屏的单次伤害阈值
 const HITSTOP_DMG := 200.0                      # 触发顿帧的单次伤害阈值
 const HITSTOP_DUR := 0.06                       # 顿帧（冻结 sim）时长
+
+# —— V3-6c HUD 反馈 ——
+const COL_CARD_BG := Color(0.12, 0.13, 0.18, 0.95)
+const COL_CARD_SEL := Color(0.22, 0.19, 0.10, 0.97)
+const COL_CROWN := Color(1.0, 0.85, 0.32)
 
 # 兵种白膜外形（半径 tile，按队伍色填充；空军画环标记）。
 const UNIT_VIS := {
@@ -166,7 +172,9 @@ func _draw() -> void:
 	_draw_combat_fx()
 	_draw_drag_ghost(a)
 	_draw_topbar()
+	draw_rect(Rect2(0, _vh - HUD_BOTTOM_H, _vw, HUD_BOTTOM_H), COL_PANEL)   # 底部 HUD 底板
 	_draw_elixir()
+	_draw_cards()
 
 func _draw_terrain(a) -> void:
 	var tp := _tile_px()
@@ -257,22 +265,75 @@ func _draw_units(a) -> void:
 
 func _draw_topbar() -> void:
 	draw_rect(Rect2(0, 0, _vw, TOPBAR_H), COL_PANEL)
-	var p_crowns := _crowns(match_obj.battle.opponent_towers)
+	var p_crowns := _crowns(match_obj.battle.opponent_towers)   # 你拆掉的敌塔
 	var o_crowns := _crowns(match_obj.battle.player_towers)
-	_text(Vector2(16, 34), "YOU  %d" % p_crowns, COL_PLAYER, 22)
-	_text(Vector2(_vw - 120, 34), "%d  ENEMY" % o_crowns, COL_OPPONENT, 22)
+	_text(Vector2(12, 28), "YOU", COL_PLAYER, 16)
+	_draw_crowns(Vector2(54, 8), p_crowns, COL_PLAYER)
+	_text(Vector2(_vw - 56, 28), "ENEMY", COL_OPPONENT, 16)
+	_draw_crowns(Vector2(_vw - 150, 8), o_crowns, COL_OPPONENT)
+	# 倒计时：低于 30s 红色脉动强调
 	var t: float = match_obj.battle.remaining_time()
-	_text(Vector2(_vw * 0.5 - 28, 34), "%d:%02d" % [int(t) / 60, int(t) % 60], Color.WHITE, 22)
+	var tcol := Color.WHITE
+	var tsize := 24
+	if t <= 30.0:
+		var pulse: float = 0.5 + 0.5 * sin(_elapsed * 6.0)
+		tcol = Color(1, 0.4, 0.35).lerp(Color(1, 0.9, 0.3), pulse)
+		tsize = 27
+	_text(Vector2(_vw * 0.5 - 30, 32), "%d:%02d" % [int(t) / 60, int(t) % 60], tcol, tsize)
+
+func _draw_crowns(start: Vector2, n: int, col: Color) -> void:
+	for i in 3:
+		_draw_crown(start + Vector2(i * 19 + 9, 9), 15.0, col, i < n)
+
+func _draw_crown(c: Vector2, s: float, col: Color, filled: bool) -> void:
+	var w := s
+	var h := s * 0.8
+	var pts := PackedVector2Array([
+		c + Vector2(-w * 0.5, h * 0.5), c + Vector2(-w * 0.5, -h * 0.25),
+		c + Vector2(-w * 0.25, h * 0.1), c + Vector2(0, -h * 0.5),
+		c + Vector2(w * 0.25, h * 0.1), c + Vector2(w * 0.5, -h * 0.25),
+		c + Vector2(w * 0.5, h * 0.5),
+	])
+	if filled:
+		draw_colored_polygon(pts, col)
+	else:
+		var line := pts.duplicate()
+		line.append(pts[0])
+		draw_polyline(line, Color(col.r, col.g, col.b, 0.35), 1.5)
 
 func _draw_elixir() -> void:
 	var e = match_obj.player.elixir
 	var amt: float = e.get_amount()
-	var mx: float = float(e.maximum) if "maximum" in e else 10.0
+	var mx: int = maxi(1, int(round(float(e.maximum) if "maximum" in e else 10.0)))
+	var full: bool = e.is_full()
 	var y := _vh - HUD_BOTTOM_H + 10.0
-	var w := _vw - 32.0
-	draw_rect(Rect2(16, y, w, 18.0), Color(0, 0, 0, 0.5))
-	draw_rect(Rect2(16, y, w * clampf(amt / mx, 0.0, 1.0), 18.0), COL_ELIXIR)
-	_text(Vector2(20, y + 15.0), "%d" % int(amt), Color.WHITE, 16)
+	var x0 := 16.0
+	var next_w := 104.0
+	var total_w := _vw - 32.0 - next_w
+	var gap := 3.0
+	var pip_w: float = (total_w - gap * (mx - 1)) / mx
+	for i in mx:
+		var px := x0 + i * (pip_w + gap)
+		draw_rect(Rect2(px, y, pip_w, 20.0), Color(0.10, 0.05, 0.12, 0.85))   # 空槽
+		var fillf: float = clampf(amt - float(i), 0.0, 1.0)
+		if fillf > 0.0:
+			var col := COL_ELIXIR
+			if full:
+				col = COL_ELIXIR.lerp(Color(1, 0.85, 1), (0.5 + 0.5 * sin(_elapsed * 8.0)) * 0.6)
+			draw_rect(Rect2(px, y, pip_w * fillf, 20.0), col)
+	_text(Vector2(x0 + 4, y + 16.0), "%d" % e.get_int(), Color.WHITE, 14)
+	_draw_next_chip(_vw - next_w - 4.0, y - 2.0, next_w - 6.0, 24.0)
+
+func _draw_next_chip(x: float, y: float, w: float, h: float) -> void:
+	var nx = match_obj.player.deck.peek_next()
+	if nx == null:
+		return
+	draw_rect(Rect2(x, y, w, h), Color(0, 0, 0, 0.4))
+	_text(Vector2(x + 5, y + 10), "NEXT", Color(0.7, 0.7, 0.7), 10)
+	_text(Vector2(x + 5, y + h - 4), _short(str(nx), 9), Color.WHITE, 11)
+	var cost: int = match_obj.player.card_cost(nx)
+	draw_circle(Vector2(x + w - 12, y + h * 0.5), 8.0, COL_ELIXIR)
+	_text(Vector2(x + w - 15, y + h * 0.5 + 4.0), "%d" % cost, Color.WHITE, 11)
 
 func _hp_color(ratio: float) -> Color:
 	if ratio > 0.5:
@@ -494,6 +555,12 @@ func _build_cards() -> void:
 		b.size = Vector2(bw, HUD_BOTTOM_H - 56.0)
 		b.button_down.connect(_on_card_down.bind(i))
 		b.button_up.connect(_on_card_up.bind(i))
+		# 透明：仅作输入热区，卡面由 _draw_cards 自绘（便于 V3-7 贴皮）。
+		var empty := StyleBoxEmpty.new()
+		for sn in ["normal", "hover", "pressed", "disabled", "focus", "hover_pressed"]:
+			b.add_theme_stylebox_override(sn, empty)
+		b.focus_mode = Control.FOCUS_NONE
+		b.text = ""
 		add_child(b)
 		_card_btns.append(b)
 		_card_base_pos.append(b.position)
@@ -522,24 +589,45 @@ func _on_card_up(i: int) -> void:
 	if match_obj.player.try_play_card(sc, drop_tile):
 		_fx.append({"pos": drop_tile, "t0": _elapsed, "dur": POOF_DUR})
 
+# 仅作输入门控：出不起/空格 → disabled（disabled 不触发 button_down，拖不动）。卡面见 _draw_cards。
 func _sync_cards() -> void:
 	if match_obj == null:
 		return
 	var hand: Array = match_obj.player.deck.get_hand()
 	for i in _card_btns.size():
 		var b: Button = _card_btns[i]
-		var lifted: bool = _dragging and i == selected_card
-		if i < _card_base_pos.size():
-			b.position.y = _card_base_pos[i].y - (14.0 if lifted else 0.0)
-		if i >= hand.size() or hand[i] == null:
-			b.text = ""
-			b.disabled = true
-			b.modulate = Color.WHITE
+		b.disabled = not (i < hand.size() and hand[i] != null and match_obj.player.can_play(i))
+
+# 自绘卡面：底板 + 卡名 + 费用珠 + 不可用「扫光」(暗罩随圣水→费用回落) + 选中高亮 + 拖拽抬起。
+func _draw_cards() -> void:
+	var hand: Array = match_obj.player.deck.get_hand()
+	var e = match_obj.player.elixir
+	for i in _card_btns.size():
+		if i >= _card_base_pos.size():
 			continue
-		var cid := str(hand[i])
-		b.text = "%s\n%d" % [cid, match_obj.player.card_cost(cid)]
-		b.disabled = not match_obj.player.can_play(i)
-		b.modulate = Color(1, 0.9, 0.4) if i == selected_card else Color.WHITE
+		var sz: Vector2 = (_card_btns[i] as Button).size
+		var lifted: bool = _dragging and i == selected_card
+		var pos: Vector2 = _card_base_pos[i] - Vector2(0, 14.0 if lifted else 0.0)
+		var rect := Rect2(pos, sz)
+		var sel: bool = i == selected_card
+		draw_rect(rect, COL_CARD_SEL if sel else COL_CARD_BG)
+		if i < hand.size() and hand[i] != null:
+			var cid := str(hand[i])
+			var cost: int = match_obj.player.card_cost(cid)
+			var affordable: bool = e.get_int() >= cost
+			_text(pos + Vector2(7, 22), _short(cid, 10), Color.WHITE if affordable else Color(0.62, 0.62, 0.66), 14)
+			draw_circle(pos + Vector2(15, sz.y - 15), 11.0, COL_ELIXIR)
+			_text(pos + Vector2(11, sz.y - 10), "%d" % cost, Color.WHITE, 14)
+			if not affordable:
+				var prog: float = clampf(e.get_amount() / float(maxi(1, cost)), 0.0, 1.0)
+				draw_rect(Rect2(pos.x, pos.y, sz.x, sz.y * (1.0 - prog)), Color(0, 0, 0, 0.55))
+		if sel:
+			draw_rect(rect, COL_CROWN, false, 3.0)
+		else:
+			draw_rect(rect, Color(0, 0, 0, 0.5), false, 1.0)
+
+func _short(s: String, n: int) -> String:
+	return s if s.length() <= n else s.substr(0, n - 1) + "…"
 
 # —— HUD：结算面板 ——
 func _build_result_panel() -> void:
