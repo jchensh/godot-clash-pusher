@@ -57,6 +57,9 @@ const COL_CARD_BG := Color(0.12, 0.13, 0.18, 0.95)
 const COL_CARD_SEL := Color(0.22, 0.19, 0.10, 0.97)
 const COL_CROWN := Color(1.0, 0.85, 0.32)
 
+# —— V3-6d 胜负演出 ——
+const END_BTN_DELAY := 0.85                     # 结算按钮淡入延迟（先放胜负演出）
+
 # 兵种白膜外形（半径 tile，按队伍色填充；空军画环标记）。
 const UNIT_VIS := {
 	"giant_body":      {"r": 0.85},
@@ -93,6 +96,13 @@ var _sparks: Array = []       # [{pos:Vector2(tile), t0, dur}]
 var _shake := Vector2.ZERO
 var _shake_mag := 0.0
 var _hitstop_t := 0.0
+# —— V3-6d 胜负演出状态 ——
+var _ending := false
+var _end_t := 0.0
+var _end_result := 0
+var _end_pscore := 0.0
+var _end_oscore := 0.0
+var _end_buttons_added := false
 
 @onready var _vw: float = float(get_viewport_rect().size.x)
 @onready var _vh: float = float(get_viewport_rect().size.y)
@@ -133,8 +143,12 @@ func _process(delta: float) -> void:
 		_drag_screen = get_viewport().get_mouse_position()
 	_cull_transients()
 	_sync_cards()
-	if match_obj.is_over() and not _result_layer.visible:
-		_show_result()
+	if match_obj.is_over() and not _ending:
+		_start_ending()
+	if _ending:
+		_end_t += delta
+		if _end_t >= END_BTN_DELAY and not _end_buttons_added:
+			_add_result_buttons()
 	queue_redraw()
 
 # —— 坐标映射 ——
@@ -175,6 +189,7 @@ func _draw() -> void:
 	draw_rect(Rect2(0, _vh - HUD_BOTTOM_H, _vw, HUD_BOTTOM_H), COL_PANEL)   # 底部 HUD 底板
 	_draw_elixir()
 	_draw_cards()
+	_draw_end_screen()
 
 func _draw_terrain(a) -> void:
 	var tp := _tile_px()
@@ -636,43 +651,65 @@ func _build_result_panel() -> void:
 	_result_layer.mouse_filter = Control.MOUSE_FILTER_STOP
 	_result_layer.visible = false
 	add_child(_result_layer)
-	var dim := ColorRect.new()
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dim.color = Color(0, 0, 0, 0.6)
-	_result_layer.add_child(dim)
+	# 调暗/标题/王冠/比分由 _draw_end_screen 动画绘制；本层只承载（延迟淡入的）按钮。
+	# 比赛一结束即 visible（透明全屏 STOP）→ 拦截点击、演出期间不能再出牌。
 
-func _show_result() -> void:
-	_result_layer.visible = true
-	var res: int = match_obj.get_result()
-	var title := "DRAW"
-	var col := Color.WHITE
-	if res == BattleScript.RESULT_PLAYER_WIN:
-		title = "YOU WIN"
-		col = COL_PLAYER
-	elif res == BattleScript.RESULT_OPPONENT_WIN:
-		title = "YOU LOSE"
-		col = COL_OPPONENT
-	var lbl := Label.new()
-	lbl.text = title
-	lbl.add_theme_font_size_override("font_size", 56)
-	lbl.add_theme_color_override("font_color", col)
-	lbl.position = Vector2(_vw * 0.5 - 150, _vh * 0.38)
-	lbl.size = Vector2(300, 70)
-	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_result_layer.add_child(lbl)
-	var pscore: float = match_obj.battle.total_tower_hp(match_obj.battle.player_towers)
-	var oscore: float = match_obj.battle.total_tower_hp(match_obj.battle.opponent_towers)
-	var sub := Label.new()
-	sub.text = "Towers  You %d : Enemy %d" % [int(pscore), int(oscore)]
-	sub.position = Vector2(_vw * 0.5 - 150, _vh * 0.5)
-	sub.size = Vector2(300, 30)
-	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_result_layer.add_child(sub)
+# 比赛结束：进入演出（调暗/标题 sting/王冠落入/比分滚动），按钮稍后淡入。
+func _start_ending() -> void:
+	_ending = true
+	_end_t = 0.0
+	_end_result = match_obj.get_result()
+	_end_pscore = match_obj.battle.total_tower_hp(match_obj.battle.player_towers)
+	_end_oscore = match_obj.battle.total_tower_hp(match_obj.battle.opponent_towers)
+	_result_layer.visible = true   # 透明全屏，拦截点击（演出期不能出牌）
+
+func _add_result_buttons() -> void:
+	_end_buttons_added = true
 	if GameStateScript.run != null:
-		_result_btn("CONTINUE", _vh * 0.58, _on_run_continue)   # Roguelite：回 run 中枢推进/给奖励/结算
+		_result_btn("CONTINUE", _vh * 0.62, _on_run_continue)   # Roguelite：回 run 中枢推进/给奖励/结算
 	else:
-		_result_btn("REMATCH", _vh * 0.58, _on_rematch)
-		_result_btn("MENU", _vh * 0.58 + 70.0, _on_menu)
+		_result_btn("REMATCH", _vh * 0.62, _on_rematch)
+		_result_btn("MENU", _vh * 0.62 + 70.0, _on_menu)
+	_result_layer.modulate = Color(1, 1, 1, 0.0)
+	create_tween().tween_property(_result_layer, "modulate:a", 1.0, 0.3)
+
+# 胜负演出（全 _draw 驱动、单一 _end_t 计时）。
+func _draw_end_screen() -> void:
+	if not _ending:
+		return
+	var dimp: float = clampf(_end_t / 0.35, 0.0, 1.0)
+	draw_rect(Rect2(0, 0, _vw, _vh), Color(0, 0, 0, 0.62 * dimp))
+	var win: bool = _end_result == BattleScript.RESULT_PLAYER_WIN
+	var lose: bool = _end_result == BattleScript.RESULT_OPPONENT_WIN
+	var title := "YOU WIN" if win else ("YOU LOSE" if lose else "DRAW")
+	var tcol: Color = COL_PLAYER if win else (COL_OPPONENT if lose else Color.WHITE)
+	# 标题 sting：透明淡入 + 字号回弹放大
+	var ti: float = clampf(_end_t / 0.45, 0.0, 1.0)
+	var fs: int = int(40.0 + 24.0 * _ease_back(ti))
+	tcol.a = ti
+	draw_string(_font, Vector2(0, _vh * 0.34), title, HORIZONTAL_ALIGNMENT_CENTER, _vw, fs, tcol)
+	# 王冠落入（你拆掉的敌塔数，逐个延迟 + 回弹下落）
+	var earned: int = _crowns(match_obj.battle.opponent_towers)
+	var cw := 56.0
+	var sx: float = _vw * 0.5 - float(earned - 1) * cw * 0.5
+	for i in earned:
+		var lt: float = clampf((_end_t - 0.2 - float(i) * 0.12) / 0.4, 0.0, 1.0)
+		if lt <= 0.0:
+			continue
+		var yb: float = _ease_back(lt)
+		_draw_crown(Vector2(sx + float(i) * cw, _vh * 0.46 - 60.0 * (1.0 - yb)), 40.0, COL_CROWN, true)
+	# 比分滚动
+	var cu: float = clampf((_end_t - 0.3) / 0.7, 0.0, 1.0)
+	var sc := Color(1, 1, 1, clampf(_end_t * 2.0, 0.0, 1.0))
+	draw_string(_font, Vector2(0, _vh * 0.56), "Towers  You %d : Enemy %d" % [int(round(_end_pscore * cu)), int(round(_end_oscore * cu))],
+			HORIZONTAL_ALIGNMENT_CENTER, _vw, 22, sc)
+
+# back-out 缓动（0→1，末段回弹过冲 >1）。
+func _ease_back(t: float) -> float:
+	var c1 := 1.70158
+	var c3 := c1 + 1.0
+	var x: float = clampf(t, 0.0, 1.0) - 1.0
+	return 1.0 + c3 * x * x * x + c1 * x * x
 
 func _result_btn(txt: String, y: float, cb: Callable) -> void:
 	var b := Button.new()

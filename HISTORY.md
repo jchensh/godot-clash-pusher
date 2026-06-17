@@ -55,9 +55,10 @@
 | V3-4d | boss/精英节点难度修正 + 局间 meta 解锁 + 存档（user:// 往返）+ 最简 run view | ✅ 完成（单测 + headless smoke；引擎内流程交真人验收） | 待提交 |
 | V3-6a | 拖拽部署（CR 式）+ 落点 ghost/合法红绿 + 半场高亮 + 落地涟漪 + 入场缩放（仅 view） | ✅ 完成（单测 172/172；**真人实机 7/7 验收通过 2026-06-16**） | `1999797` |
 | V3-6b | 战斗 juice：移动插值 + 受击闪白 + 浮动伤害数字 + 命中顿帧 + 震屏 + 命中火花（仅 view） | ✅ 代码完成（单测 172/172 零回归；手感待真人验收） | `8a09953` |
-| V3-6c | HUD 反馈：分段圣水条 + 满槽脉动 + 卡面自绘(费用/不可用扫光/选中) + 下一张预览 + 王冠/倒计时强调（仅 view） | 🚧 代码完成（headless smoke + 单测 172/172 零回归；外观待真人验收） | 待提交 |
+| V3-6c | HUD 反馈：分段圣水条 + 满槽脉动 + 卡面自绘(费用/不可用扫光/选中) + 下一张预览 + 王冠/倒计时强调（仅 view） | ✅ 代码完成（单测 172/172 零回归；外观待真人验收） | `819a713` |
+| V3-6d | 胜负演出（调暗/标题 sting/王冠落入/比分滚动/按钮淡入）+ run 奖励·结算揭示动画（仅 view） | 🚧 代码完成（headless smoke + 单测 172/172 零回归；演出待真人验收） | 待提交 |
 
-> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）进行中**：V3-6a（拖拽部署 + 落点反馈）**真人 7/7 验收通过**；V3-6b（战斗 juice，仅 view）代码完成、手感待真人验收；V3-6c（圣水/HUD 反馈：分段圣水条/卡面自绘/下一张预览/王冠倒计时，仅 view）代码完成、外观待真人验收；下一步 V3-6d（胜负与 run 总结演出）。V3-5 短战役 + 新手引导按决策 40 推迟到 V3-6/V3-7 之后执行。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
+> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）进行中**：V3-6a（拖拽部署 + 落点反馈）**真人 7/7 验收通过**；V3-6b（战斗 juice，仅 view）代码完成、手感待真人验收；V3-6c（圣水/HUD 反馈，仅 view）代码完成、外观待真人验收；V3-6d（胜负演出 + run 奖励/结算揭示动画，仅 view）代码完成、演出待真人验收 → **V3-6（交互与游戏手感）四个 gate 全部代码完成**。下一步 **V3-7 精灵美术**（按决策 40 顺序 6→7→5）。V3-5 短战役 + 新手引导按决策 40 推迟到 V3-7 之后执行。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
 
 **测试**：172/172（macOS，`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
@@ -515,3 +516,28 @@
 - **HUD 外观/反馈留真人实机验收**（清单见下）。
 
 **V3-6c 真人实机验收清单（交用户）**：F5 运行 → 任意战斗，确认：① 圣水条是**分段 pip**、随回涨逐格填、**满 10 格时脉动**；② 圣水条旁有 **NEXT** 预览（下一张卡名 + 费用珠）且随出牌更新；③ 手牌为**自绘卡面**（卡名 + 费用珠 + 选中金框 + 拖拽抬起）；④ 出不起的牌有**暗罩扫光**、随圣水接近费用**从底部回落**到点亮，且**仍拖不动**直到够费；⑤ 顶栏左右各 **3 王冠**、按拆塔**点亮**；⑥ 倒计时 **≤30s 变红脉动放大**；⑦ 帧率正常、无报错、出牌/拖拽仍正常。回报「通过/哪条不对」。
+
+### V3-6d — 胜负演出 + run 奖励/结算揭示（仅 view）  （待提交）
+**前置决策**：见决策日志 41（纯显示层；本 gate 跨 `battle_scene`(结算) 与 `run_scene`(奖励/结算) 两场景）。
+
+**修改（`view/battle_scene.gd`，零逻辑改）**
+- **结算改演出**：去掉旧「一结束即建 Label/Button 静态面板」，改单一 `_end_t` 计时的 `_draw_end_screen`（全 `_draw` 绘制）——调暗淡入 → **标题 sting**（透明淡入 + 字号 `_ease_back` 回弹）→ **王冠逐个落入**（你拆塔数，错峰 + 回弹下落，复用 `_draw_crown`）→ **比分滚动**（count-up）；`END_BTN_DELAY=0.85s` 后按钮（CONTINUE / REMATCH+MENU）淡入。`_result_layer` 一结束即 `visible`（透明全屏 STOP）**拦截点击 → 演出期不能再出牌**。新增 `_ease_back`（back-out 缓动）。
+- `_start_ending`（捕获 result + 双方塔血快照）/`_add_result_buttons`（延迟建按钮 + tween 淡入）取代 `_show_result`。
+
+**修改（`view/run_scene.gd`，零逻辑改）**
+- **奖励揭示**：`_build_reward` 的标题/候选卡/SKIP 经 `_anim_pop`（从下方淡入 + `TRANS_BACK` 回弹归位）**逐张错峰**揭示。
+- **选中 flourish**：`_on_pick` 选中的卡**放大 + 金色**(`create_tween`)再回中枢；`_picking` 守卫挡二次点击/SKIP；`_offer_nodes` 记 id→卡节点。
+- **结算揭示**：`_build_summary` 的 RUN CLEARED/OVER 标题、战绩、解锁、按钮逐条 `_anim_pop` 错峰入场。
+- 新增 `_anim_pop` 通用入场动画助手。
+
+**范围边界**：仅 view，逻辑/config/单测零改。塔被摧毁的「爆破序列」沿用 6b（震屏 + 大涟漪），本步不再加碎块粒子（留 V3-7 美术）。所有演出为白膜程序化（字号/多边形/tween），V3-7 贴精灵不改时序。
+
+**踩坑与修复**
+- 无新坑。`battle_scene` 演出走 `_draw`（与 6b/6c 同源、单 `_end_t` 计时）；`run_scene` 走 Control `create_tween`（节点 UI 友好）。Tween 绑定的节点被 `_clear` free 时 Godot 自动杀 tween，无悬挂。
+
+**验收**
+- `Godot_..._console.exe --headless --path . res://view/battle_scene.tscn|run_scene.tscn --quit-after 200` → 两场景零脚本/运行期错误（演出/奖励覆盖层 200 帧 smoke 内未触发，靠解析校验 + 真人验收）✅
+- `... --script res://tests/test_runner.gd` → **172/172 全过**（仅改 view，逻辑零回归）✅
+- **演出留真人实机验收**（清单见下）。
+
+**V3-6d 真人实机验收清单（交用户）**：① 普通对局结束：屏幕**渐暗** → **YOU WIN/LOSE/DRAW** 标题**弹入放大**(sting) → 你的**王冠逐个落下**(回弹) → **比分滚动**计数 → 稍后 **REMATCH/MENU**(或 run 模式 **CONTINUE**) 按钮**淡入**；演出期间**点不动手牌**；② ROGUELITE 胜后：奖励覆盖层 **DRAFT A CARD / CHOOSE A RELIC** 标题 + 候选**逐张错峰弹入**，**选中**的卡**放大金光**再回中枢（卡组/relic 已加）；③ run 通关/败北：**RUN CLEARED / RUN OVER** + 战绩 + 解锁**逐条错峰入场**，BACK TO MENU 可用；④ 全程无报错、帧率正常、REMATCH/CONTINUE/MENU/NEW RUN 流转仍对。回报「通过/哪条不对」。

@@ -31,6 +31,8 @@ var _overlay: Control          # 奖励/结算覆盖层
 var _mode := "none"            # none / reward / summary
 var _reward_kind := "card"     # card / relic
 var _offers: Array = []        # 当前奖励候选 id
+var _offer_nodes: Dictionary = {}   # 奖励候选 id → 卡节点（选中 flourish 用）
+var _picking := false          # 正在播放选中演出，挡二次点击
 
 func _ready() -> void:
 	_loader = ConfigLoaderScript.new()
@@ -149,10 +151,13 @@ func _refresh_overlay() -> void:
 
 func _build_reward() -> void:
 	_dim(_overlay)
+	_offer_nodes = {}
 	var is_relic: bool = _reward_kind == "relic"
 	var title := "CHOOSE A RELIC" if is_relic else "DRAFT A CARD"
-	_label(_overlay, title, Vector2(0, 250), Vector2(720, 50), 38, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+	var tlbl := _label(_overlay, title, Vector2(0, 250), Vector2(720, 50), 38, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+	_anim_pop(tlbl, 0.0, -24.0)
 	var y := 360.0
+	var idx := 0
 	for id in _offers:
 		var name_txt: String
 		var sub_txt: String
@@ -166,27 +171,31 @@ func _build_reward() -> void:
 		var card := _button(_overlay, "", Vector2(110, y), Vector2(500, 110), Color(0.16, 0.20, 0.30), GOLD, _on_pick.bind(id))
 		_label(card, name_txt, Vector2(20, 18), Vector2(460, 40), 28, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 		_label(card, sub_txt, Vector2(20, 64), Vector2(460, 30), 18, Color(0.8, 0.85, 0.9), HORIZONTAL_ALIGNMENT_CENTER)
+		_offer_nodes[id] = card
+		_anim_pop(card, 0.12 + idx * 0.10, 40.0)   # 逐张错峰揭示
+		idx += 1
 		y += 130.0
-	_button(_overlay, "SKIP", Vector2(260, y + 10.0), Vector2(200, 64), Color(0.22, 0.24, 0.28), Color(0.5, 0.55, 0.6), _on_skip)
+	var skip := _button(_overlay, "SKIP", Vector2(260, y + 10.0), Vector2(200, 64), Color(0.22, 0.24, 0.28), Color(0.5, 0.55, 0.6), _on_skip)
+	_anim_pop(skip, 0.12 + idx * 0.10, 20.0)
 
 func _build_summary() -> void:
 	_dim(_overlay)
 	var run = GameStateScript.run
 	var won: bool = run.status == RunStateScript.RUN_WON
-	_label(_overlay, "RUN CLEARED" if won else "RUN OVER", Vector2(0, 360), Vector2(720, 70), 56, (C_CURRENT if won else C_BOSS), HORIZONTAL_ALIGNMENT_CENTER)
+	_anim_pop(_label(_overlay, "RUN CLEARED" if won else "RUN OVER", Vector2(0, 360), Vector2(720, 70), 56, (C_CURRENT if won else C_BOSS), HORIZONTAL_ALIGNMENT_CENTER), 0.0, -30.0)
 	var line := "Cleared all %d battles!" % run.wins if won else "Fell after %d win(s)." % run.wins
-	_label(_overlay, line, Vector2(0, 450), Vector2(720, 30), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	_anim_pop(_label(_overlay, line, Vector2(0, 450), Vector2(720, 30), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER), 0.18, 20.0)
 	if GameStateScript.meta != null:
 		var m = GameStateScript.meta
 		var ms := "Runs won: %d   ·   Bosses beaten: %d" % [m.runs_won, m.bosses_defeated]
-		_label(_overlay, ms, Vector2(0, 500), Vector2(720, 28), 18, Color(0.8, 0.85, 0.8), HORIZONTAL_ALIGNMENT_CENTER)
+		_anim_pop(_label(_overlay, ms, Vector2(0, 500), Vector2(720, 28), 18, Color(0.8, 0.85, 0.8), HORIZONTAL_ALIGNMENT_CENTER), 0.30, 20.0)
 		var newly: Array = m.unlocked_ids(_loader.relics)
 		if not newly.is_empty():
 			var names: Array = []
 			for rid in newly:
 				names.append(String(_loader.get_relic(rid).get("name", rid)))
-			_label(_overlay, "Unlocked: " + ", ".join(names), Vector2(0, 540), Vector2(720, 28), 18, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
-	_button(_overlay, "BACK TO MENU", Vector2(210, 620), Vector2(300, 72), Color(0.20, 0.22, 0.26), Color(0.45, 0.50, 0.56), _on_summary_menu)
+			_anim_pop(_label(_overlay, "Unlocked: " + ", ".join(names), Vector2(0, 540), Vector2(720, 28), 18, GOLD, HORIZONTAL_ALIGNMENT_CENTER), 0.42, 20.0)
+	_anim_pop(_button(_overlay, "BACK TO MENU", Vector2(210, 620), Vector2(300, 72), Color(0.20, 0.22, 0.26), Color(0.45, 0.50, 0.56), _on_summary_menu), 0.55, 20.0)
 
 # ---------------- 交互回调 ----------------
 func _on_fight() -> void:
@@ -195,22 +204,50 @@ func _on_fight() -> void:
 	get_tree().change_scene_to_file(BATTLE_SCENE)   # battle_scene 读 GameState.run 自行建场
 
 func _on_pick(id) -> void:
+	if _picking:
+		return
+	_picking = true
 	var run = GameStateScript.run
 	if _reward_kind == "relic":
 		run.add_relic(id)
 	else:
 		run.add_card(id)
 	SaveScript.save_run(run)
-	_close_reward()
+	# 选中 flourish：放大 + 金色，再回中枢。
+	var node: Control = _offer_nodes.get(id)
+	if node != null:
+		node.pivot_offset = node.size * 0.5
+		var tw := create_tween()
+		tw.tween_property(node, "scale", Vector2(1.18, 1.18), 0.18).set_trans(Tween.TRANS_BACK)
+		tw.parallel().tween_property(node, "modulate", GOLD, 0.18)
+		tw.tween_interval(0.12)
+		tw.tween_callback(_close_reward)
+	else:
+		_close_reward()
 
 func _on_skip() -> void:
+	if _picking:
+		return
 	_close_reward()
 
 func _close_reward() -> void:
 	_mode = "none"
 	_offers = []
+	_offer_nodes = {}
+	_picking = false
 	call_deferred("_refresh_overlay")
 	call_deferred("_refresh_content")
+
+# 入场：从下方(rise)淡入 + 回弹归位；delay 用于错峰。
+func _anim_pop(node: Control, delay: float, rise: float) -> void:
+	var base := node.position
+	node.modulate.a = 0.0
+	node.position = base + Vector2(0, rise)
+	var tw := create_tween()
+	if delay > 0.0:
+		tw.tween_interval(delay)
+	tw.tween_property(node, "modulate:a", 1.0, 0.25)
+	tw.parallel().tween_property(node, "position", base, 0.32).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _on_new_run() -> void:
 	SaveScript.clear_run_save()
