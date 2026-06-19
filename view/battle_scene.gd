@@ -16,6 +16,7 @@ const BattleScript = preload("res://logic/battle.gd")
 const AIControllerScript = preload("res://ai/ai_controller.gd")
 const GameStateScript = preload("res://view/game_state.gd")
 const RunModifiersScript = preload("res://logic/run_modifiers.gd")
+const SpriteDB = preload("res://view/sprite_db.gd")
 const RunSceneScene := "res://view/run_scene.tscn"
 
 const TOPBAR_H := 54.0
@@ -60,18 +61,28 @@ const COL_CROWN := Color(1.0, 0.85, 0.32)
 # —— V3-6d 胜负演出 ——
 const END_BTN_DELAY := 0.85                     # 结算按钮淡入延迟（先放胜负演出）
 
-# —— V3-7③ 精灵垂直切片（架构 A：immediate _draw + draw_texture；逻辑零改）——
-# 切片只验证管线：knight 用精灵帧、塔用 building 贴图、落地 FX 用火爆炸序列；
-# 精确动画状态/朝向/全单位换皮留 V3-7b 量产。
-const TEX_KNIGHT := preload("res://assets/units/Heavy_Knight_Non-Combat_Animations.png")
-const TEX_TOWER := preload("res://assets/towers/building1.png")
+# —— V3-7 精灵贴图（架构 A：immediate _draw + draw_texture；逻辑零改）——
+# 单位精灵走 SpriteDB(manifest，含帧网格/走攻行/朝向)；塔/落地 FX 仍在此 preload（塔皮 7b-2、FX 7b-3 再细化）。
+const TEX_TOWER_KING := preload("res://assets/towers/building1.png")       # 王塔 = 大城堡（4×4）
+const TEX_TOWER_PRINCESS := preload("res://assets/towers/building6.png")   # 公主塔 = 单体小堡（3×3）
 const TEX_EXPLOSION := preload("res://assets/fx/Fire_Explosion_28x28.png")
-const KNIGHT_FPX := 32       # 角色帧尺寸（96/3 列）
-const KNIGHT_WALK_ROW := 0   # 取该行做行走循环（切片）
-const KNIGHT_WALK_N := 3
-const KNIGHT_FPS := 6.0
 const EXPLOSION_FPX := 28
 const EXPLOSION_N := 12
+const TEX_LIGHTNING := preload("res://assets/fx/Lightning_Energy_48x48.png")   # 闪电术命中（扩散电能环）
+const TEX_RED_ENERGY := preload("res://assets/fx/Red_Energy_48x48.png")        # 电火花命中（红电环）
+const FX_SEQ_FPX := 48        # Lightning/Red_Energy 帧尺寸
+const FX_SEQ_N := 9
+# 卡 id → 命中 FX 类型；未列出（含 spawn 兵牌）= 中性落地尘土。
+const FX_KIND := {
+	"fireball": "fireball", "lightning": "lightning", "zap": "zap",
+	"arrows": "arrows", "log": "log", "heal": "heal",
+}
+# —— 远程投射物（路线 A：view 侧检测攻击冷却上升沿=开火）——
+const TEX_PROJ_FIREBALL := preload("res://assets/units/fire_skull_fireball.png")
+const PROJ_FB_FPX := 16
+const PROJ_SPEED := 16.0       # 投射物飞行速度 tile/s
+const PROJ_RANGED_MIN := 2.5   # attack_range ≥ 此值才出投射物（排除近战/短手）
+const PROJ_KIND := {"archer_body": "arrow", "musketeer_body": "bolt", "baby_dragon_body": "fireball"}
 
 # 兵种白膜外形（半径 tile，按队伍色填充；空军画环标记）。
 const UNIT_VIS := {
@@ -106,6 +117,8 @@ var _thp: Dictionary = {}     # 塔 id → 上帧 hp
 var _flash: Dictionary = {}   # id → 闪白结束 _elapsed（单位+塔混用）
 var _dmgnums: Array = []      # [{pos:Vector2(tile), text, col, size, t0, dur}]
 var _sparks: Array = []       # [{pos:Vector2(tile), t0, dur}]
+var _projectiles: Array = [] # 远程投射物：[{from,to:Vector2(tile), t0, dur, kind}]
+var _atkcd: Dictionary = {}  # 单位 id → 上帧 _attack_cooldown（检测开火上升沿）
 var _shake := Vector2.ZERO
 var _shake_mag := 0.0
 var _hitstop_t := 0.0
@@ -150,6 +163,7 @@ func _process(delta: float) -> void:
 	elif not match_obj.is_over():
 		match_obj.update(delta)
 	_detect_events()                   # 逐帧 diff hp → 伤害数字/闪白/火花/顿帧/震屏（路线 A）
+	_detect_attacks()                  # 远程兵开火上升沿 → 投射物（路线 A）
 	_update_disp(delta)                # 10Hz→60fps 位置插值
 	_update_shake(delta)
 	if _dragging:
@@ -196,6 +210,7 @@ func _draw() -> void:
 	_draw_towers()
 	_draw_units(a)
 	_draw_fx()
+	_draw_projectiles()
 	_draw_combat_fx()
 	_draw_drag_ghost(a)
 	_draw_topbar()
@@ -232,26 +247,33 @@ func _draw_towers() -> void:
 		for t in side:
 			var base: Color = COL_PLAYER if t.owner_id == 0 else COL_OPPONENT
 			var c := _t2s(t.pos)
-			var w: float = t.fw * tp.x
-			var h: float = t.fh * tp.y
-			var r := Rect2(c.x - w * 0.5, c.y - h * 0.5, w, h)
-			if t.is_destroyed():
-				draw_rect(r, Color(0.25, 0.25, 0.25, 0.6))
+			var king: bool = t.is_king()
+			var fw_px: float = t.fw * tp.x
+			var foot_bottom: float = c.y + t.fh * tp.y * 0.5     # footprint 底边 = 塔贴地处
+			var tex: Texture2D = TEX_TOWER_KING if king else TEX_TOWER_PRINCESS
+			var ts: Vector2 = tex.get_size()
+			# 保持贴图原始长宽比（不再压扁填正方形）：以 footprint 宽为基准缩放，底部对齐贴地。
+			# 王塔横宽(building1=1.5:1)、公主方正(building6=1:1)，王塔系数更大以保主次（否则公主反而更高）。
+			var draw_w: float = fw_px * (1.35 if king else 1.05)
+			var draw_h: float = draw_w * ts.y / ts.x
+			var rx: float = c.x - draw_w * 0.5
+			var ry: float = foot_bottom - draw_h
+			if t.is_destroyed():                                  # 摧毁：压低 + 染暗成废墟堆
+				var dh: float = draw_h * 0.42
+				draw_texture_rect(tex, Rect2(rx, foot_bottom - dh, draw_w, dh), false, Color(0.30, 0.28, 0.26, 0.95))
 				continue
-			var fill: Color = base.darkened(0.25)
+			var fill: Color = Color.WHITE.lerp(base, 0.5)        # 温和队伍色（让城堡贴图透出）
 			var fend: float = _flash.get(t.get_instance_id(), 0.0)
 			if fend > _elapsed:
 				fill = fill.lerp(Color.WHITE, ((fend - _elapsed) / FLASH_DUR) * 0.85)
-			draw_texture_rect(TEX_TOWER, r, false, fill)   # 切片：塔用 building 贴图（modulate 染队伍色+闪白）
-			draw_rect(r, base, false, 3.0)
-			if t.is_king():
-				draw_circle(c, minf(w, h) * 0.18, base.lightened(0.3))
+			draw_texture_rect(tex, Rect2(rx, ry, draw_w, draw_h), false, fill)
 			var ratio: float = clampf(t.hp / t.max_hp, 0.0, 1.0)
-			var bw := w * 0.9
-			var bx := c.x - bw * 0.5
-			var by := c.y - h * 0.5 - 8.0
-			draw_rect(Rect2(bx, by, bw, 5.0), Color(0, 0, 0, 0.5))
-			draw_rect(Rect2(bx, by, bw * ratio, 5.0), _hp_color(ratio))
+			var bw := draw_w * 0.8
+			var by := ry - 7.0
+			draw_rect(Rect2(c.x - bw * 0.5, by, bw, 5.0), Color(0, 0, 0, 0.5))
+			draw_rect(Rect2(c.x - bw * 0.5, by, bw * ratio, 5.0), _hp_color(ratio))
+			if king:                                              # 王塔顶金王冠标记
+				_draw_crown(Vector2(c.x, by - 13.0), 20.0, COL_CROWN, true)
 
 func _draw_units(a) -> void:
 	var tp := _tile_px()
@@ -276,10 +298,21 @@ func _draw_units(a) -> void:
 		var fend: float = _flash.get(id, 0.0)
 		if fend > _elapsed:
 			fill = base.lerp(Color.WHITE, ((fend - _elapsed) / FLASH_DUR) * 0.85)
-		if u.unit_id == "knight_body":   # 切片：骑士用精灵帧（modulate=fill 染队伍色+受击闪白）
-			var kcol := int(_elapsed * KNIGHT_FPS) % KNIGHT_WALK_N
-			_draw_sheet(TEX_KNIGHT, c, rad * 2.4, KNIGHT_FPX, kcol, KNIGHT_WALK_ROW, fill)
-		else:
+		# 状态派生（路线 A）：有索敌目标且在攻击射程内 → attack，否则 walk。
+		# 塔目标因占位较大，射程需加塔半径。
+		var st := "walk"
+		var ct = u.current_target
+		if ct != null and is_instance_valid(ct):
+			var reach: float = u.attack_range + 1.0
+			if "fw" in ct:
+				reach = u.attack_range + maxf(float(ct.fw), float(ct.fh)) * 0.5 + 0.5
+			if u.pos.distance_to(ct.pos) <= reach:
+				st = "attack"
+		var spr: Dictionary = SpriteDB.frame(u.unit_id, st, u.owner_id, _elapsed)
+		if not spr.is_empty():   # 精灵帧（modulate=fill 染队伍色+受击闪白）
+			var box: float = rad * 2.0 * float(spr["scale"])
+			draw_texture_rect_region(spr["tex"], Rect2(c - Vector2(box, box) * 0.5, Vector2(box, box)), spr["src"], fill)
+		else:                    # 无精灵 → 白膜回退
 			draw_circle(c, rad, fill)
 			draw_arc(c, rad, 0.0, TAU, 20, base.darkened(0.4), 2.0)
 		if flying:
@@ -294,6 +327,7 @@ func _draw_units(a) -> void:
 			_seen.erase(k)
 			_disp.erase(k)
 			_uhp.erase(k)
+			_atkcd.erase(k)
 
 func _draw_topbar() -> void:
 	draw_rect(Rect2(0, 0, _vw, TOPBAR_H), COL_PANEL)
@@ -453,26 +487,83 @@ func _draw_deploy_hint(a) -> void:
 	draw_rect(Rect2(fr.position.x, y0, fr.size.x, fr.position.y + fr.size.y - y0),
 			Color(COL_OK.r, COL_OK.g, COL_OK.b, pulse))
 
-# 落地涟漪。
+# 命中/落地 FX：按 kind 分派（sheet 序列帧 or 程序化）。AOE 卡用 radius 定大小。
 func _draw_fx() -> void:
 	var tp := _tile_px()
 	var ur: float = (tp.x + tp.y) * 0.5
 	for f in _fx:
 		var p: float = clampf((_elapsed - f["t0"]) / f["dur"], 0.0, 1.0)
 		var c: Vector2 = _t2s(f["pos"])
-		var fi: int = mini(EXPLOSION_N - 1, int(p * EXPLOSION_N))   # 切片：落地 FX 用火爆炸序列帧
-		var sz: float = ur * 2.6
-		draw_texture_rect_region(TEX_EXPLOSION, Rect2(c - Vector2(sz, sz) * 0.5, Vector2(sz, sz)), Rect2(fi * EXPLOSION_FPX, 0, EXPLOSION_FPX, EXPLOSION_FPX))
+		var kind: String = f.get("kind", "spawn")
+		var rt: float = float(f.get("radius", 0.0))
+		match kind:
+			"fireball":
+				_fx_seq(TEX_EXPLOSION, EXPLOSION_FPX, EXPLOSION_N, c, (rt * 2.0 * ur) if rt > 0.0 else ur * 2.6, p, Color.WHITE)
+			"lightning":
+				_fx_seq(TEX_LIGHTNING, FX_SEQ_FPX, FX_SEQ_N, c, (rt * 2.2 * ur) if rt > 0.0 else ur * 3.0, p, Color(0.85, 0.92, 1.0))
+			"zap":
+				_fx_seq(TEX_RED_ENERGY, FX_SEQ_FPX, FX_SEQ_N, c, ur * 2.0, p, Color.WHITE)
+			"arrows":
+				_fx_arrows(c, maxf(rt, 1.0) * ur, p)
+			"log":
+				_fx_dust(c, maxf(rt, 1.0) * ur, p, Color(0.60, 0.50, 0.36))
+			"heal":
+				_fx_heal(c, maxf(rt, 1.0) * ur, p)
+			_:
+				_fx_dust(c, ur * 1.2, p, Color(0.78, 0.74, 0.66))
 
-# 从 sheet 取 (col,row) 帧画到 center（边长 size），modulate 染色。切片精灵绘制核心。
-func _draw_sheet(tex: Texture2D, center: Vector2, size: float, fpx: int, col: int, row: int, mod: Color) -> void:
-	var src := Rect2(col * fpx, row * fpx, fpx, fpx)
-	draw_texture_rect_region(tex, Rect2(center - Vector2(size, size) * 0.5, Vector2(size, size)), src, mod)
+# sheet 横向序列帧：按进度 p 取帧画到 center（边长 size），modulate 染色。
+func _fx_seq(tex: Texture2D, fpx: int, n: int, c: Vector2, size: float, p: float, mod: Color) -> void:
+	var fi: int = mini(n - 1, int(p * n))
+	draw_texture_rect_region(tex, Rect2(c - Vector2(size, size) * 0.5, Vector2(size, size)), Rect2(fi * fpx, 0, fpx, fpx), mod)
+
+# 程序化尘土环（召唤落地 / 滚石）：扩散 + 淡出。
+func _fx_dust(c: Vector2, r: float, p: float, col: Color) -> void:
+	var rr: float = r * (0.35 + 1.0 * p)
+	var a: float = (1.0 - p) * 0.6
+	draw_circle(c, rr * 0.85, Color(col.r, col.g, col.b, a * 0.35))
+	draw_arc(c, rr, 0.0, TAU, 26, Color(col.r, col.g, col.b, a), 3.0)
+
+# 程序化箭雨：数支箭错峰斜插入 AOE 区淡出。
+func _fx_arrows(c: Vector2, r: float, p: float) -> void:
+	var col := Color(0.92, 0.86, 0.6)
+	for i in 8:
+		var lt: float = clampf((p - float(i) * 0.03) / 0.45, 0.0, 1.0)
+		if lt <= 0.0:
+			continue
+		var ox: float = (float(i) / 7.0 - 0.5) * 1.6 * r
+		var tip: Vector2 = c + Vector2(ox, -r * 0.4 + r * 1.3 * lt)
+		col.a = 1.0 - lt
+		draw_line(tip + Vector2(-7, -18), tip, col, 2.0)
+		draw_line(tip, tip + Vector2(-3, -5), col, 1.5)
+		draw_line(tip, tip + Vector2(4, -5), col, 1.5)
+
+# 程序化治疗：绿色扩散环 + 上浮十字。
+func _fx_heal(c: Vector2, r: float, p: float) -> void:
+	draw_arc(c, r * (0.4 + 0.8 * p), 0.0, TAU, 28, Color(0.4, 1.0, 0.5, (1.0 - p) * 0.7), 2.5)
+	for i in 5:
+		var ang: float = float(i) / 5.0 * TAU
+		var pp: Vector2 = c + Vector2(cos(ang), sin(ang)) * r * 0.45 - Vector2(0, r * 0.7 * p)
+		var pa: float = 1.0 - p
+		draw_line(pp - Vector2(3, 0), pp + Vector2(3, 0), Color(0.5, 1, 0.6, pa), 2.0)
+		draw_line(pp - Vector2(0, 3), pp + Vector2(0, 3), Color(0.5, 1, 0.6, pa), 2.0)
+
+# 各 FX 类型时长。
+func _fx_dur(kind: String) -> float:
+	match kind:
+		"fireball": return 0.5
+		"lightning": return 0.45
+		"zap": return 0.32
+		"arrows": return 0.6
+		"log": return 0.5
+		"heal": return 0.65
+		_: return POOF_DUR
 
 func _cull_transients() -> void:
 	_fx = _cull_list(_fx)
 	_dmgnums = _cull_list(_dmgnums)
 	_sparks = _cull_list(_sparks)
+	_projectiles = _cull_list(_projectiles)
 	for k in _flash.keys():
 		if _flash[k] <= _elapsed:
 			_flash.erase(k)
@@ -530,7 +621,53 @@ func _on_hit(id: int, pos: Vector2, amount: float) -> void:
 func _on_tower_destroyed(pos: Vector2) -> void:
 	_hitstop_t = maxf(_hitstop_t, HITSTOP_DUR)
 	_shake_mag = minf(SHAKE_MAX, maxf(_shake_mag, SHAKE_TOWER))
-	_fx.append({"pos": pos, "t0": _elapsed, "dur": 0.6})
+	_fx.append({"pos": pos, "t0": _elapsed, "dur": 0.6, "kind": "fireball", "radius": 2.5})
+
+# 远程兵开火检测（路线 A）：攻击冷却从 ~0 跳满 = 上升沿 = 刚出手 → 发射 attacker→target 投射物。
+func _detect_attacks() -> void:
+	if match_obj.battle == null or match_obj.battle.arena == null:
+		return
+	for u in match_obj.battle.arena.get_units():
+		if not u.is_alive() or not PROJ_KIND.has(u.unit_id) or u.attack_range < PROJ_RANGED_MIN:
+			continue
+		var id: int = u.get_instance_id()
+		var cur: float = u._attack_cooldown
+		var prev: float = _atkcd.get(id, cur)
+		_atkcd[id] = cur
+		# 冷却跳升 = 刚 mark_attacked（逻辑层只会让冷却递减，唯有攻击会设回满）。
+		# 注意不能用「prev≈0→cur满」：同 tick 内冷却减到 0 又立即设满，view 永远看不到 0，最低只见 ~0.1。
+		if cur > prev + 0.01:
+			var ct = u.current_target
+			if ct != null and is_instance_valid(ct):
+				var dist: float = u.pos.distance_to(ct.pos)
+				_projectiles.append({"from": _disp_pos(u), "to": ct.pos, "t0": _elapsed,
+						"dur": clampf(dist / PROJ_SPEED, 0.1, 0.45), "kind": PROJ_KIND[u.unit_id]})
+
+# 投射物：from→to 线性飞行，按 kind 画箭/法术弹/火球。
+func _draw_projectiles() -> void:
+	var tp := _tile_px()
+	var ur: float = (tp.x + tp.y) * 0.5
+	for pr in _projectiles:
+		var t: float = clampf((_elapsed - pr["t0"]) / pr["dur"], 0.0, 1.0)
+		var a: Vector2 = _t2s(pr["from"])
+		var b: Vector2 = _t2s(pr["to"])
+		var pos: Vector2 = a.lerp(b, t)
+		match pr["kind"]:
+			"arrow":
+				var dir: Vector2 = (b - a)
+				dir = dir.normalized() if dir.length() > 0.001 else Vector2.UP
+				var perp := Vector2(-dir.y, dir.x)
+				var col := Color(0.93, 0.88, 0.6)
+				draw_line(pos - dir * ur * 0.7, pos, col, 2.0)
+				draw_line(pos, pos - dir * 5.0 + perp * 3.0, col, 1.5)
+				draw_line(pos, pos - dir * 5.0 - perp * 3.0, col, 1.5)
+			"bolt":
+				draw_circle(pos, ur * 0.24, Color(0.8, 0.55, 1.0, 0.85))
+				draw_circle(pos, ur * 0.12, Color(1, 1, 1, 0.95))
+			"fireball":
+				var fi: int = 1 + int(_elapsed * 14.0) % 7   # 飞行帧循环（避开末尾炸帧）
+				var sz: float = ur * 1.0
+				draw_texture_rect_region(TEX_PROJ_FIREBALL, Rect2(pos - Vector2(sz, sz) * 0.5, Vector2(sz, sz)), Rect2(fi * PROJ_FB_FPX, 0, PROJ_FB_FPX, PROJ_FB_FPX))
 
 func _spawn_dmgnum(pos: Vector2, text: String, col: Color, size: int) -> void:
 	_dmgnums.append({"pos": pos, "text": text, "col": col, "size": size, "t0": _elapsed, "dur": DMGNUM_DUR})
@@ -625,8 +762,12 @@ func _on_card_up(i: int) -> void:
 	if screen.y < TOPBAR_H or screen.y > _vh - HUD_BOTTOM_H:
 		return   # 松手在 HUD/顶栏 → 取消
 	var drop_tile: Vector2 = _drop_tile_from(screen)
+	var hand: Array = match_obj.player.deck.get_hand()
+	var cid: String = str(hand[sc]) if (sc < hand.size() and hand[sc] != null) else ""
 	if match_obj.player.try_play_card(sc, drop_tile):
-		_fx.append({"pos": drop_tile, "t0": _elapsed, "dur": POOF_DUR})
+		var kind: String = FX_KIND.get(cid, "spawn")
+		var info: Dictionary = _card_info(cid)
+		_fx.append({"pos": drop_tile, "t0": _elapsed, "dur": _fx_dur(kind), "kind": kind, "radius": float(info["radius"])})
 
 # 仅作输入门控：出不起/空格 → disabled（disabled 不触发 button_down，拖不动）。卡面见 _draw_cards。
 func _sync_cards() -> void:

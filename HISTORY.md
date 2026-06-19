@@ -61,8 +61,11 @@
 | V3-7 ① | 卡牌黑暗中世纪化改名（`cards.json` name 中英定稿，id 不变） | ✅ 完成（单测 172/172；config check ok） | 待提交 |
 | V3-7 ② | 多语言 i18n（中英表 + autoload + 像素中文字体 + 6 场景接入 + 设置内切换/存盘） | ✅ 代码完成（6 场景 smoke + 单测 172/172；中文显示真人认可） | `0cb32f2` |
 | V3-7 ③ | 美术垂直切片（骑士精灵 / building 塔贴图 / 火爆炸序列 FX + 像素 nearest filter；架构 A：immediate `_draw`+`draw_texture`，仅 view） | ✅ 完成（**真人 6/6 验收通过 2026-06-20**；单测 172/172） | 待提交 |
+| V3-7b-1 | 量产·单位精灵全量（10 单位 manifest `view/sprite_db.gd` + 走/攻状态派生 + 朝向；修正 ③ 骑士帧 bug） | ✅ 完成（**真人 1-7 验收通过**；单测 172/172） | 待提交 |
+| V3-7b-2 | 量产·塔（王=building1 / 公主=building6 + 保持长宽比贴地 + 金王冠 + 废墟态） | ✅ 完成（**MCP 截图验收**；单测 172/172） | 待提交 |
+| V3-7b-3 | 量产·技能命中 FX 按卡区分 + 远程投射物（路线 A 冷却跳升检测；含投射物只射一发 bug 修复） | ✅ 完成（**MCP 计数器验证投射物持续开火** + 真人玩通无错；单测 172/172） | 待提交 |
 
-> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）进行中**：V3-6a（拖拽部署 + 落点反馈）**真人 7/7 验收通过**；V3-6b（战斗 juice，仅 view）代码完成、手感待真人验收；V3-6c（圣水/HUD 反馈，仅 view）代码完成、外观待真人验收；V3-6d（胜负演出 + run 奖励/结算揭示动画，仅 view）代码完成、演出待真人验收 → **V3-6（交互与游戏手感）四个 gate 全部代码完成**。**V3-7（精灵美术）进行中**：素材准备 + ① 卡牌改名 + ② 多语言（i18n + 像素中文字体 + 设置内中英切换）已完成（中文显示真人认可）；③ 美术垂直切片（骑士精灵 + building 塔贴图 + 火爆炸序列 FX，架构 A）**真人 6/6 验收通过**，精灵管线打通；下一步 **V3-7b 量产**（按管线全量换精灵：单位→塔→卡面→地形→UI）。V3-5 短战役 + 新手引导按决策 40 推迟到 V3-7 之后执行。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
+> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）进行中**：V3-6a（拖拽部署 + 落点反馈）**真人 7/7 验收通过**；V3-6b（战斗 juice，仅 view）代码完成、手感待真人验收；V3-6c（圣水/HUD 反馈，仅 view）代码完成、外观待真人验收；V3-6d（胜负演出 + run 奖励/结算揭示动画，仅 view）代码完成、演出待真人验收 → **V3-6（交互与游戏手感）四个 gate 全部代码完成**。**V3-7（精灵美术）进行中**：素材准备 + ① 卡牌改名 + ② 多语言（i18n + 像素中文字体 + 设置内中英切换）已完成（中文显示真人认可）；③ 美术垂直切片（骑士精灵 + building 塔贴图 + 火爆炸序列 FX，架构 A）**真人 6/6 验收通过**，精灵管线打通。**V3-7b 量产进行中**（执行序 7b-1 单位 → 7b-2 塔 → 7b-3 FX/投射物 → 7b-4 地形 → 7b-5 卡面 → 7b-6 圣经定稿）：**7b-1 单位全量（manifest `sprite_db.gd`）真人 1-7 通过；7b-2 塔（王/公主区分）MCP 截图验收；7b-3 技能 FX 按卡区分 + 远程投射物（含 bug 修复）MCP 验证**。下一步 **V3-7b-4 地形 tile**。V3-5 短战役 + 新手引导按决策 40 推迟到 V3-7 之后执行。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
 
 **测试**：172/172（macOS，`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
@@ -595,3 +598,29 @@
 - battle_scene headless smoke 零脚本错误（preload 纹理 + 塔贴图绘制 OK）；单测 **172/172**。✅
 - **真人 6/6 验收通过（2026-06-20）**：骑士精灵(染色/闪白) + building 塔贴图 + 火爆炸序列 + 像素锐利 + 其余白膜 + 流程不变，全通过。✅
 **下一步**：**V3-7b 量产** —— 按此管线给全部单位（含朝向/idle/walk/attack/death 状态）、塔（王/公主区分）、卡面、地形 tile、FX 批量换精灵 + 美术圣经定稿（决策 42 升级）。
+
+### V3-7b — 量产（按 ③ 管线全量换精灵；仅 view，逻辑/单测零改）  （本次提交：7b-1/2/3）
+**开工规格**（用户 2026-06-20 确认）：保真度=**务实**（走+攻两态；死亡复用现有 FX；idle 并入 walk）；朝向=**混合**（方向族按 owner 取朝上/朝下行，对称族不处理）；单位**一次上全 10**。执行序 = 7b-1 单位 → 7b-2 塔 → 7b-3 FX/投射物 → 7b-4 地形 → 7b-5 卡面 → 7b-6 圣经定稿。
+**帧网格坐定方法**：临时脚本 `tools/_frame_probe.py`（透明间隔自动探测）+ 带行号网格放大图肉眼核对（**临时物，验后即删、不入 git**）。坐实结论：64×224 怪物族=16×16/4列×14行（goblin/skelly/orc/zombie/…，但 goblin↔skelly 行语义略不同需逐个核）；Archer_Combat=32×32/4×8；axe_warrior_combat=32×32/4×20；fire_skull=16×16/4×10；Mage/Archer Non-Combat=16×16/4×31；**Heavy_Knight Non-Combat=24×24/4×31**（≠③ 误用的 32/3，本次修正）。英雄多为 Combat(攻)/Non-Combat(走) 双 sheet、帧尺寸可不同。
+
+#### V3-7b-1 — 单位精灵全量（仅 view）
+- 新增 `view/sprite_db.gd`（manifest，纯表现层数据）：`unit_id → {scale, walk/attack:{tex,fw,fh,cols,row,row_up?,n,fps,sc?}}`，10 单位全覆盖。`frame(unit_id,state,owner,t)` 返回 `{tex,src:Rect2,scale}`；owner=0(玩家,朝上) 有 row_up 则取背面行。
+- 改 `battle_scene._draw_units`：通用精灵查询取代骑士特例——状态派生（`current_target` 在 `attack_range`(塔目标 +半占位) 内→attack，否则 walk）；染队伍色(fill)+受击闪白；无精灵回退白膜。删 ③ 的 `_draw_sheet` + 错的 `KNIGHT_*`/`TEX_KNIGHT` 常量。
+- **修正 ③ 遗留 bug**：骑士帧 `32px/3列` → 正确 `24×24/4列`。
+- 范围：仅 view；塔仍 building1、FX 仍火爆炸（属 7b-2/7b-3）。
+- 验收：单测 172/172；headless smoke 干净；选中帧预览拼图自查全对；**真人实机 1-7 全过**（10 兵皆精灵 + 走/攻动画 + 朝向 + 染色 + 大小 + 流程）。
+
+#### V3-7b-2 — 塔换皮（仅 view）
+- `battle_scene._draw_towers` 重写 + preload 拆 `TEX_TOWER_KING`(building1 大城堡)/`TEX_TOWER_PRINCESS`(building6 小堡)。
+- **保持贴图原始长宽比 + 底部贴地**（不再压扁填正方形）；王塔系数更大保主次（building1 横宽、building6 方正，否则公主反而更高）；王塔顶画**金王冠**(`_draw_crown`)；摧毁态=**压低 42% + 暗色废墟堆**；队伍色改温和 `WHITE.lerp(base,0.5)` 让城堡细节透出 + 受击闪白。
+- 候选核定：building2/3/8=城镇组合图(多房+散屋顶,不用)；building6 最干净对称单体→公主塔。
+- 验收：单测 172/172；smoke 干净；预览图自查主次/染色/废墟成立；**MCP project_run 截图确认**引擎内王冠/王>公主/敌我蓝红/废墟态/长宽比全对、整局零运行期错误。
+
+#### V3-7b-3 — 技能命中 FX 按卡区分 + 远程投射物（仅 view）
+- **命中 FX 分派**（原所有出牌同一火爆炸）：`_fx` 项带 `kind`+`radius`；召唤兵=中性尘土环（程序化）/ 火球=火爆炸 / 闪电=蓝白电能环(Lightning_Energy 48×48×9) / 电火花=红电环(Red_Energy) / 箭雨=程序化落箭 / 滚石=褐尘 / 治疗=绿光环+上浮十字 / 塔毁=大火。`_draw_fx` 按 kind 分派 sheet 序列(`_fx_seq`) 或程序化(`_fx_dust/_fx_arrows/_fx_heal`)；`_fx_kind`/`_fx_dur` 助手。`_on_card_up` 据卡 id 定 kind+radius。
+- **远程投射物**（路线 A，零逻辑改）：`_detect_attacks` 每帧读各远程兵(`attack_range≥2.5` 且在 `PROJ_KIND`)的 `_attack_cooldown`，检测**跳升**(`cur>prev+0.01`)=刚 `mark_attacked` → 发射 `from(disp位)→to(current_target.pos)` 投射物；弓箭手=箭(带头朝向)/女巫=紫法术弹/火颅=火球序列帧(fire_skull_fireball)。`_draw_projectiles` 线性飞行作画；`_projectiles`/`_atkcd` 状态随死亡剔除/按时回收。
+- **bug 修复**（真人首验抓到「弓箭手只射第一发」）：原判据「冷却 ~0→满」错——逻辑层**同 tick 内**冷却减到 0 又立即设回满，view 永远采样不到 0（最低只见 ~0.1=一个 TICK_DELTA），故仅单位出生(初值0)那一发触发。改为检测**冷却跳升**（仅 `mark_attacked` 会让冷却上升，平时只递减）→ 每次攻击都触发。
+- 范围/已知限制：仅 view；**AI(敌方)施放法术暂不显示命中大 FX**（路线 A 的 FX 只挂玩家出牌路径；敌方法术爆点需「同帧多兵聚集掉血」启发式推断=决策 30，留可选后续）。
+- 验收：单测 172/172；smoke 干净（含 AI 远程兵触发投射物路径）；**MCP 临时计数器验证**——`PROJ` 累计 0→12→32 整局持续增长（旧 bug 下每兵只射一发，绝无可能），投射物修复确凿生效（临时计数器验后已撤）；真人玩通一整局无报错、帧率正常。
+
+**下一步**：**V3-7b-4 地形 tile**（Lonesome Summer 地面/河/桥 tileset 替现在的纯色块）。
