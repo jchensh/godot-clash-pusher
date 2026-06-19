@@ -59,9 +59,10 @@
 | V3-6d | 胜负演出（调暗/标题 sting/王冠落入/比分滚动/按钮淡入）+ run 奖励·结算揭示动画（仅 view） | 🚧 代码完成（headless smoke + 单测 172/172 零回归；演出待真人验收） | 待提交 |
 | V3-7 准备 | 美术素材入库（`assets/` 选用 94 + `testAssets/` 库）+ ART_ASSETS 美术圣经雏形（题材=黑暗中世纪幻想） | ✅ 完成 | `6579207` |
 | V3-7 ① | 卡牌黑暗中世纪化改名（`cards.json` name 中英定稿，id 不变） | ✅ 完成（单测 172/172；config check ok） | 待提交 |
-| V3-7 ② | 多语言 i18n（中英表 + autoload + 像素中文字体 + 6 场景接入 + 设置内切换/存盘） | ✅ 代码完成（6 场景 smoke + 单测 172/172；中文显示真人认可） | 待提交 |
+| V3-7 ② | 多语言 i18n（中英表 + autoload + 像素中文字体 + 6 场景接入 + 设置内切换/存盘） | ✅ 代码完成（6 场景 smoke + 单测 172/172；中文显示真人认可） | `0cb32f2` |
+| V3-7 ③ | 美术垂直切片（骑士精灵 / building 塔贴图 / 火爆炸序列 FX + 像素 nearest filter；架构 A：immediate `_draw`+`draw_texture`，仅 view） | ✅ 完成（**真人 6/6 验收通过 2026-06-20**；单测 172/172） | 待提交 |
 
-> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）进行中**：V3-6a（拖拽部署 + 落点反馈）**真人 7/7 验收通过**；V3-6b（战斗 juice，仅 view）代码完成、手感待真人验收；V3-6c（圣水/HUD 反馈，仅 view）代码完成、外观待真人验收；V3-6d（胜负演出 + run 奖励/结算揭示动画，仅 view）代码完成、演出待真人验收 → **V3-6（交互与游戏手感）四个 gate 全部代码完成**。**V3-7（精灵美术）进行中**：素材准备 + ① 卡牌改名 + ② 多语言（i18n + 像素中文字体 + 设置内中英切换）已完成（中文显示真人认可）；下一步 **③ 美术垂直切片**（1 兵+1 塔+1 特效跑通精灵管线）。V3-5 短战役 + 新手引导按决策 40 推迟到 V3-7 之后执行。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
+> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）进行中**：V3-6a（拖拽部署 + 落点反馈）**真人 7/7 验收通过**；V3-6b（战斗 juice，仅 view）代码完成、手感待真人验收；V3-6c（圣水/HUD 反馈，仅 view）代码完成、外观待真人验收；V3-6d（胜负演出 + run 奖励/结算揭示动画，仅 view）代码完成、演出待真人验收 → **V3-6（交互与游戏手感）四个 gate 全部代码完成**。**V3-7（精灵美术）进行中**：素材准备 + ① 卡牌改名 + ② 多语言（i18n + 像素中文字体 + 设置内中英切换）已完成（中文显示真人认可）；③ 美术垂直切片（骑士精灵 + building 塔贴图 + 火爆炸序列 FX，架构 A）**真人 6/6 验收通过**，精灵管线打通；下一步 **V3-7b 量产**（按管线全量换精灵：单位→塔→卡面→地形→UI）。V3-5 短战役 + 新手引导按决策 40 推迟到 V3-7 之后执行。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
 
 **测试**：172/172（macOS，`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
@@ -579,4 +580,18 @@
 - 6 场景 headless smoke 零脚本错误（tr key / `%` 格式化全对）；单测 **172/172**。✅
 - **中文像素字体显示真人认可**（主菜单/组卡截图，2026-06-16）✅；中英切换 + 其余场景全中文细节留真人继续验收。
 - 既有良性 warning（`size` 遮蔽基类 / int-as-enum / 整除）非本步引入、不影响运行，暂忽略（将来统一清一轮）。
-**下一步**：③ 美术垂直切片（1 兵 + 1 塔 + 1 特效 → 精灵导入→tween→2D 对局，验证管线）。
+**下一步**：③ 美术垂直切片（已完成，见下）。
+
+### V3-7 ③ — 美术垂直切片（仅 view + 1 渲染设置）  （待提交）
+**前置决策**：用户 2026-06-20 选定 **架构 A = immediate `_draw` + `draw_texture`**（契合 6a–6d 的 `_draw` 体系，单位动态增减天然支持，逻辑零改）+ 切片范围 = 骑士 + building 塔 + 火爆炸 FX。
+**修改（仅 `view/battle_scene.gd` + `project.godot`）**
+- 顶部 `preload` 三纹理（Heavy_Knight Non-Combat / building1 / Fire_Explosion）+ 帧常量；新增 `_draw_sheet`（从 sheet 取 (col,row) 帧 `draw_texture_rect_region`，`modulate` 染色）。
+- `_draw_units`：`knight_body` 用精灵帧（32×32、walk 行循环 6fps），`modulate=fill`（染队伍色区分敌我 + 复用受击闪白）；其余兵仍白膜圆。
+- `_draw_towers`：塔主体改 `draw_texture_rect(building1, modulate=fill)`，保留血条/王冠标记/摧毁。
+- `_draw_fx`（落地涟漪）：改 `Fire_Explosion` 28×28×12 序列帧。
+- `project.godot`：`rendering/textures/canvas_textures/default_texture_filter=0`（最近邻，像素锐利，像素美术前提）。
+**范围边界**：仅 view + 1 渲染设置，逻辑/config/单测零改。切片验证**管线**（精灵导入→帧动画→替白膜→逻辑零改）；精确动画状态/朝向（现取 sheet 一行循环、不分上下）/全单位·塔·卡面·地形换皮留 **V3-7b 量产**。
+**验收**
+- battle_scene headless smoke 零脚本错误（preload 纹理 + 塔贴图绘制 OK）；单测 **172/172**。✅
+- **真人 6/6 验收通过（2026-06-20）**：骑士精灵(染色/闪白) + building 塔贴图 + 火爆炸序列 + 像素锐利 + 其余白膜 + 流程不变，全通过。✅
+**下一步**：**V3-7b 量产** —— 按此管线给全部单位（含朝向/idle/walk/attack/death 状态）、塔（王/公主区分）、卡面、地形 tile、FX 批量换精灵 + 美术圣经定稿（决策 42 升级）。

@@ -60,6 +60,19 @@ const COL_CROWN := Color(1.0, 0.85, 0.32)
 # —— V3-6d 胜负演出 ——
 const END_BTN_DELAY := 0.85                     # 结算按钮淡入延迟（先放胜负演出）
 
+# —— V3-7③ 精灵垂直切片（架构 A：immediate _draw + draw_texture；逻辑零改）——
+# 切片只验证管线：knight 用精灵帧、塔用 building 贴图、落地 FX 用火爆炸序列；
+# 精确动画状态/朝向/全单位换皮留 V3-7b 量产。
+const TEX_KNIGHT := preload("res://assets/units/Heavy_Knight_Non-Combat_Animations.png")
+const TEX_TOWER := preload("res://assets/towers/building1.png")
+const TEX_EXPLOSION := preload("res://assets/fx/Fire_Explosion_28x28.png")
+const KNIGHT_FPX := 32       # 角色帧尺寸（96/3 列）
+const KNIGHT_WALK_ROW := 0   # 取该行做行走循环（切片）
+const KNIGHT_WALK_N := 3
+const KNIGHT_FPS := 6.0
+const EXPLOSION_FPX := 28
+const EXPLOSION_N := 12
+
 # 兵种白膜外形（半径 tile，按队伍色填充；空军画环标记）。
 const UNIT_VIS := {
 	"giant_body":      {"r": 0.85},
@@ -229,7 +242,7 @@ func _draw_towers() -> void:
 			var fend: float = _flash.get(t.get_instance_id(), 0.0)
 			if fend > _elapsed:
 				fill = fill.lerp(Color.WHITE, ((fend - _elapsed) / FLASH_DUR) * 0.85)
-			draw_rect(r, fill)
+			draw_texture_rect(TEX_TOWER, r, false, fill)   # 切片：塔用 building 贴图（modulate 染队伍色+闪白）
 			draw_rect(r, base, false, 3.0)
 			if t.is_king():
 				draw_circle(c, minf(w, h) * 0.18, base.lightened(0.3))
@@ -263,8 +276,12 @@ func _draw_units(a) -> void:
 		var fend: float = _flash.get(id, 0.0)
 		if fend > _elapsed:
 			fill = base.lerp(Color.WHITE, ((fend - _elapsed) / FLASH_DUR) * 0.85)
-		draw_circle(c, rad, fill)
-		draw_arc(c, rad, 0.0, TAU, 20, base.darkened(0.4), 2.0)
+		if u.unit_id == "knight_body":   # 切片：骑士用精灵帧（modulate=fill 染队伍色+受击闪白）
+			var kcol := int(_elapsed * KNIGHT_FPS) % KNIGHT_WALK_N
+			_draw_sheet(TEX_KNIGHT, c, rad * 2.4, KNIGHT_FPX, kcol, KNIGHT_WALK_ROW, fill)
+		else:
+			draw_circle(c, rad, fill)
+			draw_arc(c, rad, 0.0, TAU, 20, base.darkened(0.4), 2.0)
 		if flying:
 			draw_arc(c, rad + 3.0, 0.0, TAU, 20, Color(1, 1, 1, 0.7), 1.5)
 		var ratio: float = clampf(u.hp / u.max_hp, 0.0, 1.0)
@@ -443,7 +460,14 @@ func _draw_fx() -> void:
 	for f in _fx:
 		var p: float = clampf((_elapsed - f["t0"]) / f["dur"], 0.0, 1.0)
 		var c: Vector2 = _t2s(f["pos"])
-		draw_arc(c, ur * (0.3 + 1.3 * p), 0.0, TAU, 32, Color(1, 1, 1, (1.0 - p) * 0.7), 2.0 + 2.0 * (1.0 - p))
+		var fi: int = mini(EXPLOSION_N - 1, int(p * EXPLOSION_N))   # 切片：落地 FX 用火爆炸序列帧
+		var sz: float = ur * 2.6
+		draw_texture_rect_region(TEX_EXPLOSION, Rect2(c - Vector2(sz, sz) * 0.5, Vector2(sz, sz)), Rect2(fi * EXPLOSION_FPX, 0, EXPLOSION_FPX, EXPLOSION_FPX))
+
+# 从 sheet 取 (col,row) 帧画到 center（边长 size），modulate 染色。切片精灵绘制核心。
+func _draw_sheet(tex: Texture2D, center: Vector2, size: float, fpx: int, col: int, row: int, mod: Color) -> void:
+	var src := Rect2(col * fpx, row * fpx, fpx, fpx)
+	draw_texture_rect_region(tex, Rect2(center - Vector2(size, size) * 0.5, Vector2(size, size)), src, mod)
 
 func _cull_transients() -> void:
 	_fx = _cull_list(_fx)
