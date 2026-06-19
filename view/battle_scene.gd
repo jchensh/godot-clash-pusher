@@ -810,6 +810,7 @@ func _draw_cards() -> void:
 		draw_rect(rect, COL_CARD_SEL if sel else COL_CARD_BG)
 		if i < hand.size() and hand[i] != null:
 			var cid := str(hand[i])
+			_draw_card_art(cid, pos + Vector2(sz.x * 0.5, sz.y * 0.54), minf(sz.x, sz.y) * 0.66)
 			var cost: int = match_obj.player.card_cost(cid)
 			var affordable: bool = e.get_int() >= cost
 			_text(pos + Vector2(7, 22), _short(tr("card_" + cid), 10), Color.WHITE if affordable else Color(0.62, 0.62, 0.66), 14)
@@ -822,6 +823,41 @@ func _draw_cards() -> void:
 			draw_rect(rect, COL_CROWN, false, 3.0)
 		else:
 			draw_rect(rect, Color(0, 0, 0, 0.5), false, 1.0)
+
+# 卡面图：兵牌=单位精灵正面静帧（自然色，不染队伍色）；法术牌=代表特效图标。
+func _draw_card_art(cid: String, c: Vector2, box: float) -> void:
+	var info: Dictionary = _card_info(cid)
+	if info["spawn"]:
+		var spr: Dictionary = SpriteDB.frame(str(info["unit_id"]), "walk", 1, 0.0)   # owner=1→正面行
+		if not spr.is_empty():
+			draw_texture_rect_region(spr["tex"], Rect2(c - Vector2(box, box) * 0.5, Vector2(box, box)), spr["src"], Color.WHITE)
+			return
+	_draw_card_spell_icon(cid, c, box)
+
+func _draw_card_spell_icon(cid: String, c: Vector2, box: float) -> void:
+	var r := Rect2(c - Vector2(box, box) * 0.5, Vector2(box, box))
+	var s: float = box * 0.42
+	match FX_KIND.get(cid, ""):
+		"fireball":
+			draw_texture_rect_region(TEX_EXPLOSION, r, Rect2(4 * EXPLOSION_FPX, 0, EXPLOSION_FPX, EXPLOSION_FPX))
+		"lightning":
+			draw_texture_rect_region(TEX_LIGHTNING, r, Rect2(4 * FX_SEQ_FPX, 0, FX_SEQ_FPX, FX_SEQ_FPX))
+		"zap":
+			draw_texture_rect_region(TEX_RED_ENERGY, r, Rect2(4 * FX_SEQ_FPX, 0, FX_SEQ_FPX, FX_SEQ_FPX))
+		"arrows":
+			for k in 3:
+				var ox: float = (float(k) - 1.0) * s * 0.55
+				draw_line(c + Vector2(ox, s * 0.7), c + Vector2(ox, -s * 0.7), Color(0.93, 0.86, 0.6), 2.0)
+				draw_line(c + Vector2(ox, -s * 0.7), c + Vector2(ox - 3, -s * 0.7 + 5), Color(0.93, 0.86, 0.6), 2.0)
+				draw_line(c + Vector2(ox, -s * 0.7), c + Vector2(ox + 3, -s * 0.7 + 5), Color(0.93, 0.86, 0.6), 2.0)
+		"log":
+			draw_circle(c, s * 0.85, Color(0.50, 0.42, 0.30))
+			draw_arc(c, s * 0.85, 0.0, TAU, 18, Color(0.28, 0.22, 0.16), 2.5)
+		"heal":
+			draw_line(c - Vector2(s * 0.6, 0), c + Vector2(s * 0.6, 0), Color(0.4, 1.0, 0.5), 4.0)
+			draw_line(c - Vector2(0, s * 0.6), c + Vector2(0, s * 0.6), Color(0.4, 1.0, 0.5), 4.0)
+		_:
+			pass
 
 func _short(s: String, n: int) -> String:
 	return s if s.length() <= n else s.substr(0, n - 1) + "…"
