@@ -23,10 +23,6 @@ const TOPBAR_H := 54.0
 const HUD_BOTTOM_H := 176.0
 
 const COL_BG := Color(0.10, 0.12, 0.11)
-const COL_GROUND := Color(0.22, 0.40, 0.24)
-const COL_GROUND_ENEMY := Color(0.34, 0.26, 0.26)   # 敌方半场地面微调（辨上下）
-const COL_WATER := Color(0.16, 0.34, 0.55)
-const COL_BRIDGE := Color(0.55, 0.42, 0.24)
 const COL_PLAYER := Color(0.35, 0.60, 1.0)
 const COL_OPPONENT := Color(1.0, 0.42, 0.38)
 const COL_ELIXIR := Color(0.80, 0.33, 0.96)
@@ -83,6 +79,16 @@ const PROJ_FB_FPX := 16
 const PROJ_SPEED := 16.0       # 投射物飞行速度 tile/s
 const PROJ_RANGED_MIN := 2.5   # attack_range ≥ 此值才出投射物（排除近战/短手）
 const PROJ_KIND := {"archer_body": "arrow", "musketeer_body": "bolt", "baby_dragon_body": "fireball"}
+# —— 地形 tile（7b-4，Lonesome Summer；16px tile 逐逻辑格铺，与河行/桥列对齐）——
+const TEX_FLOOR := preload("res://assets/terrain/Lonesome_Forest_FLOOR.png")
+const TEX_WATER := preload("res://assets/terrain/simple_water_spritesheet.png")   # 河水动画 4×3=12 帧
+const TEX_BRIDGE := preload("res://assets/terrain/Lonesome_Forest_COBBLESTONE_PATH.png")
+const TILE_PX := 16
+const GROUND_TILES := [Vector2i(4, 1), Vector2i(4, 2)]   # 纯土满铺双变体
+const BRIDGE_TILES := [Vector2i(1, 1), Vector2i(2, 1)]   # 鹅卵石桥
+const WATER_COLS := 4
+const WATER_N := 12
+const WATER_FPS := 5.0
 
 # 兵种白膜外形（半径 tile，按队伍色填充；空军画环标记）。
 const UNIT_VIS := {
@@ -224,22 +230,33 @@ func _draw_terrain(a) -> void:
 	for ty in range(a.grid_h):
 		for tx in range(a.grid_w):
 			var t: int = a.tile_type(tx, ty)
-			if t == a.TILE_TOWER:
-				continue   # 塔单独画
-			var col := COL_GROUND
-			if t == a.TILE_WATER:
-				col = COL_WATER
-			elif ty >= a.river_y_min and ty < a.river_y_max:
-				col = COL_BRIDGE      # 河行里的可走 = 桥
-			elif ty < a.grid_h / 2:
-				col = COL_GROUND_ENEMY
 			var s := _t2s(Vector2(tx, ty))
-			draw_rect(Rect2(s.x, s.y, tp.x + 1.0, tp.y + 1.0), col)
+			var rect := Rect2(s.x, s.y, tp.x + 1.0, tp.y + 1.0)
+			if t == a.TILE_WATER:
+				_draw_water_tile(rect)
+			elif t != a.TILE_TOWER and ty >= a.river_y_min and ty < a.river_y_max:
+				_draw_bridge_tile(tx, ty, rect)   # 河行里的可走 = 桥
+			else:
+				_draw_ground_tile(tx, ty, rect, ty < a.grid_h / 2)   # 塔占位下也铺地（塔贴图透明盖上）
 	# 己方半场可部署区描边提示
 	var fr := _field_rect()
 	var y0 := _t2s(Vector2(0, a.deploy_player_y_min)).y
 	draw_rect(Rect2(fr.position.x, y0, fr.size.x, fr.position.y + fr.size.y - y0),
 			Color(0.4, 0.8, 0.5, 0.10))
+
+func _blit_tile(tex: Texture2D, cell: Vector2i, rect: Rect2, mod: Color) -> void:
+	draw_texture_rect_region(tex, rect, Rect2(cell.x * TILE_PX, cell.y * TILE_PX, TILE_PX, TILE_PX), mod)
+
+func _draw_ground_tile(tx: int, ty: int, rect: Rect2, enemy: bool) -> void:
+	var cell: Vector2i = GROUND_TILES[(tx * 7 + ty * 13) % GROUND_TILES.size()]
+	_blit_tile(TEX_FLOOR, cell, rect, Color(1.0, 0.90, 0.86) if enemy else Color.WHITE)  # 敌方半场微暖辨上下
+
+func _draw_bridge_tile(tx: int, ty: int, rect: Rect2) -> void:
+	_blit_tile(TEX_BRIDGE, BRIDGE_TILES[(tx + ty) % BRIDGE_TILES.size()], rect, Color.WHITE)
+
+func _draw_water_tile(rect: Rect2) -> void:
+	var fr: int = int(_elapsed * WATER_FPS) % WATER_N
+	_blit_tile(TEX_WATER, Vector2i(fr % WATER_COLS, fr / WATER_COLS), rect, Color.WHITE)
 
 func _draw_towers() -> void:
 	var tp := _tile_px()

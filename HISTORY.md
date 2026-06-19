@@ -63,9 +63,10 @@
 | V3-7 ③ | 美术垂直切片（骑士精灵 / building 塔贴图 / 火爆炸序列 FX + 像素 nearest filter；架构 A：immediate `_draw`+`draw_texture`，仅 view） | ✅ 完成（**真人 6/6 验收通过 2026-06-20**；单测 172/172） | 待提交 |
 | V3-7b-1 | 量产·单位精灵全量（10 单位 manifest `view/sprite_db.gd` + 走/攻状态派生 + 朝向；修正 ③ 骑士帧 bug） | ✅ 完成（**真人 1-7 验收通过**；单测 172/172） | 待提交 |
 | V3-7b-2 | 量产·塔（王=building1 / 公主=building6 + 保持长宽比贴地 + 金王冠 + 废墟态） | ✅ 完成（**MCP 截图验收**；单测 172/172） | 待提交 |
-| V3-7b-3 | 量产·技能命中 FX 按卡区分 + 远程投射物（路线 A 冷却跳升检测；含投射物只射一发 bug 修复） | ✅ 完成（**MCP 计数器验证投射物持续开火** + 真人玩通无错；单测 172/172） | 待提交 |
+| V3-7b-3 | 量产·技能命中 FX 按卡区分 + 远程投射物（路线 A 冷却跳升检测；含投射物只射一发 bug 修复） | ✅ 完成（**MCP 计数器验证投射物持续开火** + 真人玩通无错；单测 172/172） | `4aacb21` |
+| V3-7b-4 | 量产·地形 tile（Lonesome FLOOR 地面 / simple_water 12帧动画河 / COBBLESTONE 桥；逐逻辑格铺替纯色块） | ✅ 完成（单测 172/172 + smoke；真人观感待看） | 待提交 |
 
-> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）进行中**：V3-6a（拖拽部署 + 落点反馈）**真人 7/7 验收通过**；V3-6b（战斗 juice，仅 view）代码完成、手感待真人验收；V3-6c（圣水/HUD 反馈，仅 view）代码完成、外观待真人验收；V3-6d（胜负演出 + run 奖励/结算揭示动画，仅 view）代码完成、演出待真人验收 → **V3-6（交互与游戏手感）四个 gate 全部代码完成**。**V3-7（精灵美术）进行中**：素材准备 + ① 卡牌改名 + ② 多语言（i18n + 像素中文字体 + 设置内中英切换）已完成（中文显示真人认可）；③ 美术垂直切片（骑士精灵 + building 塔贴图 + 火爆炸序列 FX，架构 A）**真人 6/6 验收通过**，精灵管线打通。**V3-7b 量产进行中**（执行序 7b-1 单位 → 7b-2 塔 → 7b-3 FX/投射物 → 7b-4 地形 → 7b-5 卡面 → 7b-6 圣经定稿）：**7b-1 单位全量（manifest `sprite_db.gd`）真人 1-7 通过；7b-2 塔（王/公主区分）MCP 截图验收；7b-3 技能 FX 按卡区分 + 远程投射物（含 bug 修复）MCP 验证**。下一步 **V3-7b-4 地形 tile**。V3-5 短战役 + 新手引导按决策 40 推迟到 V3-7 之后执行。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
+> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）进行中**：V3-6a（拖拽部署 + 落点反馈）**真人 7/7 验收通过**；V3-6b（战斗 juice，仅 view）代码完成、手感待真人验收；V3-6c（圣水/HUD 反馈，仅 view）代码完成、外观待真人验收；V3-6d（胜负演出 + run 奖励/结算揭示动画，仅 view）代码完成、演出待真人验收 → **V3-6（交互与游戏手感）四个 gate 全部代码完成**。**V3-7（精灵美术）进行中**：素材准备 + ① 卡牌改名 + ② 多语言（i18n + 像素中文字体 + 设置内中英切换）已完成（中文显示真人认可）；③ 美术垂直切片（骑士精灵 + building 塔贴图 + 火爆炸序列 FX，架构 A）**真人 6/6 验收通过**，精灵管线打通。**V3-7b 量产进行中**（执行序 7b-1 单位 → 7b-2 塔 → 7b-3 FX/投射物 → 7b-4 地形 → 7b-5 卡面 → 7b-6 圣经定稿）：**7b-1 单位全量（manifest `sprite_db.gd`）真人 1-7 通过；7b-2 塔（王/公主区分）MCP 截图验收；7b-3 技能 FX 按卡区分 + 远程投射物（含 bug 修复）MCP 验证**（已提交 `4aacb21`）；**7b-4 地形 tile（FLOOR 地面 / simple_water 动画河 / 鹅卵石桥）替纯色块**（单测+smoke）。下一步 **V3-7b-5 卡面**。V3-5 短战役 + 新手引导按决策 40 推迟到 V3-7 之后执行。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
 
 **测试**：172/172（macOS，`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
@@ -623,4 +624,11 @@
 - 范围/已知限制：仅 view；**AI(敌方)施放法术暂不显示命中大 FX**（路线 A 的 FX 只挂玩家出牌路径；敌方法术爆点需「同帧多兵聚集掉血」启发式推断=决策 30，留可选后续）。
 - 验收：单测 172/172；smoke 干净（含 AI 远程兵触发投射物路径）；**MCP 临时计数器验证**——`PROJ` 累计 0→12→32 整局持续增长（旧 bug 下每兵只射一发，绝无可能），投射物修复确凿生效（临时计数器验后已撤）；真人玩通一整局无报错、帧率正常。
 
-**下一步**：**V3-7b-4 地形 tile**（Lonesome Summer 地面/河/桥 tileset 替现在的纯色块）。
+#### V3-7b-4 — 地形 tile（仅 view）
+- `battle_scene._draw_terrain` 重写：纯色块 → **逐逻辑格铺 16px tile**（与河行/桥列精确对齐）。preload Lonesome Summer：FLOOR(地面) / simple_water(河水 4×3=12 帧**动画**) / COBBLESTONE(桥)。
+- 助手：`_blit_tile` / `_draw_ground_tile`(纯土双变体 (4,1)/(4,2) 按坐标 hash + 敌方半场微暖调辨上下) / `_draw_bridge_tile`((1,1)/(2,1)) / `_draw_water_tile`(按 `_elapsed` 取帧)。塔占位下也铺地面（塔贴图透明盖上，免黑边）。删已无用旧地形色常量 `COL_GROUND/WATER/BRIDGE/GROUND_ENEMY`。
+- tile 选格经 `tools/_tg_probe.py`(临时，不入 git) 行列网格图 + 拼贴预览坐定满铺格。
+- 范围：仅 view，逻辑/config/单测零改。河岸为硬边（未用 RIVER 自动拼边 tile，留后续美化）。
+- 验收：单测 172/172；headless smoke 干净；拼贴预览确认四类 tile 满铺无破绽。**真人观感待看（本步按约定只单测、不走 MCP）**。
+
+**下一步**：**V3-7b-5 卡面**（手牌/draft 卡面贴单位裁剪图或图标）。
