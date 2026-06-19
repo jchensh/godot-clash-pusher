@@ -52,8 +52,8 @@
   | 冰/减速（未来积木） | `Ice-Burst*` |
 - **Boss / roguelite** `assets/bosses/`：`vampire_lord_*`（IDLE/WALK/MELEE/BITE/CAST/AOE/DEATH 全套）；`vampire_spawn_fem/masc_*` 正好做 **golem 亡语裂兵**（`on_death_spawn`）。
 
-## 6. 卡牌「黑暗中世纪化」命名（中英对照初稿，= i18n 起点）
-> ⚠️ 建议初稿，待用户定稿；定稿后写入 `config/cards.json` 的 `name` 并作为多语言表种子。
+## 6. 卡牌「黑暗中世纪化」命名（中英对照，✅ 定稿）
+> ✅ 已定稿（用户 2026-06-16，按主推）。**中文名已写入 `config/cards.json` 的 `name`**；英文名 = ② 多语言的英文种子。`id` 一律不变。
 
 | 原 id | 英文名 | 中文名 | 改动 |
 |---|---|---|---|
@@ -85,7 +85,8 @@
 - ⚠️ **把付费源素材放进公开 GitHub = 再分发，可能违反 EULA**。提交前须决定：(a) 仓库转私有；(b) `.gitignore` 掉 `testAssets/`（及可能 `assets/`）；(c) 仅提交可分发部分（No-Attribution 地形）。
 - 发行前补 `CREDITS` 清单。
 
-## 9. 多语言（i18n）规划 — 独立步骤，未实现
+## 9. 多语言（i18n）— ✅ 已实现（V3-7②，见 HISTORY 决策 43）
+> 实际方案 = `config/i18n.json` + `I18n` autoload 运行时构建 `Translation`（非 CSV 编辑器导入，headless 友好）+ Fusion Pixel 像素中文字体 + 设置页中英切换/存盘、默认中文。下方为初版规划，存档。
 - **方案**：Godot `TranslationServer` + CSV/`.po`；UI / 卡牌 / 提示文本走翻译 key。
 - **范围**：提取 view 层硬编码英文 → key；卡牌名用 §6 中英；设置界面加**中/英切换**并存盘。
 - **建议**：作为**独立一步**（V3-7 期或紧随），不混进素材整理；开工前单独确认范围与排期。

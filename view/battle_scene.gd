@@ -108,7 +108,7 @@ var _end_buttons_added := false
 @onready var _vh: float = float(get_viewport_rect().size.y)
 
 func _ready() -> void:
-	_font = ThemeDB.fallback_font
+	_font = load("res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf")
 	loader = ConfigLoaderScript.new()
 	loader.load_all()
 	match_obj = MatchScript.new(loader)
@@ -282,9 +282,9 @@ func _draw_topbar() -> void:
 	draw_rect(Rect2(0, 0, _vw, TOPBAR_H), COL_PANEL)
 	var p_crowns := _crowns(match_obj.battle.opponent_towers)   # 你拆掉的敌塔
 	var o_crowns := _crowns(match_obj.battle.player_towers)
-	_text(Vector2(12, 28), "YOU", COL_PLAYER, 16)
+	_text(Vector2(12, 28), tr("hud_you"), COL_PLAYER, 16)
 	_draw_crowns(Vector2(54, 8), p_crowns, COL_PLAYER)
-	_text(Vector2(_vw - 56, 28), "ENEMY", COL_OPPONENT, 16)
+	_text(Vector2(_vw - 56, 28), tr("hud_enemy"), COL_OPPONENT, 16)
 	_draw_crowns(Vector2(_vw - 150, 8), o_crowns, COL_OPPONENT)
 	# 倒计时：低于 30s 红色脉动强调
 	var t: float = match_obj.battle.remaining_time()
@@ -344,8 +344,8 @@ func _draw_next_chip(x: float, y: float, w: float, h: float) -> void:
 	if nx == null:
 		return
 	draw_rect(Rect2(x, y, w, h), Color(0, 0, 0, 0.4))
-	_text(Vector2(x + 5, y + 10), "NEXT", Color(0.7, 0.7, 0.7), 10)
-	_text(Vector2(x + 5, y + h - 4), _short(str(nx), 9), Color.WHITE, 11)
+	_text(Vector2(x + 5, y + 10), tr("hud_next"), Color(0.7, 0.7, 0.7), 10)
+	_text(Vector2(x + 5, y + h - 4), _short(tr("card_" + str(nx)), 9), Color.WHITE, 11)
 	var cost: int = match_obj.player.card_cost(nx)
 	draw_circle(Vector2(x + w - 12, y + h * 0.5), 8.0, COL_ELIXIR)
 	_text(Vector2(x + w - 15, y + h * 0.5 + 4.0), "%d" % cost, Color.WHITE, 11)
@@ -630,7 +630,7 @@ func _draw_cards() -> void:
 			var cid := str(hand[i])
 			var cost: int = match_obj.player.card_cost(cid)
 			var affordable: bool = e.get_int() >= cost
-			_text(pos + Vector2(7, 22), _short(cid, 10), Color.WHITE if affordable else Color(0.62, 0.62, 0.66), 14)
+			_text(pos + Vector2(7, 22), _short(tr("card_" + cid), 10), Color.WHITE if affordable else Color(0.62, 0.62, 0.66), 14)
 			draw_circle(pos + Vector2(15, sz.y - 15), 11.0, COL_ELIXIR)
 			_text(pos + Vector2(11, sz.y - 10), "%d" % cost, Color.WHITE, 14)
 			if not affordable:
@@ -666,10 +666,10 @@ func _start_ending() -> void:
 func _add_result_buttons() -> void:
 	_end_buttons_added = true
 	if GameStateScript.run != null:
-		_result_btn("CONTINUE", _vh * 0.62, _on_run_continue)   # Roguelite：回 run 中枢推进/给奖励/结算
+		_result_btn(tr("btn_continue"), _vh * 0.62, _on_run_continue)   # Roguelite：回 run 中枢推进/给奖励/结算
 	else:
-		_result_btn("REMATCH", _vh * 0.62, _on_rematch)
-		_result_btn("MENU", _vh * 0.62 + 70.0, _on_menu)
+		_result_btn(tr("btn_rematch"), _vh * 0.62, _on_rematch)
+		_result_btn(tr("btn_menu"), _vh * 0.62 + 70.0, _on_menu)
 	_result_layer.modulate = Color(1, 1, 1, 0.0)
 	create_tween().tween_property(_result_layer, "modulate:a", 1.0, 0.3)
 
@@ -681,7 +681,7 @@ func _draw_end_screen() -> void:
 	draw_rect(Rect2(0, 0, _vw, _vh), Color(0, 0, 0, 0.62 * dimp))
 	var win: bool = _end_result == BattleScript.RESULT_PLAYER_WIN
 	var lose: bool = _end_result == BattleScript.RESULT_OPPONENT_WIN
-	var title := "YOU WIN" if win else ("YOU LOSE" if lose else "DRAW")
+	var title := tr("result_win") if win else (tr("result_lose") if lose else tr("result_draw"))
 	var tcol: Color = COL_PLAYER if win else (COL_OPPONENT if lose else Color.WHITE)
 	# 标题 sting：透明淡入 + 字号回弹放大
 	var ti: float = clampf(_end_t / 0.45, 0.0, 1.0)
@@ -701,7 +701,7 @@ func _draw_end_screen() -> void:
 	# 比分滚动
 	var cu: float = clampf((_end_t - 0.3) / 0.7, 0.0, 1.0)
 	var sc := Color(1, 1, 1, clampf(_end_t * 2.0, 0.0, 1.0))
-	draw_string(_font, Vector2(0, _vh * 0.56), "Towers  You %d : Enemy %d" % [int(round(_end_pscore * cu)), int(round(_end_oscore * cu))],
+	draw_string(_font, Vector2(0, _vh * 0.56), tr("result_score") % [int(round(_end_pscore * cu)), int(round(_end_oscore * cu))],
 			HORIZONTAL_ALIGNMENT_CENTER, _vw, 22, sc)
 
 # back-out 缓动（0→1，末段回弹过冲 >1）。

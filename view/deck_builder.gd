@@ -1,9 +1,7 @@
 # DeckBuilder —— 组卡界面（V2-7c）。自由从卡池选任意 8 张唯一卡，进对局（决策 34）。
 #
-# 流程：菜单 → 选关 → 组卡(本界面) → 对局。选满 8 张 → 写 GameState.player_deck → 进对局
-# （battle_scene 把它传给 Match.setup 覆盖关卡默认 player_deck）；BACK 回选关。
-# 卡池从 ConfigLoader 动态读取（加卡只改 JSON、界面自动出现）。
-# 全英文 UI（延续零 CJK 字体）：卡牌显示 card_id + 费用，不显示中文 name。纯程序化、零素材。
+# 菜单 → 选关 → 组卡 → 对局。选满 8 张 → 写 GameState.player_deck → 进对局；BACK 回选关。
+# 文本走 i18n（② 多语言）：卡牌显示中文卡名 tr(card_<id>) + 费用。
 extends Control
 
 const GameStateScript = preload("res://view/game_state.gd")
@@ -34,7 +32,6 @@ func _ready() -> void:
 	_build()
 	_refresh()
 
-# 预填：优先沿用本会话已组的卡组，否则用所选关卡的默认 player_deck（便于直接开战）。
 func _init_selection() -> void:
 	var src: Array = GameStateScript.player_deck
 	if src.is_empty():
@@ -46,6 +43,10 @@ func _init_selection() -> void:
 func _cost(id) -> int:
 	return int(_loader.get_card(id).get("elixir_cost", 0))
 
+# 卡牌显示名（i18n）：tr(card_<id>)，缺翻译则回退 id。
+func _card_name(id) -> String:
+	return tr("card_" + str(id))
+
 func _is_troop(id) -> bool:
 	for sk in (_loader.get_card(id).get("skills", []) as Array):
 		if typeof(sk) == TYPE_DICTIONARY and sk.get("type") == "spawn_unit":
@@ -56,11 +57,11 @@ func _build() -> void:
 	_rect(Color(0.09, 0.12, 0.10, 1.0), Vector2(0, 0), Vector2(720, 1280))
 	for lx in [160.0, 360.0, 560.0]:
 		_rect(Color(0.16, 0.20, 0.16, 1.0), Vector2(lx - 70.0, 96), Vector2(140, 1088))
-	_center_label("BUILD DECK", 56, 50, Color(1.0, 0.92, 0.5))
-	_center_label("STAGE: %s" % GameStateScript.level_id.to_upper(), 120, 22, Color(0.72, 0.78, 0.72))
+	_center_label(tr("deck_title"), 56, 50, Color(1.0, 0.92, 0.5))
+	_center_label(tr("deck_stage") % GameStateScript.level_id.to_upper(), 120, 22, Color(0.72, 0.78, 0.72))
 
 	# 当前卡组 8 格（2 行 x 4）
-	_pin_label("YOUR DECK", Vector2(30, 162), Vector2(360, 28), 24, Color(0.86, 0.90, 0.92), HORIZONTAL_ALIGNMENT_LEFT)
+	_pin_label(tr("deck_your"), Vector2(30, 162), Vector2(360, 28), 24, Color(0.86, 0.90, 0.92), HORIZONTAL_ALIGNMENT_LEFT)
 	for i in DECK_SIZE:
 		var col := i % 4
 		var row := i / 4
@@ -83,7 +84,7 @@ func _build() -> void:
 
 	# 分隔线 + 卡池
 	_rect(Color(0.30, 0.34, 0.30, 0.8), Vector2(30, 386), Vector2(660, 3))
-	_pin_label("CARD POOL  (tap to add / remove)", Vector2(30, 398), Vector2(660, 26), 20, Color(0.72, 0.78, 0.72), HORIZONTAL_ALIGNMENT_LEFT)
+	_pin_label(tr("deck_pool"), Vector2(30, 398), Vector2(660, 26), 20, Color(0.72, 0.78, 0.72), HORIZONTAL_ALIGNMENT_LEFT)
 	var ids: Array = _loader.cards.keys()
 	for i in ids.size():
 		var id = ids[i]
@@ -94,11 +95,11 @@ func _build() -> void:
 		_pool_tile(id, x, y)
 
 	# 底部按钮
-	_action_button("BACK", 70, 988, 240, Color(0.20, 0.22, 0.26), Color(0.45, 0.50, 0.56), _on_back)
-	_battle_btn = _action_button("BATTLE", 410, 988, 240, Color(0.18, 0.42, 0.24), Color(0.45, 0.85, 0.55), _on_battle)
+	_action_button(tr("btn_back"), 70, 988, 240, Color(0.20, 0.22, 0.26), Color(0.45, 0.50, 0.56), _on_back)
+	_battle_btn = _action_button(tr("btn_battle"), 410, 988, 240, Color(0.18, 0.42, 0.24), Color(0.45, 0.85, 0.55), _on_battle)
 	var dis := _sbflat(Color(0.18, 0.20, 0.18), 10, 2, Color(0.32, 0.36, 0.32))
 	_battle_btn.add_theme_stylebox_override("disabled", dis)
-	_center_label("need exactly 8 cards", 1086, 20, Color(0.55, 0.6, 0.55))
+	_center_label(tr("deck_need8"), 1086, 20, Color(0.55, 0.6, 0.55))
 
 func _pool_tile(id, x: float, y: float) -> void:
 	var troop := _is_troop(id)
@@ -113,7 +114,7 @@ func _pool_tile(id, x: float, y: float) -> void:
 	btn.add_theme_stylebox_override("pressed", _sbflat(bg.darkened(0.12), 10, 2, border))
 	btn.pressed.connect(_toggle.bind(id))
 	add_child(btn)
-	_pin_label("%s\n%d" % [id, _cost(id)], Vector2(x, y), Vector2(150, 84), 21, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER)
+	_pin_label("%s\n%d" % [_card_name(id), _cost(id)], Vector2(x, y), Vector2(150, 84), 21, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER)
 	# 选中金边（默认隐藏，_refresh 控制 visible）
 	var frame := Panel.new()
 	frame.position = Vector2(x - 2, y - 2)
@@ -144,7 +145,7 @@ func _refresh() -> void:
 		var s = _slots[i]
 		if i < _selected.size():
 			var id = _selected[i]
-			s.label.text = "%s\n%d" % [id, _cost(id)]
+			s.label.text = "%s\n%d" % [_card_name(id), _cost(id)]
 			s.btn.add_theme_stylebox_override("normal", _sbflat(SLOT_FILLED_BG, 8, 2, Color(0.40, 0.55, 0.42)))
 		else:
 			s.label.text = "+"

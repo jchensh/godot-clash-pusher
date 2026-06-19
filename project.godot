@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 _mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
+I18n="*res://view/i18n.gd"
 
 [display]
 
@@ -30,6 +31,10 @@ window/handheld/orientation="portrait"
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/godot_ai/plugin.cfg")
+
+[gui]
+
+theme/custom_font="res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf"
 
 [rendering]
 

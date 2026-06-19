@@ -107,8 +107,8 @@ func _prepare_reward(fought_type: String) -> void:
 func _refresh_content() -> void:
 	_clear(_content)
 	var run = GameStateScript.run
-	_label(_content, "ROGUELITE RUN", Vector2(0, 24), Vector2(720, 50), 40, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
-	var prog := "Node %d / %d   ·   Wins %d" % [mini(run.cursor + 1, run.map.size()), run.map.size(), run.wins]
+	_label(_content, tr("run_title"), Vector2(0, 24), Vector2(720, 50), 40, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+	var prog := tr("run_progress") % [mini(run.cursor + 1, run.map.size()), run.map.size(), run.wins]
 	_label(_content, prog, Vector2(0, 78), Vector2(720, 26), 20, Color(0.78, 0.82, 0.78), HORIZONTAL_ALIGNMENT_CENTER)
 
 	# 节点链（线性）：完成=暗绿、当前=金、未来=灰、boss 红描边。
@@ -121,25 +121,28 @@ func _refresh_content() -> void:
 		var base: Color = C_DONE if done else (C_CURRENT if current else C_FUTURE)
 		var border: Color = C_BOSS if ntype == RunMapScript.TYPE_BOSS else base.lightened(0.2)
 		var mark := "✓" if done else ("▶" if current else "·")
-		var txt := "%s  Act %d   %s   (%s)" % [mark, int(node.get("act", 0)) + 1, ntype.to_upper(), String(node.get("level_id"))]
+		var txt := tr("run_node_row") % [mark, int(node.get("act", 0)) + 1, tr("node_" + ntype), String(node.get("level_id"))]
 		var row := _panel(_content, Vector2(40, y), Vector2(640, 52), base.darkened(0.35), border, 3 if (current or ntype == RunMapScript.TYPE_BOSS) else 1)
 		_label(row, txt, Vector2(16, 0), Vector2(610, 52), 20, Color.WHITE if not done else Color(0.7, 0.8, 0.7), HORIZONTAL_ALIGNMENT_LEFT)
 		y += 60.0
 
 	# run 卡组 + relic 摘要
-	_label(_content, "DECK (%d):  %s" % [run.deck.size(), ", ".join(run.deck)], Vector2(40, y + 6), Vector2(640, 48), 16, Color(0.80, 0.86, 0.92), HORIZONTAL_ALIGNMENT_LEFT)
+	var deck_names: Array = []
+	for cid in run.deck:
+		deck_names.append(tr("card_" + str(cid)))
+	_label(_content, tr("run_deck") % [run.deck.size(), ", ".join(deck_names)], Vector2(40, y + 6), Vector2(640, 48), 16, Color(0.80, 0.86, 0.92), HORIZONTAL_ALIGNMENT_LEFT)
 	var relic_names: Array = []
 	for rid in run.relics:
-		relic_names.append(String(_loader.get_relic(rid).get("name", rid)))
-	var rtext: String = ", ".join(relic_names) if not relic_names.is_empty() else "(none)"
-	_label(_content, "RELICS:  " + rtext, Vector2(40, y + 56), Vector2(640, 44), 16, Color(0.95, 0.85, 0.55), HORIZONTAL_ALIGNMENT_LEFT)
+		relic_names.append(tr("relic_" + str(rid) + "_name"))
+	var rtext: String = ", ".join(relic_names) if not relic_names.is_empty() else tr("run_relics_none")
+	_label(_content, tr("run_relics") % rtext, Vector2(40, y + 56), Vector2(640, 44), 16, Color(0.95, 0.85, 0.55), HORIZONTAL_ALIGNMENT_LEFT)
 
 	# 底部按钮
 	var disabled: bool = _mode != "none" or GameStateScript.run.is_over()
-	var fight := _button(_content, "FIGHT", Vector2(40, 1090), Vector2(300, 84), Color(0.18, 0.42, 0.24), Color(0.45, 0.85, 0.55), _on_fight)
+	var fight := _button(_content, tr("btn_fight"), Vector2(40, 1090), Vector2(300, 84), Color(0.18, 0.42, 0.24), Color(0.45, 0.85, 0.55), _on_fight)
 	fight.disabled = disabled
-	_button(_content, "NEW RUN", Vector2(360, 1090), Vector2(150, 84), Color(0.34, 0.26, 0.20), Color(0.7, 0.55, 0.4), _on_new_run)
-	_button(_content, "MENU", Vector2(530, 1090), Vector2(150, 84), Color(0.20, 0.22, 0.26), Color(0.45, 0.50, 0.56), _on_menu)
+	_button(_content, tr("btn_new_run"), Vector2(360, 1090), Vector2(150, 84), Color(0.34, 0.26, 0.20), Color(0.7, 0.55, 0.4), _on_new_run)
+	_button(_content, tr("btn_menu"), Vector2(530, 1090), Vector2(150, 84), Color(0.20, 0.22, 0.26), Color(0.45, 0.50, 0.56), _on_menu)
 
 # ---------------- 奖励 / 结算覆盖层 ----------------
 func _refresh_overlay() -> void:
@@ -153,7 +156,7 @@ func _build_reward() -> void:
 	_dim(_overlay)
 	_offer_nodes = {}
 	var is_relic: bool = _reward_kind == "relic"
-	var title := "CHOOSE A RELIC" if is_relic else "DRAFT A CARD"
+	var title := tr("reward_relic_title") if is_relic else tr("reward_card_title")
 	var tlbl := _label(_overlay, title, Vector2(0, 250), Vector2(720, 50), 38, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
 	_anim_pop(tlbl, 0.0, -24.0)
 	var y := 360.0
@@ -162,12 +165,11 @@ func _build_reward() -> void:
 		var name_txt: String
 		var sub_txt: String
 		if is_relic:
-			var rdef: Dictionary = _loader.get_relic(id)
-			name_txt = String(rdef.get("name", id))
-			sub_txt = String(rdef.get("desc", ""))
+			name_txt = tr("relic_" + str(id) + "_name")
+			sub_txt = tr("relic_" + str(id) + "_desc")
 		else:
-			name_txt = String(id)
-			sub_txt = "cost %d" % int(_loader.get_card(id).get("elixir_cost", 0))
+			name_txt = tr("card_" + str(id))
+			sub_txt = tr("reward_cost") % int(_loader.get_card(id).get("elixir_cost", 0))
 		var card := _button(_overlay, "", Vector2(110, y), Vector2(500, 110), Color(0.16, 0.20, 0.30), GOLD, _on_pick.bind(id))
 		_label(card, name_txt, Vector2(20, 18), Vector2(460, 40), 28, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 		_label(card, sub_txt, Vector2(20, 64), Vector2(460, 30), 18, Color(0.8, 0.85, 0.9), HORIZONTAL_ALIGNMENT_CENTER)
@@ -175,27 +177,27 @@ func _build_reward() -> void:
 		_anim_pop(card, 0.12 + idx * 0.10, 40.0)   # 逐张错峰揭示
 		idx += 1
 		y += 130.0
-	var skip := _button(_overlay, "SKIP", Vector2(260, y + 10.0), Vector2(200, 64), Color(0.22, 0.24, 0.28), Color(0.5, 0.55, 0.6), _on_skip)
+	var skip := _button(_overlay, tr("btn_skip"), Vector2(260, y + 10.0), Vector2(200, 64), Color(0.22, 0.24, 0.28), Color(0.5, 0.55, 0.6), _on_skip)
 	_anim_pop(skip, 0.12 + idx * 0.10, 20.0)
 
 func _build_summary() -> void:
 	_dim(_overlay)
 	var run = GameStateScript.run
 	var won: bool = run.status == RunStateScript.RUN_WON
-	_anim_pop(_label(_overlay, "RUN CLEARED" if won else "RUN OVER", Vector2(0, 360), Vector2(720, 70), 56, (C_CURRENT if won else C_BOSS), HORIZONTAL_ALIGNMENT_CENTER), 0.0, -30.0)
-	var line := "Cleared all %d battles!" % run.wins if won else "Fell after %d win(s)." % run.wins
+	_anim_pop(_label(_overlay, tr("run_cleared") if won else tr("run_over"), Vector2(0, 360), Vector2(720, 70), 56, (C_CURRENT if won else C_BOSS), HORIZONTAL_ALIGNMENT_CENTER), 0.0, -30.0)
+	var line := (tr("run_summary_win") % run.wins) if won else (tr("run_summary_lose") % run.wins)
 	_anim_pop(_label(_overlay, line, Vector2(0, 450), Vector2(720, 30), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER), 0.18, 20.0)
 	if GameStateScript.meta != null:
 		var m = GameStateScript.meta
-		var ms := "Runs won: %d   ·   Bosses beaten: %d" % [m.runs_won, m.bosses_defeated]
+		var ms := tr("meta_stats") % [m.runs_won, m.bosses_defeated]
 		_anim_pop(_label(_overlay, ms, Vector2(0, 500), Vector2(720, 28), 18, Color(0.8, 0.85, 0.8), HORIZONTAL_ALIGNMENT_CENTER), 0.30, 20.0)
 		var newly: Array = m.unlocked_ids(_loader.relics)
 		if not newly.is_empty():
 			var names: Array = []
 			for rid in newly:
-				names.append(String(_loader.get_relic(rid).get("name", rid)))
-			_anim_pop(_label(_overlay, "Unlocked: " + ", ".join(names), Vector2(0, 540), Vector2(720, 28), 18, GOLD, HORIZONTAL_ALIGNMENT_CENTER), 0.42, 20.0)
-	_anim_pop(_button(_overlay, "BACK TO MENU", Vector2(210, 620), Vector2(300, 72), Color(0.20, 0.22, 0.26), Color(0.45, 0.50, 0.56), _on_summary_menu), 0.55, 20.0)
+				names.append(tr("relic_" + str(rid) + "_name"))
+			_anim_pop(_label(_overlay, tr("unlocked") % ", ".join(names), Vector2(0, 540), Vector2(720, 28), 18, GOLD, HORIZONTAL_ALIGNMENT_CENTER), 0.42, 20.0)
+	_anim_pop(_button(_overlay, tr("btn_back_menu"), Vector2(210, 620), Vector2(300, 72), Color(0.20, 0.22, 0.26), Color(0.45, 0.50, 0.56), _on_summary_menu), 0.55, 20.0)
 
 # ---------------- 交互回调 ----------------
 func _on_fight() -> void:

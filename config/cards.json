@@ -22,7 +22,7 @@
     ]
   },
   "giant": {
-    "name": "巨人",
+    "name": "食人魔",
     "elixir_cost": 5,
     "skills": [
       {
@@ -44,7 +44,7 @@
     ]
   },
   "minions": {
-    "name": "亡灵",
+    "name": "怨灵",
     "elixir_cost": 3,
     "skills": [
       {
@@ -55,7 +55,7 @@
     ]
   },
   "fireball": {
-    "name": "火球",
+    "name": "火球术",
     "elixir_cost": 4,
     "skills": [
       {
@@ -66,7 +66,7 @@
     ]
   },
   "arrows": {
-    "name": "射箭",
+    "name": "箭雨",
     "elixir_cost": 3,
     "skills": [
       {
@@ -77,7 +77,7 @@
     ]
   },
   "zap": {
-    "name": "电击",
+    "name": "电火花",
     "elixir_cost": 2,
     "skills": [
       {
@@ -88,7 +88,7 @@
     ]
   },
   "mini_pekka": {
-    "name": "迷你皮卡",
+    "name": "狂战士",
     "elixir_cost": 4,
     "skills": [
       {
@@ -99,7 +99,7 @@
     ]
   },
   "musketeer": {
-    "name": "火枪手",
+    "name": "女巫",
     "elixir_cost": 4,
     "skills": [
       {
@@ -110,7 +110,7 @@
     ]
   },
   "skeletons": {
-    "name": "骷髅海",
+    "name": "骷髅兵",
     "elixir_cost": 2,
     "skills": [
       {
@@ -121,7 +121,7 @@
     ]
   },
   "baby_dragon": {
-    "name": "小龙",
+    "name": "余烬火颅",
     "elixir_cost": 4,
     "skills": [
       {
@@ -132,7 +132,7 @@
     ]
   },
   "lightning": {
-    "name": "闪电",
+    "name": "闪电术",
     "elixir_cost": 4,
     "skills": [
       {
@@ -143,7 +143,7 @@
     ]
   },
   "log": {
-    "name": "滚木",
+    "name": "滚石",
     "elixir_cost": 2,
     "skills": [
       {
@@ -154,7 +154,7 @@
     ]
   },
   "golem": {
-    "name": "石头人",
+    "name": "亡灵巨像",
     "elixir_cost": 7,
     "skills": [
       {
@@ -165,7 +165,7 @@
     ]
   },
   "heal": {
-    "name": "治疗术",
+    "name": "治愈术",
     "elixir_cost": 3,
     "skills": [
       {

@@ -57,8 +57,11 @@
 | V3-6b | 战斗 juice：移动插值 + 受击闪白 + 浮动伤害数字 + 命中顿帧 + 震屏 + 命中火花（仅 view） | ✅ 代码完成（单测 172/172 零回归；手感待真人验收） | `8a09953` |
 | V3-6c | HUD 反馈：分段圣水条 + 满槽脉动 + 卡面自绘(费用/不可用扫光/选中) + 下一张预览 + 王冠/倒计时强调（仅 view） | ✅ 代码完成（单测 172/172 零回归；外观待真人验收） | `819a713` |
 | V3-6d | 胜负演出（调暗/标题 sting/王冠落入/比分滚动/按钮淡入）+ run 奖励·结算揭示动画（仅 view） | 🚧 代码完成（headless smoke + 单测 172/172 零回归；演出待真人验收） | 待提交 |
+| V3-7 准备 | 美术素材入库（`assets/` 选用 94 + `testAssets/` 库）+ ART_ASSETS 美术圣经雏形（题材=黑暗中世纪幻想） | ✅ 完成 | `6579207` |
+| V3-7 ① | 卡牌黑暗中世纪化改名（`cards.json` name 中英定稿，id 不变） | ✅ 完成（单测 172/172；config check ok） | 待提交 |
+| V3-7 ② | 多语言 i18n（中英表 + autoload + 像素中文字体 + 6 场景接入 + 设置内切换/存盘） | ✅ 代码完成（6 场景 smoke + 单测 172/172；中文显示真人认可） | 待提交 |
 
-> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）进行中**：V3-6a（拖拽部署 + 落点反馈）**真人 7/7 验收通过**；V3-6b（战斗 juice，仅 view）代码完成、手感待真人验收；V3-6c（圣水/HUD 反馈，仅 view）代码完成、外观待真人验收；V3-6d（胜负演出 + run 奖励/结算揭示动画，仅 view）代码完成、演出待真人验收 → **V3-6（交互与游戏手感）四个 gate 全部代码完成**。下一步 **V3-7 精灵美术**（按决策 40 顺序 6→7→5）。V3-5 短战役 + 新手引导按决策 40 推迟到 V3-7 之后执行。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
+> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）进行中**：V3-6a（拖拽部署 + 落点反馈）**真人 7/7 验收通过**；V3-6b（战斗 juice，仅 view）代码完成、手感待真人验收；V3-6c（圣水/HUD 反馈，仅 view）代码完成、外观待真人验收；V3-6d（胜负演出 + run 奖励/结算揭示动画，仅 view）代码完成、演出待真人验收 → **V3-6（交互与游戏手感）四个 gate 全部代码完成**。**V3-7（精灵美术）进行中**：素材准备 + ① 卡牌改名 + ② 多语言（i18n + 像素中文字体 + 设置内中英切换）已完成（中文显示真人认可）；下一步 **③ 美术垂直切片**（1 兵+1 塔+1 特效跑通精灵管线）。V3-5 短战役 + 新手引导按决策 40 推迟到 V3-7 之后执行。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
 
 **测试**：172/172（macOS，`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
@@ -161,6 +164,14 @@
 > 41 为 **V3-6（交互与游戏手感）范围与拆步**，用户 2026-06-16 确认。参考业界 UI/UX 范例：皇室战争（拖拽部署/卡片抬起/落点提示/分段圣水/胜利演出）、Vlambeer《The Art of Screenshake》+《Juice it or Lose it》（顿帧/震屏/缓动）、Brawl Stars（受击数字）、Slay the Spire（奖励/relic 揭示）、Apple HIG（≥44pt 触控/拇指区）。
 
 41. **V3-6 = 纯显示层（零逻辑改，沿用决策 30 路线 A）+ 拆 4 个真人验收 gate**：所有手感经显示层逐帧 diff 逻辑状态实现（hp 降→受击数字、新兵→入场、塔 hp→0→爆破），**不动逻辑、无新单测、全交真人验收**。**部署交互 = 拖拽（CR 式）**（用户选定，取代原两段式 tap）：按手牌→拖到场上(落点抬到手指上方避免遮挡)→松手落子；拖拽中画落点 ghost + 合法绿/非法红 + 己方半场高亮。**拆步（执行序 6a→6b→6c→6d，每步一 gate）**：**6a** 部署交互 + 落点 ghost/红绿 + 半场高亮 + 落地涟漪 + 入场缩放；**6b** 战斗 juice（10Hz→60fps 移动插值、受击闪白 + 浮动伤害数字、命中顿帧、震屏、攻击命中 stub FX）；**6c** 圣水/HUD 反馈（分段圣水条 + 满槽脉动、卡牌冷却扫光 + 下一张预览、可用/不可用态、王冠/倒计时强调）；**6d** 胜负与 run 总结演出（王冠落入、胜负 sting、塔爆破序列、结算面板动画；roguelite 奖励/relic 揭示）。**白膜上做**：6a–6d 装的是「手感系统」（插值/伤害数字生成器/震屏/ghost），V3-7 再贴精灵/粒子皮，**近零返工**。
+
+> 42 为 **V3-7 题材 + 美术主风格 + 素材方案**，用户 2026-06-16 确认。
+
+42. **题材 = 黑暗中世纪幻想；主美术 = itch Pixel Grit 精细像素**：骑士/法师/亡灵/兽人/吸血鬼，无机甲/火器（→ 非中世纪卡改名换概念，见 ①）。`testAssets/` 原始库（Pixel Grit 角色/特效/boss bundle + Lonesome/Grand Forests/World Map 三套 **No-Attribution** 地形 + .aseprite 源）；`assets/` 选用集 94 文件（units/towers/terrain/map/fx/bosses）。地形三套分工：Lonesome **Summer** 全色版=战场地面/河/桥、Grand Forests=树木、World Map=run 节点地图（弃 pixelCrawler top-down + PICO-8）。映射/缺口（golem/真龙/真巨人缺→换皮）/许可见 [docs/ART_ASSETS.md](docs/ART_ASSETS.md)。⚠️ Pixel Grit 付费 bundle 授权用户已确认（license 文件待补拷）；仓库公开、用户确认全量入库。
+
+> 43 为 **② 多语言（i18n）方案 + ① 卡牌改名**，用户 2026-06-16 确认（顺序 ①→②→③ 切片）。
+
+43. **i18n = JSON 翻译表 + autoload 运行时构建 Translation（headless 友好）+ 像素中文字体 + 设置内中英切换**：弃 CSV 编辑器导入，用 `config/i18n.json`(en/zh ~80 key) 经 `I18n` autoload 建 `Translation` 注入 `TranslationServer`；locale 存 `user://settings.cfg`、**默认中文**。字体 = Fusion Pixel 12px proportional zh_hans（OFL，Godot 自动禁 subpixel），`project.godot` [gui] 默认主题字体（中英共用）。6 场景全 `tr()`（卡名/relic/难度/数值模板/HUD/结算/奖励）；新增设置页（主菜单入口）切换即时(reload 本页)+存盘。**① 卡牌改名**：13 张改 `cards.json` name（食人魔/狂战士/女巫/怨灵/余烬火颅/亡灵巨像/滚石 + 火球术/箭雨/电火花/闪电术/骷髅兵/治愈术），id 不变、英文名入 i18n。**view 层零逻辑改、无新单测**（表现层）。
 
 ---
 
@@ -541,3 +552,31 @@
 - **演出留真人实机验收**（清单见下）。
 
 **V3-6d 真人实机验收清单（交用户）**：① 普通对局结束：屏幕**渐暗** → **YOU WIN/LOSE/DRAW** 标题**弹入放大**(sting) → 你的**王冠逐个落下**(回弹) → **比分滚动**计数 → 稍后 **REMATCH/MENU**(或 run 模式 **CONTINUE**) 按钮**淡入**；演出期间**点不动手牌**；② ROGUELITE 胜后：奖励覆盖层 **DRAFT A CARD / CHOOSE A RELIC** 标题 + 候选**逐张错峰弹入**，**选中**的卡**放大金光**再回中枢（卡组/relic 已加）；③ run 通关/败北：**RUN CLEARED / RUN OVER** + 战绩 + 解锁**逐条错峰入场**，BACK TO MENU 可用；④ 全程无报错、帧率正常、REMATCH/CONTINUE/MENU/NEW RUN 流转仍对。回报「通过/哪条不对」。
+
+---
+
+## V3-7 — 精灵美术（准备 + 卡牌改名 + 多语言；进行中）
+
+> 方向见 PLAN_V3 §3 + 决策 42/43。执行顺序：素材准备 → ① 卡牌改名 → ② 多语言 → ③ 美术垂直切片（未开工）。
+
+### V3-7 准备 — 美术素材入库 + ART_ASSETS（已提交 `6579207`）
+题材敲定黑暗中世纪幻想、主风格 Pixel Grit（决策 42）。`testAssets/` 原始库 + `assets/` 选用 94 文件 + `docs/ART_ASSETS.md` 美术圣经雏形。
+
+### V3-7 ① — 卡牌黑暗中世纪化改名（仅 config）  （待提交）
+`config/cards.json` 13 张 `name` 改中文定稿（id 不变、英文名入 i18n）；knight/archers/goblins 原名保留。Excel `--from-json` 同步、`--check` ok。**验收**：单测 172/172；config check ok ✅。映射见 [docs/ART_ASSETS.md §6](docs/ART_ASSETS.md)。
+
+### V3-7 ② — 多语言 i18n + 像素中文字体 + 设置切换（仅 view/config）  （待提交）
+**前置决策**：43。
+**新增/修改**
+- `config/i18n.json`（中英 ~80 key：UI/卡名/relic 名+描述/难度/数值模板）。
+- `view/i18n.gd`（autoload `I18n`）：运行时读 i18n.json 建 en/zh `Translation` 注入 `TranslationServer`；locale 存 `user://settings.cfg`、默认中文；`set_language`/`current_locale`。`project.godot` 注册 autoload。
+- `assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf`（OFL，自动禁 subpixel）+ `OFL.txt`；`project.godot` [gui]theme/custom_font 设为它；`battle_scene._font` 改 load 该 ttf（draw_string 中文）。
+- 6 场景接入 `tr()`：main_menu/level_select/deck_builder/battle_scene/run_scene（卡名/relic/难度/数值/HUD/结算/奖励全中英）。
+- `view/settings.gd`+`.tscn`（新）：中/英切换（即时 reload 本页 + 存盘）；main_menu 加「设置」入口。
+**范围边界**：仅 view + config，逻辑/单测零改（i18n 表现层、无单测）。
+**踩坑**：`gh` 不走代理 → 用 `curl --proxy` 取 GitHub release；Windows python 不认 git-bash `/tmp` → 下载放工程相对路径；CSV 编辑器导入 headless 不友好 → 改 JSON + autoload 运行时构建。
+**验收**
+- 6 场景 headless smoke 零脚本错误（tr key / `%` 格式化全对）；单测 **172/172**。✅
+- **中文像素字体显示真人认可**（主菜单/组卡截图，2026-06-16）✅；中英切换 + 其余场景全中文细节留真人继续验收。
+- 既有良性 warning（`size` 遮蔽基类 / int-as-enum / 整除）非本步引入、不影响运行，暂忽略（将来统一清一轮）。
+**下一步**：③ 美术垂直切片（1 兵 + 1 塔 + 1 特效 → 精灵导入→tween→2D 对局，验证管线）。
