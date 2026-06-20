@@ -9,6 +9,8 @@ const RUN_SCENE := "res://view/run_scene.tscn"
 const SETTINGS_SCENE := "res://view/settings.tscn"
 
 func _ready() -> void:
+	AudioManager.play_music("music_main_menu")
+	AudioManager.stop_ambience()
 	_build()
 
 func _build() -> void:
@@ -74,6 +76,10 @@ func _menu_button(text: String, y: float, cb: Callable, big: bool = false) -> Bu
 	btn.size = Vector2(bw, bh)
 	btn.focus_mode = Control.FOCUS_NONE
 	btn.add_theme_font_size_override("font_size", 36)
-	btn.pressed.connect(cb)
+	btn.pressed.connect(_on_menu_button_pressed.bind(cb))
 	add_child(btn)
 	return btn
+
+func _on_menu_button_pressed(cb: Callable) -> void:
+	AudioManager.play_sfx("ui_button_press")
+	cb.call()

@@ -9,12 +9,15 @@
 extends RefCounted
 class_name AIController
 
-# 难度档位（决策日志 33）：threshold 出牌圣水阈值 / cooldown 出牌最小间隔 /
+# 难度档位（决策 33；V3-9 扩 5 档）：threshold 出牌圣水阈值 / cooldown 出牌最小间隔 /
 # defends 是否防守 / smart 进攻是否集火最弱塔侧（否则固定中路）。
+# 梯度 rookie(极缓·纯练手) → easy → normal → hard → extreme(残暴)；cooldown 是「AI出兵节奏」主杠杆。
 const DIFF := {
-	"easy":   {"threshold": 8, "cooldown": 2.0, "defends": false, "smart": false},
-	"normal": {"threshold": 6, "cooldown": 1.2, "defends": true,  "smart": true},
-	"hard":   {"threshold": 4, "cooldown": 0.6, "defends": true,  "smart": true},
+	"rookie":  {"threshold": 9, "cooldown": 7.0, "defends": false, "smart": false},
+	"easy":    {"threshold": 9, "cooldown": 5.0, "defends": false, "smart": false},
+	"normal":  {"threshold": 7, "cooldown": 2.5, "defends": true,  "smart": false},
+	"hard":    {"threshold": 5, "cooldown": 1.2, "defends": true,  "smart": true},
+	"extreme": {"threshold": 4, "cooldown": 0.5, "defends": true,  "smart": true},
 }
 const DEFAULT_DIFF := "normal"
 

@@ -145,16 +145,22 @@ func _ready() -> void:
 	loader.load_all()
 	match_obj = MatchScript.new(loader)
 	var run = GameStateScript.run
+	var battle_music_id := "music_battle_normal"
 	if run != null and not run.is_over():
 		# Roguelite 模式：当前节点 level_id + run 卡组 + relic/节点难度修正器。
 		var node: Dictionary = run.current_node()
+		var node_type := String(node.get("type", "battle"))
+		if node_type == "elite" or node_type == "boss":
+			battle_music_id = "music_battle_boss"
 		var mods: Array = RunModifiersScript.relic_mods(run.relics, loader.relics)
-		var nm: Dictionary = RunModifiersScript.node_mod(loader.get_run("default"), String(node.get("type", "battle")))
+		var nm: Dictionary = RunModifiersScript.node_mod(loader.get_run("default"), node_type)
 		if not nm.is_empty():
 			mods.append(nm)
 		match_obj.setup(String(node.get("level_id")), run.deck, mods)
 	else:
 		match_obj.setup(GameStateScript.level_id, GameStateScript.player_deck)
+	AudioManager.play_music(battle_music_id)
+	AudioManager.play_ambience("amb_battle_wind")
 	match_obj.set_opponent_controller(AIControllerScript.new(match_obj, loader))
 	_build_cards()
 	_build_result_panel()
@@ -455,6 +461,39 @@ func _card_info(cid) -> Dictionary:
 			return {"spawn": false, "unit_id": "", "count": 0, "radius": 0.0}
 	return {"spawn": false, "unit_id": "", "count": 0, "radius": 0.0}
 
+func _play_card_audio(cid: String, info: Dictionary) -> void:
+	match cid:
+		"fireball":
+			AudioManager.play_sfx("spell_fireball_cast")
+			AudioManager.play_sfx("spell_fireball_impact")
+		"arrows":
+			AudioManager.play_sfx("spell_arrows_cast")
+			AudioManager.play_sfx("spell_arrows_impact")
+		"zap":
+			AudioManager.play_sfx("spell_zap_cast")
+			AudioManager.play_sfx("spell_zap_impact")
+		"lightning":
+			AudioManager.play_sfx("spell_lightning_cast")
+			AudioManager.play_sfx("spell_lightning_impact")
+		"log":
+			AudioManager.play_sfx("spell_log_impact")
+		"heal":
+			AudioManager.play_sfx("spell_heal_cast")
+		_:
+			_play_deploy_audio(info)
+
+func _play_deploy_audio(info: Dictionary) -> void:
+	var unit_id := String(info.get("unit_id", ""))
+	var count := int(info.get("count", 1))
+	if unit_id == "giant_body" or unit_id == "golem_body":
+		AudioManager.play_sfx("deploy_large")
+	elif unit_id == "minion_body" or unit_id == "baby_dragon_body":
+		AudioManager.play_sfx("deploy_air")
+	elif count >= 3 or unit_id == "goblin_body" or unit_id == "skeleton_body":
+		AudioManager.play_sfx("deploy_small")
+	else:
+		AudioManager.play_sfx("deploy_medium")
+
 # 拖拽中：场上画落点 ghost（兵剪影 / AOE 圈 / 直伤准星）+ 合法绿/非法红。
 func _draw_drag_ghost(a) -> void:
 	if not _dragging or selected_card < 0 or match_obj.is_over():
@@ -621,7 +660,7 @@ func _detect_events() -> void:
 				if d > 0.5:
 					_on_hit(id, t.pos - Vector2(0, t.fh * 0.5), d)
 					if was_alive and t.is_destroyed():
-						_on_tower_destroyed(t.pos)
+						_on_tower_destroyed(t.pos, t.is_king())
 			_thp[id] = cur
 
 func _on_hit(id: int, pos: Vector2, amount: float) -> void:
@@ -632,13 +671,18 @@ func _on_hit(id: int, pos: Vector2, amount: float) -> void:
 	if big:
 		_hitstop_t = maxf(_hitstop_t, HITSTOP_DUR)
 		_shake_mag = minf(SHAKE_MAX, maxf(_shake_mag, SHAKE_BIG))
+		AudioManager.play_sfx("hit_heavy")
 	elif amount >= SHAKE_HIT_DMG:
 		_shake_mag = minf(SHAKE_MAX, maxf(_shake_mag, SHAKE_HIT))
+		AudioManager.play_sfx("hit_medium")
+	else:
+		AudioManager.play_sfx("hit_light")
 
-func _on_tower_destroyed(pos: Vector2) -> void:
+func _on_tower_destroyed(pos: Vector2, king: bool) -> void:
 	_hitstop_t = maxf(_hitstop_t, HITSTOP_DUR)
 	_shake_mag = minf(SHAKE_MAX, maxf(_shake_mag, SHAKE_TOWER))
 	_fx.append({"pos": pos, "t0": _elapsed, "dur": 0.6, "kind": "fireball", "radius": 2.5})
+	AudioManager.play_sfx("tower_destroy_king" if king else "tower_destroy_princess")
 
 # 远程兵开火检测（路线 A）：攻击冷却从 ~0 跳满 = 上升沿 = 刚出手 → 发射 attacker→target 投射物。
 func _detect_attacks() -> void:
@@ -659,6 +703,7 @@ func _detect_attacks() -> void:
 				var dist: float = u.pos.distance_to(ct.pos)
 				_projectiles.append({"from": _disp_pos(u), "to": ct.pos, "t0": _elapsed,
 						"dur": clampf(dist / PROJ_SPEED, 0.1, 0.45), "kind": PROJ_KIND[u.unit_id]})
+				_play_projectile_audio(String(PROJ_KIND[u.unit_id]))
 
 # 投射物：from→to 线性飞行，按 kind 画箭/法术弹/火球。
 func _draw_projectiles() -> void:
@@ -685,6 +730,15 @@ func _draw_projectiles() -> void:
 				var fi: int = 1 + int(_elapsed * 14.0) % 7   # 飞行帧循环（避开末尾炸帧）
 				var sz: float = ur * 1.0
 				draw_texture_rect_region(TEX_PROJ_FIREBALL, Rect2(pos - Vector2(sz, sz) * 0.5, Vector2(sz, sz)), Rect2(fi * PROJ_FB_FPX, 0, PROJ_FB_FPX, PROJ_FB_FPX))
+
+func _play_projectile_audio(kind: String) -> void:
+	match kind:
+		"arrow":
+			AudioManager.play_sfx("bow_shot")
+		"bolt":
+			AudioManager.play_sfx("magic_bolt_cast")
+		"fireball":
+			AudioManager.play_sfx("fire_skull_shot")
 
 func _spawn_dmgnum(pos: Vector2, text: String, col: Color, size: int) -> void:
 	_dmgnums.append({"pos": pos, "text": text, "col": col, "size": size, "t0": _elapsed, "dur": DMGNUM_DUR})
@@ -763,6 +817,7 @@ func _build_cards() -> void:
 func _on_card_down(i: int) -> void:
 	if match_obj == null or match_obj.is_over():
 		return
+	AudioManager.play_sfx("ui_card_pickup")
 	selected_card = i
 	_dragging = true
 	_drag_screen = get_viewport().get_mouse_position()
@@ -777,14 +832,19 @@ func _on_card_up(i: int) -> void:
 		return
 	var screen: Vector2 = get_viewport().get_mouse_position()
 	if screen.y < TOPBAR_H or screen.y > _vh - HUD_BOTTOM_H:
+		AudioManager.play_sfx("ui_card_cancel")
 		return   # 松手在 HUD/顶栏 → 取消
 	var drop_tile: Vector2 = _drop_tile_from(screen)
 	var hand: Array = match_obj.player.deck.get_hand()
 	var cid: String = str(hand[sc]) if (sc < hand.size() and hand[sc] != null) else ""
 	if match_obj.player.try_play_card(sc, drop_tile):
+		AudioManager.play_sfx("ui_card_drop_valid")
 		var kind: String = FX_KIND.get(cid, "spawn")
 		var info: Dictionary = _card_info(cid)
 		_fx.append({"pos": drop_tile, "t0": _elapsed, "dur": _fx_dur(kind), "kind": kind, "radius": float(info["radius"])})
+		_play_card_audio(cid, info)
+	else:
+		AudioManager.play_sfx("ui_card_drop_invalid")
 
 # 仅作输入门控：出不起/空格 → disabled（disabled 不触发 button_down，拖不动）。卡面见 _draw_cards。
 func _sync_cards() -> void:
@@ -880,6 +940,13 @@ func _start_ending() -> void:
 	_end_pscore = match_obj.battle.total_tower_hp(match_obj.battle.player_towers)
 	_end_oscore = match_obj.battle.total_tower_hp(match_obj.battle.opponent_towers)
 	_result_layer.visible = true   # 透明全屏，拦截点击（演出期不能出牌）
+	match _end_result:
+		BattleScript.RESULT_PLAYER_WIN:
+			AudioManager.play_sfx("stinger_victory")
+		BattleScript.RESULT_OPPONENT_WIN:
+			AudioManager.play_sfx("stinger_defeat")
+		BattleScript.RESULT_DRAW:
+			AudioManager.play_sfx("stinger_draw")
 
 func _add_result_buttons() -> void:
 	_end_buttons_added = true
@@ -938,11 +1005,14 @@ func _result_btn(txt: String, y: float, cb: Callable) -> void:
 	_result_layer.add_child(b)
 
 func _on_run_continue() -> void:
+	AudioManager.play_sfx("ui_button_press")
 	GameStateScript.run_last_result = match_obj.get_result()
 	get_tree().change_scene_to_file(RunSceneScene)
 
 func _on_rematch() -> void:
+	AudioManager.play_sfx("ui_button_press")
 	get_tree().reload_current_scene()
 
 func _on_menu() -> void:
+	AudioManager.play_sfx("ui_button_back")
 	get_tree().change_scene_to_file("res://view/main_menu.tscn")

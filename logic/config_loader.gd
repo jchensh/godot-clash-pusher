@@ -16,6 +16,7 @@ var levels: Dictionary = {}
 var arena: Dictionary = {}      # V3：2D 场地配置（arena.json），结构性、不进 Excel 镜像
 var run: Dictionary = {}        # V3-4：Roguelite run 结构（run.json），结构性、不进 Excel 镜像
 var relics: Dictionary = {}     # V3-4c：relic 修正器池（relics.json），结构性、不进 Excel 镜像
+var audio_assets: Dictionary = {} # V3-8：音频资源表（AudioConfig.xlsx -> audio_assets.json）
 var errors: Array[String] = []
 
 # 读入配置；全部成功且校验无误返回 true，否则 false（详情见 errors）。
@@ -27,6 +28,7 @@ func load_all(config_dir: String = DEFAULT_CONFIG_DIR) -> bool:
 	arena = _load_json_dict(config_dir.path_join("arena.json"))
 	run = _load_json_dict(config_dir.path_join("run.json"))
 	relics = _load_json_dict(config_dir.path_join("relics.json"))
+	audio_assets = _load_json_dict(config_dir.path_join("audio_assets.json"))
 	_validate()
 	return errors.is_empty()
 
@@ -137,6 +139,22 @@ func _validate() -> void:
 		if typeof(rdef.get("mods")) != TYPE_DICTIONARY:
 			errors.append("relic '%s' 缺少 mods 对象" % str(rid))
 
+	# audio_assets.json（V3-8）：由 AudioConfig.xlsx 生成；运行时按 asset_id 查表播放。
+	for aid in audio_assets:
+		var adef = audio_assets[aid]
+		if typeof(adef) != TYPE_DICTIONARY:
+			errors.append("audio asset '%s' 应为对象" % str(aid))
+			continue
+		for f in ["display_name_zh", "type", "bus", "path", "asset_status", "loop", "volume_db", "pitch_min", "pitch_max", "max_polyphony"]:
+			if not adef.has(f):
+				errors.append("audio asset '%s' 缺少 %s" % [str(aid), f])
+		if adef.has("type") and not ["music", "ambience", "stinger", "ui", "sfx"].has(str(adef.get("type"))):
+			errors.append("audio asset '%s' 的 type 非法" % str(aid))
+		if adef.has("asset_status") and not ["planned", "sourced", "imported", "final"].has(str(adef.get("asset_status"))):
+			errors.append("audio asset '%s' 的 asset_status 非法" % str(aid))
+		if adef.has("path") and not str(adef.get("path")).begins_with("res://sound/"):
+			errors.append("audio asset '%s' 的 path 必须在 res://sound/ 下" % str(aid))
+
 	# 交叉引用：spawn_unit.unit_id 必须在 units 中；deck 中的 card 必须在 cards 中。
 	for cid in cards:
 		var card = cards[cid]
@@ -190,6 +208,9 @@ func get_run(id: String = "default") -> Dictionary:
 func get_relic(id: String) -> Dictionary:
 	return relics.get(id, {})
 
+func get_audio_asset(id: String) -> Dictionary:
+	return audio_assets.get(id, {})
+
 func has_card(id: String) -> bool:
 	return cards.has(id)
 
@@ -198,6 +219,9 @@ func has_unit(id: String) -> bool:
 
 func has_level(id: String) -> bool:
 	return levels.has(id)
+
+func has_audio_asset(id: String) -> bool:
+	return audio_assets.has(id)
 
 func _is_number(value) -> bool:
 	var t := typeof(value)

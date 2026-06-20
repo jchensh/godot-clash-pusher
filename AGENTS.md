@@ -35,6 +35,13 @@
   人类策划直接改 Excel 后，用无参 `build_config.py` 反向生成 JSON。
 - ⚠️ `--from-json` 会覆盖 `GameConfig.xlsx`；若疑似 Excel 有用户未同步到 JSON 的手改，**先停下询问**，别直接覆盖。只分析方案时不擅自改配置。
 - 工作簿 sheet：`Units`（单位数值；`attack_interval_s`→JSON `attack_speed`）/ `Cards` / `CardSkills`（一行一积木，按 `card_id+order` 聚合）/ `Levels` / `Decks` / `Balance_View`（公式视图，不导出）/ `_Enums`（隐藏，不导出）。
+- **音频资源表单独走 `config/AudioConfig.xlsx` → `config/audio_assets.json`**：Godot 运行时只读 JSON，不直接读 xlsx；音频文件统一放根目录 `sound/` 下（`bgm/`、`sfx/`、`ui/`、`stingers/`、`ambience/`）。常用命令：
+  ```bash
+  uv run --with openpyxl python tools/build_audio_config.py          # AudioConfig.xlsx → audio_assets.json
+  uv run --with openpyxl python tools/build_audio_config.py --check  # 校验 xlsx↔json 一致
+  uv run --with openpyxl python tools/build_audio_config.py --from-json
+  ```
+  `AudioAssets` sheet 中 `path` 是 **Godot 目标资源路径**，不是“文件已存在”的证明；`asset_status=planned/sourced/imported/final` 才表示素材状态。表内有 `display_name_zh` 中文资源名，`effect_notes` 必须写中文声音设计说明；`ColumnGuide` sheet 解释每一列用途。首版允许“清单先行、音频文件后补”：`AudioManager` 找不到实际 `.ogg/.wav` 时会静默跳过，避免空资源阶段阻塞开发。
 
 ## 目录布局
 ```
@@ -42,6 +49,7 @@
 /view    显示层脚本与场景
 /ai      AIController
 /config  GameConfig.xlsx（策划源表）+ cards.json / units.json / levels.json（生成产物）
+/sound   音乐/音效文件根目录（运行时路径来自 config/audio_assets.json）
 /tests   单元测试（test_*.gd） + test_runner.gd + test_case.gd
 /tools   配置生成脚本等项目工具
 ```
@@ -76,5 +84,8 @@ godot --path . -e                                                               
   - V3-2 ✅ 空军（飞兵越河 + 对空克制 `attack_targets`）
   - V3-3 ✅ 新技能积木（亡语召唤 `golem` / 治疗术 `heal`）→ 16 卡 / 10 单位
   - V3-4 ✅ Roguelite 主轴 a/b/c/d（决策 38/39）：骨架(RunState+线性连战链+二元永久死亡) + draft 三选一(卡组可增长) + relic(JSON 数值修正器、不污染 base) + boss/精英难度修正 + 局间 meta 解锁 + `user://` 存档 + 最简 run view（菜单 ROGUELITE→中枢→战斗→奖励→结算）
-  - 单测 **172/172**；**V3-1h/V3-2/V3-3 战斗画面·手感 + V3-4 run 引擎内流程 留真人实机验收**。
-- **Now**：**V3-6 交互与游戏手感四 gate（6a 拖拽部署 / 6b 战斗 juice / 6c HUD 反馈 / 6d 胜负·run 演出）代码全部完成**（6a 真人 7/7 通过；6b/6c/6d 待真人验收）。下一步 **V3-7 精灵美术**。**V3-5 短战役 + 新手引导按决策 40 推迟到 V3-7 之后**，执行顺序 = V3-6 → V3-7 → V3-5 → V3-8 → V3-9。
+  - V3-6 ✅ 交互与游戏手感四 gate 代码完成（6a 拖拽部署真人 7/7 通过；6b 战斗 juice / 6c HUD / 6d 胜负·run 演出待真人手感验收）
+  - V3-7 ✅ 精灵美术整阶段收官（单位/塔/FX·投射物/地形/卡面 + `docs/ART_ASSETS.md`）
+  - V3-8 ✅ 音频资源表 + 运行时音频机制代码完成（`AudioConfig.xlsx`→`audio_assets.json`，首版 79 条；`sound/` 目录；`AudioManager` autoload；真实音频素材待补）
+  - 单测 **177/177**；**V3-1h/V3-2/V3-3 战斗画面·手感 + V3-4 run 引擎内流程 + V3-6b/c/d 表现手感 留真人实机验收**。
+- **Now**：**V3-9 平衡**可继续推进（Claude 当前可并行做数值/难度）；**V3-5 短战役 + 新手引导按决策 40 继续暂缓**。

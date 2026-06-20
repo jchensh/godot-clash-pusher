@@ -89,7 +89,7 @@ UNIT_TYPES = ["ground", "air"]
 ATTACK_TARGETS = ["ground", "air", "both"]   # 该单位能攻击的目标类型（V3-2 对空克制）
 TARGETS = ["first_enemy_in_lane"]
 SIDES = ["player", "ai"]
-DIFFICULTIES = ["easy", "normal", "hard"]
+DIFFICULTIES = ["rookie", "easy", "normal", "hard", "extreme"]
 
 
 class ConfigError(RuntimeError):

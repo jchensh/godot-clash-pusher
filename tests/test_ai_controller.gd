@@ -45,7 +45,7 @@ func test_resolves_difficulty_from_match_or_override() -> void:
 
 func test_threshold_gates_play() -> void:
 	var m = _match()
-	_set_opp_elixir(m, 5.0)                       # normal 阈值 6 > 5
+	_set_opp_elixir(m, 5.0)                       # normal 阈值 7 > 5
 	var ai = AIControllerScript.new(m, _loader, "normal")
 	ai.tick(0.1)
 	assert_eq(_opp_units(m).size(), 0, "圣水不足阈值 → 不出牌")
@@ -65,18 +65,18 @@ func test_cooldown_between_plays() -> void:
 	var ai = AIControllerScript.new(m, _loader, "normal")
 	ai.tick(0.1)
 	var n := _opp_units(m).size()
-	ai.tick(0.1)                                  # 冷却中（1.2s 未过）
+	ai.tick(0.1)                                  # 冷却中（2.5s 未过）
 	assert_eq(_opp_units(m).size(), n, "冷却期内不再出牌")
 
 func test_easy_higher_threshold_than_hard() -> void:
 	var hard = _match()
 	_set_opp_elixir(hard, 5.0)
 	AIControllerScript.new(hard, _loader, "hard").tick(0.1)
-	assert_eq(_opp_units(hard).size(), 1, "hard 阈值 4 ≤ 5 → 出牌")
+	assert_eq(_opp_units(hard).size(), 1, "hard 阈值 5 ≤ 5 → 出牌")
 	var easy = _match()
 	_set_opp_elixir(easy, 5.0)
 	AIControllerScript.new(easy, _loader, "easy").tick(0.1)
-	assert_eq(_opp_units(easy).size(), 0, "easy 阈值 8 > 5 → 不出牌")
+	assert_eq(_opp_units(easy).size(), 0, "easy 阈值 9 > 5 → 不出牌")
 
 func test_defends_threat_in_own_half() -> void:
 	var m = _match()

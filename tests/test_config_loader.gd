@@ -67,21 +67,20 @@ func test_v2_7a_new_cards_well_formed() -> void:
 	assert_true(int(loader.get_unit("mini_pekka_body").get("damage")) >= 200, "迷你皮卡高单发伤害")
 
 func test_v2_7b_multi_level() -> void:
-	# V2-7b 多关卡：每关=独立遭遇战、自带难度；level_01 保持 normal 不变。
+	# V2-7b 多关卡：每关=独立遭遇战、自带难度。V3-9 平衡：扩 5 档（rookie→extreme），5 关一档一关、修复撞名+断层。
 	var loader = _make_loaded()
-	assert_true(loader.levels.size() >= 4, "关卡应扩到 >=4 个; 实际=%d" % loader.levels.size())
-	assert_eq(String(loader.get_level("level_01").get("ai_difficulty")), "normal", "level_01 仍为 normal（守住旧测试假设）")
-	var expect := {"level_02": "easy", "level_03": "hard", "level_04": "hard"}
+	assert_true(loader.levels.size() >= 5, "关卡应扩到 >=5 个; 实际=%d" % loader.levels.size())
+	var expect := {"level_01": "rookie", "level_02": "easy", "level_05": "normal", "level_03": "hard", "level_04": "extreme"}
 	for lid in expect:
-		assert_true(loader.has_level(lid), "应包含新关卡 %s" % lid)
+		assert_true(loader.has_level(lid), "应包含关卡 %s" % lid)
 		var lv = loader.get_level(lid)
 		assert_eq(String(lv.get("ai_difficulty")), expect[lid], "%s 难度=%s" % [lid, expect[lid]])
-		assert_true(["easy", "normal", "hard"].has(String(lv.get("ai_difficulty"))), "%s 难度合法" % lid)
+		assert_true(["rookie", "easy", "normal", "hard", "extreme"].has(String(lv.get("ai_difficulty"))), "%s 难度合法" % lid)
 		assert_eq((lv.get("player_deck") as Array).size(), 8, "%s player_deck 8 张" % lid)
 		assert_eq((lv.get("ai_deck") as Array).size(), 8, "%s ai_deck 8 张" % lid)
 	# 关卡数值差异化（节奏/时长）确实生效。
-	assert_almost_eq(float(loader.get_level("level_04").get("elixir_regen_rate")), 2.0, 0.0001, "闪电赛双倍圣水回速")
-	assert_eq(int(loader.get_level("level_04").get("match_duration")), 120, "闪电赛时长更短")
+	assert_almost_eq(float(loader.get_level("level_04").get("elixir_regen_rate")), 2.0, 0.0001, "生死战双倍圣水回速")
+	assert_eq(int(loader.get_level("level_04").get("match_duration")), 120, "生死战时长更短")
 
 func test_v3_arena_config_loaded() -> void:
 	# V3：arena.json 纳入 ConfigLoader 统一入口，含 default 场地（grid/river/deploy/towers）。

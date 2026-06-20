@@ -68,10 +68,12 @@
 | V3-7b-5 | 量产·战斗手牌卡面（兵牌=单位精灵正面帧 / 法术牌=特效图标；draft·组卡卡面留 7b-5b） | ✅ 完成（**真人验收通过**；单测 172/172 + smoke） | `0e73300` |
 | V3-7b-5b | 量产·draft 奖励卡 + 组卡界面卡面（Control+TextureRect 加单位/法术肖像；共享 `SpriteDB.card_portrait_tex`） | ✅ 完成（**真人验收通过**；导入解析+单测 172/172+deck_builder smoke） | `39c80ff` |
 | V3-7b-6 | 美术圣经定稿（`docs/ART_ASSETS.md`：单位 manifest 帧网格/行/朝向 + 帧坐定方法 + 塔/FX/地形/卡面 as-built + 缺口/许可，决策 42 升级） | ✅ 完成（纯文档） | 待提交 |
+| V3-8 | 音频资源表 + 运行时音频机制（AudioConfig.xlsx→audio_assets.json→AudioManager） | ✅ 代码完成（audio config check；单测 177/177；headless editor 导入通过；真实素材待补） | 待提交 |
+| V3-9 ① | 难度系统扩 5 档（rookie/easy/normal/hard/extreme）+ 标题/配色/5 关 + 降难度底 | ✅ 完成（梯度实测单调；单测 177/177；config check ok；手感交真人） | 待提交 |
 
-> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）进行中**：V3-6a（拖拽部署 + 落点反馈）**真人 7/7 验收通过**；V3-6b（战斗 juice，仅 view）代码完成、手感待真人验收；V3-6c（圣水/HUD 反馈，仅 view）代码完成、外观待真人验收；V3-6d（胜负演出 + run 奖励/结算揭示动画，仅 view）代码完成、演出待真人验收 → **V3-6（交互与游戏手感）四个 gate 全部代码完成**。**V3-7（精灵美术）进行中**：素材准备 + ① 卡牌改名 + ② 多语言（i18n + 像素中文字体 + 设置内中英切换）已完成（中文显示真人认可）；③ 美术垂直切片（骑士精灵 + building 塔贴图 + 火爆炸序列 FX，架构 A）**真人 6/6 验收通过**，精灵管线打通。**V3-7b 量产进行中**（执行序 7b-1 单位 → 7b-2 塔 → 7b-3 FX/投射物 → 7b-4 地形 → 7b-5 卡面 → 7b-6 圣经定稿）：**7b-1 单位全量（manifest `sprite_db.gd`）真人 1-7 通过；7b-2 塔（王/公主区分）MCP 截图验收；7b-3 技能 FX 按卡区分 + 远程投射物（含 bug 修复）MCP 验证**（已提交 `4aacb21`）；**7b-4 地形 tile（FLOOR 地面 / simple_water 动画河 / 鹅卵石桥）替纯色块**（已提交 `f3c8abf`）；**7b-5 战斗手牌卡面（已提交 `0e73300`）+ 7b-5b draft/组卡界面卡面（共享 `SpriteDB.card_portrait_tex`）真人验收通过**。**V3-7b 量产全部完成**（单位/塔/FX·投射物/地形/卡面 + 7b-6 美术圣经定稿 `docs/ART_ASSETS.md`）→ **V3-7（精灵美术）整阶段收官**。**下一步 = V3-9 平衡**（用户 2026-06-20：V3-8 音频先跳过、V3-5 短战役+引导暂缓，先做数值/难度平衡）。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
+> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）四个 gate 全部代码完成**，其中 V3-6a 真人 7/7 验收通过，V3-6b/c/d 仍留手感/外观/演出真人验收。**V3-7（精灵美术）整阶段收官**（单位/塔/FX·投射物/地形/卡面 + 7b-6 美术圣经定稿）。**V3-8 音频资源表 + 运行时音频机制已代码完成**：首版 79 条音频需求表、`sound/` 目录、`AudioManager` autoload、场景触发接入；真实音频素材待后续补入。**下一步可继续 V3-9 平衡**（Claude/用户当前并行推进），V3-5 短战役+引导仍暂缓。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
 
-**测试**：172/172（macOS，`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
+**测试**：177/177（`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`；音频单独走 `config/AudioConfig.xlsx` → `config/audio_assets.json`，用 `tools/build_audio_config.py --check` 校验。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
 ---
 
@@ -654,4 +656,64 @@
 
 > **V3-7（精灵美术）整阶段收官**：准备 → ①卡牌改名 → ②多语言 → ③垂直切片 → 7b 量产（单位/塔/FX·投射物/地形/卡面）→ 7b-6 圣经定稿。单测全程 172/172。
 
-**下一步**：**V3-9 平衡**（用户 2026-06-20 调整执行序：V3-7 后**跳过 V3-8 音频**、**V3-5 短战役+引导暂缓**，先做**数值/难度平衡**；方法可参考 V2-8 决策 35 的「数据驱动测量 + 难度交真人」）。
+**后续调整**：用户 2026-06-20 原计划 V3-7 后跳过 V3-8、先做 V3-9 平衡；随后明确要求先补“音频资源表 + 工程读取机制”，因此 V3-8 已在下节完成代码与配置管线。V3-5 短战役+引导仍暂缓，V3-9 平衡可继续并行推进。
+
+---
+
+## V3-8 — 音频资源表 + 运行时音频机制（并行补基础管线）  （待提交）
+
+**前置决策**：用户 2026-06-20 明确要求 Codex 兼任音乐音效师，先把“音频资源表 + 工程读取机制”做出来；Claude 可继续并行做数值平衡。本步只搭音频配置与播放入口，**不引入真实音频素材**。
+
+**配置工作流**
+- 新增独立音频资源表：`config/AudioConfig.xlsx`（策划源表）→ `config/audio_assets.json`（Godot 运行时读取）。
+- 新增 `tools/build_audio_config.py`：支持 `--init` / 默认 xlsx→json / `--from-json` / `--check`。音频管线不写入 `GameConfig.xlsx`，避免和卡牌/单位/关卡平衡表互相污染。
+- 表字段：`asset_id / display_name_zh / type / group / bus / path / asset_status / loop / volume_db / pitch_min / pitch_max / max_polyphony / priority / suggested_duration_s / implementation_phase / trigger / effect_notes / source_notes`。
+- `path` 是目标 Godot 资源路径，不代表文件已存在；`asset_status=planned/sourced/imported/final` 才表示素材状态。工作簿新增 `ColumnGuide` sheet 和表头注释，解释每一列用途。
+- 首版清单覆盖 BGM、ambience、stinger、UI、圣水、run/reward/relic、部署、攻击/命中/死亡、远程投射物、塔、全部现有法术等资源；`display_name_zh` 为中文资源名，`effect_notes` 全部改为中文声音设计说明。
+
+**新增 / 修改**
+- `sound/` 根目录 + 子目录占位：`bgm/`、`sfx/`、`ui/`、`stingers/`、`ambience/`。所有音频文件路径统一从 `audio_assets.json` 指向 `res://sound/...`。
+- `logic/config_loader.gd`：加载并校验 `audio_assets.json`，新增 `audio_assets` / `get_audio_asset` / `has_audio_asset`。
+- `view/audio_manager.gd`（autoload `AudioManager`）：统一 `play_music` / `play_ambience` / `play_sfx` / `play` / `stop_music` / `stop_ambience`；BGM 与 ambience 分通道，SFX 按配置并发池播放；按配置读取 bus、音量、pitch、并发数；真实 `.ogg/.wav` 尚不存在时安全返回 false，不报错。
+- `project.godot`：注册 `AudioManager` autoload。
+- `view/main_menu.gd`：进主菜单播放 `music_main_menu`，停止 ambience，按钮点击走 `ui_button_press`。
+- `view/run_scene.gd`：run 中枢播放 `music_run_map` + `amb_run_campfire`；进入战斗、奖励打开、draft/relic 选择、skip/new run/back 挂对应 UI 音效入口。
+- `view/battle_scene.gd`：普通/elite/boss 对局切换 `music_battle_normal`/`music_battle_boss` + `amb_battle_wind`；拖卡、合法/非法落点、单位/法术出牌、受击、塔毁、远程开火、胜负结算 sting 挂音效入口。
+- `tests/test_audio_config.gd`：覆盖音频清单加载、必需字段、中文资源名/素材状态/效果说明、路径统一在 `res://sound/` 下、P0 核心资源存在。
+- Godot 导入生成：`view/audio_manager.gd.uid`、`tests/test_audio_config.gd.uid`。
+- `AGENTS.md` / `CLAUDE.md`：补充音频配置工作流与 V3-8 当前进度，明确 Godot 运行时读 JSON、不直接读 xlsx，音频文件统一进 `sound/`。
+
+**范围边界**
+- 本步只建立“表 → JSON → AudioManager → 场景触发”的机制和完整需求表；不制作/导入实际音频文件。
+- 当前没有 `Music/SFX/UI/Ambience` bus layout 时，`AudioManager` 会自动 fallback 到 `Master`，后续 V3-9 设置/音量面板再加 bus layout 与音量控制。
+- 战斗音效当前仍按显示层状态 diff 触发，匹配现有 V3-6/7 路线；未来做音频精修时建议升级为逻辑层轻量 combat event buffer，避免高频 hit 重复过密。
+
+**验收**
+- `uv run --with openpyxl python tools/build_audio_config.py --check` → `audio config check ok`。✅
+- `godot --headless --path . --script res://tests/test_runner.gd`（`HOME` 隔离）→ **177/177 全过**。✅
+- `godot --headless --editor --path . --quit`（`HOME` 隔离）→ 导入/Autoload 解析通过；headless 下 MCP 插件按预期禁用。✅
+- 退出时仍有一次 `ObjectDB/resource still in use` 警告，来自 headless/test teardown 阶段；命令退出码为 0，且无脚本解析或运行期错误。
+
+---
+
+## V3-9 — 平衡（进行中）
+
+> 方向见决策 35（数据驱动测量 + 难度交真人）。用户 2026-06-20/21 反馈：纯公平对局**无卡牌数值养成 → 难度=AI 竞技水平**，玩家 vs AI 拼手速；最低档也太压迫，要求**降难度底**，进而定为 **5 档系统**。相关记忆 [[difficulty-is-ai-competence]]。
+
+### V3-9 ① — 难度系统扩 5 档 + 降难度底（config/view/逻辑 + 单测）  （待提交）
+**前置**：用户反馈训练场太凶（临时 harness 实测：旧 easy AI vs 不出兵的玩家 45s 团灭）。先把 easy 放缓、新手关 normal→easy；随后用户定为 5 档。
+**测量方法**：临时 harness `tools/_pace_probe.gd`（**验后即删、不入 git**）三组——①节奏（双方镜像 bot）：全程拆王塔决胜、0 超时 0 平、44–128s，**节奏健康**；②对称卡组 + 交换出牌序对照：胜率噪声大且随序漂移 → proxy **测不准胜负/侧平衡**（印证决策 35，arena 塔位已验上下对称）；③**真实 AI 压迫度**（真 AIController vs 不出兵玩家）：测出兵节奏/拆塔速度，作难度梯度客观参照。
+
+**改动**
+- `ai/ai_controller.gd` `DIFF` 扩 5 档（`cooldown`=AI 出兵节奏主杠杆）：rookie 9/7.0 · easy 9/5.0（均不防守不集火）· normal 7/2.5（防守）· hard 5/1.2（防守+集火）· extreme 4/0.5（防守+集火）。`DEFAULT_DIFF` 仍 normal。
+- `view/level_select.gd`：5 档排序权重 + **5 色渐变底**（青绿→绿→蓝→琥珀→深红）+ 标题按档一一映射（去掉旧 hard 按圣水分 blitz/champion 的分叉）。
+- `config/i18n.json`（中英）：标题 新手村/试炼场/竞技场/冠军赛/生死战；徽章 新手/简单/普通/困难/极限；说明 5 条。
+- `config/levels.json`：**5 关一档一关**——level_01 rookie(新手村) / level_02 easy(试炼场) / **level_05 normal(竞技场，新增)** / level_03 hard(冠军赛) / level_04 extreme(生死战)；修复「两个训练场」撞名 + 难度断层（level_select 标题原按难度档生成，两关同 easy 才会撞名）。
+- `tools/build_config.py`：`DIFFICULTIES` 枚举扩 5 档；`GameConfig.xlsx` 重建 + `config check ok`。
+- `tests/test_config_loader.gd` / `tests/test_ai_controller.gd`：更新断言/注释到 5 档。
+
+**梯度实测**（真 AI 压迫度，首座公主塔被拆耗时，越久越温和）：rookie **34s** → easy 31 → normal 27 → hard 22 → extreme **17s**，单调递进、分档清晰；rookie 不出兵玩家撑到 59s/保 1120 塔血。
+
+**范围边界 / 现状**：仅难度配置 + 选关 UI；不动战斗逻辑。难度**手感（5 档体感）整体交真人**（决策 35）；rookie/试炼场真人已确认能轻松取胜。
+
+**验收**：单测 **177/177**；`build_config.py --check` → `config check ok`；梯度实测单调。

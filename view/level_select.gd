@@ -10,12 +10,15 @@ const DECK_BUILDER_SCENE := "res://view/deck_builder.tscn"
 const MENU_SCENE := "res://view/main_menu.tscn"
 
 # 难度 → 排序权重 / 配色（说明文案走 i18n key diff_desc_*）。
-const DIFF_RANK := {"easy": 0, "normal": 1, "hard": 2}
+# 5 档（V3-9）：rookie→extreme 由易到难；底色渐变 青绿→绿→蓝→琥珀→深红（凉=安全、热=危险）。
+const DIFF_RANK := {"rookie": 0, "easy": 1, "normal": 2, "hard": 3, "extreme": 4}
 const DIFF_BG := {
-	"easy": Color(0.20, 0.45, 0.28), "normal": Color(0.22, 0.34, 0.55), "hard": Color(0.52, 0.24, 0.26),
+	"rookie": Color(0.18, 0.40, 0.38), "easy": Color(0.20, 0.45, 0.28), "normal": Color(0.22, 0.34, 0.55),
+	"hard": Color(0.50, 0.34, 0.16), "extreme": Color(0.46, 0.16, 0.20),
 }
 const DIFF_BORDER := {
-	"easy": Color(0.45, 0.85, 0.55), "normal": Color(0.50, 0.66, 1.0), "hard": Color(1.0, 0.50, 0.50),
+	"rookie": Color(0.48, 0.88, 0.80), "easy": Color(0.45, 0.85, 0.55), "normal": Color(0.50, 0.66, 1.0),
+	"hard": Color(1.0, 0.68, 0.30), "extreme": Color(1.0, 0.34, 0.36),
 }
 
 func _ready() -> void:
@@ -46,15 +49,15 @@ func _sorted_level_ids(loader) -> Array:
 		return String(a) < String(b))
 	return ids
 
-# 关卡标题：按难度档命名（i18n）；hard 再按圣水节奏分 BLITZ(快) / CHAMPION。
+# 关卡标题：按 5 难度档一一映射（i18n）。
 func _level_title(level: Dictionary) -> String:
-	var diff := String(level.get("ai_difficulty", "normal"))
-	var fast: bool = float(level.get("elixir_regen_rate", 1.0)) >= 1.5
-	match diff:
-		"easy": return tr("level_training")
-		"normal": return tr("level_arena")
-		"hard": return tr("level_blitz") if fast else tr("level_champion")
-	return tr("level_arena")
+	match String(level.get("ai_difficulty", "normal")):
+		"rookie": return tr("level_rookie")
+		"easy": return tr("level_easy")
+		"normal": return tr("level_normal")
+		"hard": return tr("level_hard")
+		"extreme": return tr("level_extreme")
+	return tr("level_normal")
 
 func _choose(level_id: String) -> void:
 	GameStateScript.level_id = level_id

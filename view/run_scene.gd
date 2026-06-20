@@ -36,6 +36,8 @@ var _offer_nodes: Dictionary = {}   # 奖励候选 id → 卡节点（选中 flo
 var _picking := false          # 正在播放选中演出，挡二次点击
 
 func _ready() -> void:
+	AudioManager.play_music("music_run_map")
+	AudioManager.play_ambience("amb_run_campfire")
 	_loader = ConfigLoaderScript.new()
 	_loader.load_all()
 	if GameStateScript.meta == null:
@@ -157,6 +159,7 @@ func _build_reward() -> void:
 	_dim(_overlay)
 	_offer_nodes = {}
 	var is_relic: bool = _reward_kind == "relic"
+	AudioManager.play_sfx("relic_reveal" if is_relic else "reward_panel_open")
 	var title := tr("reward_relic_title") if is_relic else tr("reward_card_title")
 	var tlbl := _label(_overlay, title, Vector2(0, 250), Vector2(720, 50), 38, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
 	_anim_pop(tlbl, 0.0, -24.0)
@@ -208,6 +211,7 @@ func _build_summary() -> void:
 func _on_fight() -> void:
 	if _mode != "none" or GameStateScript.run.is_over():
 		return
+	AudioManager.play_sfx("run_node_select")
 	get_tree().change_scene_to_file(BATTLE_SCENE)   # battle_scene 读 GameState.run 自行建场
 
 func _on_pick(id) -> void:
@@ -217,8 +221,10 @@ func _on_pick(id) -> void:
 	var run = GameStateScript.run
 	if _reward_kind == "relic":
 		run.add_relic(id)
+		AudioManager.play_sfx("relic_pick")
 	else:
 		run.add_card(id)
+		AudioManager.play_sfx("reward_card_pick")
 	SaveScript.save_run(run)
 	# 选中 flourish：放大 + 金色，再回中枢。
 	var node: Control = _offer_nodes.get(id)
@@ -235,6 +241,7 @@ func _on_pick(id) -> void:
 func _on_skip() -> void:
 	if _picking:
 		return
+	AudioManager.play_sfx("reward_skip")
 	_close_reward()
 
 func _close_reward() -> void:
@@ -257,6 +264,7 @@ func _anim_pop(node: Control, delay: float, rise: float) -> void:
 	tw.parallel().tween_property(node, "position", base, 0.32).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _on_new_run() -> void:
+	AudioManager.play_sfx("ui_button_press")
 	SaveScript.clear_run_save()
 	GameStateScript.run = null
 	_start_new_run()
@@ -266,9 +274,11 @@ func _on_new_run() -> void:
 	call_deferred("_refresh_content")
 
 func _on_menu() -> void:
+	AudioManager.play_sfx("ui_button_back")
 	get_tree().change_scene_to_file(MENU_SCENE)
 
 func _on_summary_menu() -> void:
+	AudioManager.play_sfx("ui_button_back")
 	GameStateScript.run = null          # run 已结束，清掉（meta 已存盘）
 	get_tree().change_scene_to_file(MENU_SCENE)
 
