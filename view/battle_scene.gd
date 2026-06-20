@@ -125,6 +125,7 @@ var _dmgnums: Array = []      # [{pos:Vector2(tile), text, col, size, t0, dur}]
 var _sparks: Array = []       # [{pos:Vector2(tile), t0, dur}]
 var _projectiles: Array = [] # 远程投射物：[{from,to:Vector2(tile), t0, dur, kind}]
 var _atkcd: Dictionary = {}  # 单位 id → 上帧 _attack_cooldown（检测开火上升沿）
+var _tatkcd: Dictionary = {} # 塔 id → 上帧 _attack_cooldown（塔射箭开火检测，A5-2）
 var _shake := Vector2.ZERO
 var _shake_mag := 0.0
 var _hitstop_t := 0.0
@@ -704,6 +705,36 @@ func _detect_attacks() -> void:
 				_projectiles.append({"from": _disp_pos(u), "to": ct.pos, "t0": _elapsed,
 						"dur": clampf(dist / PROJ_SPEED, 0.1, 0.45), "kind": PROJ_KIND[u.unit_id]})
 				_play_projectile_audio(String(PROJ_KIND[u.unit_id]))
+	# 塔射箭（A5-2）：塔反击冷却上升沿 = 刚 mark_attacked → 从塔身射箭到射程内最近敌兵。
+	for side in [match_obj.battle.player_towers, match_obj.battle.opponent_towers]:
+		for t in side:
+			if not t.is_alive() or t.damage <= 0.0:
+				continue
+			var tid: int = t.get_instance_id()
+			var tcur: float = t._attack_cooldown
+			var tprev: float = _tatkcd.get(tid, tcur)
+			_tatkcd[tid] = tcur
+			if tcur > tprev + 0.01:
+				var victim = _tower_target(t)
+				if victim != null:
+					var muzzle: Vector2 = (t.pos as Vector2) - Vector2(0.0, float(t.fh) * 0.4)
+					var tdist: float = muzzle.distance_to(victim.pos)
+					_projectiles.append({"from": muzzle, "to": victim.pos, "t0": _elapsed,
+							"dur": clampf(tdist / PROJ_SPEED, 0.1, 0.5), "kind": "arrow"})
+
+# 塔射程内最近的存活敌方单位（view 侧复刻 arena 选择，路线 A）；无则 null。
+func _tower_target(t):
+	var best = null
+	var best_d := INF
+	var r: float = float(t.attack_range) + 0.001
+	for u in match_obj.battle.arena.get_units():
+		if not u.is_alive() or u.owner_id == t.owner_id:
+			continue
+		var d: float = (t.pos as Vector2).distance_to(u.pos as Vector2)
+		if d <= r and d < best_d:
+			best_d = d
+			best = u
+	return best
 
 # 投射物：from→to 线性飞行，按 kind 画箭/法术弹/火球。
 func _draw_projectiles() -> void:

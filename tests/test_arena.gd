@@ -224,6 +224,39 @@ func test_distraction_picks_nearest_enemy_unit() -> void:
 	arena.tick(0.1)
 	assert_eq(p.current_target, near, "分心选最近的敌兵")
 
+# —— 隔河不分心：地面兵走流场绕桥，不卡岸被风筝（A5-1 回归）——
+
+func test_no_distraction_across_river() -> void:
+	var arena = _battle_arena()[1]
+	# 玩家近战兵在己方半场近河(9,18)，敌兵在河对岸(9,14)：dist 4 < aggro 5，但隔河不可直线到达。
+	var p = UnitScript.new("p", UnitScript.OWNER_PLAYER, _aggro_cfg(), Vector2(9, 18))
+	arena.add_unit(p)
+	_still_enemy(arena, Vector2(9, 14))
+	arena.tick(0.1)
+	assert_true(arena.towers.has(p.current_target), "隔河敌兵不分心 → 仍锁敌塔（走流场绕桥），不直奔对岸")
+
+func test_ground_unit_crosses_bridge_despite_across_river_enemy() -> void:
+	var ctx = _battle_arena()
+	var battle = ctx[0]
+	var arena = ctx[1]
+	# 回归 A5-1：对岸有敌兵持续诱惑时，近战地面兵不应被勾引直奔对岸卡在水边，而应绕桥过河。
+	var cfg := {
+		"hp": 100000.0, "damage": 0.0, "attack_speed": 1.0,
+		"move_speed": 3.0, "attack_range": 1.0, "aggro_radius": 5.0, "target_type": "ground",
+	}
+	var p = UnitScript.new("p", UnitScript.OWNER_PLAYER, cfg, Vector2(9, 18))
+	arena.add_unit(p)
+	_still_enemy(arena, Vector2(9, 14), 100000.0)   # 河对岸静止永生敌兵（持续诱惑）
+	var min_y: float = p.pos.y
+	var touched_water := false
+	for i in 400:
+		battle.step(0.1)
+		min_y = minf(min_y, p.pos.y)
+		if arena.tile_type_at(p.pos) == ArenaScript.TILE_WATER:
+			touched_water = true
+	assert_false(touched_water, "全程不踏水（绕桥，不卡岸冲水）")
+	assert_true(min_y < 15.0, "越过河到达敌方半场(y<15)，未卡在岸边; 实际 min_y=%.1f" % min_y)
+
 # —— 软推挤碰撞 + 接敌攻击（V3-1d）——
 
 func _fighter(arena, owner: int, pos: Vector2, dmg: float = 50.0, hp: float = 100.0,
@@ -390,3 +423,21 @@ func test_on_death_spawn_summons_units() -> void:
 		if u.unit_id == "goblin_body":
 			goblins += 1
 	assert_eq(goblins, 2, "石头人亡语：死后裂出 2 哥布林")
+
+func test_death_spawn_never_lands_in_water() -> void:
+	var loader = _loader()
+	var battle = BattleScript.new()
+	var arena = battle.build_arena(loader.get_level("level_01"), loader.get_arena("default"))
+	var skill = SkillSystemScript.new(loader, battle)
+	skill.play_card("golem", UnitScript.OWNER_PLAYER, Vector2(9, 20))
+	var golem = arena.get_units()[0]
+	golem.pos = Vector2(14.7, 15.5)            # 右桥边缘/水边：裂兵 off 会溢出到水
+	golem.take_damage(golem.max_hp)
+	arena.tick(0.1)                            # _remove_dead → 亡语生成（应钳到地面）
+	var checked := 0
+	for u in arena.get_units():
+		if u.unit_id == "goblin_body":
+			checked += 1
+			assert_true(arena.is_ground_walkable_at(u.pos),
+				"亡语裂兵钳到可走地面、不落水; pos=(%.2f,%.2f)" % [u.pos.x, u.pos.y])
+	assert_eq(checked, 2, "两只裂兵都已校验落点")

@@ -70,10 +70,11 @@
 | V3-7b-6 | 美术圣经定稿（`docs/ART_ASSETS.md`：单位 manifest 帧网格/行/朝向 + 帧坐定方法 + 塔/FX/地形/卡面 as-built + 缺口/许可，决策 42 升级） | ✅ 完成（纯文档） | 待提交 |
 | V3-8 | 音频资源表 + 运行时音频机制（AudioConfig.xlsx→audio_assets.json→AudioManager） | ✅ 代码完成（audio config check；单测 177/177；headless editor 导入通过；真实素材待补） | 待提交 |
 | V3-9 ① | 难度系统扩 5 档（rookie/easy/normal/hard/extreme）+ 标题/配色/5 关 + 降难度底 | ✅ 完成（梯度实测单调；单测 177/177；config check ok；手感交真人） | 待提交 |
+| V3-R | 回归修复：寻路卡桥/塔射箭/亡语落水/攻击动画（真人验收通过 2026-06-21） | ✅ 完成（单测 180/180） | 待提交 |
 
 > **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）四个 gate 全部代码完成**，其中 V3-6a 真人 7/7 验收通过，V3-6b/c/d 仍留手感/外观/演出真人验收。**V3-7（精灵美术）整阶段收官**（单位/塔/FX·投射物/地形/卡面 + 7b-6 美术圣经定稿）。**V3-8 音频资源表 + 运行时音频机制已代码完成**：首版 79 条音频需求表、`sound/` 目录、`AudioManager` autoload、场景触发接入；真实音频素材待后续补入。**下一步可继续 V3-9 平衡**（Claude/用户当前并行推进），V3-5 短战役+引导仍暂缓。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
 
-**测试**：177/177（`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`；音频单独走 `config/AudioConfig.xlsx` → `config/audio_assets.json`，用 `tools/build_audio_config.py --check` 校验。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
+**测试**：180/180（`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`；音频单独走 `config/AudioConfig.xlsx` → `config/audio_assets.json`，用 `tools/build_audio_config.py --check` 校验。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
 ---
 
@@ -717,3 +718,38 @@
 **范围边界 / 现状**：仅难度配置 + 选关 UI；不动战斗逻辑。难度**手感（5 档体感）整体交真人**（决策 35）；rookie/试炼场真人已确认能轻松取胜。
 
 **验收**：单测 **177/177**；`build_config.py --check` → `config check ok`；梯度实测单调。
+
+---
+
+## V3 回归修复批次 — 寻路 / 塔射箭 / 亡语落水 / 攻击动画（2026-06-21，真人验收通过）  （待提交）
+
+> 来源：V3 表现层回归验收（用户实机过核心对局）反馈的 4 个问题，一批修完并真人验收通过。跨 V3-1(寻路)/V3-1e(塔火表现)/V3-3(亡语)/V3-7b(攻击帧)。
+
+**A5-1 地面寻路卡桥/被风筝（逻辑 bug + 单测）**
+- 根因：地面兵 aggro 锁敌方单位后走「直线趋向」(`_step_toward_point`)，撞水即原地冻结；对岸/河上有敌兵时近战兵直奔对岸→撞河→卡岸/桥边，被对面远程(射程更长)持续风筝致死。
+- 修 `logic/arena.gd`：①`_nearest_enemy_unit_in_aggro` 加地面直线可达性过滤(`_ground_path_clear` 沿线采样无水/界外)，隔河敌兵不分心→继续走流场绕桥；②`_step_toward_point` 撞水回退 `_step_toward`(流场绕桥)、绝不冻结(治「卡桥」：窄桥上分心斜拉会单步滑出桥落水冻结)。
+- 单测 +2：`test_no_distraction_across_river`、`test_ground_unit_crosses_bridge_despite_across_river_enemy`。
+
+**A5-2 塔不射箭（纯 view）**
+- 逻辑层塔反击(V3-1e)一直在掉血，但 view 无开火视觉(V3-7b-3 投射物只挂远程兵、漏了塔)。
+- `view/battle_scene.gd`：`_detect_attacks` 加塔循环——塔 `_attack_cooldown` 上升沿=刚 `mark_attacked`→从塔身射箭到射程内最近敌兵(新 `_tower_target` view 侧复刻选择、`_tatkcd` 记上帧冷却)，复用投射物系统(arrow)。
+
+**亡语裂兵落水（逻辑 bug + 单测）**
+- 根因：`_remove_dead` 亡语在 `pos+offset` 直接生成、未校验落点；golem 死在桥/水边时偏移溢出到水。
+- 修 `logic/arena.gd`：新增 `_clamp_to_ground`(确定性环形搜最近可走地面 tile 中心)，地面裂兵生成经它钳制(飞行裂兵不钳)。
+- 单测 +1：`test_death_spawn_never_lands_in_water`。
+
+**攻击动画缺失（纯 view）**
+- 根因：knight/archer/musketeer 用独立 Combat sheet，attack 行/帧尺寸为 V3-7b「初版最佳读数」未核准→静态/错位；其余单位 walk+attack 同 sheet、行碰巧对(食人魔有动画)。
+- 经放大带行号预览图(临时 `_atk_*.png`，验后即删)核定，修 `view/sprite_db.gd` attack：knight row8→row0/row_up5；archer row4→row2/row_up3；**musketeer 实为 16×16 4列(原误配 32×32 2列)**、row0/row_up6；按 owner 补朝向(玩家朝上=row_up、敌朝下=row)。
+
+**A7 亡语裂兵数量**：早有 `test_on_death_spawn_summons_units` 覆盖，本批确认逻辑无 bug、未改(用户先前「没裂兵」为混战没看清)。
+
+**踩坑**：①battle_scene 多行 Edit 因某行空白匹配失败→改单行锚定。②女巫 Combat sheet 64×256 既可读作 32×32 2列、又可 16×16 4列，预览图按 32 渲染每格含 4 小人才发现实为 16px。
+
+**范围 / 现状**：攻击动画仅修 3 个独立 CB sheet 单位；其余单位若实机仍缺攻击动画/朝向别扭，后续按单位核对其 sheet 行(真人验收已确认本批 OK)。
+
+**验收**
+- 单测 **180/180**(+3：寻路 2 + 亡语落水 1；旧 177 零回归)。
+- battle_scene 360 帧 smoke 零脚本/运行期错误。
+- **真人实机验收通过(2026-06-21)**：寻路绕桥不卡/不被风筝、塔射箭、亡语裂兵不落水、治愈回血、骑士/弓箭手/女巫攻击帧动画，均 OK。
