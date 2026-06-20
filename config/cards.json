@@ -3,56 +3,176 @@
     "name": "骑士",
     "elixir_cost": 3,
     "skills": [
-      { "type": "spawn_unit", "unit_id": "knight_body", "count": 1 }
+      {
+        "type": "spawn_unit",
+        "unit_id": "knight_body",
+        "count": 1
+      }
     ]
   },
   "archers": {
     "name": "弓箭手",
     "elixir_cost": 3,
     "skills": [
-      { "type": "spawn_unit", "unit_id": "archer_body", "count": 2 }
+      {
+        "type": "spawn_unit",
+        "unit_id": "archer_body",
+        "count": 2
+      }
     ]
   },
   "giant": {
-    "name": "巨人",
+    "name": "食人魔",
     "elixir_cost": 5,
     "skills": [
-      { "type": "spawn_unit", "unit_id": "giant_body", "count": 1 }
+      {
+        "type": "spawn_unit",
+        "unit_id": "giant_body",
+        "count": 1
+      }
     ]
   },
   "goblins": {
     "name": "哥布林",
     "elixir_cost": 2,
     "skills": [
-      { "type": "spawn_unit", "unit_id": "goblin_body", "count": 3 }
+      {
+        "type": "spawn_unit",
+        "unit_id": "goblin_body",
+        "count": 3
+      }
     ]
   },
   "minions": {
-    "name": "亡灵",
+    "name": "怨灵",
     "elixir_cost": 3,
     "skills": [
-      { "type": "spawn_unit", "unit_id": "minion_body", "count": 3 }
+      {
+        "type": "spawn_unit",
+        "unit_id": "minion_body",
+        "count": 3
+      }
     ]
   },
   "fireball": {
-    "name": "火球",
+    "name": "火球术",
     "elixir_cost": 4,
     "skills": [
-      { "type": "aoe_damage", "radius": 1.5, "damage": 300 }
+      {
+        "type": "aoe_damage",
+        "radius": 3.0,
+        "damage": 300
+      }
     ]
   },
   "arrows": {
-    "name": "射箭",
+    "name": "箭雨",
     "elixir_cost": 3,
     "skills": [
-      { "type": "direct_damage", "damage": 150, "target": "first_enemy_in_lane" }
+      {
+        "type": "aoe_damage",
+        "radius": 2.5,
+        "damage": 140
+      }
     ]
   },
   "zap": {
-    "name": "电击",
+    "name": "电火花",
     "elixir_cost": 2,
     "skills": [
-      { "type": "direct_damage", "damage": 75, "target": "first_enemy_in_lane" }
+      {
+        "type": "direct_damage",
+        "damage": 75,
+        "target": "first_enemy_in_lane"
+      }
+    ]
+  },
+  "mini_pekka": {
+    "name": "狂战士",
+    "elixir_cost": 4,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "mini_pekka_body",
+        "count": 1
+      }
+    ]
+  },
+  "musketeer": {
+    "name": "女巫",
+    "elixir_cost": 4,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "musketeer_body",
+        "count": 1
+      }
+    ]
+  },
+  "skeletons": {
+    "name": "骷髅兵",
+    "elixir_cost": 2,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "skeleton_body",
+        "count": 4
+      }
+    ]
+  },
+  "baby_dragon": {
+    "name": "余烬火颅",
+    "elixir_cost": 4,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "baby_dragon_body",
+        "count": 1
+      }
+    ]
+  },
+  "lightning": {
+    "name": "闪电术",
+    "elixir_cost": 4,
+    "skills": [
+      {
+        "type": "direct_damage",
+        "damage": 280,
+        "target": "first_enemy_in_lane"
+      }
+    ]
+  },
+  "log": {
+    "name": "滚石",
+    "elixir_cost": 2,
+    "skills": [
+      {
+        "type": "aoe_damage",
+        "radius": 2.0,
+        "damage": 130
+      }
+    ]
+  },
+  "golem": {
+    "name": "亡灵巨像",
+    "elixir_cost": 7,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "golem_body",
+        "count": 1
+      }
+    ]
+  },
+  "heal": {
+    "name": "治愈术",
+    "elixir_cost": 3,
+    "skills": [
+      {
+        "type": "aoe_heal",
+        "radius": 3.0,
+        "damage": 150
+      }
     ]
   }
 }

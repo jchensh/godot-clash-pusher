@@ -1,0 +1,30 @@
+{
+  "default": {
+    "grid": { "w": 18, "h": 32 },
+    "river": {
+      "y_min": 15,
+      "y_max": 17,
+      "bridges": [
+        { "x_min": 3, "x_max": 5 },
+        { "x_min": 13, "x_max": 15 }
+      ]
+    },
+    "deploy": { "player_y_min": 17.0, "enemy_y_max": 15.0 },
+    "tower_combat": {
+      "king":     { "damage": 50, "attack_range": 7.0, "attack_speed": 1.0 },
+      "princess": { "damage": 50, "attack_range": 7.5, "attack_speed": 0.8 }
+    },
+    "towers": {
+      "player": {
+        "king":           { "x": 9.0,  "y": 29.0, "fw": 4, "fh": 4 },
+        "princess_left":  { "x": 4.5,  "y": 24.0, "fw": 3, "fh": 3 },
+        "princess_right": { "x": 13.5, "y": 24.0, "fw": 3, "fh": 3 }
+      },
+      "enemy": {
+        "king":           { "x": 9.0,  "y": 3.0,  "fw": 4, "fh": 4 },
+        "princess_left":  { "x": 4.5,  "y": 8.0,  "fw": 3, "fh": 3 },
+        "princess_right": { "x": 13.5, "y": 8.0,  "fw": 3, "fh": 3 }
+      }
+    }
+  }
+}

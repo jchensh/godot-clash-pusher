@@ -13,14 +13,22 @@ const DEFAULT_CONFIG_DIR := "res://config"
 var cards: Dictionary = {}
 var units: Dictionary = {}
 var levels: Dictionary = {}
+var arena: Dictionary = {}      # V3：2D 场地配置（arena.json），结构性、不进 Excel 镜像
+var run: Dictionary = {}        # V3-4：Roguelite run 结构（run.json），结构性、不进 Excel 镜像
+var relics: Dictionary = {}     # V3-4c：relic 修正器池（relics.json），结构性、不进 Excel 镜像
+var audio_assets: Dictionary = {} # V3-8：音频资源表（AudioConfig.xlsx -> audio_assets.json）
 var errors: Array[String] = []
 
-# 读入三张配置；全部成功且校验无误返回 true，否则 false（详情见 errors）。
+# 读入配置；全部成功且校验无误返回 true，否则 false（详情见 errors）。
 func load_all(config_dir: String = DEFAULT_CONFIG_DIR) -> bool:
 	errors.clear()
 	cards = _load_json_dict(config_dir.path_join("cards.json"))
 	units = _load_json_dict(config_dir.path_join("units.json"))
 	levels = _load_json_dict(config_dir.path_join("levels.json"))
+	arena = _load_json_dict(config_dir.path_join("arena.json"))
+	run = _load_json_dict(config_dir.path_join("run.json"))
+	relics = _load_json_dict(config_dir.path_join("relics.json"))
+	audio_assets = _load_json_dict(config_dir.path_join("audio_assets.json"))
 	_validate()
 	return errors.is_empty()
 
@@ -59,9 +67,18 @@ func _validate() -> void:
 		if typeof(u) != TYPE_DICTIONARY:
 			errors.append("unit '%s' 应为对象" % id)
 			continue
-		for f in ["hp", "damage", "move_speed"]:
+		for f in ["hp", "damage", "attack_speed", "move_speed", "attack_range", "target_type"]:
 			if not u.has(f):
 				errors.append("unit '%s' 缺少 %s" % [id, f])
+		# V3：attack_range 量纲改为 tile 距离（≥0，无上限）；move_speed 为 tile/秒。
+		if u.has("attack_range"):
+			var attack_range = u.get("attack_range")
+			if not _is_number(attack_range):
+				errors.append("unit '%s' 的 attack_range 应为数字" % id)
+			elif float(attack_range) < 0.0:
+				errors.append("unit '%s' 的 attack_range 应 ≥ 0" % id)
+		if u.has("target_type") and not ["ground", "air"].has(str(u.get("target_type"))):
+			errors.append("unit '%s' 的 target_type 应为 ground 或 air" % id)
 
 	for id in levels:
 		var lv = levels[id]
@@ -71,6 +88,72 @@ func _validate() -> void:
 		for f in ["elixir_regen_rate", "elixir_max", "match_duration"]:
 			if not lv.has(f):
 				errors.append("level '%s' 缺少 %s" % [id, f])
+
+	# arena.json（V3）：至少有 default 场地，含 grid/river/deploy/towers。
+	if arena.is_empty() or not arena.has("default"):
+		errors.append("arena.json 缺少 default 场地配置")
+	elif typeof(arena.get("default")) != TYPE_DICTIONARY:
+		errors.append("arena.default 应为对象")
+	else:
+		for f in ["grid", "river", "deploy", "towers"]:
+			if not (arena["default"] as Dictionary).has(f):
+				errors.append("arena.default 缺少 %s" % f)
+
+	# run.json（V3-4 Roguelite）：至少有 default，含非空 acts；每个节点 type 合法、
+	# level_id 必须在 levels 中；starter_deck（若有）的卡必须在 cards 中。
+	if run.is_empty() or not run.has("default"):
+		errors.append("run.json 缺少 default run 配置")
+	elif typeof(run.get("default")) != TYPE_DICTIONARY:
+		errors.append("run.default 应为对象")
+	else:
+		var rd: Dictionary = run["default"]
+		if not (rd.has("acts") and typeof(rd["acts"]) == TYPE_ARRAY and not (rd["acts"] as Array).is_empty()):
+			errors.append("run.default 缺少非空 acts 数组")
+		else:
+			for act in (rd["acts"] as Array):
+				if typeof(act) != TYPE_DICTIONARY:
+					continue
+				var act_nodes = act.get("nodes", [])
+				if typeof(act_nodes) != TYPE_ARRAY:
+					errors.append("run.default 某 act 缺少 nodes 数组")
+					continue
+				for n in act_nodes:
+					if typeof(n) != TYPE_DICTIONARY:
+						continue
+					if not ["battle", "elite", "boss"].has(String(n.get("type", ""))):
+						errors.append("run 节点 type 非法: '%s'" % str(n.get("type", "")))
+					if not levels.has(String(n.get("level_id", ""))):
+						errors.append("run 节点引用了不存在的 level '%s'" % str(n.get("level_id", "")))
+		var starter = rd.get("starter_deck", [])
+		if typeof(starter) == TYPE_ARRAY:
+			for cid in starter:
+				if not cards.has(cid):
+					errors.append("run.default 的 starter_deck 引用了不存在的 card '%s'" % str(cid))
+
+	# relics.json（V3-4c）：每个 relic 须为对象且含 mods 对象（数值修正器）。
+	for rid in relics:
+		var rdef = relics[rid]
+		if typeof(rdef) != TYPE_DICTIONARY:
+			errors.append("relic '%s' 应为对象" % str(rid))
+			continue
+		if typeof(rdef.get("mods")) != TYPE_DICTIONARY:
+			errors.append("relic '%s' 缺少 mods 对象" % str(rid))
+
+	# audio_assets.json（V3-8）：由 AudioConfig.xlsx 生成；运行时按 asset_id 查表播放。
+	for aid in audio_assets:
+		var adef = audio_assets[aid]
+		if typeof(adef) != TYPE_DICTIONARY:
+			errors.append("audio asset '%s' 应为对象" % str(aid))
+			continue
+		for f in ["display_name_zh", "type", "bus", "path", "asset_status", "loop", "volume_db", "pitch_min", "pitch_max", "max_polyphony"]:
+			if not adef.has(f):
+				errors.append("audio asset '%s' 缺少 %s" % [str(aid), f])
+		if adef.has("type") and not ["music", "ambience", "stinger", "ui", "sfx"].has(str(adef.get("type"))):
+			errors.append("audio asset '%s' 的 type 非法" % str(aid))
+		if adef.has("asset_status") and not ["planned", "sourced", "imported", "final"].has(str(adef.get("asset_status"))):
+			errors.append("audio asset '%s' 的 asset_status 非法" % str(aid))
+		if adef.has("path") and not str(adef.get("path")).begins_with("res://sound/"):
+			errors.append("audio asset '%s' 的 path 必须在 res://sound/ 下" % str(aid))
 
 	# 交叉引用：spawn_unit.unit_id 必须在 units 中；deck 中的 card 必须在 cards 中。
 	for cid in cards:
@@ -85,6 +168,14 @@ func _validate() -> void:
 				var uid = sk.get("unit_id", "")
 				if not units.has(uid):
 					errors.append("card '%s' 的 spawn_unit 引用了不存在的 unit '%s'" % [cid, str(uid)])
+
+	# 交叉引用：unit.death_spawn_unit（亡语召唤，V3-3）必须在 units 中。
+	for uid in units:
+		var u = units[uid]
+		if typeof(u) == TYPE_DICTIONARY and u.has("death_spawn_unit"):
+			var dsid = str(u.get("death_spawn_unit", ""))
+			if not units.has(dsid):
+				errors.append("unit '%s' 的 death_spawn_unit 引用了不存在的 unit '%s'" % [uid, dsid])
 
 	for lid in levels:
 		var lv = levels[lid]
@@ -108,6 +199,18 @@ func get_unit(id: String) -> Dictionary:
 func get_level(id: String) -> Dictionary:
 	return levels.get(id, {})
 
+func get_arena(id: String = "default") -> Dictionary:
+	return arena.get(id, {})
+
+func get_run(id: String = "default") -> Dictionary:
+	return run.get(id, {})
+
+func get_relic(id: String) -> Dictionary:
+	return relics.get(id, {})
+
+func get_audio_asset(id: String) -> Dictionary:
+	return audio_assets.get(id, {})
+
 func has_card(id: String) -> bool:
 	return cards.has(id)
 
@@ -116,3 +219,10 @@ func has_unit(id: String) -> bool:
 
 func has_level(id: String) -> bool:
 	return levels.has(id)
+
+func has_audio_asset(id: String) -> bool:
+	return audio_assets.has(id)
+
+func _is_number(value) -> bool:
+	var t := typeof(value)
+	return t == TYPE_INT or t == TYPE_FLOAT

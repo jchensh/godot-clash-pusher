@@ -1,0 +1,45 @@
+{
+  "default": {
+    "name": "Roguelite Run",
+    "node_modifiers": {
+      "elite": { "tower_hp_king": { "mult": 1.25 }, "tower_hp_princess": { "mult": 1.25 } },
+      "boss": { "tower_hp_king": { "mult": 1.5 }, "tower_hp_princess": { "mult": 1.4 } }
+    },
+    "starter_deck": [
+      "knight",
+      "archers",
+      "giant",
+      "goblins",
+      "minions",
+      "fireball",
+      "arrows",
+      "zap"
+    ],
+    "acts": [
+      {
+        "name": "Act 1",
+        "nodes": [
+          { "type": "battle", "level_id": "level_02" },
+          { "type": "battle", "level_id": "level_01" },
+          { "type": "boss", "level_id": "level_03" }
+        ]
+      },
+      {
+        "name": "Act 2",
+        "nodes": [
+          { "type": "battle", "level_id": "level_01" },
+          { "type": "elite", "level_id": "level_03" },
+          { "type": "boss", "level_id": "level_04" }
+        ]
+      },
+      {
+        "name": "Act 3",
+        "nodes": [
+          { "type": "battle", "level_id": "level_03" },
+          { "type": "elite", "level_id": "level_04" },
+          { "type": "boss", "level_id": "level_04" }
+        ]
+      }
+    ]
+  }
+}

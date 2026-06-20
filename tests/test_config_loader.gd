@@ -14,6 +14,9 @@ func test_load_all_succeeds() -> void:
 	assert_true(ok, "load_all 应成功; errors=%s" % str(loader.errors))
 	assert_true(loader.errors.is_empty(), "不应有错误")
 
+func test_excel_source_workbook_exists() -> void:
+	assert_true(FileAccess.file_exists("res://config/GameConfig.xlsx"), "策划源表 GameConfig.xlsx 应存在")
+
 func test_cards_loaded() -> void:
 	var loader = _make_loaded()
 	assert_true(loader.cards.size() > 0, "cards 非空")
@@ -37,6 +40,79 @@ func test_levels_loaded() -> void:
 	assert_eq(lv.get("elixir_max"), 10, "elixir_max=10")
 	assert_eq(lv.get("tower_hp").get("king"), 2400, "国王塔血量=2400")
 	assert_true((lv.get("player_deck") as Array).size() >= 1, "player_deck 非空")
+
+func test_v2_7a_expanded_pool() -> void:
+	# V2-7a 扩卡池：卡池扩到 ~14 卡 / ~9 单位，新增内容仍走三积木、零回归。
+	var loader = _make_loaded()
+	assert_true(loader.cards.size() >= 14, "卡池应扩到 >=14 张; 实际=%d" % loader.cards.size())
+	assert_true(loader.units.size() >= 9, "单位应扩到 >=9 个; 实际=%d" % loader.units.size())
+	for cid in ["mini_pekka", "musketeer", "skeletons", "baby_dragon", "lightning", "log"]:
+		assert_true(loader.has_card(cid), "应包含新卡 %s" % cid)
+	for uid in ["mini_pekka_body", "musketeer_body", "skeleton_body", "baby_dragon_body"]:
+		assert_true(loader.has_unit(uid), "应包含新单位 %s" % uid)
+
+func test_v2_7a_new_cards_well_formed() -> void:
+	# 新卡的技能积木结构正确：兵牌 spawn_unit + 数量；法术 direct/aoe。
+	var loader = _make_loaded()
+	var skeletons = loader.get_card("skeletons")
+	assert_eq(skeletons["skills"][0].get("type"), "spawn_unit", "skeletons 是 spawn_unit")
+	assert_eq(int(skeletons["skills"][0].get("count")), 4, "skeletons 生成 4 个骷髅")
+	var lightning = loader.get_card("lightning")
+	assert_eq(lightning["skills"][0].get("type"), "direct_damage", "lightning 是 direct_damage")
+	assert_eq(lightning["skills"][0].get("target"), "first_enemy_in_lane", "lightning 目标=first_enemy_in_lane")
+	var log_card = loader.get_card("log")
+	assert_eq(log_card["skills"][0].get("type"), "aoe_damage", "log 是 aoe_damage")
+	# 新单位关键数值（air 单位至少一个、近战反坦克 mini_pekka 高伤）。
+	assert_eq(loader.get_unit("baby_dragon_body").get("target_type"), "air", "小龙是空中单位")
+	assert_true(int(loader.get_unit("mini_pekka_body").get("damage")) >= 200, "迷你皮卡高单发伤害")
+
+func test_v2_7b_multi_level() -> void:
+	# V2-7b 多关卡：每关=独立遭遇战、自带难度。V3-9 平衡：扩 5 档（rookie→extreme），5 关一档一关、修复撞名+断层。
+	var loader = _make_loaded()
+	assert_true(loader.levels.size() >= 5, "关卡应扩到 >=5 个; 实际=%d" % loader.levels.size())
+	var expect := {"level_01": "rookie", "level_02": "easy", "level_05": "normal", "level_03": "hard", "level_04": "extreme"}
+	for lid in expect:
+		assert_true(loader.has_level(lid), "应包含关卡 %s" % lid)
+		var lv = loader.get_level(lid)
+		assert_eq(String(lv.get("ai_difficulty")), expect[lid], "%s 难度=%s" % [lid, expect[lid]])
+		assert_true(["rookie", "easy", "normal", "hard", "extreme"].has(String(lv.get("ai_difficulty"))), "%s 难度合法" % lid)
+		assert_eq((lv.get("player_deck") as Array).size(), 8, "%s player_deck 8 张" % lid)
+		assert_eq((lv.get("ai_deck") as Array).size(), 8, "%s ai_deck 8 张" % lid)
+	# 关卡数值差异化（节奏/时长）确实生效。
+	assert_almost_eq(float(loader.get_level("level_04").get("elixir_regen_rate")), 2.0, 0.0001, "生死战双倍圣水回速")
+	assert_eq(int(loader.get_level("level_04").get("match_duration")), 120, "生死战时长更短")
+
+func test_v3_arena_config_loaded() -> void:
+	# V3：arena.json 纳入 ConfigLoader 统一入口，含 default 场地（grid/river/deploy/towers）。
+	var loader = _make_loaded()
+	assert_false(loader.arena.is_empty(), "arena.json 应被加载")
+	var a = loader.get_arena("default")
+	assert_false(a.is_empty(), "应有 default 场地")
+	for f in ["grid", "river", "deploy", "towers"]:
+		assert_true(a.has(f), "arena.default 应含 %s" % f)
+	assert_true(int((a.get("grid") as Dictionary).get("w", 0)) > 0, "网格宽>0")
+	assert_true(int((a.get("grid") as Dictionary).get("h", 0)) > 0, "网格高>0")
+
+func test_v3_run_config_loaded() -> void:
+	# V3-4a：run.json 纳入 ConfigLoader 统一入口，含 default（starter_deck + 非空 acts）。
+	var loader = _make_loaded()
+	assert_false(loader.run.is_empty(), "run.json 应被加载")
+	var r = loader.get_run("default")
+	assert_false(r.is_empty(), "应有 default run")
+	assert_true((r.get("starter_deck") as Array).size() == 8, "starter_deck 8 张")
+	var acts = r.get("acts") as Array
+	assert_eq(acts.size(), 3, "3 个 act（决策 36）")
+	# 每个节点引用的 level 必须真实存在（交叉校验已在 load_all 跑过，这里再断言无错）。
+	assert_true(loader.errors.is_empty(), "run 交叉引用应有效; errors=%s" % str(loader.errors))
+
+func test_v3_relics_config_loaded() -> void:
+	# V3-4c：relics.json 纳入 ConfigLoader；每个 relic 含 mods 对象。
+	var loader = _make_loaded()
+	assert_false(loader.relics.is_empty(), "relics.json 应被加载")
+	assert_true(loader.relics.has("elixir_surge"), "应含 elixir_surge")
+	var r = loader.get_relic("elixir_surge")
+	assert_true(typeof(r.get("mods")) == TYPE_DICTIONARY, "relic 含 mods 对象")
+	assert_true(loader.errors.is_empty(), "relic 校验无错; errors=%s" % str(loader.errors))
 
 func test_missing_dir_reports_error() -> void:
 	var loader = ConfigLoaderScript.new()

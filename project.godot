@@ -1,6 +1,10 @@
 ; Engine configuration file.
-; 竖屏皇室战争式对推小游戏 — Godot 4.x
-; 详细规划见 PLAN.md（项目唯一权威规划）。
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
@@ -8,18 +12,33 @@ config_version=5
 
 config/name="对推小游戏"
 config/description="竖屏皇室战争式对推小游戏 (V1 白膜)"
+run/main_scene="res://view/main_menu.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
+
+[autoload]
+
+_mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
+I18n="*res://view/i18n.gd"
+AudioManager="*res://view/audio_manager.gd"
 
 [display]
 
 window/size/viewport_width=720
 window/size/viewport_height=1280
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
 window/handheld/orientation="portrait"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godot_ai/plugin.cfg")
+
+[gui]
+
+theme/custom_font="res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf"
 
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+textures/canvas_textures/default_texture_filter=0

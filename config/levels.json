@@ -4,9 +4,154 @@
     "elixir_regen_rate": 1.0,
     "elixir_max": 10,
     "match_duration": 180,
-    "player_deck": ["knight", "archers", "giant", "goblins", "minions", "fireball", "arrows", "zap"],
-    "ai_deck": ["knight", "archers", "giant", "goblins", "minions", "fireball", "arrows", "zap"],
+    "player_deck": [
+      "knight",
+      "archers",
+      "giant",
+      "goblins",
+      "minions",
+      "fireball",
+      "arrows",
+      "zap"
+    ],
+    "ai_deck": [
+      "knight",
+      "archers",
+      "giant",
+      "goblins",
+      "minions",
+      "fireball",
+      "arrows",
+      "zap"
+    ],
+    "ai_difficulty": "rookie",
+    "tower_hp": {
+      "king": 2400,
+      "princess": 1400
+    }
+  },
+  "level_02": {
+    "name": "试炼场",
+    "elixir_regen_rate": 1.0,
+    "elixir_max": 10,
+    "match_duration": 180,
+    "player_deck": [
+      "knight",
+      "archers",
+      "giant",
+      "goblins",
+      "minions",
+      "fireball",
+      "arrows",
+      "zap"
+    ],
+    "ai_deck": [
+      "knight",
+      "archers",
+      "giant",
+      "goblins",
+      "minions",
+      "skeletons",
+      "arrows",
+      "zap"
+    ],
+    "ai_difficulty": "easy",
+    "tower_hp": {
+      "king": 2400,
+      "princess": 1400
+    }
+  },
+  "level_03": {
+    "name": "冠军赛",
+    "elixir_regen_rate": 1.2,
+    "elixir_max": 10,
+    "match_duration": 180,
+    "player_deck": [
+      "knight",
+      "archers",
+      "giant",
+      "goblins",
+      "minions",
+      "fireball",
+      "arrows",
+      "zap"
+    ],
+    "ai_deck": [
+      "giant",
+      "mini_pekka",
+      "musketeer",
+      "baby_dragon",
+      "minions",
+      "fireball",
+      "lightning",
+      "archers"
+    ],
+    "ai_difficulty": "hard",
+    "tower_hp": {
+      "king": 2600,
+      "princess": 1500
+    }
+  },
+  "level_04": {
+    "name": "生死战",
+    "elixir_regen_rate": 2.0,
+    "elixir_max": 10,
+    "match_duration": 120,
+    "player_deck": [
+      "knight",
+      "archers",
+      "giant",
+      "goblins",
+      "minions",
+      "fireball",
+      "arrows",
+      "zap"
+    ],
+    "ai_deck": [
+      "goblins",
+      "skeletons",
+      "knight",
+      "archers",
+      "mini_pekka",
+      "log",
+      "zap",
+      "musketeer"
+    ],
+    "ai_difficulty": "extreme",
+    "tower_hp": {
+      "king": 2400,
+      "princess": 1400
+    }
+  },
+  "level_05": {
+    "name": "竞技场",
+    "elixir_regen_rate": 1.1,
+    "elixir_max": 10,
+    "match_duration": 180,
+    "player_deck": [
+      "knight",
+      "archers",
+      "giant",
+      "goblins",
+      "minions",
+      "fireball",
+      "arrows",
+      "zap"
+    ],
+    "ai_deck": [
+      "knight",
+      "archers",
+      "giant",
+      "goblins",
+      "minions",
+      "musketeer",
+      "fireball",
+      "arrows"
+    ],
     "ai_difficulty": "normal",
-    "tower_hp": { "king": 2400, "princess": 1400 }
+    "tower_hp": {
+      "king": 2500,
+      "princess": 1450
+    }
   }
 }

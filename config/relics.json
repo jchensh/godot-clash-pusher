@@ -1,0 +1,46 @@
+{
+  "elixir_surge": {
+    "name": "Elixir Surge",
+    "desc": "+0.3 elixir/s regen",
+    "rarity": "common",
+    "mods": { "elixir_regen_rate": { "add": 0.3 } }
+  },
+  "big_reservoir": {
+    "name": "Big Reservoir",
+    "desc": "+2 max elixir",
+    "rarity": "common",
+    "mods": { "elixir_max": { "add": 2 } }
+  },
+  "head_start": {
+    "name": "Head Start",
+    "desc": "Start each battle with +4 elixir",
+    "rarity": "common",
+    "mods": { "elixir_start": { "add": 4 } }
+  },
+  "fortified_walls": {
+    "name": "Fortified Walls",
+    "desc": "+25% princess tower HP",
+    "rarity": "uncommon",
+    "mods": { "tower_hp_princess": { "mult": 1.25 } }
+  },
+  "long_game": {
+    "name": "Long Game",
+    "desc": "+60s battle time",
+    "rarity": "uncommon",
+    "mods": { "match_duration": { "add": 60 } }
+  },
+  "royal_decree": {
+    "name": "Royal Decree",
+    "desc": "+30% king tower HP",
+    "rarity": "rare",
+    "mods": { "tower_hp_king": { "mult": 1.3 } },
+    "unlock": { "runs_won": 1 }
+  },
+  "giants_blood": {
+    "name": "Giant's Blood",
+    "desc": "+20% all tower HP",
+    "rarity": "rare",
+    "mods": { "tower_hp_king": { "mult": 1.2 }, "tower_hp_princess": { "mult": 1.2 } },
+    "unlock": { "bosses_defeated": 1 }
+  }
+}
