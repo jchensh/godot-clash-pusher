@@ -14,6 +14,7 @@ const RunRewardsScript = preload("res://logic/run_rewards.gd")
 const MetaScript = preload("res://logic/meta_progress.gd")
 const SaveScript = preload("res://logic/save_system.gd")
 const BattleScript = preload("res://logic/battle.gd")
+const SpriteDB = preload("res://view/sprite_db.gd")
 
 const BATTLE_SCENE := "res://view/battle_scene.tscn"
 const MENU_SCENE := "res://view/main_menu.tscn"
@@ -171,6 +172,10 @@ func _build_reward() -> void:
 			name_txt = tr("card_" + str(id))
 			sub_txt = tr("reward_cost") % int(_loader.get_card(id).get("elixir_cost", 0))
 		var card := _button(_overlay, "", Vector2(110, y), Vector2(500, 110), Color(0.16, 0.20, 0.30), GOLD, _on_pick.bind(id))
+		if not is_relic:                                  # 卡牌 draft：左侧加单位/法术肖像
+			var port := SpriteDB.make_card_portrait(str(id), _loader, Vector2(16, 14), Vector2(82, 82))
+			if port != null:
+				card.add_child(port)
 		_label(card, name_txt, Vector2(20, 18), Vector2(460, 40), 28, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 		_label(card, sub_txt, Vector2(20, 64), Vector2(460, 30), 18, Color(0.8, 0.85, 0.9), HORIZONTAL_ALIGNMENT_CENTER)
 		_offer_nodes[id] = card

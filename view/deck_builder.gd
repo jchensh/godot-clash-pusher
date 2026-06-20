@@ -6,6 +6,7 @@ extends Control
 
 const GameStateScript = preload("res://view/game_state.gd")
 const ConfigLoaderScript = preload("res://logic/config_loader.gd")
+const SpriteDB = preload("res://view/sprite_db.gd")
 const BATTLE_SCENE := "res://view/battle_scene.tscn"
 const LEVEL_SELECT_SCENE := "res://view/level_select.tscn"
 const DECK_SIZE := 8
@@ -76,8 +77,16 @@ func _build() -> void:
 		btn.add_theme_stylebox_override("pressed", _sbflat(SLOT_FILLED_BG.darkened(0.1), 8, 2, Color(0.40, 0.55, 0.42)))
 		btn.pressed.connect(_remove_at.bind(i))
 		add_child(btn)
-		var lbl := _pin_label("", Vector2(x, y), Vector2(150, 70), 22, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER)
-		_slots.append({"btn": btn, "label": lbl})
+		var port := TextureRect.new()       # 已选槽肖像（_refresh 按选中卡设纹理/隐显）
+		port.position = Vector2(x + 50, y + 3)
+		port.size = Vector2(50, 34)
+		port.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		port.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		port.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		port.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(port)
+		var lbl := _pin_label("", Vector2(x, y + 36), Vector2(150, 30), 18, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER)
+		_slots.append({"btn": btn, "label": lbl, "portrait": port})
 
 	# 计数
 	_count_label = _pin_label("", Vector2(400, 162), Vector2(290, 28), 24, Color(0.9, 0.9, 0.6), HORIZONTAL_ALIGNMENT_RIGHT)
@@ -114,7 +123,12 @@ func _pool_tile(id, x: float, y: float) -> void:
 	btn.add_theme_stylebox_override("pressed", _sbflat(bg.darkened(0.12), 10, 2, border))
 	btn.pressed.connect(_toggle.bind(id))
 	add_child(btn)
-	_pin_label("%s\n%d" % [_card_name(id), _cost(id)], Vector2(x, y), Vector2(150, 84), 21, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER)
+	var port := SpriteDB.make_card_portrait(str(id), _loader, Vector2(x + 49, y + 3), Vector2(52, 40))
+	if port != null:   # 有肖像 → 图在上、名+费在下；无肖像(箭雨/滚石/治疗) → 名+费居中
+		add_child(port)
+		_pin_label("%s\n%d" % [_card_name(id), _cost(id)], Vector2(x, y + 42), Vector2(150, 40), 15, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER)
+	else:
+		_pin_label("%s\n%d" % [_card_name(id), _cost(id)], Vector2(x, y), Vector2(150, 84), 21, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER)
 	# 选中金边（默认隐藏，_refresh 控制 visible）
 	var frame := Panel.new()
 	frame.position = Vector2(x - 2, y - 2)
@@ -145,10 +159,13 @@ func _refresh() -> void:
 		var s = _slots[i]
 		if i < _selected.size():
 			var id = _selected[i]
-			s.label.text = "%s\n%d" % [_card_name(id), _cost(id)]
+			s.label.text = _card_name(id)
+			s.portrait.texture = SpriteDB.card_portrait_tex(str(id), _loader)
+			s.portrait.visible = s.portrait.texture != null
 			s.btn.add_theme_stylebox_override("normal", _sbflat(SLOT_FILLED_BG, 8, 2, Color(0.40, 0.55, 0.42)))
 		else:
 			s.label.text = "+"
+			s.portrait.visible = false
 			s.btn.add_theme_stylebox_override("normal", _sbflat(SLOT_EMPTY_BG, 8, 2, Color(0.28, 0.30, 0.28)))
 	var full := _selected.size() == DECK_SIZE
 	_count_label.text = "%d / %d" % [_selected.size(), DECK_SIZE]

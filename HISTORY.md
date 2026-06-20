@@ -65,9 +65,10 @@
 | V3-7b-2 | 量产·塔（王=building1 / 公主=building6 + 保持长宽比贴地 + 金王冠 + 废墟态） | ✅ 完成（**MCP 截图验收**；单测 172/172） | 待提交 |
 | V3-7b-3 | 量产·技能命中 FX 按卡区分 + 远程投射物（路线 A 冷却跳升检测；含投射物只射一发 bug 修复） | ✅ 完成（**MCP 计数器验证投射物持续开火** + 真人玩通无错；单测 172/172） | `4aacb21` |
 | V3-7b-4 | 量产·地形 tile（Lonesome FLOOR 地面 / simple_water 12帧动画河 / COBBLESTONE 桥；逐逻辑格铺替纯色块） | ✅ 完成（单测 172/172 + smoke） | `f3c8abf` |
-| V3-7b-5 | 量产·战斗手牌卡面（兵牌=单位精灵正面帧 / 法术牌=特效图标；draft·组卡卡面留 7b-5b） | ✅ 完成（**真人验收通过**；单测 172/172 + smoke） | 待提交 |
+| V3-7b-5 | 量产·战斗手牌卡面（兵牌=单位精灵正面帧 / 法术牌=特效图标；draft·组卡卡面留 7b-5b） | ✅ 完成（**真人验收通过**；单测 172/172 + smoke） | `0e73300` |
+| V3-7b-5b | 量产·draft 奖励卡 + 组卡界面卡面（Control+TextureRect 加单位/法术肖像；共享 `SpriteDB.card_portrait_tex`） | ✅ 完成（**真人验收通过**；导入解析+单测 172/172+deck_builder smoke） | 待提交 |
 
-> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）进行中**：V3-6a（拖拽部署 + 落点反馈）**真人 7/7 验收通过**；V3-6b（战斗 juice，仅 view）代码完成、手感待真人验收；V3-6c（圣水/HUD 反馈，仅 view）代码完成、外观待真人验收；V3-6d（胜负演出 + run 奖励/结算揭示动画，仅 view）代码完成、演出待真人验收 → **V3-6（交互与游戏手感）四个 gate 全部代码完成**。**V3-7（精灵美术）进行中**：素材准备 + ① 卡牌改名 + ② 多语言（i18n + 像素中文字体 + 设置内中英切换）已完成（中文显示真人认可）；③ 美术垂直切片（骑士精灵 + building 塔贴图 + 火爆炸序列 FX，架构 A）**真人 6/6 验收通过**，精灵管线打通。**V3-7b 量产进行中**（执行序 7b-1 单位 → 7b-2 塔 → 7b-3 FX/投射物 → 7b-4 地形 → 7b-5 卡面 → 7b-6 圣经定稿）：**7b-1 单位全量（manifest `sprite_db.gd`）真人 1-7 通过；7b-2 塔（王/公主区分）MCP 截图验收；7b-3 技能 FX 按卡区分 + 远程投射物（含 bug 修复）MCP 验证**（已提交 `4aacb21`）；**7b-4 地形 tile（FLOOR 地面 / simple_water 动画河 / 鹅卵石桥）替纯色块**（已提交 `f3c8abf`）；**7b-5 战斗手牌卡面（兵=单位精灵 / 法术=图标）真人验收通过**。下一步 **V3-7b-5b draft/组卡卡面** → 7b-6 美术圣经定稿。V3-5 短战役 + 新手引导按决策 40 推迟到 V3-7 之后执行。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
+> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）进行中**：V3-6a（拖拽部署 + 落点反馈）**真人 7/7 验收通过**；V3-6b（战斗 juice，仅 view）代码完成、手感待真人验收；V3-6c（圣水/HUD 反馈，仅 view）代码完成、外观待真人验收；V3-6d（胜负演出 + run 奖励/结算揭示动画，仅 view）代码完成、演出待真人验收 → **V3-6（交互与游戏手感）四个 gate 全部代码完成**。**V3-7（精灵美术）进行中**：素材准备 + ① 卡牌改名 + ② 多语言（i18n + 像素中文字体 + 设置内中英切换）已完成（中文显示真人认可）；③ 美术垂直切片（骑士精灵 + building 塔贴图 + 火爆炸序列 FX，架构 A）**真人 6/6 验收通过**，精灵管线打通。**V3-7b 量产进行中**（执行序 7b-1 单位 → 7b-2 塔 → 7b-3 FX/投射物 → 7b-4 地形 → 7b-5 卡面 → 7b-6 圣经定稿）：**7b-1 单位全量（manifest `sprite_db.gd`）真人 1-7 通过；7b-2 塔（王/公主区分）MCP 截图验收；7b-3 技能 FX 按卡区分 + 远程投射物（含 bug 修复）MCP 验证**（已提交 `4aacb21`）；**7b-4 地形 tile（FLOOR 地面 / simple_water 动画河 / 鹅卵石桥）替纯色块**（已提交 `f3c8abf`）；**7b-5 战斗手牌卡面（已提交 `0e73300`）+ 7b-5b draft/组卡界面卡面（共享 `SpriteDB.card_portrait_tex`）真人验收通过**。**V3-7b 量产单位/塔/FX·投射物/地形/卡面(战斗+菜单) 全部完成**；下一步 **V3-7b-6 美术圣经定稿**（决策 42 升级）。V3-5 短战役 + 新手引导按决策 40 推迟到 V3-7 之后执行。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
 
 **测试**：172/172（macOS，`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
@@ -638,4 +639,11 @@
 - 范围：仅**战斗内手牌**（immediate `_draw`）。**draft 奖励卡 / 组卡界面**用 Control(Button+Label) 渲染、需另用 TextureRect，留 7b-5b。
 - 验收：单测 172/172；smoke 干净；**真人验收通过**。
 
-**下一步**：**V3-7b-5b**（draft 奖励 / 组卡界面卡面，Control+TextureRect）→ **7b-6 美术圣经定稿**（决策 42 升级，落 manifest 规格/调色/许可）。
+#### V3-7b-5b — draft 奖励卡 + 组卡界面卡面（仅 view）
+- `view/sprite_db.gd` +共享 API：`card_portrait_tex(card_id, loader)`（兵牌→单位正面帧 AtlasTexture；火球/闪电/电火花→特效帧；箭雨/滚石/治疗/未知→null）+ `make_card_portrait(...)`（产出配置好的 `TextureRect`：AtlasTexture + `STRETCH_KEEP_ASPECT_CENTERED` + 最近邻 + 鼠标穿透）+ FX 贴图 preload + `SPELL_ICON` 表。
+- `view/run_scene.gd`：draft 卡牌候选左侧加肖像（relic 候选不加）。
+- `view/deck_builder.gd`：卡池格（有肖像→图上名+费在下、无肖像法术→名+费居中）+ 已选 8 格（持久 `TextureRect`，`_refresh` 按选中卡设纹理/隐显，槽名改单行卡名）。
+- 范围：仅 view，逻辑/config/单测零改。箭雨/滚石/治疗在菜单为文字（无单帧贴图）。
+- 验收：编辑器导入解析全过；单测 172/172；deck_builder smoke 干净；**真人验收通过**。
+
+**下一步**：**V3-7b-6 美术圣经定稿**（决策 42 升级，把 manifest 规格/帧网格坐定方法/调色/朝向/许可写进 [docs/ART_ASSETS.md](docs/ART_ASSETS.md)）。

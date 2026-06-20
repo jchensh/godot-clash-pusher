@@ -20,6 +20,15 @@ const T_GOBLIN := preload("res://assets/units/goblin.png")
 const T_SKELLY := preload("res://assets/units/skelly.png")
 const T_FIRE_SKULL := preload("res://assets/units/fire_skull.png")
 const T_ORC := preload("res://assets/units/orc_champion.png")
+# 法术卡肖像用的特效帧（菜单/draft；arrows/log/heal 无单帧贴图→卡面回退文字）。
+const T_FX_FIRE := preload("res://assets/fx/Fire_Explosion_28x28.png")
+const T_FX_LIGHT := preload("res://assets/fx/Lightning_Energy_48x48.png")
+const T_FX_RED := preload("res://assets/fx/Red_Energy_48x48.png")
+const SPELL_ICON := {
+	"fireball": {"tex": T_FX_FIRE, "fpx": 28, "frame": 4},
+	"lightning": {"tex": T_FX_LIGHT, "fpx": 48, "frame": 4},
+	"zap": {"tex": T_FX_RED, "fpx": 48, "frame": 4},
+}
 
 # scale = 屏幕渲染相对 body 半径的倍率（16px 帧字符偏小 → 倍率更大）。
 # 各状态：fw/fh 帧尺寸、cols 列数、row 朝下行、row_up 朝上行(可选)、n 帧数、fps、
@@ -99,3 +108,41 @@ static func frame(unit_id: String, state: String, owner_id: int, t: float) -> Di
 	var col: int = int(t * fps) % n
 	var sc: float = float(u.get("scale", 1.2)) * float(s.get("sc", 1.0))
 	return {"tex": s["tex"], "src": Rect2(col * fw, row * fh, fw, fh), "scale": sc}
+
+# —— 卡片肖像（菜单/draft/组卡 用 TextureRect；7b-5b）——
+static func _atlas(tex: Texture2D, col: int, row: int, fw: int, fh: int) -> AtlasTexture:
+	var at := AtlasTexture.new()
+	at.atlas = tex
+	at.region = Rect2(col * fw, row * fh, fw, fh)
+	return at
+
+# 卡片肖像纹理：兵牌=单位正面静帧；火球/闪电/电火花=特效帧；其余(箭雨/滚石/治疗/未知)=null。
+static func card_portrait_tex(card_id: String, loader) -> Texture2D:
+	if loader == null or not loader.has_card(card_id):
+		return null
+	for sk in loader.get_card(card_id).get("skills", []):
+		if typeof(sk) == TYPE_DICTIONARY and str(sk.get("type")) == "spawn_unit":
+			var uid := str(sk.get("unit_id"))
+			if not DB.has(uid):
+				return null
+			var w: Dictionary = DB[uid]["walk"]
+			return _atlas(w["tex"], 0, int(w["row"]), int(w["fw"]), int(w["fh"]))   # col0,正面行
+	if SPELL_ICON.has(card_id):
+		var s: Dictionary = SPELL_ICON[card_id]
+		return _atlas(s["tex"], int(s["frame"]), 0, int(s["fpx"]), int(s["fpx"]))
+	return null
+
+# 现成可加到 Control 的肖像 TextureRect（无肖像返 null）。
+static func make_card_portrait(card_id: String, loader, pos: Vector2, size: Vector2) -> TextureRect:
+	var tex := card_portrait_tex(card_id, loader)
+	if tex == null:
+		return null
+	var t := TextureRect.new()
+	t.texture = tex
+	t.position = pos
+	t.size = size
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return t
