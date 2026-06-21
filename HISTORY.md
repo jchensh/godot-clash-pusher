@@ -72,6 +72,7 @@
 | V3-9 ① | 难度系统扩 5 档（rookie/easy/normal/hard/extreme）+ 标题/配色/5 关 + 降难度底 | ✅ 完成（梯度实测单调；单测 177/177；config check ok；手感交真人） | 待提交 |
 | V3-R | 回归修复：寻路卡桥/塔射箭/亡语落水/攻击动画（真人验收通过 2026-06-21） | ✅ 完成（单测 180/180） | 待提交 |
 | V3-UI | 像素 UI 设计系统(PixelUI 9-slice) + 6 屏全统一(主菜单/选关/设置/组卡/run/战斗HUD) + 选关返回 bug 修复 | ✅ 完成（真人验收通过 2026-06-21；单测 180/180） | 待提交 |
+| V3-5a | 新手战役框架：CampaignState(可重试) + campaign.json 6 教学关 + 战役中枢 view + battle 战役模式 + 菜单入口（含修复选关混入 campaign 关 bug） | ✅ 完成（真人 1-6 验收通过 2026-06-22；单测 186/186） | 待提交 |
 
 > **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）四个 gate 全部代码完成**，其中 V3-6a 真人 7/7 验收通过，V3-6b/c/d 仍留手感/外观/演出真人验收。**V3-7（精灵美术）整阶段收官**（单位/塔/FX·投射物/地形/卡面 + 7b-6 美术圣经定稿）。**V3-8 音频资源表 + 运行时音频机制已代码完成**：首版 79 条音频需求表、`sound/` 目录、`AudioManager` autoload、场景触发接入；真实音频素材待后续补入。**下一步可继续 V3-9 平衡**（Claude/用户当前并行推进），V3-5 短战役+引导仍暂缓。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
 
@@ -184,6 +185,14 @@
 > 43 为 **② 多语言（i18n）方案 + ① 卡牌改名**，用户 2026-06-16 确认（顺序 ①→②→③ 切片）。
 
 43. **i18n = JSON 翻译表 + autoload 运行时构建 Translation（headless 友好）+ 像素中文字体 + 设置内中英切换**：弃 CSV 编辑器导入，用 `config/i18n.json`(en/zh ~80 key) 经 `I18n` autoload 建 `Translation` 注入 `TranslationServer`；locale 存 `user://settings.cfg`、**默认中文**。字体 = Fusion Pixel 12px proportional zh_hans（OFL，Godot 自动禁 subpixel），`project.godot` [gui] 默认主题字体（中英共用）。6 场景全 `tr()`（卡名/relic/难度/数值模板/HUD/结算/奖励）；新增设置页（主菜单入口）切换即时(reload 本页)+存盘。**① 卡牌改名**：13 张改 `cards.json` name（食人魔/狂战士/女巫/怨灵/余烬火颅/亡灵巨像/滚石 + 火球术/箭雨/电火花/闪电术/骷髅兵/治愈术），id 不变、英文名入 i18n。**view 层零逻辑改、无新单测**（表现层）。
+
+> 44 为 **V3 UI/UX 整体优化（像素设计系统 + 全屏统一）**，用户 2026-06-21 确认。
+
+44. **UI = 像素设计系统 PixelUI + 全屏统一**：用户要求菜单/系统界面整体优化、保持像素风（非高清拟物）。立 `view/ui/pixel_ui.gd`（9-slice 按钮/面板 + 色板 + 动态色 sbpixel）+ `tools/gen_ui_assets.py` 生成贴图。落地 = Theme/9-slice（用户选）。**关键约束**：编辑器开着时 MCP 无法为全新 png 生成 `.import`（Godot 双实例锁，headless `--import` 抢锁）→ 定「固定中性样式（按钮/面板）用 9-slice 贴图、动态语义色（难度/稀有度）用程序化 StyleBoxFlat」。6 屏全统一（主菜单/选关/设置/组卡/run/战斗HUD），战斗 HUD 仅色板对齐、战场单位色不动。
+
+> 45 为 **V3-5 新手战役范围**，用户 2026-06-22 确认。
+
+45. **V3-5 = 新手战役（教学专属 6 关 + 可重试 + 无剧情 + roguelite 不锁）**：①关卡 = 新增教学专属序列（`campaign.json` 6 关，焦点 deploy→elixir→bridge→defend→spell→boss + AI 循序），不复用 5 难度关；新增 `campaign_01~06` 到 `levels.json`（⚠️**选关界面须过滤 campaign_* 关，否则混入自由对战**）。②流转 = 可重试（`CampaignState`：胜推进/败留原地重打/全胜通关，区别于 roguelite 二元永久死亡）。③剧情 = 首版极简（关名+focus，无叙事）。④roguelite = 一直开放（不锁）。⑤拆 V3-5a 框架 + V3-5b 新手引导覆盖层。⑥菜单「新手战役」主线金按钮。
 
 ---
 
@@ -780,3 +789,29 @@
 
 **验收**：单测 **180/180**（view 改动零回归）；MCP 逐屏 game 截图 + 日志零 runtime error；**真人实机验收通过（2026-06-21，关卡 + roguelite 全流程）**。
 **遗留**：①战斗节奏偏紧张（不够新手友好）→ 留作数值调优（用户作为策划后续调）。②battle HUD 深度 9-slice 改造、真实美术素材（itch UI kit/图形 logo）精致化留后续。
+
+---
+
+## V3-5 — 新手战役 + 新手引导（进行中）
+
+> 方向见决策 45（教学专属 6 关 / 可重试 / 无剧情 / roguelite 不锁）。拆 V3-5a 框架 + V3-5b 引导。
+
+### V3-5a — 战役框架（逻辑+config+view+单测）  （待提交，真人 1-6 验收通过 2026-06-22）
+**逻辑 + config**
+- `logic/campaign_state.gd`（CampaignState）：线性进度 + 可重试流转（胜推进 / 败·平·未结束留原地重打 / 全胜→CLEARED；区别于 RunState 二元永久死亡）+ to_dict/load_dict。
+- `config/campaign.json`（结构性、不进 Excel）：default = 6 关序列 `{level_id, focus}`（deploy→elixir→bridge→defend→spell→boss）。
+- `config/levels.json` +6 教学关 `campaign_01~06`：AI 循序（前 3 关弱卡组+rookie / 中 2 关基础+easy / boss 关强卡组+normal+高塔血 3200/1800）；player_deck 统一教学卡组。**ai_deck 必须满 8 张**（build_config 校验 + AI Deck 需 ≥5 循环抽牌）。
+- `config_loader.gd`：挂 campaign.json + 校验（每关 level_id 在 levels）+ get_campaign。
+- 单测 `test_campaign_state`(5) + `test_config_loader`(+1) → 186/186；config check ok。
+**view（接通，可玩）**
+- `view/campaign_scene.gd`+`.tscn`（新）：战役中枢——6 关进度链(当前金▶ / boss 红框 / 完成✓) + 进度 + 战斗/菜单，PixelUI 风格；处理回传结果(推进/重打)+通关结算；会话内进度（落盘留后续）。
+- `battle_scene.gd`：+战役模式（GameState.campaign 非空 → 用当前关 level_id + 关卡默认教学卡组建场；结算 CONTINUE 回中枢写 campaign_last_result；focus=boss 用 boss 音乐）。
+- `main_menu.gd`：+「新手战役」金按钮（主线），5 按钮重排。
+- `game_state.gd`：+campaign / campaign_last_result 握手。
+- `i18n.json`：+战役文案（campaign_title/progress/node/cleared + focus_* 6 个，中英；「新手战役」命名）。
+**踩坑 / 修复**
+- ⚠️ **选关界面 bug（本步引入、当天修复）**：campaign_* 加进 levels.json 后 `level_select` 读全部 levels 把 6 教学关也按难度档显示（4 个「新手村」等）、列表溢出挤掉返回按钮 → 修 `level_select._sorted_level_ids` 过滤 `begins_with("campaign_")`（真人验收过）。教训：往 levels.json 加非自由对战关时，所有消费 `levels.keys()` 的地方都要考虑过滤。
+- config_loader 多行 Edit 因深嵌套 Tab 数误判失败 → 改用浅缩进 ASCII 锚。
+**验收**：单测 186/186；config check ok；MCP 逐场景截图（战役中枢 / 选关恢复 5 关）正常；**真人实机 1-6 验收通过 2026-06-22**（菜单战役入口→中枢→打关→胜推进/败重打→通关→续档）。
+**遗留**：战役第一关仍偏难（首版 AI 占位，留后续整体大改时调，见 [[battle-pacing-too-tense]]）。
+**下一步**：V3-5b 新手引导覆盖层（局部高亮 + 手指指引 + 气泡文字，数据驱动引导脚本）。

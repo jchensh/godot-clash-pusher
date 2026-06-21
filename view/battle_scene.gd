@@ -147,8 +147,14 @@ func _ready() -> void:
 	loader.load_all()
 	match_obj = MatchScript.new(loader)
 	var run = GameStateScript.run
+	var campaign = GameStateScript.campaign
 	var battle_music_id := "music_battle_normal"
-	if run != null and not run.is_over():
+	if campaign != null and not campaign.is_over():
+		# 战役模式：当前关 level_id + 关卡默认教学卡组（不受组卡影响）。
+		if campaign.current_focus() == "boss":
+			battle_music_id = "music_battle_boss"
+		match_obj.setup(campaign.current_level_id(), [])
+	elif run != null and not run.is_over():
 		# Roguelite 模式：当前节点 level_id + run 卡组 + relic/节点难度修正器。
 		var node: Dictionary = run.current_node()
 		var node_type := String(node.get("type", "battle"))
@@ -983,7 +989,9 @@ func _start_ending() -> void:
 
 func _add_result_buttons() -> void:
 	_end_buttons_added = true
-	if GameStateScript.run != null:
+	if GameStateScript.campaign != null:
+		_result_btn(tr("btn_continue"), _vh * 0.62, _on_campaign_continue)   # 战役：回中枢推进/重打
+	elif GameStateScript.run != null:
 		_result_btn(tr("btn_continue"), _vh * 0.62, _on_run_continue)   # Roguelite：回 run 中枢推进/给奖励/结算
 	else:
 		_result_btn(tr("btn_rematch"), _vh * 0.62, _on_rematch)
@@ -1041,6 +1049,11 @@ func _on_run_continue() -> void:
 	AudioManager.play_sfx("ui_button_press")
 	GameStateScript.run_last_result = match_obj.get_result()
 	get_tree().change_scene_to_file(RunSceneScene)
+
+func _on_campaign_continue() -> void:
+	AudioManager.play_sfx("ui_button_press")
+	GameStateScript.campaign_last_result = match_obj.get_result()
+	get_tree().change_scene_to_file("res://view/campaign_scene.tscn")
 
 func _on_rematch() -> void:
 	AudioManager.play_sfx("ui_button_press")

@@ -16,6 +16,7 @@ var levels: Dictionary = {}
 var arena: Dictionary = {}      # V3：2D 场地配置（arena.json），结构性、不进 Excel 镜像
 var run: Dictionary = {}        # V3-4：Roguelite run 结构（run.json），结构性、不进 Excel 镜像
 var relics: Dictionary = {}     # V3-4c：relic 修正器池（relics.json），结构性、不进 Excel 镜像
+var campaign: Dictionary = {}   # V3-5：短战役关卡序列（campaign.json），结构性、不进 Excel 镜像
 var audio_assets: Dictionary = {} # V3-8：音频资源表（AudioConfig.xlsx -> audio_assets.json）
 var errors: Array[String] = []
 
@@ -28,6 +29,7 @@ func load_all(config_dir: String = DEFAULT_CONFIG_DIR) -> bool:
 	arena = _load_json_dict(config_dir.path_join("arena.json"))
 	run = _load_json_dict(config_dir.path_join("run.json"))
 	relics = _load_json_dict(config_dir.path_join("relics.json"))
+	campaign = _load_json_dict(config_dir.path_join("campaign.json"))
 	audio_assets = _load_json_dict(config_dir.path_join("audio_assets.json"))
 	_validate()
 	return errors.is_empty()
@@ -130,6 +132,22 @@ func _validate() -> void:
 				if not cards.has(cid):
 					errors.append("run.default 的 starter_deck 引用了不存在的 card '%s'" % str(cid))
 
+	# campaign.json（V3-5）：default 含非空 levels；每关 level_id 须在 levels 中。
+	if campaign.is_empty() or not campaign.has("default"):
+		errors.append("campaign.json 缺少 default 战役配置")
+	elif typeof(campaign.get("default")) != TYPE_DICTIONARY:
+		errors.append("campaign.default 应为对象")
+	else:
+		var clevels = (campaign["default"] as Dictionary).get("levels", [])
+		if typeof(clevels) != TYPE_ARRAY or (clevels as Array).is_empty():
+			errors.append("campaign.default 缺少非空 levels 数组")
+		else:
+			for cn in (clevels as Array):
+				if typeof(cn) != TYPE_DICTIONARY:
+					continue
+				if not levels.has(String(cn.get("level_id", ""))):
+					errors.append("campaign 关卡引用了不存在的 level '%s'" % str(cn.get("level_id", "")))
+
 	# relics.json（V3-4c）：每个 relic 须为对象且含 mods 对象（数值修正器）。
 	for rid in relics:
 		var rdef = relics[rid]
@@ -204,6 +222,9 @@ func get_arena(id: String = "default") -> Dictionary:
 
 func get_run(id: String = "default") -> Dictionary:
 	return run.get(id, {})
+
+func get_campaign(id: String = "default") -> Dictionary:
+	return campaign.get(id, {})
 
 func get_relic(id: String) -> Dictionary:
 	return relics.get(id, {})

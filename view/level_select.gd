@@ -45,7 +45,10 @@ func _build() -> void:
 
 # 关卡按难度档由易到难排，同档按 id 升序。
 func _sorted_level_ids(loader) -> Array:
-	var ids: Array = loader.levels.keys()
+	var ids: Array = []
+	for k in loader.levels.keys():
+		if not String(k).begins_with("campaign_"):   # 战役教学关只走「新手战役」中枢，不进自由对战选关
+			ids.append(k)
 	ids.sort_custom(func(a, b):
 		var ra: int = DIFF_RANK.get(String(loader.get_level(a).get("ai_difficulty", "normal")), 1)
 		var rb: int = DIFF_RANK.get(String(loader.get_level(b).get("ai_difficulty", "normal")), 1)
