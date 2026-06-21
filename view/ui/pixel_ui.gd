@@ -1,0 +1,70 @@
+# PixelUI —— V3 像素 UI 设计系统：色板常量 + 9-slice 按钮/面板样式工厂。
+#
+# 用 assets/ui/ 的 9-slice 贴图（tools/gen_ui_assets.py 生成）建 StyleBoxTexture。
+# 各场景 `const PixelUI := preload(".../pixel_ui.gd")` 后调 PixelUI.style_button(btn, kind)
+# 复用统一像素风（主菜单标杆 → 选关/组卡/设置/run/结算/战斗 HUD 全复用同一套）。
+# 不用 class_name（经 preload 调静态方法/常量，避开全局注册预检）。
+extends RefCounted
+
+# —— 色板（黑暗中世纪夜色，权威常量；改色重跑 gen_ui_assets.py）——
+const COL_PARCHMENT := Color("e7decb")   # 主文字（羊皮纸）
+const COL_MUTED := Color("a79fc0")       # 次文字
+const COL_GOLD := Color("ecb94e")        # 标题/强调金
+const COL_GOLD_INK := Color("2c1f06")    # 金按钮上的深字
+const COL_HINT := Color("6f6888")        # 脚注/弱提示
+const COL_OUTLINE := Color("3a2a08")     # 标题描边深金
+
+const _BTN_MARGIN := 5    # 按钮 9-slice 边距 = gen 脚本 e(2)+b(3)
+const _PANEL_MARGIN := 7  # 面板 9-slice 边距 = e(3)+b(4)
+
+static func _btn_box(path: String) -> StyleBoxTexture:
+	var sb := StyleBoxTexture.new()
+	sb.texture = load(path)
+	sb.set_texture_margin_all(_BTN_MARGIN)
+	sb.set_content_margin_all(10.0)
+	sb.set_content_margin(SIDE_LEFT, 20.0)
+	sb.set_content_margin(SIDE_RIGHT, 20.0)
+	return sb
+
+# 给按钮套 9-slice 三态 + 字色。kind = "stone" | "gold" | "dark"。
+static func style_button(btn: Button, kind: String = "stone", font_size: int = 34) -> void:
+	var base := "res://assets/ui/btn_%s_" % kind
+	btn.add_theme_stylebox_override("normal", _btn_box(base + "normal.png"))
+	btn.add_theme_stylebox_override("hover", _btn_box(base + "hover.png"))
+	btn.add_theme_stylebox_override("pressed", _btn_box(base + "pressed.png"))
+	btn.add_theme_stylebox_override("focus", _btn_box(base + "normal.png"))
+	btn.add_theme_stylebox_override("disabled", _btn_box(base + "normal.png"))
+	btn.add_theme_font_size_override("font_size", font_size)
+	var fc: Color = COL_GOLD_INK if kind == "gold" else COL_PARCHMENT
+	btn.add_theme_color_override("font_color", fc)
+	btn.add_theme_color_override("font_hover_color", fc)
+	btn.add_theme_color_override("font_pressed_color", fc)
+	btn.add_theme_color_override("font_focus_color", fc)
+
+# 容器面板 StyleBox（对话框/卡槽）。kind = "stone"(凸) | "inset"(凹槽)。
+static func panel_box(kind: String = "stone") -> StyleBoxTexture:
+	var sb := StyleBoxTexture.new()
+	sb.texture = load("res://assets/ui/panel_%s.png" % kind)
+	sb.set_texture_margin_all(_PANEL_MARGIN)
+	sb.set_content_margin_all(16.0)
+	return sb
+
+# 动态语义色（难度/relic 稀有度/阵营色）用 StyleBoxFlat 程序化像素方块（无圆角+边框），
+# 不为每种色生成 9-slice 贴图。固定中性样式（按钮/面板）才用上面的 9-slice。
+static func sbpixel(bg: Color, border_w: int = 3, border_col: Color = Color(0, 0, 0, 0)) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.set_corner_radius_all(0)   # 无圆角 = 像素方块
+	sb.set_border_width_all(border_w)
+	sb.border_color = border_col if border_col.a > 0.0 else bg.lightened(0.3)
+	return sb
+
+# 给场景铺夜色战场背景（已加为 parent 第一个 child，返回该 TextureRect）。
+static func add_background(parent: Control) -> TextureRect:
+	var bg := TextureRect.new()
+	bg.texture = load("res://assets/ui/menu_bg.png")
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(bg)
+	return bg

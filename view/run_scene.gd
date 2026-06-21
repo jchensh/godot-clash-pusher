@@ -1,4 +1,4 @@
-# RunScene —— Roguelite run 中枢（V3-4 最简 view）。
+# RunScene —— Roguelite run 中枢（V3-4 view，V3 UI 像素设计系统换皮）。
 #
 # 显示节点连战链 + 当前 run 卡组/relic，驱动「打当前节点 → 回来推进 → 给奖励(draft 卡/relic) → 下一节点」，
 # run 结束弹结算并更新 meta + 存盘。所有 run 流转/奖励/解锁/存档都走逻辑层
@@ -6,6 +6,7 @@
 # 与 battle_scene 经 GameState.run / run_last_result 握手（玩家在 battle_scene 实打，回来这里结算）。
 extends Control
 
+const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const GameStateScript = preload("res://view/game_state.gd")
 const ConfigLoaderScript = preload("res://logic/config_loader.gd")
 const RunMapScript = preload("res://logic/run_map.gd")
@@ -110,9 +111,9 @@ func _prepare_reward(fought_type: String) -> void:
 func _refresh_content() -> void:
 	_clear(_content)
 	var run = GameStateScript.run
-	_label(_content, tr("run_title"), Vector2(0, 24), Vector2(720, 50), 40, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+	_gold_title(_content, tr("run_title"), 24, 40)
 	var prog := tr("run_progress") % [mini(run.cursor + 1, run.map.size()), run.map.size(), run.wins]
-	_label(_content, prog, Vector2(0, 78), Vector2(720, 26), 20, Color(0.78, 0.82, 0.78), HORIZONTAL_ALIGNMENT_CENTER)
+	_label(_content, prog, Vector2(0, 80), Vector2(720, 26), 20, PixelUI.COL_MUTED, HORIZONTAL_ALIGNMENT_CENTER)
 
 	# 节点链（线性）：完成=暗绿、当前=金、未来=灰、boss 红描边。
 	var y := 120.0
@@ -142,10 +143,10 @@ func _refresh_content() -> void:
 
 	# 底部按钮
 	var disabled: bool = _mode != "none" or GameStateScript.run.is_over()
-	var fight := _button(_content, tr("btn_fight"), Vector2(40, 1090), Vector2(300, 84), Color(0.18, 0.42, 0.24), Color(0.45, 0.85, 0.55), _on_fight)
+	var fight := _button(_content, tr("btn_fight"), Vector2(40, 1090), Vector2(300, 84), "gold", _on_fight)
 	fight.disabled = disabled
-	_button(_content, tr("btn_new_run"), Vector2(360, 1090), Vector2(150, 84), Color(0.34, 0.26, 0.20), Color(0.7, 0.55, 0.4), _on_new_run)
-	_button(_content, tr("btn_menu"), Vector2(530, 1090), Vector2(150, 84), Color(0.20, 0.22, 0.26), Color(0.45, 0.50, 0.56), _on_menu)
+	_button(_content, tr("btn_new_run"), Vector2(360, 1090), Vector2(150, 84), "stone", _on_new_run)
+	_button(_content, tr("btn_menu"), Vector2(530, 1090), Vector2(150, 84), "dark", _on_menu)
 
 # ---------------- 奖励 / 结算覆盖层 ----------------
 func _refresh_overlay() -> void:
@@ -174,7 +175,7 @@ func _build_reward() -> void:
 		else:
 			name_txt = tr("card_" + str(id))
 			sub_txt = tr("reward_cost") % int(_loader.get_card(id).get("elixir_cost", 0))
-		var card := _button(_overlay, "", Vector2(110, y), Vector2(500, 110), Color(0.16, 0.20, 0.30), GOLD, _on_pick.bind(id))
+		var card := _reward_card(Vector2(110, y), Vector2(500, 110), _on_pick.bind(id))
 		if not is_relic:                                  # 卡牌 draft：左侧加单位/法术肖像
 			var port := SpriteDB.make_card_portrait(str(id), _loader, Vector2(16, 14), Vector2(82, 82))
 			if port != null:
@@ -185,7 +186,7 @@ func _build_reward() -> void:
 		_anim_pop(card, 0.12 + idx * 0.10, 40.0)   # 逐张错峰揭示
 		idx += 1
 		y += 130.0
-	var skip := _button(_overlay, tr("btn_skip"), Vector2(260, y + 10.0), Vector2(200, 64), Color(0.22, 0.24, 0.28), Color(0.5, 0.55, 0.6), _on_skip)
+	var skip := _button(_overlay, tr("btn_skip"), Vector2(260, y + 10.0), Vector2(200, 64), "dark", _on_skip)
 	_anim_pop(skip, 0.12 + idx * 0.10, 20.0)
 
 func _build_summary() -> void:
@@ -205,7 +206,7 @@ func _build_summary() -> void:
 			for rid in newly:
 				names.append(tr("relic_" + str(rid) + "_name"))
 			_anim_pop(_label(_overlay, tr("unlocked") % ", ".join(names), Vector2(0, 540), Vector2(720, 28), 18, GOLD, HORIZONTAL_ALIGNMENT_CENTER), 0.42, 20.0)
-	_anim_pop(_button(_overlay, tr("btn_back_menu"), Vector2(210, 620), Vector2(300, 72), Color(0.20, 0.22, 0.26), Color(0.45, 0.50, 0.56), _on_summary_menu), 0.55, 20.0)
+	_anim_pop(_button(_overlay, tr("btn_back_menu"), Vector2(210, 620), Vector2(300, 72), "dark", _on_summary_menu), 0.55, 20.0)
 
 # ---------------- 交互回调 ----------------
 func _on_fight() -> void:
@@ -284,11 +285,7 @@ func _on_summary_menu() -> void:
 
 # ---------------- 小工具 ----------------
 func _build_bg() -> void:
-	var r := ColorRect.new()
-	r.color = Color(0.09, 0.12, 0.10, 1.0)
-	r.set_anchors_preset(Control.PRESET_FULL_RECT)
-	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(r)
+	PixelUI.add_background(self)
 
 func _layer() -> Control:
 	var c := Control.new()
@@ -310,11 +307,16 @@ func _clear(c: Control) -> void:
 		c.remove_child(n)
 		n.free()
 
+func _gold_title(parent: Control, text: String, y: float, fs: int) -> void:
+	for off in [Vector2(3, 3), Vector2(-3, 3), Vector2(3, -3), Vector2(-3, -3)]:
+		_label(parent, text, Vector2(off.x, y + off.y), Vector2(720, fs + 16), fs, PixelUI.COL_OUTLINE, HORIZONTAL_ALIGNMENT_CENTER)
+	_label(parent, text, Vector2(0, y), Vector2(720, fs + 16), fs, PixelUI.COL_GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+
 func _panel(parent: Control, pos: Vector2, size: Vector2, bg: Color, border: Color, bw: int) -> Control:
 	var p := Panel.new()
 	p.position = pos
 	p.size = size
-	p.add_theme_stylebox_override("panel", _sbflat(bg, 8, bw, border))
+	p.add_theme_stylebox_override("panel", PixelUI.sbpixel(bg, bw, border))
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(p)
 	return p
@@ -333,26 +335,35 @@ func _label(parent: Control, text: String, pos: Vector2, size: Vector2, font_siz
 	parent.add_child(l)
 	return l
 
-func _button(parent: Control, text: String, pos: Vector2, size: Vector2, bg: Color, border: Color, cb: Callable) -> Button:
+# 普通按钮：9-slice 石碑（kind = gold/stone/dark）+ 按下 scale juice + disabled 灰。
+func _button(parent: Control, text: String, pos: Vector2, size: Vector2, kind: String, cb: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.position = pos
 	b.size = size
+	b.pivot_offset = size * 0.5
 	b.focus_mode = Control.FOCUS_NONE
-	b.add_theme_font_size_override("font_size", 28)
-	b.add_theme_stylebox_override("normal", _sbflat(bg, 10, 2, border))
-	b.add_theme_stylebox_override("hover", _sbflat(bg.lightened(0.15), 10, 2, border))
-	b.add_theme_stylebox_override("pressed", _sbflat(bg.darkened(0.12), 10, 2, border))
-	b.add_theme_stylebox_override("disabled", _sbflat(Color(0.18, 0.20, 0.18), 10, 2, Color(0.30, 0.33, 0.30)))
-	b.add_theme_color_override("font_color", Color(0.95, 0.96, 0.97))
+	PixelUI.style_button(b, kind, 28)
+	b.add_theme_stylebox_override("disabled", PixelUI.sbpixel(Color(0.18, 0.20, 0.18), 3, Color(0.30, 0.33, 0.30)))
+	b.add_theme_color_override("font_disabled_color", Color(0.5, 0.5, 0.55))
 	b.pressed.connect(cb)
+	b.button_down.connect(_scale_to.bind(b, 0.96))
+	b.button_up.connect(_scale_to.bind(b, 1.0))
 	parent.add_child(b)
 	return b
 
-func _sbflat(bg: Color, radius: int, border_w: int, border_col: Color) -> StyleBoxFlat:
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = bg
-	sb.set_corner_radius_all(radius)
-	sb.set_border_width_all(border_w)
-	sb.border_color = border_col
-	return sb
+# 奖励候选卡：可点像素方块（蓝面 + 金边，内部叠肖像/文字），选中 flourish 由 _on_pick 接管。
+func _reward_card(pos: Vector2, size: Vector2, cb: Callable) -> Button:
+	var b := Button.new()
+	b.position = pos
+	b.size = size
+	b.focus_mode = Control.FOCUS_NONE
+	b.add_theme_stylebox_override("normal", PixelUI.sbpixel(Color(0.16, 0.20, 0.30), 3, GOLD))
+	b.add_theme_stylebox_override("hover", PixelUI.sbpixel(Color(0.21, 0.26, 0.39), 3, GOLD))
+	b.add_theme_stylebox_override("pressed", PixelUI.sbpixel(Color(0.12, 0.15, 0.24), 3, GOLD))
+	b.pressed.connect(cb)
+	_overlay.add_child(b)
+	return b
+
+func _scale_to(c: Control, s: float) -> void:
+	create_tween().tween_property(c, "scale", Vector2(s, s), 0.07)

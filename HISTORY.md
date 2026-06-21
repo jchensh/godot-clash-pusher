@@ -71,6 +71,7 @@
 | V3-8 | 音频资源表 + 运行时音频机制（AudioConfig.xlsx→audio_assets.json→AudioManager） | ✅ 代码完成（audio config check；单测 177/177；headless editor 导入通过；真实素材待补） | 待提交 |
 | V3-9 ① | 难度系统扩 5 档（rookie/easy/normal/hard/extreme）+ 标题/配色/5 关 + 降难度底 | ✅ 完成（梯度实测单调；单测 177/177；config check ok；手感交真人） | 待提交 |
 | V3-R | 回归修复：寻路卡桥/塔射箭/亡语落水/攻击动画（真人验收通过 2026-06-21） | ✅ 完成（单测 180/180） | 待提交 |
+| V3-UI | 像素 UI 设计系统(PixelUI 9-slice) + 6 屏全统一(主菜单/选关/设置/组卡/run/战斗HUD) + 选关返回 bug 修复 | ✅ 完成（真人验收通过 2026-06-21；单测 180/180） | 待提交 |
 
 > **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）四个 gate 全部代码完成**，其中 V3-6a 真人 7/7 验收通过，V3-6b/c/d 仍留手感/外观/演出真人验收。**V3-7（精灵美术）整阶段收官**（单位/塔/FX·投射物/地形/卡面 + 7b-6 美术圣经定稿）。**V3-8 音频资源表 + 运行时音频机制已代码完成**：首版 79 条音频需求表、`sound/` 目录、`AudioManager` autoload、场景触发接入；真实音频素材待后续补入。**下一步可继续 V3-9 平衡**（Claude/用户当前并行推进），V3-5 短战役+引导仍暂缓。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
 
@@ -753,3 +754,29 @@
 - 单测 **180/180**(+3：寻路 2 + 亡语落水 1；旧 177 零回归)。
 - battle_scene 360 帧 smoke 零脚本/运行期错误。
 - **真人实机验收通过(2026-06-21)**：寻路绕桥不卡/不被风筝、塔射箭、亡语裂兵不落水、治愈回血、骑士/弓箭手/女巫攻击帧动画，均 OK。
+
+---
+
+## V3 UI/UX — 像素设计系统 + 全屏统一升级（2026-06-21，真人验收通过）  （待提交）
+
+> 来源：用户要求「整个游戏菜单/系统界面整体优化一版、保持像素风」。先立设计系统 + 主菜单标杆（用户认可「夜色战场 + 石碑按钮」布局方向，美术=像素风），再一口气推广到所有屏。落地方式 = Theme/9-slice（用户选定）。
+
+**设计系统 PixelUI（`view/ui/pixel_ui.gd` + `tools/gen_ui_assets.py` + `assets/ui/`）**
+- 色板常量（黑暗中世纪夜色：羊皮纸字/金/圣水紫/石板/夜底）+ 字体（中文 Fusion Pixel；标题金描边）。
+- `tools/gen_ui_assets.py`（PIL 生成器，保留以便重生成/调色）→ `assets/ui/` 12 张：9-slice 按钮石板/烫金/暗各三态 + 凸/凹面板 + 720×1280 夜色战场背景。
+- API：`style_button(btn,kind)` 套 9-slice 三态 + 字色；`panel_box(kind)` 容器；`sbpixel(bg,bw,col)` 动态语义色 StyleBoxFlat 像素方块；`add_background()` 一键铺夜色背景。
+
+**架构决策（编辑器开着 + MCP 无法导入新贴图）**：Godot 双实例锁 → 编辑器 GUI 开着时 MCP `reimport`/`write_text scan` 都无法为**全新** png 生成 `.import`（headless `--import` 又抢锁）。故定：**固定中性样式（按钮/面板）用 9-slice 贴图**（关编辑器时一次性 headless 导入）；**动态语义色（难度色等）用 `sbpixel` 程序化像素方块**，不新增贴图。曾试的 card_tint/badge_tint 可染贴图因此弃用、已删。
+
+**6 屏统一（仅 view，逻辑/单测零改；MCP 逐屏实跑 game 截图验证、零 runtime error）**
+- `main_menu`：夜色背景 + 9-slice 烫金石碑「开始」+ 石板按钮 + 像素金描边标题 + 按下 scale juice + 音效。
+- `level_select`：5 档难度色像素方块卡（`sbpixel` 难度色）+ 夜色背景 + 金标题；**修复返回按钮被遮挡 bug**（5 卡固定布局 270 起×200 溢出屏外 → 压缩到 238 起×180，返回按钮进屏）。
+- `settings`：夜色 + 中/英 gold/stone 按钮。
+- `deck_builder`：像素方块卡池（SpriteDB 肖像保留）+ 9-slice 出战(金)/返回(暗) + 金选中框。
+- `run_scene`：像素方块节点链（当前金/boss 红框）+ 9-slice 战斗(金)/新征程(石)/菜单(暗) + 金标题 + 奖励/结算覆盖层动画保留。
+- `battle_scene` HUD **轻量对齐**：`COL_PANEL/CARD_BG/CARD_SEL/CROWN` 对齐 PixelUI 石板/金 + 顶栏底/卡面像素描边；**战场单位色 `COL_PLAYER/OPPONENT` 不动**（与单位染色耦合）。
+
+**踩坑**：①新贴图 import（见架构决策）。②run_scene 重构误留垃圾行（`add_child.call_deferred`）→ 修。③`AudioManager` autoload 在 MCP 频繁 stop/run 切场景时报 `Identifier not found: AudioManager`（reload 时序瞬时误报，运行时 autoload 正常、正常启动不复现）——非 bug，记录备查。
+
+**验收**：单测 **180/180**（view 改动零回归）；MCP 逐屏 game 截图 + 日志零 runtime error；**真人实机验收通过（2026-06-21，关卡 + roguelite 全流程）**。
+**遗留**：①战斗节奏偏紧张（不够新手友好）→ 留作数值调优（用户作为策划后续调）。②battle HUD 深度 9-slice 改造、真实美术素材（itch UI kit/图形 logo）精致化留后续。

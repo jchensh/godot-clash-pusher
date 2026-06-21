@@ -26,7 +26,8 @@ const COL_BG := Color(0.10, 0.12, 0.11)
 const COL_PLAYER := Color(0.35, 0.60, 1.0)
 const COL_OPPONENT := Color(1.0, 0.42, 0.38)
 const COL_ELIXIR := Color(0.80, 0.33, 0.96)
-const COL_PANEL := Color(0.05, 0.07, 0.06, 0.88)
+const COL_PANEL := Color(0.10, 0.08, 0.14, 0.96)   # HUD 底，对齐 PixelUI 夜色石板
+const COL_PANEL_EDGE := Color(0.34, 0.30, 0.45)    # HUD 底板像素高光描边
 const COL_OK := Color(0.45, 1.0, 0.55)        # 落点合法（ghost/高亮）
 const COL_BAD := Color(1.0, 0.42, 0.40)       # 落点非法
 
@@ -50,9 +51,9 @@ const HITSTOP_DMG := 200.0                      # 触发顿帧的单次伤害阈
 const HITSTOP_DUR := 0.06                       # 顿帧（冻结 sim）时长
 
 # —— V3-6c HUD 反馈 ——
-const COL_CARD_BG := Color(0.12, 0.13, 0.18, 0.95)
-const COL_CARD_SEL := Color(0.22, 0.19, 0.10, 0.97)
-const COL_CROWN := Color(1.0, 0.85, 0.32)
+const COL_CARD_BG := Color(0.23, 0.21, 0.32, 0.96)    # 卡面底 = PixelUI 石板
+const COL_CARD_SEL := Color(0.40, 0.33, 0.16, 0.97)   # 选中卡 = 暗金
+const COL_CROWN := Color(0.925, 0.725, 0.305)         # 王冠/强调金 = PixelUI COL_GOLD
 
 # —— V3-6d 胜负演出 ——
 const END_BTN_DELAY := 0.85                     # 结算按钮淡入延迟（先放胜负演出）
@@ -355,6 +356,7 @@ func _draw_units(a) -> void:
 
 func _draw_topbar() -> void:
 	draw_rect(Rect2(0, 0, _vw, TOPBAR_H), COL_PANEL)
+	draw_rect(Rect2(0, TOPBAR_H - 3.0, _vw, 3.0), COL_PANEL_EDGE)   # 底部像素描边分隔
 	var p_crowns := _crowns(match_obj.battle.opponent_towers)   # 你拆掉的敌塔
 	var o_crowns := _crowns(match_obj.battle.player_towers)
 	_text(Vector2(12, 28), tr("hud_you"), COL_PLAYER, 16)
@@ -913,7 +915,7 @@ func _draw_cards() -> void:
 		if sel:
 			draw_rect(rect, COL_CROWN, false, 3.0)
 		else:
-			draw_rect(rect, Color(0, 0, 0, 0.5), false, 1.0)
+			draw_rect(rect, COL_PANEL_EDGE, false, 2.0)   # 石板高光描边（像素质感）
 
 # 卡面图：兵牌=单位精灵正面静帧（自然色，不染队伍色）；法术牌=代表特效图标。
 func _draw_card_art(cid: String, c: Vector2, box: float) -> void:
