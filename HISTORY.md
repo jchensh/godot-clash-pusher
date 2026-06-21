@@ -73,6 +73,7 @@
 | V3-R | 回归修复：寻路卡桥/塔射箭/亡语落水/攻击动画（真人验收通过 2026-06-21） | ✅ 完成（单测 180/180） | 待提交 |
 | V3-UI | 像素 UI 设计系统(PixelUI 9-slice) + 6 屏全统一(主菜单/选关/设置/组卡/run/战斗HUD) + 选关返回 bug 修复 | ✅ 完成（真人验收通过 2026-06-21；单测 180/180） | 待提交 |
 | V3-5a | 新手战役框架：CampaignState(可重试) + campaign.json 6 教学关 + 战役中枢 view + battle 战役模式 + 菜单入口（含修复选关混入 campaign 关 bug） | ✅ 完成（真人 1-6 验收通过 2026-06-22；单测 186/186） | 待提交 |
+| V3-5b | 新手引导覆盖层：tutorial.json 数据驱动 + battle_scene 引导(压暗/挖洞高亮/手指/气泡, tap+动作推进) | ✅ 完成（真人验收通过 2026-06-22；单测 186/186） | 待提交 |
 
 > **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）四个 gate 全部代码完成**，其中 V3-6a 真人 7/7 验收通过，V3-6b/c/d 仍留手感/外观/演出真人验收。**V3-7（精灵美术）整阶段收官**（单位/塔/FX·投射物/地形/卡面 + 7b-6 美术圣经定稿）。**V3-8 音频资源表 + 运行时音频机制已代码完成**：首版 79 条音频需求表、`sound/` 目录、`AudioManager` autoload、场景触发接入；真实音频素材待后续补入。**下一步可继续 V3-9 平衡**（Claude/用户当前并行推进），V3-5 短战役+引导仍暂缓。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
 
@@ -815,3 +816,15 @@
 **验收**：单测 186/186；config check ok；MCP 逐场景截图（战役中枢 / 选关恢复 5 关）正常；**真人实机 1-6 验收通过 2026-06-22**（菜单战役入口→中枢→打关→胜推进/败重打→通关→续档）。
 **遗留**：战役第一关仍偏难（首版 AI 占位，留后续整体大改时调，见 [[battle-pacing-too-tense]]）。
 **下一步**：V3-5b 新手引导覆盖层（局部高亮 + 手指指引 + 气泡文字，数据驱动引导脚本）。
+
+### V3-5b — 新手引导覆盖层（仅 view + config，真人验收）  （待提交，真人验收通过 2026-06-22）
+**前置决策**：见决策 45 + 用户 2026-06-22 选定（JSON 数据驱动 / 首版只第 1 关核心引导 / 动作触发为主+点击）。纯 view 表现层（决策 30/41 路线），无逻辑改、无新单测。
+**新增 / 修改**
+- `config/tutorial.json`（新，结构性、不进 Excel）：`campaign_01` 引导 4 步 intro→elixir→deploy→push，每步 `{text_key, highlight, finger, advance}`；advance = tap(点击) / card_played(出兵动作触发)。
+- `config_loader.gd`：挂 tutorial.json + `get_tutorial(level_id)`（结构性、无校验）。
+- `config/i18n.json`：+引导文案 `tut_c1_*` + `tut_continue`（中英）。
+- `view/battle_scene.gd`：引导集成——`_init_tutorial`（仅战役模式 + 当前关有脚本才加载，单关/roguelite 不触发）；`_input` tap 步骤吃掉点击推进（不误出兵）；出牌成功 `_tut_on_action("card_played")` 推进；`_draw_tutorial` 覆盖层（none=全屏压暗 / 有 highlight=四矩形挖洞高亮 + 金框脉动 + 手指箭头脉动 + 气泡多行文字 + tap 提示）；结算演出期不画引导。
+**范围 / 现状**：仅第 1 关有引导（其余关 tutorial.json 无条目→不触发）。手指/高亮均程序化 `_draw`。加引导 = 改 tutorial.json + i18n（不改代码）。
+**验收**：单测 186/186（view+config 改动零回归）；battle smoke 干净；MCP 截图确认「新手战役」改名；**真人实机验收通过 2026-06-22**（开局气泡→圣水高亮→出兵高亮→拖牌推进→结束，第 1 关）。
+
+> **V3-5（新手战役 + 引导）收官**：5a 框架（CampaignState + 6 教学关 + 中枢 view + battle 战役模式）+ 5b 数据驱动新手引导。单测 186/186。**遗留**：战役关 AI 难度偏高（首版占位，留后续整体大改/V3-9 平衡时调，见 [[battle-pacing-too-tense]]）。

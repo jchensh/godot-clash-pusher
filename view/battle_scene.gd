@@ -110,6 +110,9 @@ var loader
 var _font: Font
 var selected_card := -1
 var _card_btns: Array = []
+# —— V3-5b 新手引导（仅战役有 tutorial 脚本的关）——
+var _tut_steps: Array = []   # 当前关引导步骤（tutorial.json）；空=无引导
+var _tut_i: int = -1         # 当前步下标；-1=无引导/已结束
 var _result_layer: Control
 var _dragging := false
 var _drag_screen := Vector2.ZERO
@@ -172,6 +175,7 @@ func _ready() -> void:
 	match_obj.set_opponent_controller(AIControllerScript.new(match_obj, loader))
 	_build_cards()
 	_build_result_panel()
+	_init_tutorial()
 	set_process(true)
 
 func _process(delta: float) -> void:
@@ -238,6 +242,7 @@ func _draw() -> void:
 	_draw_elixir()
 	_draw_cards()
 	_draw_end_screen()
+	_draw_tutorial()
 
 func _draw_terrain(a) -> void:
 	var tp := _tile_px()
@@ -882,6 +887,7 @@ func _on_card_up(i: int) -> void:
 		var info: Dictionary = _card_info(cid)
 		_fx.append({"pos": drop_tile, "t0": _elapsed, "dur": _fx_dur(kind), "kind": kind, "radius": float(info["radius"])})
 		_play_card_audio(cid, info)
+		_tut_on_action("card_played")   # 新手引导：出兵步骤推进
 	else:
 		AudioManager.play_sfx("ui_card_drop_invalid")
 
@@ -1062,3 +1068,85 @@ func _on_rematch() -> void:
 func _on_menu() -> void:
 	AudioManager.play_sfx("ui_button_back")
 	get_tree().change_scene_to_file("res://view/main_menu.tscn")
+
+# —— V3-5b 新手引导：加载 / 推进 / 覆盖层绘制（数据驱动 tutorial.json，决策 45）——
+func _init_tutorial() -> void:
+	_tut_i = -1
+	var campaign = GameStateScript.campaign
+	if campaign == null or campaign.is_over():
+		return
+	var tut: Dictionary = loader.get_tutorial(campaign.current_level_id())
+	var steps = tut.get("steps", [])
+	if typeof(steps) == TYPE_ARRAY and not (steps as Array).is_empty():
+		_tut_steps = steps
+		_tut_i = 0
+
+func _input(event: InputEvent) -> void:
+	if _tut_i < 0 or _tut_i >= _tut_steps.size():
+		return
+	var step: Dictionary = _tut_steps[_tut_i]
+	if str(step.get("advance", "tap")) == "tap" and event is InputEventMouseButton and event.pressed:
+		_tut_next()
+		get_viewport().set_input_as_handled()   # tap 步骤吃掉点击，不触发出牌
+
+func _tut_next() -> void:
+	if _tut_i < 0:
+		return
+	_tut_i += 1
+	if _tut_i >= _tut_steps.size():
+		_tut_i = -1   # 引导结束
+
+func _tut_on_action(action: String) -> void:
+	if _tut_i < 0 or _tut_i >= _tut_steps.size():
+		return
+	if str(_tut_steps[_tut_i].get("advance", "")) == action:
+		_tut_next()
+
+func _draw_tutorial() -> void:
+	if _tut_i < 0 or _ending or _tut_i >= _tut_steps.size():
+		return
+	var step: Dictionary = _tut_steps[_tut_i]
+	var hl := str(step.get("highlight", "none"))
+	if hl == "none":
+		draw_rect(Rect2(0, 0, _vw, _vh), Color(0, 0, 0, 0.55))
+	else:
+		var r: Rect2 = _tut_rect(hl)
+		_tut_dim_except(r)
+		var pulse: float = 0.6 + 0.4 * sin(_elapsed * 5.0)
+		draw_rect(r, Color(COL_CROWN.r, COL_CROWN.g, COL_CROWN.b, pulse), false, 4.0)
+		if str(step.get("finger", "")) != "":
+			_tut_finger(r)
+	_tut_bubble(tr(str(step.get("text_key", ""))), str(step.get("advance", "tap")) == "tap")
+
+func _tut_dim_except(r: Rect2) -> void:
+	var c := Color(0, 0, 0, 0.58)
+	draw_rect(Rect2(0, 0, _vw, r.position.y), c)
+	draw_rect(Rect2(0, r.end.y, _vw, _vh - r.end.y), c)
+	draw_rect(Rect2(0, r.position.y, r.position.x, r.size.y), c)
+	draw_rect(Rect2(r.end.x, r.position.y, _vw - r.end.x, r.size.y), c)
+
+func _tut_rect(hl: String) -> Rect2:
+	match hl:
+		"elixir":
+			return Rect2(10, _vh - HUD_BOTTOM_H + 4, _vw - 124, 30)
+		"hand":
+			return Rect2(6, _vh - HUD_BOTTOM_H + 38, _vw - 12, HUD_BOTTOM_H - 44)
+		"field":
+			return Rect2(0, TOPBAR_H + (_vh - TOPBAR_H - HUD_BOTTOM_H) * 0.5, _vw, (_vh - TOPBAR_H - HUD_BOTTOM_H) * 0.5)
+	return Rect2(0, 0, _vw, _vh)
+
+func _tut_finger(r: Rect2) -> void:
+	var bob: float = 8.0 * sin(_elapsed * 5.0)
+	var tip := Vector2(r.get_center().x, r.position.y - 12.0 + bob)
+	draw_colored_polygon(PackedVector2Array([tip, tip + Vector2(-13, -20), tip + Vector2(13, -20)]), COL_CROWN)
+
+func _tut_bubble(text: String, show_tap: bool) -> void:
+	var bw := _vw - 80.0
+	var bx := 40.0
+	var by := _vh * 0.40
+	var bh := 140.0
+	draw_rect(Rect2(bx, by, bw, bh), Color(0.10, 0.08, 0.14, 0.96))
+	draw_rect(Rect2(bx, by, bw, bh), COL_CROWN, false, 3.0)
+	draw_multiline_string(_font, Vector2(bx + 20, by + 42), text, HORIZONTAL_ALIGNMENT_LEFT, bw - 40, 26, -1, Color(0.93, 0.88, 0.78))
+	if show_tap:
+		draw_string(_font, Vector2(bx, by + bh - 16), tr("tut_continue"), HORIZONTAL_ALIGNMENT_CENTER, bw, 18, Color(0.72, 0.72, 0.78))

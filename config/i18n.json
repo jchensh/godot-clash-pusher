@@ -79,6 +79,11 @@
     "focus_defend": "Defend",
     "focus_spell": "Spell",
     "focus_boss": "Boss",
+    "tut_c1_intro": "Welcome to battle! Your goal: destroy the enemy towers.",
+    "tut_c1_elixir": "This is Elixir — it refills over time. Deploying troops costs Elixir.",
+    "tut_c1_deploy": "Drag a card down onto your half to deploy a troop!",
+    "tut_c1_push": "Your troops auto-advance and attack enemy towers. Good luck!",
+    "tut_continue": "(tap to continue)",
 
     "settings_title": "Settings",
     "settings_language": "Language",
@@ -197,6 +202,11 @@
     "focus_defend": "防守",
     "focus_spell": "法术",
     "focus_boss": "首领",
+    "tut_c1_intro": "欢迎来到战场！你的目标：拆掉敌方的塔。",
+    "tut_c1_elixir": "这是圣水，会随时间自动回涨。出兵需要消耗圣水。",
+    "tut_c1_deploy": "把一张卡牌拖到己方半场，放下出兵！",
+    "tut_c1_push": "兵会自动向前推进、攻击敌塔。加油！",
+    "tut_continue": "（点击继续）",
 
     "settings_title": "设置",
     "settings_language": "语言",

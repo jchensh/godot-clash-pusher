@@ -1,0 +1,10 @@
+{
+  "campaign_01": {
+    "steps": [
+      { "id": "intro",  "text_key": "tut_c1_intro",  "highlight": "none",   "advance": "tap" },
+      { "id": "elixir", "text_key": "tut_c1_elixir", "highlight": "elixir", "finger": "elixir", "advance": "tap" },
+      { "id": "deploy", "text_key": "tut_c1_deploy", "highlight": "hand",   "finger": "hand",   "advance": "card_played" },
+      { "id": "push",   "text_key": "tut_c1_push",   "highlight": "none",   "advance": "tap" }
+    ]
+  }
+}
