@@ -1,0 +1,34 @@
+// auth.proto — 账号 / token 相关
+//
+// V4-S1 玩法验证阶段：匿名 device_id 登录。device_id 首次见 -> 建账号；
+// 二次见 -> 命中既有账号。无密码、无 SMS、无第三方。
+// 长期产品化（V4-S11）会加 provider="email"/"apple"/"google" 等。
+
+syntax = "proto3";
+
+package game.v4.auth;
+
+import "common.proto";
+
+option go_package = "github.com/jchensh/godot-clash-pusher/server/internal/pb/auth";
+
+message LoginReq {
+  string device_id = 1;        // 客户端持久 uuid（user:// 里存）
+  string client_version = 2;   // 形如 "0.4.0"
+  string platform = 3;         // "android" / "windows" / "editor"
+}
+
+message LoginResp {
+  string token = 1;                              // JWT (HS256)，TTL 30d
+  string refresh_token = 2;                      // refresh token，TTL 90d
+  game.v4.common.ProfileSummary profile = 3;     // 登录即带回基本档（少一次 round-trip）
+}
+
+message RefreshReq {
+  string refresh_token = 1;
+}
+
+message RefreshResp {
+  string token = 1;
+  string refresh_token = 2;    // 滚动签发，旧的废弃
+}

@@ -1,0 +1,54 @@
+// profile.proto — 玩家档案 + 卡组（云存档）
+//
+// V4-S2：客户端切到在线模式时从此读档；改卡组经 DeckUpdateReq 推回。
+// version 字段用于乐观锁：服务端版本胜出，客户端版本旧 -> 服务端回最新档。
+
+syntax = "proto3";
+
+package game.v4.profile;
+
+option go_package = "github.com/jchensh/godot-clash-pusher/server/internal/pb/profile";
+
+// 完整档案（比 ProfileSummary 多 exp/season/version/updated_at）。
+message Profile {
+  int64 account_id = 1;
+  string nickname = 2;
+  int32 avatar_id = 3;
+  int32 level = 4;
+  int32 exp = 5;
+  int32 trophies = 6;
+  int32 current_season_id = 7;
+  int32 version = 8;            // 乐观锁版本
+  int64 updated_at = 9;         // unix seconds
+}
+
+message Deck {
+  int64 id = 1;
+  int32 slot = 2;               // 1..3
+  repeated string card_ids = 3; // 8 个 card_id（与 V3 cards.json id 同源）
+  bool is_active = 4;
+}
+
+// 玩家档案 + 全部卡组 + 解锁卡集合。
+// unlocks 字段 V4 玩法验证阶段默认 "全卡解锁"（客户端按这个判可组卡）；
+// 等 V4-S10 IAP/养成接入后才有意义的差异化。
+message ProfileGetReq {}
+
+message ProfileGetResp {
+  Profile profile = 1;
+  repeated Deck decks = 2;
+  repeated string unlocked_card_ids = 3;
+}
+
+message DeckUpdateReq {
+  int32 slot = 1;
+  repeated string card_ids = 2;
+  bool set_active = 3;
+  int32 expected_version = 4;   // 客户端持有的 profile.version（乐观锁）
+}
+
+message DeckUpdateResp {
+  bool ok = 1;
+  int32 new_version = 2;        // 写后版本（客户端更新本地缓存）
+  Profile profile = 3;          // 顺带回 profile（节省一次 GET）
+}

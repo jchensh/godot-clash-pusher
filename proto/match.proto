@@ -1,0 +1,39 @@
+// match.proto — 匹配（lobby 阶段）
+//
+// V4-S4：客户端发 FindMatchReq -> 入 Redis ZSET 段位队列 -> 服务端 ELO 窗口扫描 ->
+// 配对后两端各推 MatchFoundPush -> 客户端跳战斗页用 room_id 调 JoinRoomReq（battle.proto）。
+
+syntax = "proto3";
+
+package game.v4.match;
+
+import "common.proto";
+
+option go_package = "github.com/jchensh/godot-clash-pusher/server/internal/pb/match";
+
+message FindMatchReq {
+  int32 deck_slot = 1;          // 用哪个卡组打（slot 1..3）
+  int32 arena = 2;              // 段位/竞技场 id，影响匹配桶（V4-S4 起步全默认 1）
+}
+
+message FindMatchResp {
+  bool ok = 1;
+  string queue_id = 2;          // 进队成功后返回，用于 cancel
+}
+
+message CancelMatchReq {
+  string queue_id = 1;
+}
+
+message CancelMatchResp {
+  bool ok = 1;
+}
+
+// 服务端主动推：找到对手了，跳战斗页。
+message MatchFoundPush {
+  string room_id = 1;           // UUID
+  game.v4.common.ProfileSummary opponent = 2;
+  int32 your_side = 3;          // 1 = player A（地图下方）/ 2 = player B（上方）
+  int32 arena = 4;
+  uint64 seed = 5;              // run 级确定性 seed（spawn 序 tie-break 等用）
+}
