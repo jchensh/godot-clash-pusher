@@ -72,6 +72,7 @@ godot --path . -e                                                               
 
 ## 分支 / 提交 / 推送约定
 - **开发在 `develop` 分支进行**；`main` 为稳定线，远端 `origin` = https://github.com/jchensh/godot-clash-pusher 。
+- **`release` 分支**：用户用 Antigravity（Google IDE）创建，用于打安卓包；跟随 `develop` 推进，**agent 默认不在此分支提交、不主动同步**，需同步由用户主动指示。
 - **仅当用户说"提交"时**才 `git commit`；提交后**顺带 `git push`**（develop 首次推送用 `git push -u origin develop` 建立跟踪）。
 - 仍遵守"一步一确认"：每步做完先停下报告，待用户说提交再 commit+push。
 
@@ -87,6 +88,8 @@ godot --path . -e                                                               
   - V3-6 ✅ 交互与游戏手感四 gate 代码完成（6a 拖拽部署真人 7/7 通过；6b 战斗 juice / 6c HUD / 6d 胜负·run 演出待真人手感验收）
   - V3-7 ✅ 精灵美术整阶段收官（单位/塔/FX·投射物/地形/卡面 + `docs/ART_ASSETS.md`）
   - V3-8 ✅ 音频资源表 + 运行时音频机制代码完成（`AudioConfig.xlsx`→`audio_assets.json`，首版 79 条；`sound/` 目录；`AudioManager` autoload；真实音频素材待补）
-  - V3-9 ① ✅ 难度 5 档（rookie→extreme）；**回归修复**（寻路绕桥不卡/塔射箭/亡语裂兵不落水/攻击帧动画，真人验收通过 2026-06-21）。
-  - 单测 **180/180**；**V3-4 run 引擎内流程 + V3-6b/c/d 表现手感 + 5 档难度体感 + roguelite 全流程 留真人实机验收**。
-- **Now**：**V3-9 平衡**可继续推进（Claude 当前可并行做数值/难度）；**V3-5 短战役 + 新手引导按决策 40 继续暂缓**。
+  - V3-9 ① ✅ 难度 5 档（rookie→extreme）；**V3-R 回归修复**（寻路绕桥/塔射箭/亡语裂兵不落水/攻击帧动画，真人 2026-06-21 通过）。
+  - V3-UI ✅ 像素 UI 设计系统(PixelUI 9-slice) + 6 屏全统一（主菜单/选关/设置/组卡/run/战斗 HUD）+ 选关返回 bug 修复（真人 2026-06-21 通过）。
+  - V3-5 ✅ 新手战役框架（5a）+ 引导覆盖层（5b，数据驱动 tutorial.json）（按决策 40 后置到 V3-6/7 之后执行，真人 2026-06-22 通过）。
+  - 单测 **186/186**。
+- **Now**：**V3-9 平衡剩余子项**可继续推进（数值/节奏调优 + 设置/导出/上架打磨）。

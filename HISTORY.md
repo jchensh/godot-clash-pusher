@@ -50,34 +50,34 @@
 | V3-2 | 空军（飞兵越河 + 对空克制 `attack_targets`） | ✅ 完成（单测；画面待真人验收） | `7ad503d` |
 | V3-3 | 新技能积木（亡语召唤 `golem` / 治疗术 `heal`）→ 16 卡 / 10 单位 | ✅ 完成（单测） | `73f99c1` |
 | V3-4a | Roguelite 骨架：RunState + 节点地图（线性连战链）+ 连战流转（二元永久死亡） | ✅ 完成（单测 + headless 跑通一条 run） | `9a6fc55` |
-| V3-4b | 战间 draft 三选一（确定性候选、改写本 run 卡组、卡组可增长） | ✅ 完成（单测） | 待提交 |
-| V3-4c | relic 系统（JSON 数值修正器、effective level 不污染 base、起手圣水） | ✅ 完成（单测） | 待提交 |
-| V3-4d | boss/精英节点难度修正 + 局间 meta 解锁 + 存档（user:// 往返）+ 最简 run view | ✅ 完成（单测 + headless smoke；引擎内流程交真人验收） | 待提交 |
+| V3-4b | 战间 draft 三选一（确定性候选、改写本 run 卡组、卡组可增长） | ✅ 完成（单测） | `239012b` |
+| V3-4c | relic 系统（JSON 数值修正器、effective level 不污染 base、起手圣水） | ✅ 完成（单测） | `239012b` |
+| V3-4d | boss/精英节点难度修正 + 局间 meta 解锁 + 存档（user:// 往返）+ 最简 run view | ✅ 完成（单测 + headless smoke；引擎内流程交真人验收） | `239012b` |
 | V3-6a | 拖拽部署（CR 式）+ 落点 ghost/合法红绿 + 半场高亮 + 落地涟漪 + 入场缩放（仅 view） | ✅ 完成（单测 172/172；**真人实机 7/7 验收通过 2026-06-16**） | `1999797` |
 | V3-6b | 战斗 juice：移动插值 + 受击闪白 + 浮动伤害数字 + 命中顿帧 + 震屏 + 命中火花（仅 view） | ✅ 代码完成（单测 172/172 零回归；手感待真人验收） | `8a09953` |
 | V3-6c | HUD 反馈：分段圣水条 + 满槽脉动 + 卡面自绘(费用/不可用扫光/选中) + 下一张预览 + 王冠/倒计时强调（仅 view） | ✅ 代码完成（单测 172/172 零回归；外观待真人验收） | `819a713` |
-| V3-6d | 胜负演出（调暗/标题 sting/王冠落入/比分滚动/按钮淡入）+ run 奖励·结算揭示动画（仅 view） | 🚧 代码完成（headless smoke + 单测 172/172 零回归；演出待真人验收） | 待提交 |
+| V3-6d | 胜负演出（调暗/标题 sting/王冠落入/比分滚动/按钮淡入）+ run 奖励·结算揭示动画（仅 view） | 🚧 代码完成（headless smoke + 单测 172/172 零回归；演出待真人验收） | `c22d601` |
 | V3-7 准备 | 美术素材入库（`assets/` 选用 94 + `testAssets/` 库）+ ART_ASSETS 美术圣经雏形（题材=黑暗中世纪幻想） | ✅ 完成 | `6579207` |
-| V3-7 ① | 卡牌黑暗中世纪化改名（`cards.json` name 中英定稿，id 不变） | ✅ 完成（单测 172/172；config check ok） | 待提交 |
+| V3-7 ① | 卡牌黑暗中世纪化改名（`cards.json` name 中英定稿，id 不变） | ✅ 完成（单测 172/172；config check ok） | `0cb32f2` |
 | V3-7 ② | 多语言 i18n（中英表 + autoload + 像素中文字体 + 6 场景接入 + 设置内切换/存盘） | ✅ 代码完成（6 场景 smoke + 单测 172/172；中文显示真人认可） | `0cb32f2` |
-| V3-7 ③ | 美术垂直切片（骑士精灵 / building 塔贴图 / 火爆炸序列 FX + 像素 nearest filter；架构 A：immediate `_draw`+`draw_texture`，仅 view） | ✅ 完成（**真人 6/6 验收通过 2026-06-20**；单测 172/172） | 待提交 |
-| V3-7b-1 | 量产·单位精灵全量（10 单位 manifest `view/sprite_db.gd` + 走/攻状态派生 + 朝向；修正 ③ 骑士帧 bug） | ✅ 完成（**真人 1-7 验收通过**；单测 172/172） | 待提交 |
-| V3-7b-2 | 量产·塔（王=building1 / 公主=building6 + 保持长宽比贴地 + 金王冠 + 废墟态） | ✅ 完成（**MCP 截图验收**；单测 172/172） | 待提交 |
+| V3-7 ③ | 美术垂直切片（骑士精灵 / building 塔贴图 / 火爆炸序列 FX + 像素 nearest filter；架构 A：immediate `_draw`+`draw_texture`，仅 view） | ✅ 完成（**真人 6/6 验收通过 2026-06-20**；单测 172/172） | `41c09d5` |
+| V3-7b-1 | 量产·单位精灵全量（10 单位 manifest `view/sprite_db.gd` + 走/攻状态派生 + 朝向；修正 ③ 骑士帧 bug） | ✅ 完成（**真人 1-7 验收通过**；单测 172/172） | `4aacb21` |
+| V3-7b-2 | 量产·塔（王=building1 / 公主=building6 + 保持长宽比贴地 + 金王冠 + 废墟态） | ✅ 完成（**MCP 截图验收**；单测 172/172） | `4aacb21` |
 | V3-7b-3 | 量产·技能命中 FX 按卡区分 + 远程投射物（路线 A 冷却跳升检测；含投射物只射一发 bug 修复） | ✅ 完成（**MCP 计数器验证投射物持续开火** + 真人玩通无错；单测 172/172） | `4aacb21` |
 | V3-7b-4 | 量产·地形 tile（Lonesome FLOOR 地面 / simple_water 12帧动画河 / COBBLESTONE 桥；逐逻辑格铺替纯色块） | ✅ 完成（单测 172/172 + smoke） | `f3c8abf` |
 | V3-7b-5 | 量产·战斗手牌卡面（兵牌=单位精灵正面帧 / 法术牌=特效图标；draft·组卡卡面留 7b-5b） | ✅ 完成（**真人验收通过**；单测 172/172 + smoke） | `0e73300` |
 | V3-7b-5b | 量产·draft 奖励卡 + 组卡界面卡面（Control+TextureRect 加单位/法术肖像；共享 `SpriteDB.card_portrait_tex`） | ✅ 完成（**真人验收通过**；导入解析+单测 172/172+deck_builder smoke） | `39c80ff` |
-| V3-7b-6 | 美术圣经定稿（`docs/ART_ASSETS.md`：单位 manifest 帧网格/行/朝向 + 帧坐定方法 + 塔/FX/地形/卡面 as-built + 缺口/许可，决策 42 升级） | ✅ 完成（纯文档） | 待提交 |
-| V3-8 | 音频资源表 + 运行时音频机制（AudioConfig.xlsx→audio_assets.json→AudioManager） | ✅ 代码完成（audio config check；单测 177/177；headless editor 导入通过；真实素材待补） | 待提交 |
-| V3-9 ① | 难度系统扩 5 档（rookie/easy/normal/hard/extreme）+ 标题/配色/5 关 + 降难度底 | ✅ 完成（梯度实测单调；单测 177/177；config check ok；手感交真人） | 待提交 |
-| V3-R | 回归修复：寻路卡桥/塔射箭/亡语落水/攻击动画（真人验收通过 2026-06-21） | ✅ 完成（单测 180/180） | 待提交 |
-| V3-UI | 像素 UI 设计系统(PixelUI 9-slice) + 6 屏全统一(主菜单/选关/设置/组卡/run/战斗HUD) + 选关返回 bug 修复 | ✅ 完成（真人验收通过 2026-06-21；单测 180/180） | 待提交 |
-| V3-5a | 新手战役框架：CampaignState(可重试) + campaign.json 6 教学关 + 战役中枢 view + battle 战役模式 + 菜单入口（含修复选关混入 campaign 关 bug） | ✅ 完成（真人 1-6 验收通过 2026-06-22；单测 186/186） | 待提交 |
-| V3-5b | 新手引导覆盖层：tutorial.json 数据驱动 + battle_scene 引导(压暗/挖洞高亮/手指/气泡, tap+动作推进) | ✅ 完成（真人验收通过 2026-06-22；单测 186/186） | 待提交 |
+| V3-7b-6 | 美术圣经定稿（`docs/ART_ASSETS.md`：单位 manifest 帧网格/行/朝向 + 帧坐定方法 + 塔/FX/地形/卡面 as-built + 缺口/许可，决策 42 升级） | ✅ 完成（纯文档） | `eddba86` |
+| V3-8 | 音频资源表 + 运行时音频机制（AudioConfig.xlsx→audio_assets.json→AudioManager） | ✅ 代码完成（audio config check；单测 177/177；headless editor 导入通过；真实素材待补） | `0c5ce0e` |
+| V3-9 ① | 难度系统扩 5 档（rookie/easy/normal/hard/extreme）+ 标题/配色/5 关 + 降难度底 | ✅ 完成（梯度实测单调；单测 177/177；config check ok；手感交真人） | `0c5ce0e` |
+| V3-R | 回归修复：寻路卡桥/塔射箭/亡语落水/攻击动画（真人验收通过 2026-06-21） | ✅ 完成（单测 180/180） | `14a29e5` |
+| V3-UI | 像素 UI 设计系统(PixelUI 9-slice) + 6 屏全统一(主菜单/选关/设置/组卡/run/战斗HUD) + 选关返回 bug 修复 | ✅ 完成（真人验收通过 2026-06-21；单测 180/180） | `242b287` |
+| V3-5a | 新手战役框架：CampaignState(可重试) + campaign.json 6 教学关 + 战役中枢 view + battle 战役模式 + 菜单入口（含修复选关混入 campaign 关 bug） | ✅ 完成（真人 1-6 验收通过 2026-06-22；单测 186/186） | `80cf141` |
+| V3-5b | 新手引导覆盖层：tutorial.json 数据驱动 + battle_scene 引导(压暗/挖洞高亮/手指/气泡, tap+动作推进) | ✅ 完成（真人验收通过 2026-06-22；单测 186/186） | `4364dbb` |
 
-> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）四个 gate 全部代码完成**，其中 V3-6a 真人 7/7 验收通过，V3-6b/c/d 仍留手感/外观/演出真人验收。**V3-7（精灵美术）整阶段收官**（单位/塔/FX·投射物/地形/卡面 + 7b-6 美术圣经定稿）。**V3-8 音频资源表 + 运行时音频机制已代码完成**：首版 79 条音频需求表、`sound/` 目录、`AudioManager` autoload、场景触发接入；真实音频素材待后续补入。**下一步可继续 V3-9 平衡**（Claude/用户当前并行推进），V3-5 短战役+引导仍暂缓。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
+> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**。**V3-6（交互与游戏手感）四个 gate 代码完成**（V3-6a 真人 7/7 通过；V3-6b/c/d 表现手感随后续 UI/关卡整体流程一并验收）。**V3-7（精灵美术）整阶段收官**（单位/塔/FX·投射物/地形/卡面 + 7b-6 美术圣经定稿）。**V3-8 音频资源表 + 运行时音频机制代码完成**：首版 79 条音频需求表、`sound/` 目录、`AudioManager` autoload；真实音频素材待补。**V3-9 ① 难度 5 档 + V3-R 战斗回归修复**（寻路绕桥/塔射箭/亡语落水/攻击帧动画，真人 2026-06-21 通过）。**V3-UI 像素 UI 设计系统 + 6 屏全统一**（真人 2026-06-21 通过）。**V3-5a 新手战役 + V3-5b 新手引导覆盖层**（按决策 40 后置到 V3-6/7 之后执行，真人 2026-06-22 通过）。**下一步：V3-9 平衡剩余子项**（数值/节奏调优 + 设置/导出/上架打磨，可继续推进）。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
 
-**测试**：180/180（`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`；音频单独走 `config/AudioConfig.xlsx` → `config/audio_assets.json`，用 `tools/build_audio_config.py --check` 校验。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
+**测试**：186/186（`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`release` 为 Antigravity（Google IDE）创建的安卓打包分支（跟随 develop，agent 默认不动）、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`；音频单独走 `config/AudioConfig.xlsx` → `config/audio_assets.json`，用 `tools/build_audio_config.py --check` 校验。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
 ---
 
@@ -283,7 +283,7 @@
 - `build_config.py --from-json` + `--check` → `config check ok`（+aggro 列往返一致）✅
 - 仇恨行为由单测覆盖：默认锁塔 / 进 aggro 转火 / 半径外忽略 / 目标死回锁 / 侧边拉扯追击(距离缩小) / 选最近敌兵 ✅
 
-### V3-1d — 软推挤碰撞 + 接敌攻击（逻辑+单测）  （与 V3-1c 同批待提交）
+### V3-1d — 软推挤碰撞 + 接敌攻击（逻辑+单测）  （commit `816968a`）
 **前置决策**：见决策日志 36（碰撞=软推挤：体积半径 + 确定性分离，不用物理引擎）。
 
 **新增 / 修改**
@@ -303,7 +303,7 @@
 - `build_config.py --from-json` + `--check` → `config check ok` ✅
 - 战斗链路由单测覆盖：重叠被推开 / 接敌首击掉血 / 单位削塔 / 双方同 tick 互伤 ✅
 
-### V3-1e — 塔会反击 + 塔毁流场重算（逻辑+单测）  （本批待提交）
+### V3-1e — 塔会反击 + 塔毁流场重算（逻辑+单测）  （commit `816968a`）
 **前置决策**：见决策日志 36（塔反击是 CR 防御核心）。
 **新增 / 修改**
 - `logic/tower.gd`：+`damage`/`attack_range`/`attack_speed` + 冷却（`tick_cooldown`/`can_attack`/`mark_attacked`，与 Unit 同口径）。
@@ -316,14 +316,14 @@
 ### V3-1f — SkillSystem 2D 化  （已于 V3-1b 完成）
 推倒重来删 lane 时 `skill_system` 被迫一并 2D 化（决策 37），本槽空出，无独立改动。
 
-### V3-1g — AIController 2D 重写（逻辑+单测）  （本批待提交）
+### V3-1g — AIController 2D 重写（逻辑+单测）  （commit `816968a`）
 **前置决策**：见决策日志 33（攻防结合 + 按向选 + 难度分级）2D 化。
 **新增 / 修改**
 - `ai/ai_controller.gd`：从死代码重写为 2D。难度表 `DIFF`(threshold/cooldown/defends/smart) 沿用；`_decide` 防守优先（`_most_threatening_player_unit`：玩家单位 `y<=THREAT_LINE` 越河威胁 → 在其 x 处 `clampf(y,10,14)` 空投最贵兵）→ 否则 `_attack`（最贵可用兵 → `_attack_pos`：智能档集火 `_weakest_player_tower` 的 x 侧、easy 固定中路 x=9；法术落 `_lead_player_unit_pos`）。经 `opponent.try_play_card(idx, pos)`，确定性无随机。
 - `tests/test_ai_controller.gd`（重新加回，7 测）：难度解析(关卡/覆盖)、阈值门控、出最贵兵入场、冷却、easy 阈值高于 hard、受威胁防守空投(投在威胁 x 附近)、集火最弱塔侧(x≈最弱塔)。
 **验收**：单测 **121/121**（+7）。
 
-### V3-1h — 显示层 2D 接通（仅 view，真人实机验收）  （本批待提交）
+### V3-1h — 显示层 2D 接通（仅 view，真人实机验收）  （commit `816968a`）
 **前置决策**：见决策日志 36/37（2D 场地、tap 落点）。
 **新增 / 修改**
 - `view/battle_scene.gd`：**整体重写为 2D**。tile↔屏幕映射（`_t2s`/`_s2t`/`_field_rect`）；`_draw` 画地形（地面/河/双桥 + 己方半场部署区提示）+ 6 塔（按 owner 色/血条变色/王塔标记/摧毁灰块）+ 自由移动单位（队伍色圆 + 空军白环 + 血条）+ 顶栏（王冠/倒计时）+ 圣水条；手牌 `Button`×4（费用/置灰/选中高亮）；结算面板（WIN/LOSE/DRAW + 比分 + REMATCH/MENU）。两段式出牌：点卡选中 → 点己方半场落点 `player.try_play_card(_s2t(click))`；对手由 `AIController` 自驱（`set_opponent_controller`）。读 `GameState.level_id`/`player_deck`。
@@ -340,7 +340,7 @@
 
 ---
 
-## V3-2 — 空军：飞兵越河 + 对空克制（逻辑+config+view+单测）  （待提交）
+## V3-2 — 空军：飞兵越河 + 对空克制（逻辑+config+view+单测）  （commit `7ad503d`）
 **前置决策**：见决策日志 36（首版先全地面、空军作为 V3-2 紧随）。
 
 **新增 / 修改**
@@ -365,7 +365,7 @@
 
 ---
 
-## V3-3 — 新技能积木：亡语召唤 + 治疗术（逻辑+config+单测）  （待提交）
+## V3-3 — 新技能积木：亡语召唤 + 治疗术（逻辑+config+单测）  （commit `73f99c1`）
 **前置决策**：PLAN_V3 §3/§5（2–3 个新积木择优）。选**接入最干净、价值最高**的两个；slow/stun（需状态系统）、knockback（需新列）、建筑（需生成计时）留后续。
 
 **新增 / 修改**
@@ -392,7 +392,7 @@
 
 > 方向见决策日志 36，权威规划见 [PLAN_V3.md](PLAN_V3.md) §3。拆 4 小步：a run 状态+节点地图+连战链 / b draft 三选一 / c relic / d boss+meta+存档。逻辑+单测为主、配最简 view。
 
-### V3-4a — Roguelite 骨架：RunState + 节点地图 + 连战流转（逻辑+config+单测）  （待提交）
+### V3-4a — Roguelite 骨架：RunState + 节点地图 + 连战流转（逻辑+config+单测）  （commit `9a6fc55`）
 **前置决策**：见决策日志 38（线性连战链 / 二元永久死亡 / 3 act × 3 战；遭遇引用现有 level；起始卡组用 deck_builder 选的卡组）。
 
 **新增**
@@ -419,7 +419,7 @@
 - `build_config.py --check` → `config check ok`（未动 units/cards/levels，Excel 无漂移）✅
 - run 推进 / 胜负流转 / 连战链 / headless 跑通一条 run（全胜→通关、首败→失败）均由单测覆盖。纯逻辑步骤，按纪律无需肉眼验收。
 
-### V3-4b — 战间 draft 三选一（逻辑+单测）  （本批待提交）
+### V3-4b — 战间 draft 三选一（逻辑+单测）  （commit `239012b`）
 **前置决策**：见决策日志 39（确定性候选、追加进 run 卡组、卡组可增长、可 SKIP）。
 **新增 / 修改**
 - `logic/run_rewards.gd`（`RunRewards`，新）：`offer_cards`/`offer_relics`——从池中剔除已持有、seeded Fisher-Yates 确定性取 N（同 seed 同结果，零随机副作用）。
@@ -427,7 +427,7 @@
 - `logic/deck.gd`：放宽 `setup` 为 ≥`HAND_SIZE`+1（不再硬限 8），支持 draft 后卡组增长；标准对局仍 8。
 - `tests`：`test_run_rewards`(6)、`test_deck`+1（10 张增长卡组循环不变量）、`test_run_state`+3（加卡增长去重 / 加 relic 去重 / **draft 卡带入下一场 Match**）。
 
-### V3-4c — relic 系统：JSON 数值修正器（逻辑+config+单测）  （本批待提交）
+### V3-4c — relic 系统：JSON 数值修正器（逻辑+config+单测）  （commit `239012b`）
 **前置决策**：见决策日志 39（effective level 深拷贝、不污染 base、起手圣水、单位级 relic 留后续）。
 **新增 / 修改**
 - `logic/run_modifiers.gd`（`RunModifiers`，新）：`effective_level(base, mod_sources)`——深拷贝后顺序叠加 `val=val*mult+add`（圣水回速/上限/起手、时长、王/公主塔血），**base 不变**；`relic_mods`（relic id→mods 数组）；`node_mod`（节点难度修正查表）。
@@ -436,7 +436,7 @@
 - `logic/config_loader.gd`：载入 `relics.json` + 校验（每 relic 含 mods 对象）+ `get_relic`。
 - `tests`：`test_run_modifiers`(7)、`test_match`+1（修正器抬塔血/起手圣水且不污染 base）、`test_config_loader`+1（relics 加载）。
 
-### V3-4d — boss/精英 + 局间 meta 解锁 + 存档 + 最简 run view（逻辑+config+view+单测）  （本批待提交）
+### V3-4d — boss/精英 + 局间 meta 解锁 + 存档 + 最简 run view（逻辑+config+view+单测）  （commit `239012b`）
 **前置决策**：见决策日志 39（节点难度走同一修正器引擎、meta 门控解锁 relic、user:// 往返、view 最简）。
 **新增 / 修改（逻辑+config）**
 - `logic/meta_progress.gd`（`MetaProgress`，新）：局间统计（runs_started/won、bosses_defeated）+ `available_relics`/`unlocked_ids`（按 relic 的 `unlock:{stat:阈值}` 解算）+ `load_dict`/`to_dict`。
@@ -478,7 +478,7 @@
 
 > 方向见 PLAN_V3 §3，范围/拆步见决策日志 41。纯显示层（零逻辑改，决策 30 路线 A），拆 4 个真人验收 gate：6a 部署交互 → 6b 战斗 juice → 6c 圣水/HUD → 6d 胜负/run 总结。全部在白膜上装「手感系统」，V3-7 再贴精灵皮。
 
-### V3-6a — 拖拽部署 + 落点反馈（仅 view）  （待提交）
+### V3-6a — 拖拽部署 + 落点反馈（仅 view）  （commit `1999797`）
 **前置决策**：见决策日志 41（拖拽部署 CR 式、纯显示层）。
 
 **修改（仅 `view/battle_scene.gd`，零逻辑改）**
@@ -502,7 +502,7 @@
 
 **V3-6a 真人实机验收清单（已通过，留作回归基线）**：F5 运行（编辑器已开，Play 读盘最新脚本）→ ROGUELITE/任意关进战斗，确认：① 按兵牌拖到场上有**兵剪影 ghost**（数量正确、抬在手指上方），松手落子；② ghost/落点环 **己方半场地面=绿、敌方半场/水/塔=红**，拖兵牌时己方半场**脉动高亮**；③ 法术：火球/箭/滚木拖出 **AOE 圈**、电击/闪电出**准星**，且**敌方半场也绿**（可放）；④ 出不起的牌**置灰拖不动**，拖动的卡**抬起高亮**；⑤ 松手在 HUD/非法处=**取消**（不扣圣水不出兵）；⑥ 成功落子有**涟漪**、新兵（含 AI 兵）**弹入**；⑦ 胜负结算/CONTINUE 仍正常。回报「通过/哪条不对」。
 
-### V3-6b — 战斗 juice：插值 + 受击反馈 + 顿帧 + 震屏（仅 view）  （待提交）
+### V3-6b — 战斗 juice：插值 + 受击反馈 + 顿帧 + 震屏（仅 view）  （commit `8a09953`）
 **前置决策**：见决策日志 41（纯显示层、逐帧 diff 逻辑状态派生反馈 = 决策 30 路线 A）。
 
 **修改（仅 `view/battle_scene.gd`，零逻辑改）**
@@ -527,7 +527,7 @@
 
 **V3-6b 真人实机验收清单（交用户）**：F5 运行 → 任意战斗，确认：① 兵移动**丝滑**不再 10Hz 跳格（尤其过桥/转向）；② 被打的兵/塔**闪白**、冒**伤害数字**（数值合理、上浮淡出）；③ 治疗术给友军冒**绿 +数字**；④ 法术（火球/闪电）等大伤害命中有**顿帧**（极短卡顿）+ **震屏**，且**只有战场抖、顶栏/圣水/手牌不抖**；⑤ **塔被摧毁**时明显**震屏 + 大涟漪**；⑥ 震屏时**落点仍准**（拖拽出兵不偏）；⑦ 帧率正常、无报错。回报「通过/哪条不对」。
 
-### V3-6c — 圣水/HUD 反馈（仅 view）  （待提交）
+### V3-6c — 圣水/HUD 反馈（仅 view）  （commit `819a713`）
 **前置决策**：见决策日志 41（纯显示层 HUD：分段圣水/满槽脉动/卡牌可用态扫光/下一张预览/王冠倒计时强调）。
 
 **修改（仅 `view/battle_scene.gd`，零逻辑改）**
@@ -550,7 +550,7 @@
 
 **V3-6c 真人实机验收清单（交用户）**：F5 运行 → 任意战斗，确认：① 圣水条是**分段 pip**、随回涨逐格填、**满 10 格时脉动**；② 圣水条旁有 **NEXT** 预览（下一张卡名 + 费用珠）且随出牌更新；③ 手牌为**自绘卡面**（卡名 + 费用珠 + 选中金框 + 拖拽抬起）；④ 出不起的牌有**暗罩扫光**、随圣水接近费用**从底部回落**到点亮，且**仍拖不动**直到够费；⑤ 顶栏左右各 **3 王冠**、按拆塔**点亮**；⑥ 倒计时 **≤30s 变红脉动放大**；⑦ 帧率正常、无报错、出牌/拖拽仍正常。回报「通过/哪条不对」。
 
-### V3-6d — 胜负演出 + run 奖励/结算揭示（仅 view）  （待提交）
+### V3-6d — 胜负演出 + run 奖励/结算揭示（仅 view）  （commit `c22d601`）
 **前置决策**：见决策日志 41（纯显示层；本 gate 跨 `battle_scene`(结算) 与 `run_scene`(奖励/结算) 两场景）。
 
 **修改（`view/battle_scene.gd`，零逻辑改）**
@@ -584,10 +584,10 @@
 ### V3-7 准备 — 美术素材入库 + ART_ASSETS（已提交 `6579207`）
 题材敲定黑暗中世纪幻想、主风格 Pixel Grit（决策 42）。`testAssets/` 原始库 + `assets/` 选用 94 文件 + `docs/ART_ASSETS.md` 美术圣经雏形。
 
-### V3-7 ① — 卡牌黑暗中世纪化改名（仅 config）  （待提交）
+### V3-7 ① — 卡牌黑暗中世纪化改名（仅 config）  （commit `0cb32f2`）
 `config/cards.json` 13 张 `name` 改中文定稿（id 不变、英文名入 i18n）；knight/archers/goblins 原名保留。Excel `--from-json` 同步、`--check` ok。**验收**：单测 172/172；config check ok ✅。映射见 [docs/ART_ASSETS.md §6](docs/ART_ASSETS.md)。
 
-### V3-7 ② — 多语言 i18n + 像素中文字体 + 设置切换（仅 view/config）  （待提交）
+### V3-7 ② — 多语言 i18n + 像素中文字体 + 设置切换（仅 view/config）  （commit `0cb32f2`）
 **前置决策**：43。
 **新增/修改**
 - `config/i18n.json`（中英 ~80 key：UI/卡名/relic 名+描述/难度/数值模板）。
@@ -603,7 +603,7 @@
 - 既有良性 warning（`size` 遮蔽基类 / int-as-enum / 整除）非本步引入、不影响运行，暂忽略（将来统一清一轮）。
 **下一步**：③ 美术垂直切片（已完成，见下）。
 
-### V3-7 ③ — 美术垂直切片（仅 view + 1 渲染设置）  （待提交）
+### V3-7 ③ — 美术垂直切片（仅 view + 1 渲染设置）  （commit `41c09d5`）
 **前置决策**：用户 2026-06-20 选定 **架构 A = immediate `_draw` + `draw_texture`**（契合 6a–6d 的 `_draw` 体系，单位动态增减天然支持，逻辑零改）+ 切片范围 = 骑士 + building 塔 + 火爆炸 FX。
 **修改（仅 `view/battle_scene.gd` + `project.godot`）**
 - 顶部 `preload` 三纹理（Heavy_Knight Non-Combat / building1 / Fire_Explosion）+ 帧常量；新增 `_draw_sheet`（从 sheet 取 (col,row) 帧 `draw_texture_rect_region`，`modulate` 染色）。
@@ -672,7 +672,7 @@
 
 ---
 
-## V3-8 — 音频资源表 + 运行时音频机制（并行补基础管线）  （待提交）
+## V3-8 — 音频资源表 + 运行时音频机制（并行补基础管线）  （commit `0c5ce0e`）
 
 **前置决策**：用户 2026-06-20 明确要求 Codex 兼任音乐音效师，先把“音频资源表 + 工程读取机制”做出来；Claude 可继续并行做数值平衡。本步只搭音频配置与播放入口，**不引入真实音频素材**。
 
@@ -712,7 +712,7 @@
 
 > 方向见决策 35（数据驱动测量 + 难度交真人）。用户 2026-06-20/21 反馈：纯公平对局**无卡牌数值养成 → 难度=AI 竞技水平**，玩家 vs AI 拼手速；最低档也太压迫，要求**降难度底**，进而定为 **5 档系统**。相关记忆 [[difficulty-is-ai-competence]]。
 
-### V3-9 ① — 难度系统扩 5 档 + 降难度底（config/view/逻辑 + 单测）  （待提交）
+### V3-9 ① — 难度系统扩 5 档 + 降难度底（config/view/逻辑 + 单测）  （commit `0c5ce0e`）
 **前置**：用户反馈训练场太凶（临时 harness 实测：旧 easy AI vs 不出兵的玩家 45s 团灭）。先把 easy 放缓、新手关 normal→easy；随后用户定为 5 档。
 **测量方法**：临时 harness `tools/_pace_probe.gd`（**验后即删、不入 git**）三组——①节奏（双方镜像 bot）：全程拆王塔决胜、0 超时 0 平、44–128s，**节奏健康**；②对称卡组 + 交换出牌序对照：胜率噪声大且随序漂移 → proxy **测不准胜负/侧平衡**（印证决策 35，arena 塔位已验上下对称）；③**真实 AI 压迫度**（真 AIController vs 不出兵玩家）：测出兵节奏/拆塔速度，作难度梯度客观参照。
 
@@ -732,7 +732,7 @@
 
 ---
 
-## V3 回归修复批次 — 寻路 / 塔射箭 / 亡语落水 / 攻击动画（2026-06-21，真人验收通过）  （待提交）
+## V3 回归修复批次 — 寻路 / 塔射箭 / 亡语落水 / 攻击动画（2026-06-21，真人验收通过）  （commit `14a29e5`）
 
 > 来源：V3 表现层回归验收（用户实机过核心对局）反馈的 4 个问题，一批修完并真人验收通过。跨 V3-1(寻路)/V3-1e(塔火表现)/V3-3(亡语)/V3-7b(攻击帧)。
 
@@ -767,7 +767,7 @@
 
 ---
 
-## V3 UI/UX — 像素设计系统 + 全屏统一升级（2026-06-21，真人验收通过）  （待提交）
+## V3 UI/UX — 像素设计系统 + 全屏统一升级（2026-06-21，真人验收通过）  （commit `242b287`）
 
 > 来源：用户要求「整个游戏菜单/系统界面整体优化一版、保持像素风」。先立设计系统 + 主菜单标杆（用户认可「夜色战场 + 石碑按钮」布局方向，美术=像素风），再一口气推广到所有屏。落地方式 = Theme/9-slice（用户选定）。
 
@@ -797,7 +797,7 @@
 
 > 方向见决策 45（教学专属 6 关 / 可重试 / 无剧情 / roguelite 不锁）。拆 V3-5a 框架 + V3-5b 引导。
 
-### V3-5a — 战役框架（逻辑+config+view+单测）  （待提交，真人 1-6 验收通过 2026-06-22）
+### V3-5a — 战役框架（逻辑+config+view+单测）  （commit `80cf141`，真人 1-6 验收通过 2026-06-22）
 **逻辑 + config**
 - `logic/campaign_state.gd`（CampaignState）：线性进度 + 可重试流转（胜推进 / 败·平·未结束留原地重打 / 全胜→CLEARED；区别于 RunState 二元永久死亡）+ to_dict/load_dict。
 - `config/campaign.json`（结构性、不进 Excel）：default = 6 关序列 `{level_id, focus}`（deploy→elixir→bridge→defend→spell→boss）。
@@ -817,7 +817,7 @@
 **遗留**：战役第一关仍偏难（首版 AI 占位，留后续整体大改时调，见 [[battle-pacing-too-tense]]）。
 **下一步**：V3-5b 新手引导覆盖层（局部高亮 + 手指指引 + 气泡文字，数据驱动引导脚本）。
 
-### V3-5b — 新手引导覆盖层（仅 view + config，真人验收）  （待提交，真人验收通过 2026-06-22）
+### V3-5b — 新手引导覆盖层（仅 view + config，真人验收）  （commit `4364dbb`，真人验收通过 2026-06-22）
 **前置决策**：见决策 45 + 用户 2026-06-22 选定（JSON 数据驱动 / 首版只第 1 关核心引导 / 动作触发为主+点击）。纯 view 表现层（决策 30/41 路线），无逻辑改、无新单测。
 **新增 / 修改**
 - `config/tutorial.json`（新，结构性、不进 Excel）：`campaign_01` 引导 4 步 intro→elixir→deploy→push，每步 `{text_key, highlight, finger, advance}`；advance = tap(点击) / card_played(出兵动作触发)。
