@@ -1,0 +1,20 @@
+# Build cache / outputs
+bin/
+*.exe
+*.test
+
+# Local env (must not leak into image)
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+
+# Docker artifacts
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Documentation (image doesn't need it)
+README.md
