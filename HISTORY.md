@@ -828,3 +828,28 @@
 **验收**：单测 186/186（view+config 改动零回归）；battle smoke 干净；MCP 截图确认「新手战役」改名；**真人实机验收通过 2026-06-22**（开局气泡→圣水高亮→出兵高亮→拖牌推进→结束，第 1 关）。
 
 > **V3-5（新手战役 + 引导）收官**：5a 框架（CampaignState + 6 教学关 + 中枢 view + battle 战役模式）+ 5b 数据驱动新手引导。单测 186/186。**遗留**：战役关 AI 难度偏高（首版占位，留后续整体大改/V3-9 平衡时调，见 [[battle-pacing-too-tense]]）。
+
+---
+
+## V3 安卓导出打包环境搭建与包体验证（2026-06-23） （待提交）
+
+**背景**
+- 配置并打通本地 Windows 环境下的 Android 导出链路，确保能够一键构建 APK 包。
+
+**新增 / 修改**
+- **指南文档**：新建 [ANDROID_BUILD_GUIDE.md](file:///f:/godotProjectRelease/docs/ANDROID_BUILD_GUIDE.md)，详细记录了环境搭建、错误排查及未来日常打包流程。
+- **工程配置**：修改 [project.godot](file:///f:/godotProjectRelease/project.godot)，在 `[rendering]` 块下启用 `textures/vram_compression/import_etc2_astc=true`，以解决 Godot 导出 Android 包对纹理压缩格式的硬性约束。
+- **环境依赖**：
+  - 配置全局 Godot 编辑器设置指向本地 SDK (`C:/Users/user/AppData/Local/Android/Sdk`) 和 JDK 17。
+  - 生成调试密钥 `debug.keystore`，放置于 Godot 默认路径。
+  - 导入 Godot 4.6.3 官方导出模板。
+- **预设配置**：添加 [export_presets.cfg](file:///f:/godotProjectRelease/export_presets.cfg) 对 Android 平台的支持。
+
+**踩坑与修复**
+- **ETC2/ASTC 压缩报错**：命令行 Headless 打包时只提示 `configuration errors` 却无详细原因。经用户在 Godot 编辑器界面中打开“导出”面板，获取到了 `目标平台需要“ETC2/ASTC”纹理压缩` 的清晰红字报错，通过修改 `project.godot` 顺利解决。
+
+**验收结果**
+- 运行打包命令：
+  `godot --headless --path . --export-debug "Android" build/android.apk`
+- 结果：构建并签名成功。生成 [android.apk](file:///f:/godotProjectRelease/build/android.apk) (57.8MB) 以及 `android.apk.idsig`。
+
