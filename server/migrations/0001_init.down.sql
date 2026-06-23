@@ -1,2 +1,2 @@
--- V4-S0c rollback for 0001_init.up.sql.
-DROP TABLE IF EXISTS schema_migrations;
+-- 0001 is a no-op placeholder, so down is a no-op too.
+SELECT 1;

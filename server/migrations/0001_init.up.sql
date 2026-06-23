@@ -1,13 +1,10 @@
--- V4-S0c placeholder migration.
--- Real schema lands in V4-S1 (accounts) and V4-S2 (profiles, decks, unlocks).
--- See PLAN_V4 §6.1 for the target schema (accounts/profiles/decks/matches/seasons + F2P
--- reserved tables unlocks/currency/purchases).
+-- V4-S0c bootstrap migration (placeholder).
+--
+-- schema_migrations is created by the migrate runner itself
+-- (server/internal/store/migrate.go: CREATE TABLE IF NOT EXISTS),
+-- so this file intentionally makes no schema changes — it only
+-- exists to reserve version 0001 in the timeline.
+--
+-- Real schema starts at 0002 (V4-S1: accounts + profiles).
 
--- Sanity: marker table so we can verify migrations ran at all.
-CREATE TABLE IF NOT EXISTS schema_migrations (
-    version INT PRIMARY KEY,
-    applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-INSERT INTO schema_migrations (version) VALUES (1)
-ON CONFLICT (version) DO NOTHING;
+SELECT 1;

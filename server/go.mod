@@ -1,6 +1,6 @@
 module github.com/jchensh/godot-clash-pusher/server
 
-go 1.23
+go 1.25.0
 
 // V4-S0b: 仅声明模块路径，无外部依赖。
 // 后续按需添加：
@@ -10,4 +10,16 @@ go 1.23
 //   - google.golang.org/protobuf            (S0e, proto runtime)
 //   - github.com/golang-jwt/jwt/v5         (S1, JWT)
 
-require google.golang.org/protobuf v1.36.11
+require (
+	github.com/jackc/pgx/v5 v5.10.0
+	google.golang.org/protobuf v1.36.11
+)
+
+require (
+	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
+	github.com/jackc/puddle/v2 v2.2.2 // indirect
+	golang.org/x/sync v0.17.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
+)

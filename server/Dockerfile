@@ -3,14 +3,19 @@
 # Each docker-compose service picks one binary via `command:`.
 
 # -------- Build stage --------
-FROM golang:1.23-alpine AS builder
+# go.mod's go directive may auto-bump to the latest installed toolchain
+# (e.g. 1.25 from `go mod tidy`); keep this image >= that.
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /src
 
-# Use China-friendly Go module proxy by default (proxy.golang.org is unreachable from CN).
-# Override at build time via --build-arg GOPROXY=... if you're outside CN.
+# Use China-friendly Go module proxy + checksum db by default
+# (proxy.golang.org / sum.golang.org are unreachable from CN).
+# Override at build time via --build-arg if you're outside CN.
 ARG GOPROXY=https://goproxy.cn,direct
+ARG GOSUMDB=sum.golang.google.cn
 ENV GOPROXY=${GOPROXY}
+ENV GOSUMDB=${GOSUMDB}
 
 # Cache module deps first.
 COPY go.mod go.sum ./
@@ -34,6 +39,10 @@ COPY --from=builder /out/gateway /usr/local/bin/gateway
 COPY --from=builder /out/api     /usr/local/bin/api
 COPY --from=builder /out/battle  /usr/local/bin/battle
 COPY --from=builder /out/migrate /usr/local/bin/migrate
+
+# Migration SQL files are read at runtime by the migrate binary
+# (MIGRATIONS_DIR env, default /app/migrations).
+COPY --from=builder /src/migrations /app/migrations
 
 # Default to gateway; compose services override via `command:`.
 CMD ["/usr/local/bin/gateway"]
