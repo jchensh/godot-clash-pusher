@@ -21,6 +21,9 @@ These do not come from git and must be configured on each machine:
 - `uv` Python runner used by the Godot AI MCP server.
 - Codex MCP registration in the user's Codex config.
 - Claude Code MCP registration in the user's Claude config.
+- Atlas (Atlassian) MCP connector for the Jira PM board — required in **both**
+  Claude Code and Codex (see the "Atlas (Atlassian) MCP" section below). Without
+  it, agents cannot maintain the `KAN` Jira board the workflow depends on.
 - User environment variables such as telemetry opt-out.
 - Local proxy settings for GitHub/PyPI downloads.
 
@@ -183,6 +186,57 @@ If it is disconnected:
 2. Confirm `Project > Project Settings > Plugins > Godot AI` is enabled.
 3. Confirm `uv` is available in the environment used to launch Godot.
 4. Restart the agent client session.
+
+## Atlas (Atlassian) MCP — Jira PM Board
+
+This project uses the Jira project **`KAN`** ("godotRoyalClash") as the PM source
+of truth, alongside `HISTORY.md`. Agents read/write it through the **Atlas
+(Atlassian) remote MCP connector**. It is **required in both Claude Code and
+Codex** — Codex follows the same plan-create / start→In Progress / done→Done
+lifecycle described in `CLAUDE.md` / `AGENTS.md`. If the connector is not
+connected, stop and ask the user to install it; do not silently skip Jira
+updates.
+
+Verified site facts:
+
+- Site: `https://jchensh.atlassian.net`
+- cloudId: `087c2538-1ab6-4794-90b5-2edf33e04312`
+- Token scope: `jira-work` (read + write). No Confluence scope — Confluence
+  tools will fail until re-authorized with a wider scope.
+- Project key: `KAN`. Epics = version lines (V1=`KAN-5`, V2=`KAN-6`,
+  V3=`KAN-7`, V4=`KAN-8`).
+
+This is the Atlassian official **remote** MCP (OAuth in the browser, no local
+process). Confirm the exact endpoint/transport against Atlassian's current
+Remote MCP Server docs, then register it.
+
+Claude Code (remote connector, OAuth):
+
+```powershell
+claude mcp add --scope user --transport sse atlassian https://mcp.atlassian.com/v1/sse
+# then run /mcp in the Claude Code TUI to complete the browser OAuth
+```
+
+Codex — add the same remote server to `~/.codex/config.toml` (use Codex's
+current remote/OAuth MCP syntax; verify against Codex docs):
+
+```toml
+[mcp_servers."atlassian"]
+url = "https://mcp.atlassian.com/v1/sse"
+enabled = true
+```
+
+Connectivity check:
+
+```powershell
+claude mcp list   # expect: atlassian ... Connected
+```
+
+Or call a read-only tool (`atlassianUserInfo` /
+`getAccessibleAtlassianResources`) — it should return the `jchensh` account and
+the cloudId above. The connector's tools are deferred MCP tools (names carry a
+UUID prefix); load their schemas via ToolSearch before calling. Interactive
+OAuth connectors may be unavailable in headless/cron runs.
 
 ## Rules For Agents
 
