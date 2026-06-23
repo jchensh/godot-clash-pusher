@@ -52,12 +52,14 @@ help:
 gen-proto: gen-proto-go gen-proto-gd
 
 gen-proto-go:
-	@echo ">> Generating Go protobuf -> $(GO_PB_OUT)/"
+	@echo ">> Generating Go protobuf -> $(GO_PB_OUT)/<subpkg>/"
 	@mkdir -p $(GO_PB_OUT)
+	@# module= strips the prefix from each go_package -> relative output path under --go_out.
+	@# Layout: pb/common/common.pb.go, pb/auth/auth.pb.go, ...
 	@protoc \
 	    --proto_path=$(PROTO_DIR) \
 	    --go_out=$(GO_PB_OUT) \
-	    --go_opt=paths=source_relative \
+	    --go_opt=module=github.com/jchensh/godot-clash-pusher/server/internal/pb \
 	    $(PROTO_FILES)
 	@echo "OK"
 

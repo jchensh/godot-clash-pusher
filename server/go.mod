@@ -9,3 +9,5 @@ go 1.23
 //   - github.com/redis/go-redis/v9         (S4, Redis client)
 //   - google.golang.org/protobuf            (S0e, proto runtime)
 //   - github.com/golang-jwt/jwt/v5         (S1, JWT)
+
+require google.golang.org/protobuf v1.36.11
