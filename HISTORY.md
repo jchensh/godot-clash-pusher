@@ -853,3 +853,39 @@
   `godot --headless --path . --export-debug "Android" build/android.apk`
 - 结果：构建并签名成功。生成 [android.apk](file:///f:/godotProjectRelease/build/android.apk) (57.8MB) 以及 `android.apk.idsig`。
 
+---
+
+## V3 Web（HTML5）导出打通与浏览器实测可玩（2026-06-24） （待提交）
+
+**背景**
+- 项目原定位为买断制单机（Android + 桌面双平台），Web/浏览器部署从未纳入任何 PLAN。
+- 本次评估并打通 Web 导出链路，验证游戏可直接部署到浏览器游玩。三路并行调研（配置层 / 运行时代码兼容性 / 项目进度）确认：渲染后端 `gl_compatibility`（Web 唯一官方支持后端）、纯 GDScript（零 C#）、零 GDExtension/原生库、游戏逻辑层（logic/view/ai）无任何 `OS.execute`/`shell_open`/`Thread`/`HTTPRequest`/`WebSocket`/`InputEventScreenTouch`（拖拽用鼠标事件）—— **对 Web 导出零结构性障碍，无需改动任何游戏逻辑代码**。
+
+**新增 / 修改**
+- **导出预设**：修改 [export_presets.cfg](file:///f:/godotProjectRelease/export_presets.cfg)，新增 `preset.1`（platform="Web"，紧跟 Android 之后）。关键选项：
+  - `export_path="build/web/index.html"`；`export_filter="all_resources"`。
+  - `html/threads_support=false`（游戏全单线程，关掉后**不需要 COOP/COEP 跨域隔离头**，任意标准静态服务器可托管）。
+  - `html/touch_input=true`（兼容移动浏览器触屏）+ `html/canvas_resize_policy=2`（自适应）。
+  - `vram_texture_compression/for_desktop=true` / `for_mobile=false`。
+  - `exclude_filter` 排除运行无关体积大户：`tests/*`、`testAssets/*`（77 个 .aseprite + 14 个 .gif 第三方参考美术，不进包）、`tools/*`、`scripts/*`、根目录 `check_export.gd`/`print_methods.gd`（Android 导出排错临时探针）。
+- **Web 导出模板**：复用 Android 导出时已安装的统一模板包（Godot 模板为多平台合一，`4.6.3.stable` 下 `web_release.zip` / `web_nothreads_release.zip` 等 8 个 web 模板均已就位，无需额外安装）。
+
+**决策 / 取舍**
+- **`_mcp_game_helper` autoload**：指向编辑器插件 `addons/godot_ai/`。release build 里安全空转（不崩溃，与 Android 导出一致），为保持零代码改动与跨平台一致，**保留 autoload + 不排除 `addons/godot_ai/`**。
+- **音频**：`sound/` 当前无实际音频文件，Web 包静音运行（`AudioManager` 容错、不崩溃）；接受首版无声，后续补 `.ogg` 资源即可，不影响导出。
+- **IndexedDB 持久化**：`user://` 存档（Roguelite meta 解锁 / run 存档）在 Web 上由 Godot 自动路由到 IndexedDB，无需改 `save_system.gd`。
+
+**产物**（导出到 `export/`）
+- `index.wasm`（35.7MB，Godot wasm 运行时）+ `index.pck`（3.7MB，游戏资源）+ `index.js`（280KB）+ `index.html`（5.4KB）+ 图标 + audio worklet。共约 40MB（debug 版）。
+
+**验收结果**
+- 本地起 `python -m http.server 8000`（避免 `file://` 的 CORS/wasm 加载限制）。
+- **真人实机验收通过 2026-06-24**：浏览器加载正常、主菜单可进入、战斗可拖拽卡牌部署、AI 对推正常、胜负结算正常、Roguelite run 可玩。
+- 结论：**Web 包可正常游玩，项目具备浏览器部署能力**。
+
+**遗留 / 可选后续**
+- 部署到公网静态托管（GitHub Pages / itch.io / Netlify 等）做公开可玩验证。
+- 导出 release 版（非 debug）以缩小包体。
+- 补音频素材后重导出。
+- 桌面浏览器竖屏（720×1280）画面偏窄，如需可加 canvas 适配（非导出阻塞项）。
+
