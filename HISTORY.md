@@ -74,11 +74,11 @@
 | V3-UI | 像素 UI 设计系统(PixelUI 9-slice) + 6 屏全统一(主菜单/选关/设置/组卡/run/战斗HUD) + 选关返回 bug 修复 | ✅ 完成（真人验收通过 2026-06-21；单测 180/180） | `242b287` |
 | V3-5a | 新手战役框架：CampaignState(可重试) + campaign.json 6 教学关 + 战役中枢 view + battle 战役模式 + 菜单入口（含修复选关混入 campaign 关 bug） | ✅ 完成（真人 1-6 验收通过 2026-06-22；单测 186/186） | `80cf141` |
 | V3-5b | 新手引导覆盖层：tutorial.json 数据驱动 + battle_scene 引导(压暗/挖洞高亮/手指/气泡, tap+动作推进) | ✅ 完成（真人验收通过 2026-06-22；单测 186/186） | `4364dbb` |
-| V4-S0 | 协议/Go 脚手架/docker compose（PLAN_V4 + proto + server/ + Makefile） | 🚧 进行中（PLAN 已写，脚手架待写） | — |
+| V4-S0 | 协议/Go 脚手架/Docker/Makefile/Go·GDScript 双端 pb（a proto + b Go cmd + c Docker + d Makefile + e Go pb 生成与 compose 跑通 + f godobuf 接入） | ✅ 完成（单测 190/190；docker compose 5 容器+pg 16.14+redis 验收通过） | `d79dd25`/`d5c71af`/`107fed9`/`8ced7fd`/`9001c2c`/`d4a2698`/`e13a466` |
 
-> **当前阶段 = V4 联网升级 + 实时对战**（账号/匹配/PvP/赛季/排行榜；长期 F2P 但前期玩法验证不实现支付）。权威规划见 [PLAN_V4.md](PLAN_V4.md)；方向锁定见决策日志 46。**V1/V2/V3 全部完成**——V1 机制白膜 → V2 3-lane + 程序化换皮 + AI 难度 + 内容平衡 → V3 2D 战斗 reboot + 空军 + 新积木 + Roguelite 主轴 + 交互手感 + 精灵美术 + 音频骨架 + 难度 5 档 + 像素 UI 设计系统 + 新手战役 + 引导。V1/V2 详细见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)，V3 详细见 [docs/HISTORY_V3_DETAILED.md](docs/HISTORY_V3_DETAILED.md)。**V3-9 平衡剩余子项**（数值/节奏调优 + 设置/导出/上架打磨）与 V4 早期阶段（S0~S2 账号/档案）可并行。**下一步**：V4-S0（proto + Go 脚手架 + docker compose）。
+> **当前阶段 = V4 联网升级 + 实时对战**（账号/匹配/PvP/赛季/排行榜；长期 F2P 但前期玩法验证不实现支付）。权威规划见 [PLAN_V4.md](PLAN_V4.md)；方向锁定见决策日志 46。**V1/V2/V3 全部完成**——V1 机制白膜 → V2 3-lane + 程序化换皮 + AI 难度 + 内容平衡 → V3 2D 战斗 reboot + 空军 + 新积木 + Roguelite 主轴 + 交互手感 + 精灵美术 + 音频骨架 + 难度 5 档 + 像素 UI 设计系统 + 新手战役 + 引导。V1/V2 详细见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)，V3 详细见 [docs/HISTORY_V3_DETAILED.md](docs/HISTORY_V3_DETAILED.md)。**V3-9 平衡剩余子项**（数值/节奏调优 + 设置/导出/上架打磨）与 V4 早期阶段（S0~S2 账号/档案）可并行。**V4-S0 整体收官**（7 commits / 6 子步 a~f：proto + Go 脚手架 + Docker + Makefile + Go·GDScript 双端 pb 圆环对接）。**下一步**：V4-S1（匿名 device_id 登录 + JWT/refresh + PG accounts 表）。
 
-**测试**：186/186（`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`release` 为 Antigravity（Google IDE）创建的安卓打包分支（跟随 develop，agent 默认不动）、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`；音频单独走 `config/AudioConfig.xlsx` → `config/audio_assets.json`，用 `tools/build_audio_config.py --check` 校验。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
+**测试**：190/190（`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`release` 为 Antigravity（Google IDE）创建的安卓打包分支（跟随 develop，agent 默认不动）、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`；音频单独走 `config/AudioConfig.xlsx` → `config/audio_assets.json`，用 `tools/build_audio_config.py --check` 校验。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
 ---
 
@@ -206,16 +206,44 @@
 
 > 方向见决策 46，权威规划见 [PLAN_V4.md](PLAN_V4.md)。**头号工程 = V4-S3 lockstep 实时对战网络层**。S0~S5 = 玩法验证骨架（脚手架/账号/档案/对战/匹配/赛季+榜），S6~S12 = 产品化推后。每步追加在本段（V3 及更早的详细段去 [docs/HISTORY_V3_DETAILED.md](docs/HISTORY_V3_DETAILED.md) 写）。
 
-### V4-S0 — 协议/Go 脚手架/docker compose（**当前步骤**）  （未开工）
-**前置决策**：见决策 46。
-**计划**：
-- `proto/` 初版（common/auth/profile/match/battle/leaderboard，~15 条消息）。
-- `server/` Go 项目脚手架（`cmd/{gateway,api,battle,migrate}` + `internal/{auth,profile,matchmaking,battle,leaderboard,season,store,pb}` + `migrations/` + `Dockerfile` + `go.mod`）。
-- `docker-compose.yml`（pg + redis + server）+ `Makefile`（`gen-proto` / `test` / `up` / `down` / `migrate`）。
-- 客户端 `proto/` 解析目录 + gd-protobuf 接入（实际 net/ 接通在 S1）。
+### V4-S0 — 协议 + Go 脚手架 + Docker + Makefile + 双端 pb（已完成）
+**前置决策**：见决策 46。拆 6 子步：a proto / b Go cmd / c Docker / d Makefile / e Go pb 生成 + docker compose 跑通 / f godobuf 客户端 pb 接入。环境前置：本机 winget 装 Go 1.26.4 + protoc 35.0 + GnuWin32 Make 3.81 + Docker Desktop 4.78（WSL2 后端，首装要管理员 PowerShell `wsl --install` + 重启电脑）。
 
-**验收**：
-- `docker compose up` 起服务（pg + redis + server 三容器健康）。
-- `cd server && go test ./...` 通过（脚手架阶段单测占位即可）。
-- `make gen-proto` 同时生成 Go (`server/internal/pb/`) 与 GDScript (`net/proto/`) 产物。
-- Godot 单测仍 186/186（客户端 net/ 仅新增 proto 解析，不接 logic）。
+#### V4-S0a — proto schema 初版（commit `d79dd25`）
+6 个 .proto / 26 条消息：common（MsgId 枚举分段 0-9/10-19/20-29/30-39/40-49/50-59 + ErrorCode 分层框架级<1000 + 业务级按模块段 + ProfileSummary）/ auth（device_id 匿名登录 + JWT/refresh）/ profile（乐观锁 `version` + `expected_version` CAS + `unlocked_card_ids`）/ match（FindMatch + MatchFoundPush 带 seed）/ battle（lockstep 核心：DeployCmd 用 `int32 x_milli/y_milli` 定点避浮点漂移 / TickBundle 空 deploys 也照发同步 tick / StateHashUp sha256(32B) / BattleResultPush 含 HASH_DIVERGENCE / Heartbeat 60s 超时认输）/ leaderboard（Scope GLOBAL/ARENA + season_id=0=当前）。帧格式 `[2 bytes msg_id (be u16)][N bytes protobuf payload]`，PING/PONG 无 payload。protoc 35.0 dry-run 全过、无 warning。
+
+#### V4-S0b — Go 服务端脚手架（commit `d5c71af`）
+- `server/go.mod`（module `github.com/jchensh/godot-clash-pusher/server`, go 1.23）。
+- 4 个 cmd binary 占位：`gateway`（WS 接入，V4-S3 起填）/`api`（HTTP API，V4-S1 起填）/`battle`（room，V4-S3 起填）/`migrate`（一次性 CLI，V4-S1 起填）。
+- `internal/version`（跨 cmd 共享版本常量 + 单测示范，"按需建包"避免预先建 8 个空 internal 目录）。
+- `server/{README.md,.gitignore}`。
+- 验证：`go build/test/vet` 全过；4 个 cmd 都能 `go run` 启动打印 boot log 后退出。
+
+#### V4-S0c — Docker 化（commit `107fed9`）
+- `server/Dockerfile`：multi-stage（golang:1.23-alpine builder → alpine:3.20 runtime）打全部 4 binary 到 `/usr/local/bin/`。
+- `server/docker-compose.yml`：5 容器（postgres:16-alpine + redis:7-alpine + gateway+api+battle 共享 `gcp-server:dev` 镜像）+ pg/redis healthcheck + `depends_on` + `.env` 通过 `${VAR:-default}` 注入配置 + 端口映射（5432/6379/8080/8081）。
+- `server/{.dockerignore,.env.example,migrations/0001_init.{up,down}.sql}`（migrations 仅占位 schema_migrations 标记表）。
+- 4 个 cmd main.go 升级为 `signal.NotifyContext` 等待 SIGINT/SIGTERM（docker 容器健壮性的最小演进，V4-S1+ 直接复用此模板）。
+
+#### V4-S0d — 根级 Makefile（commit `8ced7fd`）
+统一入口：`gen-proto-{go,gd}` / `install-tools` / `build/test/vet/fmt/tidy-go` / `up/down/down-v/logs/ps` / `migrate` / `clean` / `help` / `test-godot`。`PROTO_DIR=proto / GO_PB_OUT=server/internal/pb / GD_PB_OUT=net/proto`。兼容 GnuWin32 Make 3.81（Windows winget 装的老版，避免 .ONESHELL 等新特性）。
+
+#### V4-S0e 前半 — Go pb 生成（commit `9001c2c`）
+`go install google.golang.org/protobuf/cmd/protoc-gen-go@latest`（走 `HTTPS_PROXY=http://127.0.0.1:7897`，宿主机 Clash）+ `make gen-proto-go` 生成 `server/internal/pb/{common,auth,profile,match,battle,leaderboard}/*.pb.go`（入 git，新人 clone 即可 `go build`，不必先装 protoc）。
+**踩坑**：①初版 Makefile 用 `--go_opt=paths=source_relative` 让 6 个文件（不同 `go_package`）挤同目录 → `found packages auth (auth.pb.go) and battle (battle.pb.go)` 编译失败；改用 `--go_opt=module=github.com/jchensh/godot-clash-pusher/server/internal/pb`，protoc-gen-go 从 go_package 减 module 前缀算相对路径，6 子目录各自一个 Go package。②`server/go.{mod,sum}` 加 `google.golang.org/protobuf v1.36.11` 依赖。
+
+#### V4-S0e 后半 — docker compose 跑通（commit `d4a2698`）
+**踩坑**：①容器内 `go mod download` 拉不到 `proxy.golang.org`（被墙，Clash 代理在容器隔离网络外不可达）→ Dockerfile 加 `ARG GOPROXY=https://goproxy.cn,direct` 默认值（国内 Go 模块代理，七牛维护），同时取消 `COPY go.sum` 注释（S0e 起有真实依赖）。②`make migrate` 失败：Git Bash 把 `/usr/local/bin/migrate` 转换成 `C:/Program Files/Git/usr/local/bin/migrate` 让容器找不到 binary → Makefile migrate target 改用裸命令 `migrate`（alpine image PATH 含 `/usr/local/bin`，docker exec 自动查 PATH）。
+**验收**（Win11/WSL2/Docker Desktop 4.78）：`make up` 起 5 容器 / postgres+redis healthy / gateway+api+battle 各打印 `boot log — idling until SIGINT/SIGTERM` / postgres 16.14 响应 `SELECT version()` / redis `PING` → `PONG` / `make migrate` one-shot 容器跑完正常退出。
+
+#### V4-S0f — godobuf 客户端 pb 接入（commit `e13a466`）
+- `addons/godobuf/`：vendor [oniksan/godobuf](https://github.com/oniksan/godobuf) v0.7.0 for Godot 4.6（BSD 3-Clause），不入库其 200+ test fixture（`test/` 子目录）。
+- `Makefile gen-proto-gd`：从占位提示升级为真自动化——循环 6 proto 跑 `godot --headless --path . -s addons/godobuf/godobuf_cmdln.gd --input=... --output=...`，靠 `[ -s file ]` 判产物大小（godobuf 自身退出码不区分成败、`push_error+quit()` 都 exit 0）。新增 `PROTO_NAMES / GODOT / GODOT_TMP_HOME` 变量，可被环境覆盖。
+- `proto/*.proto` 兼容性调整（让 godobuf 和 protoc 同时跑得起来）：①`ErrorResp.message` → `detail`（godobuf 把 `message` 当 proto 保留字，protoc 实际允许）；②6 个 .proto `package game.v4.<sub>` 统一改 `package game.v4`（godobuf 不解析 `game.v4.common.X` 完全限定名；protoc 短名跨文件解析依赖同 package；`option go_package` 保留各自独立，Go pb 仍分 6 子目录）；③`ProfileSummary` 引用全部去掉 `game.v4.common.` 前缀（4 处：auth/match/battle/leaderboard）。
+- `net/proto/{common,auth,profile,match,battle,leaderboard}.gd`：godobuf 生成（29-50KB/文件，自带跨 import 类型副本如 ProfileSummary，每个 .gd 单文件 self-contained），入 git。
+- `net/README.md`：目录用途 + protobuf 工作流 + godobuf 三大坑（保留字 / 同 package / `res://` 路径 bug）+ 典型 encode/decode 代码。
+- `tests/test_net_proto.gd`：4 条 round-trip smoke（LoginReq 三字符串字段 / Profile 空消息默认值 int64=0 string="" / DeployCmd 定点坐标 x_milli=4500 y_milli=17000 / BattleResultPush 嵌套 enum Winner.SIDE_1 + Reason.KING_DESTROYED）。
+- 单测 **190/190**（旧 186 + 新 4，零回归）。
+- 顺手：`server/internal/version` `V4Stage` 标签从 `V4-S0b` 升 `V4-S0e`（log 标签同步）。
+
+> **V4-S0 整阶段收官**：a proto schema → b Go 脚手架 → c Docker 化 → d Makefile → e Go pb 生成 + docker compose 跑通 → f godobuf 客户端 pb 接入。客户端单测 **190/190**；docker compose 5 容器 + postgres 16.14 + redis 验收通过；双端 protobuf 编解码圆环对接。**下一步 V4-S1 匿名 device_id 登录**：device_id → JWT (HS256, TTL 30d) / refresh token (TTL 90d)；`server/migrations/0002_accounts.up.sql` 真实建表 + `server/internal/{auth,store}/` 起包；`net/auth.gd` 客户端 token 存盘 + `user://` 持久化；`tests/` 单测覆盖 JWT 签发/校验。
