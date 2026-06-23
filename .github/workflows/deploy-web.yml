@@ -1,0 +1,76 @@
+name: Deploy Web (HTML5)
+
+# 每次推送到 release 分支自动构建 Web 包并发布到 GitHub Pages；
+# 也可在 GitHub 仓库的 Actions 标签页手动触发（Run workflow）。
+on:
+  push:
+    branches: [release]
+  workflow_dispatch:
+
+# 发布到 Pages 需要的权限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只跑一个部署，避免并发发布冲突
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # --- 拉代码 ---
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # --- 下载 Godot 4.6.3 stable 编辑器 (Linux) ---
+      # 4.3+ 不再单独发 headless 包，用 _linux.x86_64 + --headless flag 触发无头模式
+      - name: Download Godot editor
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip
+          unzip -q Godot_v4.6.3-stable_linux.x86_64.zip
+          # 二进制名去掉 .zip 后是 Godot_v4.6.3-stable_linux.x86_64，建软链方便调用
+          ln -s Godot_v4.6.3-stable_linux.x86_64 godot
+          chmod +x godot Godot_v4.6.3-stable_linux.x86_64
+
+      # --- 下载并安装导出模板 (tpz = 多平台合一，含 Web 模板) ---
+      - name: Install export templates
+        run: |
+          mkdir -p ~/.local/share/godot/export_templates/4.6.3.stable
+          wget -q https://github.com/godotengine/godot/releases/download/4.6.3-stable/Godot_v4.6.3-stable_export_templates.tpz
+          # tpz 本质是 zip，解压出 templates/ 目录
+          unzip -q Godot_v4.6.3-stable_export_templates.tpz
+          cp -r templates/* ~/.local/share/godot/export_templates/4.6.3.stable/
+
+      # --- 导入资源（首次需扫描，生成 .godot/ 缓存，否则导出可能漏资源）---
+      - name: Import project resources
+        run: |
+          ./godot --headless --import --path . 2>&1 | tail -20 || true
+
+      # --- 导出 Web 包到 export/ 目录 ---
+      # preset "Web" 已在 export_presets.cfg 配好（threads=false，无需 COOP/COEP）
+      - name: Export Web
+        run: |
+          ./godot --headless --path . --export-release "Web" export/index.html 2>&1 | tail -30
+          echo "--- 产物列表 ---"
+          ls -la export/
+
+      # --- 上传产物给 Pages action ---
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: export/
+
+      # --- 发布 ---
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
