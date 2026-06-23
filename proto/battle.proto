@@ -9,7 +9,7 @@
 
 syntax = "proto3";
 
-package game.v4.battle;
+package game.v4;
 
 import "common.proto";
 
@@ -21,7 +21,7 @@ message JoinRoomReq {
 
 message JoinRoomResp {
   bool ok = 1;
-  game.v4.common.ProfileSummary opponent = 2;
+  ProfileSummary opponent = 2;
   int32 your_side = 3;          // 与 MatchFoundPush 一致
   int32 start_tick = 4;         // 双方都 join 后服务端拍板开局 tick（含倒数缓冲）
   uint64 seed = 5;

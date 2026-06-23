@@ -7,7 +7,7 @@
 
 syntax = "proto3";
 
-package game.v4.common;
+package game.v4;
 
 option go_package = "github.com/jchensh/godot-clash-pusher/server/internal/pb/common";
 
@@ -76,7 +76,8 @@ enum ErrorCode {
 // 通用错误响应；当 server 处理 *_REQ 失败时回此，msg_id=ERROR_RESP。
 message ErrorResp {
   ErrorCode code = 1;
-  string message = 2;       // 人类可读错误描述（不直接暴露给用户，给开发看）
+  string detail = 2;        // 人类可读错误描述（不直接暴露给用户，给开发看）
+                            // 注：原名是 message，但 godobuf 把它当 proto 保留字
   MsgId in_reply_to = 3;    // 哪个 req 出错（便于客户端关联）
 }
 

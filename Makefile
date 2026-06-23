@@ -24,6 +24,13 @@ GO_PB_OUT  := server/internal/pb
 GD_PB_OUT  := net/proto
 PROTO_FILES := $(wildcard $(PROTO_DIR)/*.proto)
 
+# Godot binary (overridable; default = this dev box's winget shim).
+GODOT          ?= /c/Users/user/AppData/Local/Microsoft/WinGet/Links/godot_console.cmd
+GODOT_TMP_HOME ?= /private/tmp/godot-home
+
+# Proto file base names (no path, no extension). Hardcoded for stable iteration order.
+PROTO_NAMES := common auth profile match battle leaderboard
+
 help:
 	@echo "V4 Makefile targets:"
 	@echo "  gen-proto-go    Generate Go protobuf code into $(GO_PB_OUT)/"
@@ -64,11 +71,21 @@ gen-proto-go:
 	@echo "OK"
 
 gen-proto-gd:
-	@echo ">> GDScript protobuf is generated INSIDE the Godot editor by the godobuf plugin."
-	@echo "   1. Open Godot editor"
-	@echo "   2. Project > Tools > Godobuf > select proto/*.proto"
-	@echo "   3. Output to $(GD_PB_OUT)/"
-	@echo "   (godobuf has no headless CLI; this is a one-time manual step per schema change.)"
+	@echo ">> godobuf headless: generating GDScript pb -> $(GD_PB_OUT)/"
+	@mkdir -p $(GD_PB_OUT)
+	@for p in $(PROTO_NAMES); do \
+	    HOME=$(GODOT_TMP_HOME) "$(GODOT)" --headless --path . \
+	        -s addons/godobuf/godobuf_cmdln.gd \
+	        --input=$(PROTO_DIR)/$$p.proto \
+	        --output=$(GD_PB_OUT)/$$p.gd \
+	        > /dev/null 2>&1; \
+	    if [ -s $(GD_PB_OUT)/$$p.gd ]; then \
+	        echo "  $$p.gd OK"; \
+	    else \
+	        echo "  $$p.gd FAILED (check 'godot ... -s addons/godobuf/godobuf_cmdln.gd' output manually)"; \
+	        exit 1; \
+	    fi; \
+	done
 
 install-tools:
 	@echo ">> go install protoc-gen-go (latest)"

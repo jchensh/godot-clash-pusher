@@ -5,7 +5,7 @@
 
 syntax = "proto3";
 
-package game.v4.match;
+package game.v4;
 
 import "common.proto";
 
@@ -32,7 +32,7 @@ message CancelMatchResp {
 // 服务端主动推：找到对手了，跳战斗页。
 message MatchFoundPush {
   string room_id = 1;           // UUID
-  game.v4.common.ProfileSummary opponent = 2;
+  ProfileSummary opponent = 2;
   int32 your_side = 3;          // 1 = player A（地图下方）/ 2 = player B（上方）
   int32 arena = 4;
   uint64 seed = 5;              // run 级确定性 seed（spawn 序 tie-break 等用）

@@ -5,7 +5,7 @@
 
 syntax = "proto3";
 
-package game.v4.profile;
+package game.v4;
 
 option go_package = "github.com/jchensh/godot-clash-pusher/server/internal/pb/profile";
 

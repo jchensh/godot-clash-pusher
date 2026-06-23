@@ -7,7 +7,7 @@
 
 syntax = "proto3";
 
-package game.v4.leaderboard;
+package game.v4;
 
 import "common.proto";
 
@@ -26,7 +26,7 @@ message LeaderboardTopReq {
 
 message LeaderboardEntry {
   int32 rank = 1;
-  game.v4.common.ProfileSummary profile = 2;
+  ProfileSummary profile = 2;
   int32 trophies = 3;
 }
 

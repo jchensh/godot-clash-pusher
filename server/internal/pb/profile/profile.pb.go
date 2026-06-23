@@ -434,7 +434,7 @@ var File_profile_proto protoreflect.FileDescriptor
 
 const file_profile_proto_rawDesc = "" +
 	"\n" +
-	"\rprofile.proto\x12\x0fgame.v4.profile\"\x8a\x02\n" +
+	"\rprofile.proto\x12\agame.v4\"\x8a\x02\n" +
 	"\aProfile\x12\x1d\n" +
 	"\n" +
 	"account_id\x18\x01 \x01(\x03R\taccountId\x12\x1a\n" +
@@ -452,22 +452,22 @@ const file_profile_proto_rawDesc = "" +
 	"\x04slot\x18\x02 \x01(\x05R\x04slot\x12\x19\n" +
 	"\bcard_ids\x18\x03 \x03(\tR\acardIds\x12\x1b\n" +
 	"\tis_active\x18\x04 \x01(\bR\bisActive\"\x0f\n" +
-	"\rProfileGetReq\"\x9d\x01\n" +
-	"\x0eProfileGetResp\x122\n" +
-	"\aprofile\x18\x01 \x01(\v2\x18.game.v4.profile.ProfileR\aprofile\x12+\n" +
-	"\x05decks\x18\x02 \x03(\v2\x15.game.v4.profile.DeckR\x05decks\x12*\n" +
+	"\rProfileGetReq\"\x8d\x01\n" +
+	"\x0eProfileGetResp\x12*\n" +
+	"\aprofile\x18\x01 \x01(\v2\x10.game.v4.ProfileR\aprofile\x12#\n" +
+	"\x05decks\x18\x02 \x03(\v2\r.game.v4.DeckR\x05decks\x12*\n" +
 	"\x11unlocked_card_ids\x18\x03 \x03(\tR\x0funlockedCardIds\"\x88\x01\n" +
 	"\rDeckUpdateReq\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\x05R\x04slot\x12\x19\n" +
 	"\bcard_ids\x18\x02 \x03(\tR\acardIds\x12\x1d\n" +
 	"\n" +
 	"set_active\x18\x03 \x01(\bR\tsetActive\x12)\n" +
-	"\x10expected_version\x18\x04 \x01(\x05R\x0fexpectedVersion\"u\n" +
+	"\x10expected_version\x18\x04 \x01(\x05R\x0fexpectedVersion\"m\n" +
 	"\x0eDeckUpdateResp\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x1f\n" +
 	"\vnew_version\x18\x02 \x01(\x05R\n" +
-	"newVersion\x122\n" +
-	"\aprofile\x18\x03 \x01(\v2\x18.game.v4.profile.ProfileR\aprofileBBZ@github.com/jchensh/godot-clash-pusher/server/internal/pb/profileb\x06proto3"
+	"newVersion\x12*\n" +
+	"\aprofile\x18\x03 \x01(\v2\x10.game.v4.ProfileR\aprofileBBZ@github.com/jchensh/godot-clash-pusher/server/internal/pb/profileb\x06proto3"
 
 var (
 	file_profile_proto_rawDescOnce sync.Once
@@ -483,17 +483,17 @@ func file_profile_proto_rawDescGZIP() []byte {
 
 var file_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_profile_proto_goTypes = []any{
-	(*Profile)(nil),        // 0: game.v4.profile.Profile
-	(*Deck)(nil),           // 1: game.v4.profile.Deck
-	(*ProfileGetReq)(nil),  // 2: game.v4.profile.ProfileGetReq
-	(*ProfileGetResp)(nil), // 3: game.v4.profile.ProfileGetResp
-	(*DeckUpdateReq)(nil),  // 4: game.v4.profile.DeckUpdateReq
-	(*DeckUpdateResp)(nil), // 5: game.v4.profile.DeckUpdateResp
+	(*Profile)(nil),        // 0: game.v4.Profile
+	(*Deck)(nil),           // 1: game.v4.Deck
+	(*ProfileGetReq)(nil),  // 2: game.v4.ProfileGetReq
+	(*ProfileGetResp)(nil), // 3: game.v4.ProfileGetResp
+	(*DeckUpdateReq)(nil),  // 4: game.v4.DeckUpdateReq
+	(*DeckUpdateResp)(nil), // 5: game.v4.DeckUpdateResp
 }
 var file_profile_proto_depIdxs = []int32{
-	0, // 0: game.v4.profile.ProfileGetResp.profile:type_name -> game.v4.profile.Profile
-	1, // 1: game.v4.profile.ProfileGetResp.decks:type_name -> game.v4.profile.Deck
-	0, // 2: game.v4.profile.DeckUpdateResp.profile:type_name -> game.v4.profile.Profile
+	0, // 0: game.v4.ProfileGetResp.profile:type_name -> game.v4.Profile
+	1, // 1: game.v4.ProfileGetResp.decks:type_name -> game.v4.Deck
+	0, // 2: game.v4.DeckUpdateResp.profile:type_name -> game.v4.Profile
 	3, // [3:3] is the sub-list for method output_type
 	3, // [3:3] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name

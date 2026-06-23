@@ -6,7 +6,7 @@
 
 syntax = "proto3";
 
-package game.v4.auth;
+package game.v4;
 
 import "common.proto";
 
@@ -21,7 +21,7 @@ message LoginReq {
 message LoginResp {
   string token = 1;                              // JWT (HS256)，TTL 30d
   string refresh_token = 2;                      // refresh token，TTL 90d
-  game.v4.common.ProfileSummary profile = 3;     // 登录即带回基本档（少一次 round-trip）
+  ProfileSummary profile = 3;     // 登录即带回基本档（少一次 round-trip）
 }
 
 message RefreshReq {

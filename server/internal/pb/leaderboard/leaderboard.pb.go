@@ -77,7 +77,7 @@ func (LeaderboardTopReq_Scope) EnumDescriptor() ([]byte, []int) {
 
 type LeaderboardTopReq struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
-	Scope         LeaderboardTopReq_Scope `protobuf:"varint,1,opt,name=scope,proto3,enum=game.v4.leaderboard.LeaderboardTopReq_Scope" json:"scope,omitempty"`
+	Scope         LeaderboardTopReq_Scope `protobuf:"varint,1,opt,name=scope,proto3,enum=game.v4.LeaderboardTopReq_Scope" json:"scope,omitempty"`
 	SeasonId      int32                   `protobuf:"varint,2,opt,name=season_id,json=seasonId,proto3" json:"season_id,omitempty"` // 0 = 当前赛季
 	Arena         int32                   `protobuf:"varint,3,opt,name=arena,proto3" json:"arena,omitempty"`                       // scope=ARENA 时必填
 	Limit         int32                   `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`                       // 1..100
@@ -259,22 +259,22 @@ var File_leaderboard_proto protoreflect.FileDescriptor
 
 const file_leaderboard_proto_rawDesc = "" +
 	"\n" +
-	"\x11leaderboard.proto\x12\x13game.v4.leaderboard\x1a\fcommon.proto\"\xc0\x01\n" +
-	"\x11LeaderboardTopReq\x12B\n" +
-	"\x05scope\x18\x01 \x01(\x0e2,.game.v4.leaderboard.LeaderboardTopReq.ScopeR\x05scope\x12\x1b\n" +
+	"\x11leaderboard.proto\x12\agame.v4\x1a\fcommon.proto\"\xb4\x01\n" +
+	"\x11LeaderboardTopReq\x126\n" +
+	"\x05scope\x18\x01 \x01(\x0e2 .game.v4.LeaderboardTopReq.ScopeR\x05scope\x12\x1b\n" +
 	"\tseason_id\x18\x02 \x01(\x05R\bseasonId\x12\x14\n" +
 	"\x05arena\x18\x03 \x01(\x05R\x05arena\x12\x14\n" +
 	"\x05limit\x18\x04 \x01(\x05R\x05limit\"\x1e\n" +
 	"\x05Scope\x12\n" +
 	"\n" +
 	"\x06GLOBAL\x10\x00\x12\t\n" +
-	"\x05ARENA\x10\x01\"|\n" +
+	"\x05ARENA\x10\x01\"u\n" +
 	"\x10LeaderboardEntry\x12\x12\n" +
-	"\x04rank\x18\x01 \x01(\x05R\x04rank\x128\n" +
-	"\aprofile\x18\x02 \x01(\v2\x1e.game.v4.common.ProfileSummaryR\aprofile\x12\x1a\n" +
-	"\btrophies\x18\x03 \x01(\x05R\btrophies\"r\n" +
-	"\x12LeaderboardTopResp\x12?\n" +
-	"\aentries\x18\x01 \x03(\v2%.game.v4.leaderboard.LeaderboardEntryR\aentries\x12\x1b\n" +
+	"\x04rank\x18\x01 \x01(\x05R\x04rank\x121\n" +
+	"\aprofile\x18\x02 \x01(\v2\x17.game.v4.ProfileSummaryR\aprofile\x12\x1a\n" +
+	"\btrophies\x18\x03 \x01(\x05R\btrophies\"f\n" +
+	"\x12LeaderboardTopResp\x123\n" +
+	"\aentries\x18\x01 \x03(\v2\x19.game.v4.LeaderboardEntryR\aentries\x12\x1b\n" +
 	"\tseason_id\x18\x02 \x01(\x05R\bseasonIdBFZDgithub.com/jchensh/godot-clash-pusher/server/internal/pb/leaderboardb\x06proto3"
 
 var (
@@ -292,16 +292,16 @@ func file_leaderboard_proto_rawDescGZIP() []byte {
 var file_leaderboard_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_leaderboard_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_leaderboard_proto_goTypes = []any{
-	(LeaderboardTopReq_Scope)(0),  // 0: game.v4.leaderboard.LeaderboardTopReq.Scope
-	(*LeaderboardTopReq)(nil),     // 1: game.v4.leaderboard.LeaderboardTopReq
-	(*LeaderboardEntry)(nil),      // 2: game.v4.leaderboard.LeaderboardEntry
-	(*LeaderboardTopResp)(nil),    // 3: game.v4.leaderboard.LeaderboardTopResp
-	(*common.ProfileSummary)(nil), // 4: game.v4.common.ProfileSummary
+	(LeaderboardTopReq_Scope)(0),  // 0: game.v4.LeaderboardTopReq.Scope
+	(*LeaderboardTopReq)(nil),     // 1: game.v4.LeaderboardTopReq
+	(*LeaderboardEntry)(nil),      // 2: game.v4.LeaderboardEntry
+	(*LeaderboardTopResp)(nil),    // 3: game.v4.LeaderboardTopResp
+	(*common.ProfileSummary)(nil), // 4: game.v4.ProfileSummary
 }
 var file_leaderboard_proto_depIdxs = []int32{
-	0, // 0: game.v4.leaderboard.LeaderboardTopReq.scope:type_name -> game.v4.leaderboard.LeaderboardTopReq.Scope
-	4, // 1: game.v4.leaderboard.LeaderboardEntry.profile:type_name -> game.v4.common.ProfileSummary
-	2, // 2: game.v4.leaderboard.LeaderboardTopResp.entries:type_name -> game.v4.leaderboard.LeaderboardEntry
+	0, // 0: game.v4.LeaderboardTopReq.scope:type_name -> game.v4.LeaderboardTopReq.Scope
+	4, // 1: game.v4.LeaderboardEntry.profile:type_name -> game.v4.ProfileSummary
+	2, // 2: game.v4.LeaderboardTopResp.entries:type_name -> game.v4.LeaderboardEntry
 	3, // [3:3] is the sub-list for method output_type
 	3, // [3:3] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name

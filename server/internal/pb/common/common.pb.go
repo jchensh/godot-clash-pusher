@@ -243,10 +243,11 @@ func (ErrorCode) EnumDescriptor() ([]byte, []int) {
 
 // 通用错误响应；当 server 处理 *_REQ 失败时回此，msg_id=ERROR_RESP。
 type ErrorResp struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Code          ErrorCode              `protobuf:"varint,1,opt,name=code,proto3,enum=game.v4.common.ErrorCode" json:"code,omitempty"`
-	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`                                                   // 人类可读错误描述（不直接暴露给用户，给开发看）
-	InReplyTo     MsgId                  `protobuf:"varint,3,opt,name=in_reply_to,json=inReplyTo,proto3,enum=game.v4.common.MsgId" json:"in_reply_to,omitempty"` // 哪个 req 出错（便于客户端关联）
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Code   ErrorCode              `protobuf:"varint,1,opt,name=code,proto3,enum=game.v4.ErrorCode" json:"code,omitempty"`
+	Detail string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"` // 人类可读错误描述（不直接暴露给用户，给开发看）
+	// 注：原名是 message，但 godobuf 把它当 proto 保留字
+	InReplyTo     MsgId `protobuf:"varint,3,opt,name=in_reply_to,json=inReplyTo,proto3,enum=game.v4.MsgId" json:"in_reply_to,omitempty"` // 哪个 req 出错（便于客户端关联）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -288,9 +289,9 @@ func (x *ErrorResp) GetCode() ErrorCode {
 	return ErrorCode_ERR_OK
 }
 
-func (x *ErrorResp) GetMessage() string {
+func (x *ErrorResp) GetDetail() string {
 	if x != nil {
-		return x.Message
+		return x.Detail
 	}
 	return ""
 }
@@ -383,11 +384,11 @@ var File_common_proto protoreflect.FileDescriptor
 
 const file_common_proto_rawDesc = "" +
 	"\n" +
-	"\fcommon.proto\x12\x0egame.v4.common\"\x8b\x01\n" +
-	"\tErrorResp\x12-\n" +
-	"\x04code\x18\x01 \x01(\x0e2\x19.game.v4.common.ErrorCodeR\x04code\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\x125\n" +
-	"\vin_reply_to\x18\x03 \x01(\x0e2\x15.game.v4.common.MsgIdR\tinReplyTo\"\x9a\x01\n" +
+	"\fcommon.proto\x12\agame.v4\"{\n" +
+	"\tErrorResp\x12&\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x12.game.v4.ErrorCodeR\x04code\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail\x12.\n" +
+	"\vin_reply_to\x18\x03 \x01(\x0e2\x0e.game.v4.MsgIdR\tinReplyTo\"\x9a\x01\n" +
 	"\x0eProfileSummary\x12\x1d\n" +
 	"\n" +
 	"account_id\x18\x01 \x01(\x03R\taccountId\x12\x1a\n" +
@@ -461,14 +462,14 @@ func file_common_proto_rawDescGZIP() []byte {
 var file_common_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_common_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_common_proto_goTypes = []any{
-	(MsgId)(0),             // 0: game.v4.common.MsgId
-	(ErrorCode)(0),         // 1: game.v4.common.ErrorCode
-	(*ErrorResp)(nil),      // 2: game.v4.common.ErrorResp
-	(*ProfileSummary)(nil), // 3: game.v4.common.ProfileSummary
+	(MsgId)(0),             // 0: game.v4.MsgId
+	(ErrorCode)(0),         // 1: game.v4.ErrorCode
+	(*ErrorResp)(nil),      // 2: game.v4.ErrorResp
+	(*ProfileSummary)(nil), // 3: game.v4.ProfileSummary
 }
 var file_common_proto_depIdxs = []int32{
-	1, // 0: game.v4.common.ErrorResp.code:type_name -> game.v4.common.ErrorCode
-	0, // 1: game.v4.common.ErrorResp.in_reply_to:type_name -> game.v4.common.MsgId
+	1, // 0: game.v4.ErrorResp.code:type_name -> game.v4.ErrorCode
+	0, // 1: game.v4.ErrorResp.in_reply_to:type_name -> game.v4.MsgId
 	2, // [2:2] is the sub-list for method output_type
 	2, // [2:2] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name

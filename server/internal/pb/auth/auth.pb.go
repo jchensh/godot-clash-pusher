@@ -249,15 +249,15 @@ var File_auth_proto protoreflect.FileDescriptor
 const file_auth_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"auth.proto\x12\fgame.v4.auth\x1a\fcommon.proto\"j\n" +
+	"auth.proto\x12\agame.v4\x1a\fcommon.proto\"j\n" +
 	"\bLoginReq\x12\x1b\n" +
 	"\tdevice_id\x18\x01 \x01(\tR\bdeviceId\x12%\n" +
 	"\x0eclient_version\x18\x02 \x01(\tR\rclientVersion\x12\x1a\n" +
-	"\bplatform\x18\x03 \x01(\tR\bplatform\"\x80\x01\n" +
+	"\bplatform\x18\x03 \x01(\tR\bplatform\"y\n" +
 	"\tLoginResp\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12#\n" +
-	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\x128\n" +
-	"\aprofile\x18\x03 \x01(\v2\x1e.game.v4.common.ProfileSummaryR\aprofile\"1\n" +
+	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\x121\n" +
+	"\aprofile\x18\x03 \x01(\v2\x17.game.v4.ProfileSummaryR\aprofile\"1\n" +
 	"\n" +
 	"RefreshReq\x12#\n" +
 	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"H\n" +
@@ -279,14 +279,14 @@ func file_auth_proto_rawDescGZIP() []byte {
 
 var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_auth_proto_goTypes = []any{
-	(*LoginReq)(nil),              // 0: game.v4.auth.LoginReq
-	(*LoginResp)(nil),             // 1: game.v4.auth.LoginResp
-	(*RefreshReq)(nil),            // 2: game.v4.auth.RefreshReq
-	(*RefreshResp)(nil),           // 3: game.v4.auth.RefreshResp
-	(*common.ProfileSummary)(nil), // 4: game.v4.common.ProfileSummary
+	(*LoginReq)(nil),              // 0: game.v4.LoginReq
+	(*LoginResp)(nil),             // 1: game.v4.LoginResp
+	(*RefreshReq)(nil),            // 2: game.v4.RefreshReq
+	(*RefreshResp)(nil),           // 3: game.v4.RefreshResp
+	(*common.ProfileSummary)(nil), // 4: game.v4.ProfileSummary
 }
 var file_auth_proto_depIdxs = []int32{
-	4, // 0: game.v4.auth.LoginResp.profile:type_name -> game.v4.common.ProfileSummary
+	4, // 0: game.v4.LoginResp.profile:type_name -> game.v4.ProfileSummary
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name

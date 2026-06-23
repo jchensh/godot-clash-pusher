@@ -441,8 +441,8 @@ func (x *StateHashUp) GetHash() []byte {
 // 服务端 -> 客户端：对局结果推送。
 type BattleResultPush struct {
 	state               protoimpl.MessageState  `protogen:"open.v1"`
-	Winner              BattleResultPush_Winner `protobuf:"varint,1,opt,name=winner,proto3,enum=game.v4.battle.BattleResultPush_Winner" json:"winner,omitempty"`
-	Reason              BattleResultPush_Reason `protobuf:"varint,2,opt,name=reason,proto3,enum=game.v4.battle.BattleResultPush_Reason" json:"reason,omitempty"`
+	Winner              BattleResultPush_Winner `protobuf:"varint,1,opt,name=winner,proto3,enum=game.v4.BattleResultPush_Winner" json:"winner,omitempty"`
+	Reason              BattleResultPush_Reason `protobuf:"varint,2,opt,name=reason,proto3,enum=game.v4.BattleResultPush_Reason" json:"reason,omitempty"`
 	Side_1Score         int32                   `protobuf:"varint,3,opt,name=side_1_score,json=side1Score,proto3" json:"side_1_score,omitempty"` // 剩余塔血总和（超时用）
 	Side_2Score         int32                   `protobuf:"varint,4,opt,name=side_2_score,json=side2Score,proto3" json:"side_2_score,omitempty"`
 	TrophiesDeltaSide_1 int32                   `protobuf:"varint,5,opt,name=trophies_delta_side_1,json=trophiesDeltaSide1,proto3" json:"trophies_delta_side_1,omitempty"` // ELO/段位变化
@@ -668,12 +668,12 @@ var File_battle_proto protoreflect.FileDescriptor
 
 const file_battle_proto_rawDesc = "" +
 	"\n" +
-	"\fbattle.proto\x12\x0egame.v4.battle\x1a\fcommon.proto\"&\n" +
+	"\fbattle.proto\x12\agame.v4\x1a\fcommon.proto\"&\n" +
 	"\vJoinRoomReq\x12\x17\n" +
-	"\aroom_id\x18\x01 \x01(\tR\x06roomId\"\xaa\x01\n" +
+	"\aroom_id\x18\x01 \x01(\tR\x06roomId\"\xa3\x01\n" +
 	"\fJoinRoomResp\x12\x0e\n" +
-	"\x02ok\x18\x01 \x01(\bR\x02ok\x12:\n" +
-	"\bopponent\x18\x02 \x01(\v2\x1e.game.v4.common.ProfileSummaryR\bopponent\x12\x1b\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\x123\n" +
+	"\bopponent\x18\x02 \x01(\v2\x17.game.v4.ProfileSummaryR\bopponent\x12\x1b\n" +
 	"\tyour_side\x18\x03 \x01(\x05R\byourSide\x12\x1d\n" +
 	"\n" +
 	"start_tick\x18\x04 \x01(\x05R\tstartTick\x12\x12\n" +
@@ -682,21 +682,21 @@ const file_battle_proto_rawDesc = "" +
 	"\x04tick\x18\x01 \x01(\x05R\x04tick\x12\x17\n" +
 	"\acard_id\x18\x02 \x01(\tR\x06cardId\x12\x17\n" +
 	"\ax_milli\x18\x03 \x01(\x05R\x06xMilli\x12\x17\n" +
-	"\ay_milli\x18\x04 \x01(\x05R\x06yMilli\"\xb6\x01\n" +
+	"\ay_milli\x18\x04 \x01(\x05R\x06yMilli\"\xa8\x01\n" +
 	"\n" +
 	"TickBundle\x12\x12\n" +
-	"\x04tick\x18\x01 \x01(\x05R\x04tick\x12?\n" +
-	"\adeploys\x18\x02 \x03(\v2%.game.v4.battle.TickBundle.SideDeployR\adeploys\x1aS\n" +
+	"\x04tick\x18\x01 \x01(\x05R\x04tick\x128\n" +
+	"\adeploys\x18\x02 \x03(\v2\x1e.game.v4.TickBundle.SideDeployR\adeploys\x1aL\n" +
 	"\n" +
 	"SideDeploy\x12\x12\n" +
-	"\x04side\x18\x01 \x01(\x05R\x04side\x121\n" +
-	"\x06deploy\x18\x02 \x01(\v2\x19.game.v4.battle.DeployCmdR\x06deploy\"5\n" +
+	"\x04side\x18\x01 \x01(\x05R\x04side\x12*\n" +
+	"\x06deploy\x18\x02 \x01(\v2\x12.game.v4.DeployCmdR\x06deploy\"5\n" +
 	"\vStateHashUp\x12\x12\n" +
 	"\x04tick\x18\x01 \x01(\x05R\x04tick\x12\x12\n" +
-	"\x04hash\x18\x02 \x01(\fR\x04hash\"\xdd\x03\n" +
-	"\x10BattleResultPush\x12?\n" +
-	"\x06winner\x18\x01 \x01(\x0e2'.game.v4.battle.BattleResultPush.WinnerR\x06winner\x12?\n" +
-	"\x06reason\x18\x02 \x01(\x0e2'.game.v4.battle.BattleResultPush.ReasonR\x06reason\x12 \n" +
+	"\x04hash\x18\x02 \x01(\fR\x04hash\"\xcf\x03\n" +
+	"\x10BattleResultPush\x128\n" +
+	"\x06winner\x18\x01 \x01(\x0e2 .game.v4.BattleResultPush.WinnerR\x06winner\x128\n" +
+	"\x06reason\x18\x02 \x01(\x0e2 .game.v4.BattleResultPush.ReasonR\x06reason\x12 \n" +
 	"\fside_1_score\x18\x03 \x01(\x05R\n" +
 	"side1Score\x12 \n" +
 	"\fside_2_score\x18\x04 \x01(\x05R\n" +
@@ -739,25 +739,25 @@ func file_battle_proto_rawDescGZIP() []byte {
 var file_battle_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_battle_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_battle_proto_goTypes = []any{
-	(BattleResultPush_Winner)(0),  // 0: game.v4.battle.BattleResultPush.Winner
-	(BattleResultPush_Reason)(0),  // 1: game.v4.battle.BattleResultPush.Reason
-	(*JoinRoomReq)(nil),           // 2: game.v4.battle.JoinRoomReq
-	(*JoinRoomResp)(nil),          // 3: game.v4.battle.JoinRoomResp
-	(*DeployCmd)(nil),             // 4: game.v4.battle.DeployCmd
-	(*TickBundle)(nil),            // 5: game.v4.battle.TickBundle
-	(*StateHashUp)(nil),           // 6: game.v4.battle.StateHashUp
-	(*BattleResultPush)(nil),      // 7: game.v4.battle.BattleResultPush
-	(*HeartbeatPing)(nil),         // 8: game.v4.battle.HeartbeatPing
-	(*HeartbeatPong)(nil),         // 9: game.v4.battle.HeartbeatPong
-	(*TickBundle_SideDeploy)(nil), // 10: game.v4.battle.TickBundle.SideDeploy
-	(*common.ProfileSummary)(nil), // 11: game.v4.common.ProfileSummary
+	(BattleResultPush_Winner)(0),  // 0: game.v4.BattleResultPush.Winner
+	(BattleResultPush_Reason)(0),  // 1: game.v4.BattleResultPush.Reason
+	(*JoinRoomReq)(nil),           // 2: game.v4.JoinRoomReq
+	(*JoinRoomResp)(nil),          // 3: game.v4.JoinRoomResp
+	(*DeployCmd)(nil),             // 4: game.v4.DeployCmd
+	(*TickBundle)(nil),            // 5: game.v4.TickBundle
+	(*StateHashUp)(nil),           // 6: game.v4.StateHashUp
+	(*BattleResultPush)(nil),      // 7: game.v4.BattleResultPush
+	(*HeartbeatPing)(nil),         // 8: game.v4.HeartbeatPing
+	(*HeartbeatPong)(nil),         // 9: game.v4.HeartbeatPong
+	(*TickBundle_SideDeploy)(nil), // 10: game.v4.TickBundle.SideDeploy
+	(*common.ProfileSummary)(nil), // 11: game.v4.ProfileSummary
 }
 var file_battle_proto_depIdxs = []int32{
-	11, // 0: game.v4.battle.JoinRoomResp.opponent:type_name -> game.v4.common.ProfileSummary
-	10, // 1: game.v4.battle.TickBundle.deploys:type_name -> game.v4.battle.TickBundle.SideDeploy
-	0,  // 2: game.v4.battle.BattleResultPush.winner:type_name -> game.v4.battle.BattleResultPush.Winner
-	1,  // 3: game.v4.battle.BattleResultPush.reason:type_name -> game.v4.battle.BattleResultPush.Reason
-	4,  // 4: game.v4.battle.TickBundle.SideDeploy.deploy:type_name -> game.v4.battle.DeployCmd
+	11, // 0: game.v4.JoinRoomResp.opponent:type_name -> game.v4.ProfileSummary
+	10, // 1: game.v4.TickBundle.deploys:type_name -> game.v4.TickBundle.SideDeploy
+	0,  // 2: game.v4.BattleResultPush.winner:type_name -> game.v4.BattleResultPush.Winner
+	1,  // 3: game.v4.BattleResultPush.reason:type_name -> game.v4.BattleResultPush.Reason
+	4,  // 4: game.v4.TickBundle.SideDeploy.deploy:type_name -> game.v4.DeployCmd
 	5,  // [5:5] is the sub-list for method output_type
 	5,  // [5:5] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name

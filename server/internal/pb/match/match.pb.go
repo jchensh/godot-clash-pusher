@@ -300,7 +300,7 @@ var File_match_proto protoreflect.FileDescriptor
 
 const file_match_proto_rawDesc = "" +
 	"\n" +
-	"\vmatch.proto\x12\rgame.v4.match\x1a\fcommon.proto\"A\n" +
+	"\vmatch.proto\x12\agame.v4\x1a\fcommon.proto\"A\n" +
 	"\fFindMatchReq\x12\x1b\n" +
 	"\tdeck_slot\x18\x01 \x01(\x05R\bdeckSlot\x12\x14\n" +
 	"\x05arena\x18\x02 \x01(\x05R\x05arena\":\n" +
@@ -310,10 +310,10 @@ const file_match_proto_rawDesc = "" +
 	"\x0eCancelMatchReq\x12\x19\n" +
 	"\bqueue_id\x18\x01 \x01(\tR\aqueueId\"!\n" +
 	"\x0fCancelMatchResp\x12\x0e\n" +
-	"\x02ok\x18\x01 \x01(\bR\x02ok\"\xac\x01\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\"\xa5\x01\n" +
 	"\x0eMatchFoundPush\x12\x17\n" +
-	"\aroom_id\x18\x01 \x01(\tR\x06roomId\x12:\n" +
-	"\bopponent\x18\x02 \x01(\v2\x1e.game.v4.common.ProfileSummaryR\bopponent\x12\x1b\n" +
+	"\aroom_id\x18\x01 \x01(\tR\x06roomId\x123\n" +
+	"\bopponent\x18\x02 \x01(\v2\x17.game.v4.ProfileSummaryR\bopponent\x12\x1b\n" +
 	"\tyour_side\x18\x03 \x01(\x05R\byourSide\x12\x14\n" +
 	"\x05arena\x18\x04 \x01(\x05R\x05arena\x12\x12\n" +
 	"\x04seed\x18\x05 \x01(\x04R\x04seedB@Z>github.com/jchensh/godot-clash-pusher/server/internal/pb/matchb\x06proto3"
@@ -332,15 +332,15 @@ func file_match_proto_rawDescGZIP() []byte {
 
 var file_match_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_match_proto_goTypes = []any{
-	(*FindMatchReq)(nil),          // 0: game.v4.match.FindMatchReq
-	(*FindMatchResp)(nil),         // 1: game.v4.match.FindMatchResp
-	(*CancelMatchReq)(nil),        // 2: game.v4.match.CancelMatchReq
-	(*CancelMatchResp)(nil),       // 3: game.v4.match.CancelMatchResp
-	(*MatchFoundPush)(nil),        // 4: game.v4.match.MatchFoundPush
-	(*common.ProfileSummary)(nil), // 5: game.v4.common.ProfileSummary
+	(*FindMatchReq)(nil),          // 0: game.v4.FindMatchReq
+	(*FindMatchResp)(nil),         // 1: game.v4.FindMatchResp
+	(*CancelMatchReq)(nil),        // 2: game.v4.CancelMatchReq
+	(*CancelMatchResp)(nil),       // 3: game.v4.CancelMatchResp
+	(*MatchFoundPush)(nil),        // 4: game.v4.MatchFoundPush
+	(*common.ProfileSummary)(nil), // 5: game.v4.ProfileSummary
 }
 var file_match_proto_depIdxs = []int32{
-	5, // 0: game.v4.match.MatchFoundPush.opponent:type_name -> game.v4.common.ProfileSummary
+	5, // 0: game.v4.MatchFoundPush.opponent:type_name -> game.v4.ProfileSummary
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
