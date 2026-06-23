@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/jchensh/godot-clash-pusher/server/internal/auth"
+	"github.com/jchensh/godot-clash-pusher/server/internal/profile"
 	"github.com/jchensh/godot-clash-pusher/server/internal/store"
 	"github.com/jchensh/godot-clash-pusher/server/internal/version"
 )
@@ -56,9 +57,12 @@ func main() {
 		log.Fatalf("api: build jwt issuer: %v", err)
 	}
 	authH := auth.NewHandler(auth.NewAccountRepo(db.Pool), issuer)
+	authMW := auth.NewMiddleware(issuer)
+	profileH := profile.NewHandler(profile.NewRepo(db.Pool))
 
 	mux := http.NewServeMux()
 	authH.Mount(mux)
+	profileH.Mount(mux, authMW)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		if err := db.Ping(r.Context()); err != nil {
 			http.Error(w, "db down", http.StatusServiceUnavailable)

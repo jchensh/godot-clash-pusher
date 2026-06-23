@@ -76,10 +76,11 @@
 | V3-5b | 新手引导覆盖层：tutorial.json 数据驱动 + battle_scene 引导(压暗/挖洞高亮/手指/气泡, tap+动作推进) | ✅ 完成（真人验收通过 2026-06-22；单测 186/186） | `4364dbb` |
 | V4-S0 | 协议/Go 脚手架/Docker/Makefile/Go·GDScript 双端 pb（a proto + b Go cmd + c Docker + d Makefile + e Go pb 生成与 compose 跑通 + f godobuf 接入） | ✅ 完成（单测 190/190；docker compose 5 容器+pg 16.14+redis 验收通过） | `d79dd25`/`d5c71af`/`107fed9`/`8ced7fd`/`9001c2c`/`d4a2698`/`e13a466` |
 | V4-S1 | 匿名 device_id 登录（a DB+migrations runner + accounts/profiles schema + b JWT HS256 access30d/refresh90d + device_id FindOrCreateByDevice + c HTTP server net/http + /v4/auth/{login,refresh} + d 客户端 net/auth.gd UUID4+token 持久化 + e 端到端真链路验收） | ✅ 完成（单测 197/197；Go unit 14 + integration 4 + smoke 真跑 PG 新增 row 全过；Jira KAN-37） | `db1e77d` |
+| V4-S2 | 玩家档案云存档（a decks 表 migration + b profile repo·乐观锁 CAS·卡组校验 + c HTTP /v4/profile/{get,deck-update}·Bearer 鉴权 middleware·httpx 共享包 + d 客户端 net/profile.gd 离线缓存·冲突重取 + e 端到端真链路验收）；顺带根治 godobuf `Deck`↔V3 全局 `class_name Deck` 撞名（proto 改名 `DeckMsg`，wire 不变） | ✅ 完成（单测 204/204；Go unit + integration auth4+profile6（`-p 1` 串行）全过；smoke PG 实查 decks 落库；Jira KAN-38） | `本提交` |
 
-> **当前阶段 = V4 联网升级 + 实时对战**（账号/匹配/PvP/赛季/排行榜；长期 F2P 但前期玩法验证不实现支付）。权威规划见 [PLAN_V4.md](PLAN_V4.md)；方向锁定见决策日志 46。**V1/V2/V3 全部完成**——V1 机制白膜 → V2 3-lane + 程序化换皮 + AI 难度 + 内容平衡 → V3 2D 战斗 reboot + 空军 + 新积木 + Roguelite 主轴 + 交互手感 + 精灵美术 + 音频骨架 + 难度 5 档 + 像素 UI 设计系统 + 新手战役 + 引导。V1/V2 详细见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)，V3 详细见 [docs/HISTORY_V3_DETAILED.md](docs/HISTORY_V3_DETAILED.md)。**V3-9 平衡剩余子项**（数值/节奏调优 + 设置/导出/上架打磨）与 V4 早期阶段（S0~S2 账号/档案）可并行。**V4-S0/S1 整体收官**：S0（7 commits / 6 子步 a~f）打底 + S1（1 commit / 5 子步 a~e）匿名 device_id 登录端到端通（客户端 UUID4 → protobuf → docker api → PG accounts/profiles → JWT/refresh → user://auth.cfg 落盘）。Jira KAN-36/KAN-37 同步 Done/In Progress。**下一步**：V4-S2（玩家档案云存档 + decks 表 + `/v4/profile/{get,deck-update}`）。
+> **当前阶段 = V4 联网升级 + 实时对战**（账号/匹配/PvP/赛季/排行榜；长期 F2P 但前期玩法验证不实现支付）。权威规划见 [PLAN_V4.md](PLAN_V4.md)；方向锁定见决策日志 46。**V1/V2/V3 全部完成**——V1 机制白膜 → V2 3-lane + 程序化换皮 + AI 难度 + 内容平衡 → V3 2D 战斗 reboot + 空军 + 新积木 + Roguelite 主轴 + 交互手感 + 精灵美术 + 音频骨架 + 难度 5 档 + 像素 UI 设计系统 + 新手战役 + 引导。V1/V2 详细见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)，V3 详细见 [docs/HISTORY_V3_DETAILED.md](docs/HISTORY_V3_DETAILED.md)。**V3-9 平衡剩余子项**（数值/节奏调优 + 设置/导出/上架打磨）与 V4 早期阶段（S0~S2 账号/档案）可并行。**V4-S0/S1 整体收官**：S0（7 commits / 6 子步 a~f）打底 + S1（1 commit / 5 子步 a~e）匿名 device_id 登录端到端通（客户端 UUID4 → protobuf → docker api → PG accounts/profiles → JWT/refresh → user://auth.cfg 落盘）。Jira KAN-36/KAN-37 同步 Done。**V4-S2 收官**：玩家档案云存档端到端通（客户端 `net/profile.gd` ↔ `/v4/profile/{get,deck-update}` ↔ PG decks/profiles；Bearer 令牌鉴权 + 乐观锁版本冲突 409 + 离线缓存兜底；顺带根治 godobuf `Deck` 与 V3 全局 `class_name Deck` 撞名隐患 → proto 改 `DeckMsg`，wire 不变）。Jira KAN-38 Done。**下一步**：V4-S3 lockstep 实时对战网络层（★头号工程）。
 
-**测试**：197/197（`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`release` 为 Antigravity（Google IDE）创建的安卓打包分支（跟随 develop，agent 默认不动）、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`；音频单独走 `config/AudioConfig.xlsx` → `config/audio_assets.json`，用 `tools/build_audio_config.py --check` 校验。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
+**测试**：客户端 204/204（`HOME` 隔离）；服务端 Go unit + integration（auth 4 + profile 6，跨包 `-p 1` 串行）全过。**分支/远端**：开发在 `develop`、`main` 稳定线、`release` 为 Antigravity（Google IDE）创建的安卓打包分支（跟随 develop，agent 默认不动）、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`；音频单独走 `config/AudioConfig.xlsx` → `config/audio_assets.json`，用 `tools/build_audio_config.py --check` 校验。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
 ---
 
@@ -302,3 +303,38 @@
 - 进度 comment 入 KAN-37，**首次写入触发 Auto Mode classifier 拦截**（"External System Writes" 风险判定，不知道 CLAUDE.md PM 工作流刚加）→ `.claude/settings.local.json` 加 6 条 Atlas MCP 写入 allow 规则放行（addCommentToJiraIssue / createJiraIssue / editJiraIssue / transitionJiraIssue / addWorklogToJiraIssue / createIssueLink），**仅本机本项目、UUID 不入 git**（每人装 MCP 拿不同 UUID）。
 
 > **V4-S1 整阶段收官**：a DB+migrations → b JWT+device_id 业务 → c HTTP server+路由 → d 客户端 net/auth.gd → e 端到端真链路验收。客户端单测 **197/197**；Go unit 14 + integration 4 全过；docker compose 5 容器健康；smoke 跑完 PG accounts/profiles 各 +1 行，`user://auth.cfg` 落盘且 reload 一致，refresh 链路也跑通。Jira KAN-37 Done。**下一步 V4-S2 玩家档案云存档**：客户端切到在线模式时从服务端读 profile + 卡组；改卡组经 `DeckUpdateReq` 推回（带乐观锁 `expected_version`）；`unlocked_card_ids` V4 玩法验证阶段默认全卡解锁（V4-S10 IAP 接入后差异化）；新建 `decks` 表（`server/migrations/0003_profile_decks.up.sql`）+ `server/internal/profile/` 起包；客户端 `net/profile.gd` 接 `/v4/profile/get` + `/v4/profile/deck-update`。
+
+### V4-S2 — 玩家档案云存档（已完成）
+**前置决策**：见决策 46 + V4-S1 收官段尾的 V4-S2 范围。拆 5 子步：a decks 表 migration / b profile 业务层（repo + 乐观锁 CAS + 卡组校验）/ c HTTP 路由 + auth 鉴权 middleware + httpx 共享包 / d 客户端 `net/profile.gd`（离线缓存 + 冲突重取）/ e 端到端真链路验收。**4 个设计决策**（用户 2026-06-24 拍板，全按推荐）：①`unlocked_card_ids` 空列表 = 全卡解锁（服务端不持卡表，客户端持 cards.json 判可组卡）；②卡组校验只查 count==8 / slot 1..3 / 无重复，**不**查卡 id 是否存在（服务端无 card 配置）；③新账号**不**自动播种 deck 行，空 decks 客户端用本地默认；④`readProto/writeProto/writeError` 抽到共享 `internal/httpx`（auth+profile 两 handler 都用）。**a~e 合 1 个 commit**（S2 末尾一次性，用户定）；e 纯验收无产物。**Jira KAN-38** Story To Do → In Progress（开工）→ Done（端到端验收 + 用户拍板）。
+
+#### V4-S2a — decks 表 migration
+- `server/migrations/0003_profile_decks.{up,down}.sql`：建 `decks(id BIGSERIAL PK, account_id BIGINT FK→accounts ON DELETE CASCADE, slot INT CHECK 1..3, card_ids JSONB NOT NULL, is_active BOOL NOT NULL default false, UNIQUE(account_id, slot))`。`profiles`（0002）已含 Profile proto 全字段 → **无需补列**。F2P 表（unlocks/currency/purchases）**不预建**（留 V4-S10）。
+- 验证：宿主机跑真 runner（`store.Apply`）→ `applied 1 migration`（v=3，v1/v2 已在）；`\d decks` 全约束就位（PK/UNIQUE/CHECK/FK CASCADE）；`schema_migrations` v=1,2,3。
+
+#### V4-S2b — profile 业务层
+- `server/internal/profile/profile.go`：`Repo.Get(account_id)` → profile + decks（slot 序）；`Repo.UpdateDeck` 乐观锁 CAS（`UPDATE profiles SET version=version+1 WHERE account_id AND version=expected`，0 行 → `ErrVersionMismatch`）+ deck upsert（`ON CONFLICT(account_id,slot) DO UPDATE`）+ set_active 互斥（降其他 slot），单 tx。`validateDeck`：slot 1..3 / 正好 8 张 / 无重复 / 无空 id → `ErrDeckInvalid`。card_ids 走 `json.Marshal` → `$3::jsonb`，读回 `json.Unmarshal`。返回 domain struct（不耦合 pb）。
+- `profile_test.go`：`validateDeck` 8 子用例（8 张 ok / slot 0·4 拒 / 7·9 张拒 / 重复拒 / 空卡拒）。CAS/CRUD 真 DB 路径留 c 的 integration 覆盖（仿 S1 account.go）。
+
+#### V4-S2c — HTTP 路由 + auth 鉴权 middleware + httpx 共享包
+- `server/internal/httpx/codec.go`（**决策 4**）：从 auth/handler.go 抽出 `ReadProto/WriteProto/WriteError` + `ContentTypeProtobuf/MaxBodyBytes`，与 V4-S3 WS frame 共享 wire 格式。
+- `server/internal/auth/middleware.go`：`Middleware.Require(next)` —— `Authorization: Bearer <token>` → `Verify(KindAccess)` → account_id 入 request ctx；缺/坏 token 401，过期专回 `ERR_AUTH_EXPIRED`（`errors.Is(jwt.ErrTokenExpired)`）。`AccountIDFromContext`。**account_id 取自令牌、不信 body**（防冒充）。battle/match 将复用。
+- `server/internal/profile/handler.go`：挂 `/v4/profile/get` + `/deck-update`（都过 middleware）；domain↔pb 映射；CAS 失败 → 409 `ERR_PROFILE_VERSION_MISMATCH`，非法卡组 → 400 `ERR_PROFILE_DECK_INVALID`，profile 缺失 → 404。`unlocked_card_ids` 回 nil（空 = 全解锁）。
+- `server/cmd/api/main.go`：挂 profile 路由 + middleware。`auth/handler.go` 改用 httpx（删私有 helper），`auth/handler_integration_test.go` 1 处引用改 httpx —— **原有 12 测全过零回归**。
+- `handler_integration_test.go`：6 integration（默认档 / 改卡组持久化 + 版本+1 / stale → 409 / 非法 → 400 / 无 token → 401 / 坏 token → 401）。
+- 验证：`go build/vet/unit` 全过；integration（真连库）6 过。
+
+#### V4-S2d — 客户端 net/profile.gd
+- `net/profile.gd`（extends RefCounted，不耦合 SceneTree）：`get_profile`（Bearer 鉴权头）成功落盘 `user://profile.cfg`、不可达回退缓存（offline）；`update_deck`（乐观锁 `expected_version`），409 → 自动重取（服务端胜出）；`request_timeout_s`（默认 10s）防服务端不可达永久挂起。wire 解码抽成 `apply_get_resp_bytes/apply_deck_resp_bytes`（可单测）。
+- `tests/test_net_profile.gd`：7 unit（默认 url / 缓存圆环 / 缺文件 false / 本地 deck upsert + 激活互斥 / DeckUpdateReq 编解码 / ProfileGetResp 解码填充 + 落盘 / DeckUpdateResp 更新版本）。
+- 验证：Godot 单测 **204/204**（197 + 7，零回归）。
+
+#### V4-S2e — 端到端真链路验收（无 commit；smoke 验后即删）
+- `tools/_profile_smoke.gd`（临时 harness，仿 S1 `_login_smoke.gd`，验后即删、不入 git）：宿主机临时 api 跑 `:8090`（不动 `:8080` 5 容器），Godot 全链路 login → get（默认 `Player{id}` / version 0 / 无 deck / unlocked 空）→ update slot1 8 张（expected 0）→ 换实例 re-get 确认持久化 → stale 版本 409 + 自动重取 → 死端口 `127.0.0.1:9999` 离线读缓存。
+- 验证（实跑）：`ALL CHECKS PASSED -- account_id=23`；`docker exec psql SELECT ... decks WHERE account_id=23` = slot1 / 8 张卡 JSONB / is_active=t；`profiles` version=1。
+
+**踩坑（V4-S2 全程，写进 commit message）**：
+1. **godobuf `Deck` 类撞 V3 全局 `class_name Deck`**（`logic/deck.gd`）：S0f 起埋的隐患 —— godobuf 把每个 message 生成同名 GDScript 内部类，`Deck` 触发 `Class "Deck" hides a global script class` 编译错。测试框架靠**重载**侥幸兜过（仍打错误日志），但 `--script` 单发 smoke 无重载 → 直接挂死。**根治**：proto `Deck` 消息改名 `DeckMsg`（wire 不变，仅类型名），重生成双端 pb（`net/proto/profile.gd` + `server/internal/pb/profile/profile.pb.go`）+ 改 `handler.go` 1 处（`pbprofile.Deck`→`DeckMsg`）。不碰 V3 全局类。
+2. **离线请求永久挂起**：`net/profile.gd` 未设 `HTTPRequest.timeout`，服务端不可达时 `await request_completed` 永不返回 → smoke 离线步卡死（exit 124）。加 `request_timeout_s`（默认 10s）修复（离线检测的必要前提）。
+3. **集成测试跨包并行踩库**：`go test` 默认并行跑不同包，auth + profile 两集成包共享 live PG、各自 `DELETE` + 建号 → auth 的 `COUNT` 断言被打乱。单包跑各自都过。修：跨包用 `-p 1` 串行（已写进 profile 测试头注释）。纯单测（无 `INTEGRATION_DB_URL`）不受影响。
+
+> **V4-S2 整阶段收官**：a decks migration → b profile 业务（CAS + 校验）→ c HTTP + 鉴权 middleware + httpx 抽包 → d 客户端 `net/profile.gd`（离线缓存 + 冲突重取）→ e 端到端真链路。客户端单测 **204/204**；Go unit + integration（auth 4 + profile 6，`-p 1` 串行）全过；smoke PG 实查落库。顺带根治 S0f 起的 `Deck` 全局类撞名隐患（→`DeckMsg`）。**下一步 V4-S3 lockstep 实时对战网络层（★头号工程）**：WS gateway + battle room；`NetworkPlayer` deploy 指令 → 服务端 → 广播双方 → 双方 `logic/` tick 推进；每 N tick state hash 三方对帐；断线重连（room TTL 60s）；超时认输。待细化：hash 算法 / 重连窗口 / tick 偏移 / 客户端预测。

@@ -873,7 +873,7 @@ class Profile:
 			return PB_ERR.PARSE_INCOMPLETE
 		return result
 	
-class Deck:
+class DeckMsg:
 	extends RefCounted
 	func _init():
 		var service
@@ -1009,7 +1009,7 @@ class ProfileGetResp:
 		service.func_ref = Callable(self, "new_profile")
 		data[__profile.tag] = service
 		
-		var __decks_default: Array[Deck] = []
+		var __decks_default: Array[DeckMsg] = []
 		__decks = PBField.new("decks", PB_DATA_TYPE.MESSAGE, PB_RULE.REPEATED, 2, true, __decks_default)
 		service = PBServiceField.new()
 		service.field = __decks
@@ -1039,13 +1039,13 @@ class ProfileGetResp:
 		return __profile.value
 	
 	var __decks: PBField
-	func get_decks() -> Array[Deck]:
+	func get_decks() -> Array[DeckMsg]:
 		return __decks.value
 	func clear_decks() -> void:
 		data[2].state = PB_SERVICE_STATE.UNFILLED
 		__decks.value.clear()
-	func add_decks() -> Deck:
-		var element = Deck.new()
+	func add_decks() -> DeckMsg:
+		var element = DeckMsg.new()
 		__decks.value.append(element)
 		return element
 	

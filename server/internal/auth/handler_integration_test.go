@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	authsvc "github.com/jchensh/godot-clash-pusher/server/internal/auth"
+	"github.com/jchensh/godot-clash-pusher/server/internal/httpx"
 	pbauth "github.com/jchensh/godot-clash-pusher/server/internal/pb/auth"
 	"github.com/jchensh/godot-clash-pusher/server/internal/store"
 	"google.golang.org/protobuf/proto"
@@ -60,7 +61,7 @@ func postProto(t *testing.T, url string, m proto.Message) (int, []byte) {
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
 	}
-	resp, err := http.Post(url, authsvc.ContentTypeProtobuf, bytes.NewReader(body))
+	resp, err := http.Post(url, httpx.ContentTypeProtobuf, bytes.NewReader(body))
 	if err != nil {
 		t.Fatalf("POST %s: %v", url, err)
 	}

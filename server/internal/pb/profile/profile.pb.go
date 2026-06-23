@@ -135,7 +135,10 @@ func (x *Profile) GetUpdatedAt() int64 {
 	return 0
 }
 
-type Deck struct {
+// 注意类名 DeckMsg（非 Deck）：godobuf 把每个 message 生成同名 GDScript 内部类，
+// 而 V3 客户端 logic/deck.gd 已有全局 class_name Deck；用 Deck 会触发
+// "Class Deck hides a global script class" 编译冲突。故 wire 类型用 DeckMsg。
+type DeckMsg struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Slot          int32                  `protobuf:"varint,2,opt,name=slot,proto3" json:"slot,omitempty"`                     // 1..3
@@ -145,20 +148,20 @@ type Deck struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Deck) Reset() {
-	*x = Deck{}
+func (x *DeckMsg) Reset() {
+	*x = DeckMsg{}
 	mi := &file_profile_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Deck) String() string {
+func (x *DeckMsg) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Deck) ProtoMessage() {}
+func (*DeckMsg) ProtoMessage() {}
 
-func (x *Deck) ProtoReflect() protoreflect.Message {
+func (x *DeckMsg) ProtoReflect() protoreflect.Message {
 	mi := &file_profile_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -170,33 +173,33 @@ func (x *Deck) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Deck.ProtoReflect.Descriptor instead.
-func (*Deck) Descriptor() ([]byte, []int) {
+// Deprecated: Use DeckMsg.ProtoReflect.Descriptor instead.
+func (*DeckMsg) Descriptor() ([]byte, []int) {
 	return file_profile_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *Deck) GetId() int64 {
+func (x *DeckMsg) GetId() int64 {
 	if x != nil {
 		return x.Id
 	}
 	return 0
 }
 
-func (x *Deck) GetSlot() int32 {
+func (x *DeckMsg) GetSlot() int32 {
 	if x != nil {
 		return x.Slot
 	}
 	return 0
 }
 
-func (x *Deck) GetCardIds() []string {
+func (x *DeckMsg) GetCardIds() []string {
 	if x != nil {
 		return x.CardIds
 	}
 	return nil
 }
 
-func (x *Deck) GetIsActive() bool {
+func (x *DeckMsg) GetIsActive() bool {
 	if x != nil {
 		return x.IsActive
 	}
@@ -245,7 +248,7 @@ func (*ProfileGetReq) Descriptor() ([]byte, []int) {
 type ProfileGetResp struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	Profile         *Profile               `protobuf:"bytes,1,opt,name=profile,proto3" json:"profile,omitempty"`
-	Decks           []*Deck                `protobuf:"bytes,2,rep,name=decks,proto3" json:"decks,omitempty"`
+	Decks           []*DeckMsg             `protobuf:"bytes,2,rep,name=decks,proto3" json:"decks,omitempty"`
 	UnlockedCardIds []string               `protobuf:"bytes,3,rep,name=unlocked_card_ids,json=unlockedCardIds,proto3" json:"unlocked_card_ids,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -288,7 +291,7 @@ func (x *ProfileGetResp) GetProfile() *Profile {
 	return nil
 }
 
-func (x *ProfileGetResp) GetDecks() []*Deck {
+func (x *ProfileGetResp) GetDecks() []*DeckMsg {
 	if x != nil {
 		return x.Decks
 	}
@@ -446,16 +449,16 @@ const file_profile_proto_rawDesc = "" +
 	"\x11current_season_id\x18\a \x01(\x05R\x0fcurrentSeasonId\x12\x18\n" +
 	"\aversion\x18\b \x01(\x05R\aversion\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\t \x01(\x03R\tupdatedAt\"b\n" +
-	"\x04Deck\x12\x0e\n" +
+	"updated_at\x18\t \x01(\x03R\tupdatedAt\"e\n" +
+	"\aDeckMsg\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
 	"\x04slot\x18\x02 \x01(\x05R\x04slot\x12\x19\n" +
 	"\bcard_ids\x18\x03 \x03(\tR\acardIds\x12\x1b\n" +
 	"\tis_active\x18\x04 \x01(\bR\bisActive\"\x0f\n" +
-	"\rProfileGetReq\"\x8d\x01\n" +
+	"\rProfileGetReq\"\x90\x01\n" +
 	"\x0eProfileGetResp\x12*\n" +
-	"\aprofile\x18\x01 \x01(\v2\x10.game.v4.ProfileR\aprofile\x12#\n" +
-	"\x05decks\x18\x02 \x03(\v2\r.game.v4.DeckR\x05decks\x12*\n" +
+	"\aprofile\x18\x01 \x01(\v2\x10.game.v4.ProfileR\aprofile\x12&\n" +
+	"\x05decks\x18\x02 \x03(\v2\x10.game.v4.DeckMsgR\x05decks\x12*\n" +
 	"\x11unlocked_card_ids\x18\x03 \x03(\tR\x0funlockedCardIds\"\x88\x01\n" +
 	"\rDeckUpdateReq\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\x05R\x04slot\x12\x19\n" +
@@ -484,7 +487,7 @@ func file_profile_proto_rawDescGZIP() []byte {
 var file_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_profile_proto_goTypes = []any{
 	(*Profile)(nil),        // 0: game.v4.Profile
-	(*Deck)(nil),           // 1: game.v4.Deck
+	(*DeckMsg)(nil),        // 1: game.v4.DeckMsg
 	(*ProfileGetReq)(nil),  // 2: game.v4.ProfileGetReq
 	(*ProfileGetResp)(nil), // 3: game.v4.ProfileGetResp
 	(*DeckUpdateReq)(nil),  // 4: game.v4.DeckUpdateReq
@@ -492,7 +495,7 @@ var file_profile_proto_goTypes = []any{
 }
 var file_profile_proto_depIdxs = []int32{
 	0, // 0: game.v4.ProfileGetResp.profile:type_name -> game.v4.Profile
-	1, // 1: game.v4.ProfileGetResp.decks:type_name -> game.v4.Deck
+	1, // 1: game.v4.ProfileGetResp.decks:type_name -> game.v4.DeckMsg
 	0, // 2: game.v4.DeckUpdateResp.profile:type_name -> game.v4.Profile
 	3, // [3:3] is the sub-list for method output_type
 	3, // [3:3] is the sub-list for method input_type
