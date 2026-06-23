@@ -3,7 +3,7 @@ package version
 
 const (
 	// V4Stage tracks which V4 sub-step the binary corresponds to.
-	V4Stage = "V4-S0b"
+	V4Stage = "V4-S0e"
 
 	// Build is a short build label appended to logs.
 	Build = "scaffold"

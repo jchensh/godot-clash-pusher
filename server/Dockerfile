@@ -7,9 +7,13 @@ FROM golang:1.23-alpine AS builder
 
 WORKDIR /src
 
-# Cache module deps first (no external deps yet, but ready for V4-S1+).
-COPY go.mod ./
-# COPY go.sum ./  # uncomment when deps are added
+# Use China-friendly Go module proxy by default (proxy.golang.org is unreachable from CN).
+# Override at build time via --build-arg GOPROXY=... if you're outside CN.
+ARG GOPROXY=https://goproxy.cn,direct
+ENV GOPROXY=${GOPROXY}
+
+# Cache module deps first.
+COPY go.mod go.sum ./
 RUN go mod download
 
 # Build all 4 cmd binaries.

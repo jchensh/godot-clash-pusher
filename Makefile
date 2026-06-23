@@ -118,7 +118,8 @@ ps:
 	@cd server && docker compose ps
 
 migrate:
-	@cd server && docker compose run --rm gateway /usr/local/bin/migrate
+	@# Use bare command name (not /usr/local/bin/migrate) so Git Bash doesn't path-translate it.
+	@cd server && docker compose run --rm gateway migrate
 
 # ---------------- Housekeeping ----------------
 
