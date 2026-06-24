@@ -12,14 +12,14 @@ import (
 
 const (
 	writeWait  = 10 * time.Second
-	readWait   = 60 * time.Second // refreshed on every inbound frame
+	readWait   = 90 * time.Second // refreshed on every inbound frame (> client heartbeat)
 	maxMsgSize = 16 * 1024
 )
 
 // Serve runs one battle WS connection end-to-end: read the opening JoinRoomReq,
-// pair through the hub, then pump frames between the socket and the room until
-// the match ends or the connection drops. Blocks until done; the caller runs
-// one Serve per connection (its own goroutine).
+// pair (or reconnect) through the hub, then pump frames between the socket and
+// the room until the match ends or the connection drops. On a drop mid-match it
+// signals the room so the reconnect window opens (V4-S3f). Blocks until done.
 func (h *Hub) Serve(ctx context.Context, ws *websocket.Conn, accountID int64, summary *pbcommon.ProfileSummary) {
 	defer ws.Close()
 	ws.SetReadLimit(maxMsgSize)
@@ -41,25 +41,32 @@ func (h *Hub) Serve(ctx context.Context, ws *websocket.Conn, accountID int64, su
 
 	p := &player{accountID: accountID, deck: jr.Deck, summary: summary, send: make(chan []byte, 64)}
 
-	// 2. Write pump: drain p.send to the socket.
+	// 2. Write pump: drain p.send to the socket. Exits on quit (read loop ended)
+	// or a write error. p.send is never closed — the room owns it and may swap
+	// it on reconnect, so closing here could race a send into a closed channel.
+	quit := make(chan struct{})
 	writeDone := make(chan struct{})
 	go func() {
 		defer close(writeDone)
-		for frame := range p.send {
-			_ = ws.SetWriteDeadline(time.Now().Add(writeWait))
-			if ws.WriteMessage(websocket.BinaryMessage, frame) != nil {
+		for {
+			select {
+			case frame := <-p.send:
+				_ = ws.SetWriteDeadline(time.Now().Add(writeWait))
+				if ws.WriteMessage(websocket.BinaryMessage, frame) != nil {
+					return
+				}
+			case <-quit:
 				return
 			}
 		}
 	}()
 
-	// 3. Pair (blocks until an opponent arrives). Room.Run is started by side 2.
+	// 3. Pair or reconnect (blocks until in a room). Room.Run is started by side 2.
 	room := h.Join(p)
 
 	// 4. Closing the socket on room end / shutdown unblocks the read loop below.
 	// On a normal end, give the write pump a brief grace to flush the final
-	// BattleResultPush before the socket closes (otherwise the close can race
-	// the result frame). Crude but sufficient for S3 玩法验证.
+	// BattleResultPush before the socket closes (otherwise close races the frame).
 	go func() {
 		select {
 		case <-room.done:
@@ -86,6 +93,14 @@ func (h *Hub) Serve(ctx context.Context, ws *websocket.Conn, accountID int64, su
 		}
 	}
 
-	close(p.send)
+	// 6. Connection dropped. If the match is still live, tell the room so the
+	// reconnect window opens; the opponent pauses until we (or the window) return.
+	close(quit)
 	<-writeDone
+	if !room.isEnded() {
+		select {
+		case room.disc <- p.side:
+		case <-room.done:
+		}
+	}
 }

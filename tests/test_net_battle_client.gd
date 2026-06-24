@@ -128,3 +128,15 @@ func test_deploy_ignored_before_join() -> void:
 	var fake = pair[1]
 	bc.send_deploy("knight", Vector2(1, 1))   # 未 join → 无 match → no-op
 	assert_eq(fake.count(CommonPb.MsgId.DEPLOY_CMD), 0)
+
+func test_heartbeat_sent_after_interval() -> void:
+	# V4-S3f：对战中每 HEARTBEAT_INTERVAL(5s) 发一次心跳。
+	var pair = _new_client()
+	var bc = pair[0]
+	var fake = pair[1]
+	bc._on_frame(CommonPb.MsgId.JOIN_ROOM_RESP, _join_resp_bytes(1))
+	fake.sent.clear()
+	bc.poll(2.0)   # 累计 2s < 5s，不发
+	assert_eq(fake.count(CommonPb.MsgId.HEARTBEAT_PING), 0)
+	bc.poll(3.5)   # 累计 5.5s ≥ 5s，发一次
+	assert_eq(fake.count(CommonPb.MsgId.HEARTBEAT_PING), 1, "5s 后应发一次心跳")

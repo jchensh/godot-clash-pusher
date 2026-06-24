@@ -26,10 +26,10 @@ func newTestRoom(persist Persister) (*Room, *player, *player) {
 	return r, p1, p2
 }
 
-func recvFrame(t *testing.T, p *player) (pbcommon.MsgId, []byte) {
+func recvFrameCh(t *testing.T, ch chan []byte) (pbcommon.MsgId, []byte) {
 	t.Helper()
 	select {
-	case f := <-p.send:
+	case f := <-ch:
 		mid, pl, ok := decodeFrame(f)
 		if !ok {
 			t.Fatal("short frame")
@@ -39,6 +39,21 @@ func recvFrame(t *testing.T, p *player) (pbcommon.MsgId, []byte) {
 		t.Fatal("timed out waiting for frame")
 		return 0, nil
 	}
+}
+
+func recvFrame(t *testing.T, p *player) (pbcommon.MsgId, []byte) {
+	t.Helper()
+	return recvFrameCh(t, p.send)
+}
+
+// newClockRoom builds a room whose clock the test can advance via *clk.
+func newClockRoom(persist Persister) (*Room, *player, *player, *time.Time) {
+	now := time.Unix(1700000000, 0)
+	clk := &now
+	p1 := &player{accountID: 100, side: 1, deck: testDeck, summary: &pbcommon.ProfileSummary{AccountId: 100}, send: make(chan []byte, 256)}
+	p2 := &player{accountID: 200, side: 2, deck: testDeck, summary: &pbcommon.ProfileSummary{AccountId: 200}, send: make(chan []byte, 256)}
+	r := NewRoom("room-test", "ladder_01", 0, p1, p2, persist, func() time.Time { return *clk })
+	return r, p1, p2, clk
 }
 
 func recvBundle(t *testing.T, p *player) *pbbattle.TickBundle {
@@ -229,5 +244,97 @@ func TestEndAfterEndedIsNoop(t *testing.T) {
 	}
 	if fp.saved != first {
 		t.Error("a second finalize must not overwrite persistence")
+	}
+}
+
+// —— V4-S3f 重连 + 超时认输 ——
+
+func TestDisconnectPausesTicking(t *testing.T) {
+	r, _, p2, _ := newClockRoom(nil)
+	r.onDisconnect(1)
+	if !r.paused {
+		t.Fatal("room should pause after a disconnect")
+	}
+	r.onTick() // paused -> must not broadcast
+	select {
+	case <-p2.send:
+		t.Error("a paused room must not broadcast tick bundles")
+	default:
+	}
+}
+
+func TestHeartbeatPong(t *testing.T) {
+	r, p1, _, _ := newClockRoom(nil)
+	r.onHeartbeat(1)
+	if mid, _ := recvFrame(t, p1); mid != pbcommon.MsgId_HEARTBEAT_PONG {
+		t.Errorf("expected HEARTBEAT_PONG, got %v", mid)
+	}
+}
+
+func TestReconnectResumesAndReplays(t *testing.T) {
+	r, p1, _, _ := newClockRoom(nil)
+	r.onDeploy(1, &pbbattle.DeployCmd{Tick: 1, CardId: "knight"})
+	r.onTick() // 0
+	r.onTick() // 1 -> history has 2 bundles
+	recvBundle(t, p1)
+	recvBundle(t, p1)
+
+	r.onDisconnect(1)
+	if !r.paused {
+		t.Fatal("should pause")
+	}
+
+	newSend := make(chan []byte, 256)
+	r.onReconnect(reconnReq{side: 1, send: newSend})
+	if r.paused {
+		t.Error("should resume once both sides are connected")
+	}
+	// Reconnect replay: fresh JoinRoomResp, then every past bundle.
+	if mid, _ := recvFrameCh(t, newSend); mid != pbcommon.MsgId_JOIN_ROOM_RESP {
+		t.Fatalf("replay should start with JoinRoomResp, got %v", mid)
+	}
+	bundles := 0
+	for i := 0; i < 2; i++ {
+		if mid, _ := recvFrameCh(t, newSend); mid == pbcommon.MsgId_TICK_BUNDLE {
+			bundles++
+		}
+	}
+	if bundles != 2 {
+		t.Errorf("should replay 2 bundles, got %d", bundles)
+	}
+}
+
+func TestReconnectWindowExpiryOpponentWins(t *testing.T) {
+	fp := &fakePersister{}
+	r, _, p2, clk := newClockRoom(fp)
+	r.sendJoinResp()
+	recvFrame(t, p2) // drain p2's JoinRoomResp
+
+	r.onDisconnect(1)                            // side 1 drops at T0
+	*clk = clk.Add(r.reconnectWindow + time.Second) // window expires
+	r.step()                                     // -> finalizeDisconnect
+	if !r.ended {
+		t.Fatal("should finalize after the reconnect window expires")
+	}
+	mid, pl := recvFrame(t, p2)
+	if mid != pbcommon.MsgId_BATTLE_RESULT_PUSH {
+		t.Fatalf("p2 should get a result, got %v", mid)
+	}
+	var res pbbattle.BattleResultPush
+	_ = proto.Unmarshal(pl, &res)
+	if res.Winner != pbbattle.BattleResultPush_SIDE_2 || res.Reason != pbbattle.BattleResultPush_DISCONNECT {
+		t.Errorf("side 2 should win by disconnect, got winner=%v reason=%v", res.Winner, res.Reason)
+	}
+	if fp.saved == nil || fp.saved.WinnerAccount != 200 {
+		t.Error("persisted winner should be p2 (200)")
+	}
+}
+
+func TestSilenceTriggersDisconnect(t *testing.T) {
+	r, _, _, clk := newClockRoom(nil)
+	*clk = clk.Add(r.silenceTimeout + time.Second) // no activity past the silence timeout
+	r.step()
+	if !r.paused {
+		t.Error("a silent client should trigger disconnect + pause")
 	}
 }

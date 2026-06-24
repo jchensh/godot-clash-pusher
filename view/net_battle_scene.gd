@@ -65,6 +65,7 @@ func _connect_flow() -> void:
 	_client = BattleClientScript.new(_loader)
 	_client.joined.connect(_on_joined)
 	_client.result.connect(_on_result)
+	_client.reconnecting.connect(_on_reconnecting)
 	_client.disconnected.connect(_on_disconnected)
 	_client.start(net.get("ws_url", "ws://localhost:8081/v4/battle/ws"), _auth.access_token, DEFAULT_DECK)
 
@@ -100,12 +101,17 @@ func _on_disconnected() -> void:
 		_status = "连接断开"
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if _client != null:
-		_client.poll()
+		_client.poll(delta)
 	if _dragging:
 		_drag_screen = get_viewport().get_mouse_position()
 	queue_redraw()
+
+
+func _on_reconnecting() -> void:
+	if _result_text == "":
+		_status = "连接中断，重连中…"
 
 
 # —— 坐标映射（side 2 翻转）——

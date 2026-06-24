@@ -16,12 +16,16 @@ const WSClientScript := preload("res://net/ws_client.gd")
 const _CommonPb := preload("res://net/proto/common.gd")
 const _BattlePb := preload("res://net/proto/battle.gd")
 
-const HASH_EVERY := 10     # 每 10 tick 上报一次状态哈希
-const TICK_OFFSET := 2     # 出兵指令 tick = 当前 + 2（RTT 缓冲，决策 1）
+const HASH_EVERY := 10           # 每 10 tick 上报一次状态哈希
+const TICK_OFFSET := 2           # 出兵指令 tick = 当前 + 2（RTT 缓冲，决策 1）
+const HEARTBEAT_INTERVAL := 5.0  # 每 5s 发一次心跳（服务端 30s 无活动判掉线）
+const RECONNECT_RETRY := 2.0     # 断线后每 2s 重试一次连接
+const RECONNECT_MAX := 60.0      # 重连窗口（对齐服务端 room TTL）；超过则放弃
 
 signal joined(your_side: int, opponent_name: String)
 signal result(winner: int, reason: int)
-signal disconnected
+signal reconnecting            # 断线、正在重连中（UI 提示）
+signal disconnected            # 重连窗口耗尽、彻底掉线
 
 var ws                     # WSClient 或 fake
 var config                 # ConfigLoader
@@ -29,8 +33,16 @@ var match_obj              # Match（收到 JoinRoomResp 后建）
 var your_side: int = 0
 
 var _deck: Array = []
+var _ws_url := ""
+var _token := ""
 var _end_reported := false
 var _playing := false
+var _ended := false              # 收到结算（正常结束，不再重连）
+var _started := false            # 至少 join 过一次（才需断线重连）
+var _hb_accum := 0.0
+var _reconnecting := false
+var _reconnect_accum := 0.0
+var _reconnect_elapsed := 0.0
 
 
 func _init(config_, ws_ = null) -> void:
@@ -43,12 +55,35 @@ func _init(config_, ws_ = null) -> void:
 
 ## 连接 gateway 并准备 join。token 走 query 参数鉴权。
 func start(server_ws_url: String, token: String, deck: Array) -> int:
+	_ws_url = server_ws_url
+	_token = token
 	_deck = deck
-	return ws.connect_to("%s?token=%s" % [server_ws_url, token])
+	return ws.connect_to(_full_url())
 
 
-func poll() -> void:
+func _full_url() -> String:
+	return "%s?token=%s" % [_ws_url, _token]
+
+
+## 每帧调用（传入帧时间）：推进 WS + 心跳 + 断线自动重连。
+func poll(delta: float = 0.0) -> void:
 	ws.poll()
+	if _ended:
+		return
+	if _playing and ws.is_open():
+		_hb_accum += delta
+		if _hb_accum >= HEARTBEAT_INTERVAL:
+			_hb_accum = 0.0
+			_send_heartbeat()
+	if _reconnecting:
+		_reconnect_elapsed += delta
+		_reconnect_accum += delta
+		if _reconnect_elapsed > RECONNECT_MAX:
+			_reconnecting = false
+			disconnected.emit()
+		elif _reconnect_accum >= RECONNECT_RETRY:
+			_reconnect_accum = 0.0
+			ws.connect_to(_full_url())
 
 
 # —— 连接事件 ——
@@ -61,8 +96,23 @@ func _on_opened() -> void:
 
 
 func _on_closed() -> void:
-	_playing = false
-	disconnected.emit()
+	if _ended:
+		return
+	if not _started:
+		disconnected.emit()   # 还没 join 成功就断 → 直接报掉线
+		return
+	if not _reconnecting:
+		# 对战中断线 → 进入重连窗口，poll 会按 RECONNECT_RETRY 重试连接。
+		_reconnecting = true
+		_reconnect_accum = 0.0
+		_reconnect_elapsed = 0.0
+		reconnecting.emit()
+
+
+func _send_heartbeat() -> void:
+	var hb = _BattlePb.HeartbeatPing.new()
+	hb.set_client_time(Time.get_ticks_msec())
+	ws.send_frame(_CommonPb.MsgId.HEARTBEAT_PING, hb.to_bytes())
 
 
 func _on_frame(msg_id: int, payload: PackedByteArray) -> void:
@@ -87,6 +137,9 @@ func _handle_join_resp(payload: PackedByteArray) -> void:
 	match_obj.setup(resp.get_level_id(), resp.get_side1_deck(), [], resp.get_side2_deck())
 	_playing = true
 	_end_reported = false
+	_started = true
+	_reconnecting = false
+	_hb_accum = 0.0
 	var opp_name := ""
 	var opp = resp.get_opponent()
 	if opp != null:
@@ -148,6 +201,8 @@ func _handle_result(payload: PackedByteArray) -> void:
 	if res.from_bytes(payload) != _BattlePb.PB_ERR.NO_ERRORS:
 		return
 	_playing = false
+	_ended = true
+	_reconnecting = false
 	result.emit(res.get_winner(), res.get_reason())
 
 
