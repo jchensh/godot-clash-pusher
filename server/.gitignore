@@ -1,0 +1,15 @@
+# Build artifacts
+/bin/
+*.exe
+*.test
+
+# Local env
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+
+# Go workspace files (per-machine)
+/go.sum.lock

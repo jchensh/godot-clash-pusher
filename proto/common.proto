@@ -1,0 +1,92 @@
+// common.proto — V4 wire 层共享消息 ID 枚举 + 通用错误 + 帧格式说明
+//
+// WS frame 约定：[2 bytes msg_id (big-endian uint16)][N bytes protobuf payload]
+//   - msg_id 取自下面的 MsgId 枚举
+//   - PING/PONG 无 payload（payload N=0）
+//   - 所有 req/resp 严格对应：客户端发 *_REQ，服务端回 *_RESP；服务端主动推用 *_PUSH
+
+syntax = "proto3";
+
+package game.v4;
+
+option go_package = "github.com/jchensh/godot-clash-pusher/server/internal/pb/common";
+
+// 消息 ID 枚举，分段：0-9 = 心跳/错误，10-19 = auth，20-29 = profile，
+// 30-39 = match (lobby)，40-49 = battle，50-59 = leaderboard。
+// 新增消息按段尾追加，**不复用**已用过的 id。
+enum MsgId {
+  MSG_UNKNOWN = 0;
+  PING = 1;
+  PONG = 2;
+  ERROR_RESP = 3;
+
+  LOGIN_REQ = 10;
+  LOGIN_RESP = 11;
+  REFRESH_REQ = 12;
+  REFRESH_RESP = 13;
+
+  PROFILE_GET_REQ = 20;
+  PROFILE_GET_RESP = 21;
+  DECK_UPDATE_REQ = 22;
+  DECK_UPDATE_RESP = 23;
+
+  FIND_MATCH_REQ = 30;
+  FIND_MATCH_RESP = 31;
+  CANCEL_MATCH_REQ = 32;
+  CANCEL_MATCH_RESP = 33;
+  MATCH_FOUND_PUSH = 34;
+
+  JOIN_ROOM_REQ = 40;
+  JOIN_ROOM_RESP = 41;
+  DEPLOY_CMD = 42;
+  TICK_BUNDLE = 43;
+  STATE_HASH_UP = 44;
+  BATTLE_RESULT_PUSH = 45;
+  HEARTBEAT_PING = 46;
+  HEARTBEAT_PONG = 47;
+  BATTLE_END_REPORT = 48;   // 客户端 -> 服务端：本地 sim 判定对局结束（lockstep 服务端无 sim，靠两端上报）
+
+  LEADERBOARD_TOP_REQ = 50;
+  LEADERBOARD_TOP_RESP = 51;
+}
+
+// 通用错误码。前 1000 为框架级（鉴权/限流），1000+ 为业务级（按模块分段）。
+enum ErrorCode {
+  ERR_OK = 0;
+  ERR_INTERNAL = 1;
+  ERR_INVALID_ARG = 2;
+  ERR_UNAUTHORIZED = 3;
+  ERR_RATE_LIMITED = 4;
+  ERR_NOT_FOUND = 5;
+
+  ERR_AUTH_INVALID_TOKEN = 100;
+  ERR_AUTH_EXPIRED = 101;
+  ERR_AUTH_BANNED = 102;
+
+  ERR_PROFILE_VERSION_MISMATCH = 200;
+  ERR_PROFILE_DECK_INVALID = 201;
+
+  ERR_MATCH_ALREADY_QUEUED = 300;
+  ERR_MATCH_NOT_QUEUED = 301;
+
+  ERR_BATTLE_ROOM_NOT_FOUND = 400;
+  ERR_BATTLE_INVALID_DEPLOY = 401;
+  ERR_BATTLE_HASH_MISMATCH = 402;
+}
+
+// 通用错误响应；当 server 处理 *_REQ 失败时回此，msg_id=ERROR_RESP。
+message ErrorResp {
+  ErrorCode code = 1;
+  string detail = 2;        // 人类可读错误描述（不直接暴露给用户，给开发看）
+                            // 注：原名是 message，但 godobuf 把它当 proto 保留字
+  MsgId in_reply_to = 3;    // 哪个 req 出错（便于客户端关联）
+}
+
+// 玩家简要信息，多处复用（match found、battle join、leaderboard 等）。
+message ProfileSummary {
+  int64 account_id = 1;
+  string nickname = 2;
+  int32 avatar_id = 3;
+  int32 level = 4;
+  int32 trophies = 5;
+}

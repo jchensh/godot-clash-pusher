@@ -13,6 +13,7 @@ config_version=5
 config/name="对推小游戏"
 config/description="竖屏皇室战争式对推小游戏 (V1 白膜)"
 run/main_scene="res://view/main_menu.tscn"
+run/max_fps=60
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 
