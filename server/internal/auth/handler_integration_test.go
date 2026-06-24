@@ -35,12 +35,11 @@ func setupIntegration(t *testing.T) (*store.DB, *httptest.Server, context.Contex
 	if err != nil {
 		t.Fatalf("Open db: %v", err)
 	}
-	// Clean prior runs so the test is deterministic.
-	if _, err := db.Pool.Exec(ctx, "DELETE FROM profiles"); err != nil {
-		t.Fatalf("cleanup profiles: %v", err)
-	}
-	if _, err := db.Pool.Exec(ctx, "DELETE FROM accounts"); err != nil {
-		t.Fatalf("cleanup accounts: %v", err)
+	// Clean prior runs (FK children before parents) so the test is deterministic.
+	for _, tbl := range []string{"matches", "decks", "profiles", "accounts"} {
+		if _, err := db.Pool.Exec(ctx, "DELETE FROM "+tbl); err != nil {
+			t.Fatalf("cleanup %s: %v", tbl, err)
+		}
 	}
 
 	iss, _ := authsvc.NewIssuer([]byte("test-secret-for-integration"))

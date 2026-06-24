@@ -47,7 +47,7 @@ func newTestServer(t *testing.T) *httptest.Server {
 	if err != nil {
 		t.Fatalf("Open db: %v", err)
 	}
-	for _, tbl := range []string{"decks", "profiles", "accounts"} {
+	for _, tbl := range []string{"matches", "decks", "profiles", "accounts"} {
 		if _, err := db.Pool.Exec(ctx, "DELETE FROM "+tbl); err != nil {
 			t.Fatalf("cleanup %s: %v", tbl, err)
 		}

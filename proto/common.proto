@@ -44,6 +44,7 @@ enum MsgId {
   BATTLE_RESULT_PUSH = 45;
   HEARTBEAT_PING = 46;
   HEARTBEAT_PONG = 47;
+  BATTLE_END_REPORT = 48;   // 客户端 -> 服务端：本地 sim 判定对局结束（lockstep 服务端无 sim，靠两端上报）
 
   LEADERBOARD_TOP_REQ = 50;
   LEADERBOARD_TOP_RESP = 51;

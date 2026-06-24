@@ -59,6 +59,7 @@ const (
 	MsgId_BATTLE_RESULT_PUSH   MsgId = 45
 	MsgId_HEARTBEAT_PING       MsgId = 46
 	MsgId_HEARTBEAT_PONG       MsgId = 47
+	MsgId_BATTLE_END_REPORT    MsgId = 48 // 客户端 -> 服务端：本地 sim 判定对局结束（lockstep 服务端无 sim，靠两端上报）
 	MsgId_LEADERBOARD_TOP_REQ  MsgId = 50
 	MsgId_LEADERBOARD_TOP_RESP MsgId = 51
 )
@@ -91,6 +92,7 @@ var (
 		45: "BATTLE_RESULT_PUSH",
 		46: "HEARTBEAT_PING",
 		47: "HEARTBEAT_PONG",
+		48: "BATTLE_END_REPORT",
 		50: "LEADERBOARD_TOP_REQ",
 		51: "LEADERBOARD_TOP_RESP",
 	}
@@ -120,6 +122,7 @@ var (
 		"BATTLE_RESULT_PUSH":   45,
 		"HEARTBEAT_PING":       46,
 		"HEARTBEAT_PONG":       47,
+		"BATTLE_END_REPORT":    48,
 		"LEADERBOARD_TOP_REQ":  50,
 		"LEADERBOARD_TOP_RESP": 51,
 	}
@@ -395,7 +398,7 @@ const file_common_proto_rawDesc = "" +
 	"\bnickname\x18\x02 \x01(\tR\bnickname\x12\x1b\n" +
 	"\tavatar_id\x18\x03 \x01(\x05R\bavatarId\x12\x14\n" +
 	"\x05level\x18\x04 \x01(\x05R\x05level\x12\x1a\n" +
-	"\btrophies\x18\x05 \x01(\x05R\btrophies*\x8e\x04\n" +
+	"\btrophies\x18\x05 \x01(\x05R\btrophies*\xa5\x04\n" +
 	"\x05MsgId\x12\x0f\n" +
 	"\vMSG_UNKNOWN\x10\x00\x12\b\n" +
 	"\x04PING\x10\x01\x12\b\n" +
@@ -425,7 +428,8 @@ const file_common_proto_rawDesc = "" +
 	"\rSTATE_HASH_UP\x10,\x12\x16\n" +
 	"\x12BATTLE_RESULT_PUSH\x10-\x12\x12\n" +
 	"\x0eHEARTBEAT_PING\x10.\x12\x12\n" +
-	"\x0eHEARTBEAT_PONG\x10/\x12\x17\n" +
+	"\x0eHEARTBEAT_PONG\x10/\x12\x15\n" +
+	"\x11BATTLE_END_REPORT\x100\x12\x17\n" +
 	"\x13LEADERBOARD_TOP_REQ\x102\x12\x18\n" +
 	"\x14LEADERBOARD_TOP_RESP\x103*\x9f\x03\n" +
 	"\tErrorCode\x12\n" +

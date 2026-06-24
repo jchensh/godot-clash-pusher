@@ -693,6 +693,12 @@ class JoinRoomReq:
 		service.field = __room_id
 		data[__room_id.tag] = service
 		
+		var __deck_default: Array[String] = []
+		__deck = PBField.new("deck", PB_DATA_TYPE.STRING, PB_RULE.REPEATED, 2, true, __deck_default)
+		service = PBServiceField.new()
+		service.field = __deck
+		data[__deck.tag] = service
+		
 	var data = {}
 	
 	var __room_id: PBField
@@ -707,6 +713,15 @@ class JoinRoomReq:
 		__room_id.value = DEFAULT_VALUES_3[PB_DATA_TYPE.STRING]
 	func set_room_id(value : String) -> void:
 		__room_id.value = value
+	
+	var __deck: PBField
+	func get_deck() -> Array[String]:
+		return __deck.value
+	func clear_deck() -> void:
+		data[2].state = PB_SERVICE_STATE.UNFILLED
+		__deck.value.clear()
+	func add_deck(value : String) -> void:
+		__deck.value.append(value)
 	
 	func _to_string() -> String:
 		return PBPacker.message_to_string(data)
@@ -759,6 +774,23 @@ class JoinRoomResp:
 		service = PBServiceField.new()
 		service.field = __seed
 		data[__seed.tag] = service
+		
+		var __side1_deck_default: Array[String] = []
+		__side1_deck = PBField.new("side1_deck", PB_DATA_TYPE.STRING, PB_RULE.REPEATED, 6, true, __side1_deck_default)
+		service = PBServiceField.new()
+		service.field = __side1_deck
+		data[__side1_deck.tag] = service
+		
+		var __side2_deck_default: Array[String] = []
+		__side2_deck = PBField.new("side2_deck", PB_DATA_TYPE.STRING, PB_RULE.REPEATED, 7, true, __side2_deck_default)
+		service = PBServiceField.new()
+		service.field = __side2_deck
+		data[__side2_deck.tag] = service
+		
+		__level_id = PBField.new("level_id", PB_DATA_TYPE.STRING, PB_RULE.OPTIONAL, 8, true, DEFAULT_VALUES_3[PB_DATA_TYPE.STRING])
+		service = PBServiceField.new()
+		service.field = __level_id
+		data[__level_id.tag] = service
 		
 	var data = {}
 	
@@ -827,6 +859,37 @@ class JoinRoomResp:
 		__seed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.UINT64]
 	func set_seed(value : int) -> void:
 		__seed.value = value
+	
+	var __side1_deck: PBField
+	func get_side1_deck() -> Array[String]:
+		return __side1_deck.value
+	func clear_side1_deck() -> void:
+		data[6].state = PB_SERVICE_STATE.UNFILLED
+		__side1_deck.value.clear()
+	func add_side1_deck(value : String) -> void:
+		__side1_deck.value.append(value)
+	
+	var __side2_deck: PBField
+	func get_side2_deck() -> Array[String]:
+		return __side2_deck.value
+	func clear_side2_deck() -> void:
+		data[7].state = PB_SERVICE_STATE.UNFILLED
+		__side2_deck.value.clear()
+	func add_side2_deck(value : String) -> void:
+		__side2_deck.value.append(value)
+	
+	var __level_id: PBField
+	func has_level_id() -> bool:
+		if __level_id.value != null:
+			return true
+		return false
+	func get_level_id() -> String:
+		return __level_id.value
+	func clear_level_id() -> void:
+		data[8].state = PB_SERVICE_STATE.UNFILLED
+		__level_id.value = DEFAULT_VALUES_3[PB_DATA_TYPE.STRING]
+	func set_level_id(value : String) -> void:
+		__level_id.value = value
 	
 	func _to_string() -> String:
 		return PBPacker.message_to_string(data)
@@ -1143,6 +1206,124 @@ class StateHashUp:
 			return PB_ERR.PARSE_INCOMPLETE
 		return result
 	
+class BattleEndReport:
+	extends RefCounted
+	func _init():
+		var service
+		
+		__tick = PBField.new("tick", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 1, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
+		service = PBServiceField.new()
+		service.field = __tick
+		data[__tick.tag] = service
+		
+		__winner = PBField.new("winner", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 2, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
+		service = PBServiceField.new()
+		service.field = __winner
+		data[__winner.tag] = service
+		
+		__reason = PBField.new("reason", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 3, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
+		service = PBServiceField.new()
+		service.field = __reason
+		data[__reason.tag] = service
+		
+		__side_1_score = PBField.new("side_1_score", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 4, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
+		service = PBServiceField.new()
+		service.field = __side_1_score
+		data[__side_1_score.tag] = service
+		
+		__side_2_score = PBField.new("side_2_score", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 5, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
+		service = PBServiceField.new()
+		service.field = __side_2_score
+		data[__side_2_score.tag] = service
+		
+	var data = {}
+	
+	var __tick: PBField
+	func has_tick() -> bool:
+		if __tick.value != null:
+			return true
+		return false
+	func get_tick() -> int:
+		return __tick.value
+	func clear_tick() -> void:
+		data[1].state = PB_SERVICE_STATE.UNFILLED
+		__tick.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
+	func set_tick(value : int) -> void:
+		__tick.value = value
+	
+	var __winner: PBField
+	func has_winner() -> bool:
+		if __winner.value != null:
+			return true
+		return false
+	func get_winner() -> int:
+		return __winner.value
+	func clear_winner() -> void:
+		data[2].state = PB_SERVICE_STATE.UNFILLED
+		__winner.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
+	func set_winner(value : int) -> void:
+		__winner.value = value
+	
+	var __reason: PBField
+	func has_reason() -> bool:
+		if __reason.value != null:
+			return true
+		return false
+	func get_reason() -> int:
+		return __reason.value
+	func clear_reason() -> void:
+		data[3].state = PB_SERVICE_STATE.UNFILLED
+		__reason.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
+	func set_reason(value : int) -> void:
+		__reason.value = value
+	
+	var __side_1_score: PBField
+	func has_side_1_score() -> bool:
+		if __side_1_score.value != null:
+			return true
+		return false
+	func get_side_1_score() -> int:
+		return __side_1_score.value
+	func clear_side_1_score() -> void:
+		data[4].state = PB_SERVICE_STATE.UNFILLED
+		__side_1_score.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
+	func set_side_1_score(value : int) -> void:
+		__side_1_score.value = value
+	
+	var __side_2_score: PBField
+	func has_side_2_score() -> bool:
+		if __side_2_score.value != null:
+			return true
+		return false
+	func get_side_2_score() -> int:
+		return __side_2_score.value
+	func clear_side_2_score() -> void:
+		data[5].state = PB_SERVICE_STATE.UNFILLED
+		__side_2_score.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
+	func set_side_2_score(value : int) -> void:
+		__side_2_score.value = value
+	
+	func _to_string() -> String:
+		return PBPacker.message_to_string(data)
+		
+	func to_bytes() -> PackedByteArray:
+		return PBPacker.pack_message(data)
+		
+	func from_bytes(bytes : PackedByteArray, offset : int = 0, limit : int = -1) -> int:
+		var cur_limit = bytes.size()
+		if limit != -1:
+			cur_limit = limit
+		var result = PBPacker.unpack_message(data, bytes, offset, cur_limit)
+		if result == cur_limit:
+			if PBPacker.check_required(data):
+				if limit == -1:
+					return PB_ERR.NO_ERRORS
+			else:
+				return PB_ERR.REQUIRED_FIELDS
+		elif limit == -1 && result > 0:
+			return PB_ERR.PARSE_INCOMPLETE
+		return result
+	
 class BattleResultPush:
 	extends RefCounted
 	func _init():
@@ -1412,6 +1593,7 @@ enum MsgId {
 	BATTLE_RESULT_PUSH = 45,
 	HEARTBEAT_PING = 46,
 	HEARTBEAT_PONG = 47,
+	BATTLE_END_REPORT = 48,
 	LEADERBOARD_TOP_REQ = 50,
 	LEADERBOARD_TOP_RESP = 51
 }

@@ -76,11 +76,12 @@
 | V3-5b | 新手引导覆盖层：tutorial.json 数据驱动 + battle_scene 引导(压暗/挖洞高亮/手指/气泡, tap+动作推进) | ✅ 完成（真人验收通过 2026-06-22；单测 186/186） | `4364dbb` |
 | V4-S0 | 协议/Go 脚手架/Docker/Makefile/Go·GDScript 双端 pb（a proto + b Go cmd + c Docker + d Makefile + e Go pb 生成与 compose 跑通 + f godobuf 接入） | ✅ 完成（单测 190/190；docker compose 5 容器+pg 16.14+redis 验收通过） | `d79dd25`/`d5c71af`/`107fed9`/`8ced7fd`/`9001c2c`/`d4a2698`/`e13a466` |
 | V4-S1 | 匿名 device_id 登录（a DB+migrations runner + accounts/profiles schema + b JWT HS256 access30d/refresh90d + device_id FindOrCreateByDevice + c HTTP server net/http + /v4/auth/{login,refresh} + d 客户端 net/auth.gd UUID4+token 持久化 + e 端到端真链路验收） | ✅ 完成（单测 197/197；Go unit 14 + integration 4 + smoke 真跑 PG 新增 row 全过；Jira KAN-37） | `db1e77d` |
-| V4-S2 | 玩家档案云存档（a decks 表 migration + b profile repo·乐观锁 CAS·卡组校验 + c HTTP /v4/profile/{get,deck-update}·Bearer 鉴权 middleware·httpx 共享包 + d 客户端 net/profile.gd 离线缓存·冲突重取 + e 端到端真链路验收）；顺带根治 godobuf `Deck`↔V3 全局 `class_name Deck` 撞名（proto 改名 `DeckMsg`，wire 不变） | ✅ 完成（单测 204/204；Go unit + integration auth4+profile6（`-p 1` 串行）全过；smoke PG 实查 decks 落库；Jira KAN-38） | `本提交` |
+| V4-S2 | 玩家档案云存档（a decks 表 migration + b profile repo·乐观锁 CAS·卡组校验 + c HTTP /v4/profile/{get,deck-update}·Bearer 鉴权 middleware·httpx 共享包 + d 客户端 net/profile.gd 离线缓存·冲突重取 + e 端到端真链路验收）；顺带根治 godobuf `Deck`↔V3 全局 `class_name Deck` 撞名（proto 改名 `DeckMsg`，wire 不变） | ✅ 完成（单测 204/204；Go unit + integration auth4+profile6（`-p 1` 串行）全过；smoke PG 实查 decks 落库；Jira KAN-38） | `923733a` |
+| V4-S3 | lockstep 实时对战网络层★（a 确定性地基 advance_tick+state_hash + b 协议扩展+ladder 配置+matches 表 + c Go gateway WS+battle room·房间中继·哈希对帐·结算落库 + d 客户端 ws_client+battle_client + e 联机对战场景+LADDER 入口+端到端真链路）；**f 重连+超时 / g 两台 Windows 真机验收待做** | 🚧 a~e 完成（单测 216/216；Go battle 9 unit + integration 全过；**端到端真 WS 856 比对 0 分叉 + PG 战绩落库**；Jira KAN-39 In Progress） | `本提交` |
 
-> **当前阶段 = V4 联网升级 + 实时对战**（账号/匹配/PvP/赛季/排行榜；长期 F2P 但前期玩法验证不实现支付）。权威规划见 [PLAN_V4.md](PLAN_V4.md)；方向锁定见决策日志 46。**V1/V2/V3 全部完成**——V1 机制白膜 → V2 3-lane + 程序化换皮 + AI 难度 + 内容平衡 → V3 2D 战斗 reboot + 空军 + 新积木 + Roguelite 主轴 + 交互手感 + 精灵美术 + 音频骨架 + 难度 5 档 + 像素 UI 设计系统 + 新手战役 + 引导。V1/V2 详细见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)，V3 详细见 [docs/HISTORY_V3_DETAILED.md](docs/HISTORY_V3_DETAILED.md)。**V3-9 平衡剩余子项**（数值/节奏调优 + 设置/导出/上架打磨）与 V4 早期阶段（S0~S2 账号/档案）可并行。**V4-S0/S1 整体收官**：S0（7 commits / 6 子步 a~f）打底 + S1（1 commit / 5 子步 a~e）匿名 device_id 登录端到端通（客户端 UUID4 → protobuf → docker api → PG accounts/profiles → JWT/refresh → user://auth.cfg 落盘）。Jira KAN-36/KAN-37 同步 Done。**V4-S2 收官**：玩家档案云存档端到端通（客户端 `net/profile.gd` ↔ `/v4/profile/{get,deck-update}` ↔ PG decks/profiles；Bearer 令牌鉴权 + 乐观锁版本冲突 409 + 离线缓存兜底；顺带根治 godobuf `Deck` 与 V3 全局 `class_name Deck` 撞名隐患 → proto 改 `DeckMsg`，wire 不变）。Jira KAN-38 Done。**下一步**：V4-S3 lockstep 实时对战网络层（★头号工程）。
+> **当前阶段 = V4 联网升级 + 实时对战**（账号/匹配/PvP/赛季/排行榜；长期 F2P 但前期玩法验证不实现支付）。权威规划见 [PLAN_V4.md](PLAN_V4.md)；方向锁定见决策日志 46。**V1/V2/V3 全部完成**——V1 机制白膜 → V2 3-lane + 程序化换皮 + AI 难度 + 内容平衡 → V3 2D 战斗 reboot + 空军 + 新积木 + Roguelite 主轴 + 交互手感 + 精灵美术 + 音频骨架 + 难度 5 档 + 像素 UI 设计系统 + 新手战役 + 引导。V1/V2 详细见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)，V3 详细见 [docs/HISTORY_V3_DETAILED.md](docs/HISTORY_V3_DETAILED.md)。**V3-9 平衡剩余子项**（数值/节奏调优 + 设置/导出/上架打磨）与 V4 早期阶段（S0~S2 账号/档案）可并行。**V4-S0/S1 整体收官**：S0（7 commits / 6 子步 a~f）打底 + S1（1 commit / 5 子步 a~e）匿名 device_id 登录端到端通（客户端 UUID4 → protobuf → docker api → PG accounts/profiles → JWT/refresh → user://auth.cfg 落盘）。Jira KAN-36/KAN-37 同步 Done。**V4-S2 收官**：玩家档案云存档端到端通（客户端 `net/profile.gd` ↔ `/v4/profile/{get,deck-update}` ↔ PG decks/profiles；Bearer 令牌鉴权 + 乐观锁版本冲突 409 + 离线缓存兜底；顺带根治 godobuf `Deck` 与 V3 全局 `class_name Deck` 撞名隐患 → proto 改 `DeckMsg`，wire 不变）。Jira KAN-38 Done。**V4-S3 a~e 进行中**：lockstep 实时对战网络层★（a 确定性地基 `Match.advance_tick`+`state_hash` → b 协议扩展+ladder 配置+matches 表 → c Go gateway WS+battle room → d 客户端 `net/ws_client`+`net/battle_client` → e 联机对战场景+LADDER 入口）。**端到端真 WebSocket 856 比对 0 分叉 + PG 战绩落库 → lockstep 整条路线验证成立**。**下一步**：f 断线重连+超时认输 / g 两台 Windows 真机验收。
 
-**测试**：客户端 204/204（`HOME` 隔离）；服务端 Go unit + integration（auth 4 + profile 6，跨包 `-p 1` 串行）全过。**分支/远端**：开发在 `develop`、`main` 稳定线、`release` 为 Antigravity（Google IDE）创建的安卓打包分支（跟随 develop，agent 默认不动）、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`；音频单独走 `config/AudioConfig.xlsx` → `config/audio_assets.json`，用 `tools/build_audio_config.py --check` 校验。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
+**测试**：客户端 216/216（`HOME` 隔离）；服务端 Go unit（battle 房间 9）+ integration（auth 4 + profile 6，跨包 `-p 1` 串行）全过；V4-S3 端到端真 WS lockstep 856 比对 0 分叉。**分支/远端**：开发在 `develop`、`main` 稳定线、`release` 为 Antigravity（Google IDE）创建的安卓打包分支（跟随 develop，agent 默认不动）、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`；音频单独走 `config/AudioConfig.xlsx` → `config/audio_assets.json`，用 `tools/build_audio_config.py --check` 校验。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
 ---
 
@@ -338,3 +339,45 @@
 3. **集成测试跨包并行踩库**：`go test` 默认并行跑不同包，auth + profile 两集成包共享 live PG、各自 `DELETE` + 建号 → auth 的 `COUNT` 断言被打乱。单包跑各自都过。修：跨包用 `-p 1` 串行（已写进 profile 测试头注释）。纯单测（无 `INTEGRATION_DB_URL`）不受影响。
 
 > **V4-S2 整阶段收官**：a decks migration → b profile 业务（CAS + 校验）→ c HTTP + 鉴权 middleware + httpx 抽包 → d 客户端 `net/profile.gd`（离线缓存 + 冲突重取）→ e 端到端真链路。客户端单测 **204/204**；Go unit + integration（auth 4 + profile 6，`-p 1` 串行）全过；smoke PG 实查落库。顺带根治 S0f 起的 `Deck` 全局类撞名隐患（→`DeckMsg`）。**下一步 V4-S3 lockstep 实时对战网络层（★头号工程）**：WS gateway + battle room；`NetworkPlayer` deploy 指令 → 服务端 → 广播双方 → 双方 `logic/` tick 推进；每 N tick state hash 三方对帐；断线重连（room TTL 60s）；超时认输。待细化：hash 算法 / 重连窗口 / tick 偏移 / 客户端预测。
+
+### V4-S3 — lockstep 实时对战网络层（进行中：a~e 完成，f/g 待做）
+**前置决策**：见决策 46 + V4-S3 规划（8 条待细化，用户 2026-06-24 全按推荐拍板）：①出兵 tick=current+2（200ms RTT 缓冲）；②S3 不做客户端预测；③哈希=浮点×1000 量化取整+固定字节序→sha256（units+towers+elixir）；④断线重连 60s/超时 30s 拆到靠后子步（f）；⑤开局下发双方卡组+关卡+side+start_tick（两端建同一初始态）；⑥新增固定 ladder 关卡配置；⑦S3 临时调试配对（真匹配=S4）；⑧新建 `net_battle_scene` 不动单机 `battle_scene`。**真机验收=两台 Windows**（同架构 x86 浮点确定性有保障；安卓跨架构 ARM 确定性延后，真 desync 再上定点数）。拆 a~g 共 7 子步；**本提交含 a~e**（f 重连+超时 / g 真机验收待做），a~e 合 1 个 commit。**Jira KAN-39** In Progress（未 Done，S3 未收尾）。
+
+#### V4-S3a — 确定性地基 + 状态哈希
+- `logic/match.gd`：新增 lockstep 三件套（单机 `update()` 路径完全不动）——`advance_tick(deploys)` 无时钟无 AI 的确定性单 tick 推进（先双方 regen → 应用 deploys → battle.step）；`_apply_deploy` 按 side 选 Player、按 card_id 在手牌反查 hand_index 再 try_play_card（卡不在手/side 非法=确定性 no-op，丢弃非法/作弊指令）；`state_hash()` 按 proto 定义量化(×1000)定序 sha256（elixir 双方 + units(arena 列表序，spawn 确定性) + towers(player 序+opponent 序)）。约定 side1↔OWNER_PLAYER、side2↔OWNER_OPPONENT。
+- 前置确认（lockstep 命门）：逻辑层零随机（唯一 RNG 在 `run_rewards.gd` 抽奖、不在战斗）+ deck 不洗牌确定性循环 + 卡组无重复卡（S2 validateDeck 保证）→ card_id↔hand_index 唯一。
+- `tests/test_lockstep_determinism.gd`：5 测——两 Match 喂相同输入序列(220 tick + 真出兵打架)每 tick 哈希全等 / 不同输入哈希分叉 / 垃圾卡 no-op / 空 tick 确定性 / net_tick 自增。单测 **209/209**。
+
+#### V4-S3b — 协议补全 + ladder 配置 + matches 表
+- `proto/battle.proto`：JoinRoomReq +deck；JoinRoomResp +side1_deck/side2_deck/level_id；新增 `BattleEndReport`（tick/winner/reason/scores——客户端 sim 判定结束上报，服务端无 sim 靠两端核对）。`proto/common.proto`：MsgId +`BATTLE_END_REPORT=48`。
+- `config/levels.json`：+`ladder_01`（固定对战配置：时长 180 / 圣水 / 塔血 / 默认场地）。
+- `server/migrations/0004_matches.{up,down}.sql`：matches 表（id UUID `gen_random_uuid()` / 双方 account FK / winner/reason/scores / trophy delta / started·ended）+ 双索引。PG13+ 内置 gen_random_uuid，无需 pgcrypto。
+- 重生成双端 pb（Go protoc + godobuf gd），Godot 209/209 无类冲突。
+
+#### V4-S3c — Go gateway WS + battle room（最重）
+- `server/internal/battle/room.go`：lockstep 中继核心（**服务端不跑 sim**，只做确定性中继+裁判）。`onDeploy` 按 tick 缓冲(过期 clamp 到 curTick+1)、`onTick` 打包广播 TickBundle(空包照发保同步)、`onHash` 两端对帐(分歧标记 mismatch，完整仲裁留 S7)、`onEnd` 双方核对一致拍板、`finalize` 算 trophy(S3 固定±30)+广播 BattleResultPush+持久化。`Run()` = 10Hz ticker + inbound channel select(单 goroutine 无锁)。帧编解码 `[2B msgid 大端][payload]`。
+- `server/internal/battle/{hub,conn,persist}.go`：Hub 先到两人配对(真匹配=S4)；conn.go WS 收发泵(gorilla/websocket，结束给 300ms 宽限 flush 结算帧)；PGPersister 写 matches + 双方 profiles.trophies(GREATEST floor 0) 单 tx。
+- `server/cmd/gateway/main.go`：真实化——`/v4/battle/ws?token=` JWT 鉴权 + 拉对手 ProfileSummary + WS upgrade + hub.Serve；`/healthz`；graceful。+gorilla/websocket v1.5.3 依赖。
+- `room_test.go`：9 测（join resp 双方卡组/side / deploy 按 tick 打包 / 双方同 tick 同包 / 过期 clamp / 哈希对帐相等不标·分歧标记 / 结束双方核对+持久化+trophy±30 / 平局零 delta / 重复结束 no-op）。
+
+#### V4-S3d — 客户端网络层
+- `net/ws_client.gd`：WebSocketPeer 封装——connect/poll/帧编解码(大端 static 可单测)/开关沿信号。
+- `net/battle_client.gd`：连 gateway → JoinRoomReq(本方卡组) → JoinRoomResp 建同一初始态 Match(setup 双方卡组) → 每 TickBundle 驱动 `advance_tick` → 每 10 tick 上报 `state_hash` → 本地 sim 结束上报 BattleEndReport → 收 BattleResultPush。`send_deploy` 发 DeployCmd(tick=net_tick+2) **不当场落子**（等服务端广播回来两端同 tick 落子）。
+- `logic/match.gd`：`setup()` +`opponent_deck_override` 参数（单机不传=用 ai_deck，行为不变）。
+- `tests/test_net_battle_client.gd`：7 测（帧编解码大端往返/高字节/短帧拒 / JoinResp 建 Match / TickBundle 推进+第10tick 报哈希 / deploy 用+2 tick+坐标×1000 / 未 join 不发）。单测 **216/216**。
+
+#### V4-S3e — 对战场景 + LADDER 入口 + 端到端真链路
+- `view/net_battle_scene.gd`+`.tscn`：联机对战场景（功能版 slim）——登录→连→等配对→渲染 match 逻辑状态(单位圆/塔矩形/HUD 卡+圣水)→拖拽出兵走 `send_deploy`→结算屏；side2 整场 180° 翻转(本方半场恒在屏幕下)。单机 `battle_scene` 不动（保 V3 训练营）。
+- `config/network.json`：服务端地址(api_url/ws_url)，真机对战改成服务端局域网 IP。
+- `view/main_menu.gd`：+「天梯对战」金 CTA 入口 → net_battle_scene（按钮整体下移重排）。
+- 端到端真链路（临时 harness `tools/_lockstep_smoke.gd`，验后即删、不入 git）：单进程两 battle_client 经真 WS 连宿主机 gateway，登录(api)→配对→真 lockstep 60 tick **逐 tick 直接比对两端 state_hash：856 比对 / 0 分叉**+各出兵真生单位→两端上报结束→服务端核对→BattleResultPush winner=1→PG matches 行落库(KING_DESTROYED / trophy±30)。
+
+**踩坑（V4-S3 a~e，写进 commit message）**：
+1. **房间结束竞态**：`finalize` 广播结算帧后立即 close socket → 结算帧可能没 flush。conn.go 关闭加 300ms 宽限（粗暴但够 S3 玩法验证）。
+2. **matches 表 FK 污染集成测试**：lockstep smoke 插了 matches 行(账号 38/39)，S1/S2 集成测试 `DELETE accounts` 撞 matches FK(SQLSTATE 23503) → 两集成测试清表加 `matches`(FK 子表先删：matches→decks→profiles→accounts)。纯单测不受影响。
+3. **Docker 守护进程中途停了**：开发中 Docker Desktop 退出 → 启动 + `compose up -d` 重新拉起 5 容器。**容器仍是旧镜像**（gateway 是 S0 scaffold），端到端验证用宿主机临时 gateway(:8082) 跑通；**g 真机前需重建 gateway 镜像**让容器带新代码。
+4. **headless editor import 补 .uid**：编译新场景时顺手生成一批 `.uid`（含 S1/S2 当时漏提的 net/proto·net/auth 等），repo 本就提交 .uid，随本提交一起入库。
+
+**Jira / PM**：KAN-39 In Progress（a~e 完成、未 Done，f/g 待做）。
+
+> **V4-S3 a~e 阶段性收尾**：a 确定性地基(advance_tick+state_hash) → b 协议+ladder+matches → c Go gateway+battle room → d 客户端 net 层 → e 对战场景+真链路。客户端单测 **216/216**；Go unit(battle 9)+integration 全过；**端到端真 WS 856 比对 0 分叉 + PG 战绩落库**。**lockstep 整条路线（不重写 Go 战斗逻辑、两端各跑 logic+哈希对帐）验证成立**。**下一步 f**：断线重连(room TTL 60s 补指令流)+超时认输(30s 无心跳)；**g**：两台 Windows 真机实测（先重建 gateway 镜像）。
