@@ -1,10 +1,12 @@
-// Command gateway is the V4 WebSocket entry point: JWT auth + lockstep battle
-// relay (V4-S3). Clients connect to /v4/battle/ws?token=<access>, send a
-// JoinRoomReq, get paired, and play a lockstep match (see internal/battle).
+// Command gateway is the V4 WebSocket entry point: JWT auth + matchmaking +
+// lockstep battle relay. Clients connect to /v4/battle/ws?token=<access>, send a
+// FindMatchReq, get matched by hidden ELO (V4-S4), then play a lockstep match
+// (V4-S3). A reconnecting client sends JoinRoomReq instead. See internal/battle.
 //
 // Environment:
 //
-//	DB_URL        postgres://...            required (match persistence)
+//	DB_URL        postgres://...            required (ratings / decks / persistence)
+//	REDIS_URL     redis://...              required (matchmaking queue)
 //	JWT_SECRET    HS256 secret             required (no fallback)
 //	GATEWAY_PORT  listen port              default 8081
 //	LADDER_LEVEL  ladder level config id   default ladder_01
@@ -23,6 +25,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/jchensh/godot-clash-pusher/server/internal/auth"
 	"github.com/jchensh/godot-clash-pusher/server/internal/battle"
+	"github.com/jchensh/godot-clash-pusher/server/internal/matchmaking"
 	pbcommon "github.com/jchensh/godot-clash-pusher/server/internal/pb/common"
 	"github.com/jchensh/godot-clash-pusher/server/internal/store"
 	"github.com/jchensh/godot-clash-pusher/server/internal/version"
@@ -54,6 +57,10 @@ func main() {
 	if levelID == "" {
 		levelID = "ladder_01"
 	}
+	redisURL := os.Getenv("REDIS_URL")
+	if redisURL == "" {
+		log.Fatal("gateway: REDIS_URL env var is required (matchmaking queue)")
+	}
 
 	rootCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -67,11 +74,18 @@ func main() {
 		log.Fatalf("gateway: ping db: %v", err)
 	}
 
+	rdb, err := store.OpenRedis(rootCtx, redisURL)
+	if err != nil {
+		log.Fatalf("gateway: open redis: %v", err)
+	}
+	defer rdb.Close()
+
 	issuer, err := auth.NewIssuer([]byte(jwtSecret))
 	if err != nil {
 		log.Fatalf("gateway: build jwt issuer: %v", err)
 	}
-	hub := battle.NewHub(battle.NewPGPersister(db), levelID)
+	lobby := battle.NewLobby(matchmaking.NewRedisQueue(rdb.Client()), battle.NewPGPersister(db), db, levelID, nil)
+	go lobby.RunMatchmaker(rootCtx)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /v4/battle/ws", func(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +99,8 @@ func main() {
 		if err != nil {
 			return // Upgrade already wrote the error response
 		}
-		hub.Serve(rootCtx, ws, claims.AccountID, summary)
+		log.Printf("ws: acc=%d connected", claims.AccountID)
+		lobby.Serve(rootCtx, ws, claims.AccountID, summary)
 	})
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		if err := db.Ping(r.Context()); err != nil {

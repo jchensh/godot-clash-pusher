@@ -13,11 +13,15 @@ const RUN_SCENE := "res://view/run_scene.tscn"
 const SETTINGS_SCENE := "res://view/settings.tscn"
 const CAMPAIGN_SCENE := "res://view/campaign_scene.tscn"
 const NET_BATTLE_SCENE := "res://view/net_battle_scene.tscn"   # V4-S3 天梯对战
+const GameStateScript := preload("res://view/game_state.gd")
+
+var _trophy_label: Label
 
 func _ready() -> void:
 	AudioManager.play_music("music_main_menu")
 	AudioManager.stop_ambience()
 	_build()
+	_bootstrap_session()
 
 func _build() -> void:
 	var bg := TextureRect.new()
@@ -30,6 +34,7 @@ func _build() -> void:
 	# 标题（拉丁名做 logo 式两行 + 描边）+ 副标题
 	_title("CLASH\nPUSHER", 108, 76)
 	_center_label(tr("app_subtitle"), 322, 28, PixelUI.COL_MUTED)
+	_trophy_label = _center_label("杯数 …", 392, 22, PixelUI.COL_GOLD)
 
 	# 主按钮：天梯对战=金 CTA（V4 主轴），其余石板，退出弱化
 	_menu_button("天梯对战", 440, _on_ladder_pressed, "gold", 40)
@@ -42,6 +47,18 @@ func _build() -> void:
 	_center_label(tr("app_footer"), 1208, 22, PixelUI.COL_HINT)
 
 # ---------- handlers ----------
+# V4-S4：进菜单自动匿名登录 + 拉档案，显示杯数（对局后回菜单会刷新）。
+func _bootstrap_session() -> void:
+	var http := HTTPRequest.new()
+	add_child(http)
+	var session = GameStateScript.session()
+	if await session.ensure(http):
+		if is_instance_valid(_trophy_label):
+			_trophy_label.text = "杯数 %d" % session.trophies()
+	elif is_instance_valid(_trophy_label):
+		_trophy_label.text = "（离线）"
+	http.queue_free()
+
 func _on_ladder_pressed() -> void:
 	get_tree().change_scene_to_file(NET_BATTLE_SCENE)
 

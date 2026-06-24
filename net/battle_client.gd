@@ -15,6 +15,7 @@ const MatchScript := preload("res://logic/match.gd")
 const WSClientScript := preload("res://net/ws_client.gd")
 const _CommonPb := preload("res://net/proto/common.gd")
 const _BattlePb := preload("res://net/proto/battle.gd")
+const _MatchPb := preload("res://net/proto/match.gd")
 
 const HASH_EVERY := 10           # 每 10 tick 上报一次状态哈希
 const TICK_OFFSET := 2           # 出兵指令 tick = 当前 + 2（RTT 缓冲，决策 1）
@@ -22,7 +23,8 @@ const HEARTBEAT_INTERVAL := 5.0  # 每 5s 发一次心跳（服务端 30s 无活
 const RECONNECT_RETRY := 2.0     # 断线后每 2s 重试一次连接
 const RECONNECT_MAX := 60.0      # 重连窗口（对齐服务端 room TTL）；超过则放弃
 
-signal joined(your_side: int, opponent_name: String)
+signal matched(your_side: int, opponent_name: String)  # 匹配到对手（MatchFound）
+signal joined(your_side: int, opponent_name: String)   # 进房建好 Match（JoinRoomResp）
 signal result(winner: int, reason: int)
 signal reconnecting            # 断线、正在重连中（UI 提示）
 signal disconnected            # 重连窗口耗尽、彻底掉线
@@ -32,7 +34,8 @@ var config                 # ConfigLoader
 var match_obj              # Match（收到 JoinRoomResp 后建）
 var your_side: int = 0
 
-var _deck: Array = []
+var _deck_slot: int = 1
+var _room_id := ""             # MatchFound 给的房间号；非空=已匹配（重连走 JoinRoom）
 var _ws_url := ""
 var _token := ""
 var _end_reported := false
@@ -53,11 +56,12 @@ func _init(config_, ws_ = null) -> void:
 	ws.closed.connect(_on_closed)
 
 
-## 连接 gateway 并准备 join。token 走 query 参数鉴权。
-func start(server_ws_url: String, token: String, deck: Array) -> int:
+## 连接 gateway 并准备匹配。token 走 query 参数鉴权;deck_slot = 用哪个卡组槽(1..3)。
+func start(server_ws_url: String, token: String, deck_slot: int = 1) -> int:
 	_ws_url = server_ws_url
 	_token = token
-	_deck = deck
+	_deck_slot = deck_slot
+	print("[net] 连接 + 匹配中 (卡组槽 %d)" % deck_slot)
 	return ws.connect_to(_full_url())
 
 
@@ -89,10 +93,17 @@ func poll(delta: float = 0.0) -> void:
 # —— 连接事件 ——
 
 func _on_opened() -> void:
-	var req = _BattlePb.JoinRoomReq.new()
-	for c in _deck:
-		req.add_deck(str(c))
-	ws.send_frame(_CommonPb.MsgId.JOIN_ROOM_REQ, req.to_bytes())
+	if _room_id == "":
+		# 首次连上 → 发 FindMatch 入队匹配。
+		var req = _MatchPb.FindMatchReq.new()
+		req.set_deck_slot(_deck_slot)
+		req.set_arena(1)
+		ws.send_frame(_CommonPb.MsgId.FIND_MATCH_REQ, req.to_bytes())
+	else:
+		# 已匹配后断线重连 → 用 room_id 回到原房。
+		var jr = _BattlePb.JoinRoomReq.new()
+		jr.set_room_id(_room_id)
+		ws.send_frame(_CommonPb.MsgId.JOIN_ROOM_REQ, jr.to_bytes())
 
 
 func _on_closed() -> void:
@@ -106,6 +117,7 @@ func _on_closed() -> void:
 		_reconnecting = true
 		_reconnect_accum = 0.0
 		_reconnect_elapsed = 0.0
+		print("[net] 连接中断, 重连中…")
 		reconnecting.emit()
 
 
@@ -117,12 +129,32 @@ func _send_heartbeat() -> void:
 
 func _on_frame(msg_id: int, payload: PackedByteArray) -> void:
 	match msg_id:
+		_CommonPb.MsgId.MATCH_FOUND_PUSH:
+			_handle_match_found(payload)
 		_CommonPb.MsgId.JOIN_ROOM_RESP:
 			_handle_join_resp(payload)
 		_CommonPb.MsgId.TICK_BUNDLE:
 			_handle_tick_bundle(payload)
 		_CommonPb.MsgId.BATTLE_RESULT_PUSH:
 			_handle_result(payload)
+
+
+func _handle_match_found(payload: PackedByteArray) -> void:
+	var mf = _MatchPb.MatchFoundPush.new()
+	if mf.from_bytes(payload) != _MatchPb.PB_ERR.NO_ERRORS:
+		return
+	_room_id = mf.get_room_id()   # 非空后,断线重连走 JoinRoom(room_id)
+	var opp_name := ""
+	var opp = mf.get_opponent()
+	if opp != null:
+		opp_name = opp.get_nickname()
+	print("[net] 已匹配: 对手=%s 我方=%d 房间=%s" % [opp_name, mf.get_your_side(), _room_id])
+	matched.emit(mf.get_your_side(), opp_name)
+
+
+## 匹配中取消(退队)。服务端按账号出队,不需要 queue_id。
+func cancel_match() -> void:
+	ws.send_frame(_CommonPb.MsgId.CANCEL_MATCH_REQ, _MatchPb.CancelMatchReq.new().to_bytes())
 
 
 # —— 消息处理 ——
@@ -144,6 +176,7 @@ func _handle_join_resp(payload: PackedByteArray) -> void:
 	var opp = resp.get_opponent()
 	if opp != null:
 		opp_name = opp.get_nickname()
+	print("[net] 进房, 我方=%d, 开打" % your_side)
 	joined.emit(your_side, opp_name)
 
 
@@ -203,6 +236,7 @@ func _handle_result(payload: PackedByteArray) -> void:
 	_playing = false
 	_ended = true
 	_reconnecting = false
+	print("[net] 对局结束: winner=%d reason=%d" % [res.get_winner(), res.get_reason()])
 	result.emit(res.get_winner(), res.get_reason())
 
 

@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	pbbattle "github.com/jchensh/godot-clash-pusher/server/internal/pb/battle"
 	pbcommon "github.com/jchensh/godot-clash-pusher/server/internal/pb/common"
+	pbmatch "github.com/jchensh/godot-clash-pusher/server/internal/pb/match"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -16,91 +16,151 @@ const (
 	maxMsgSize = 16 * 1024
 )
 
-// Serve runs one battle WS connection end-to-end: read the opening JoinRoomReq,
-// pair (or reconnect) through the hub, then pump frames between the socket and
-// the room until the match ends or the connection drops. On a drop mid-match it
-// signals the room so the reconnect window opens (V4-S3f). Blocks until done.
-func (h *Hub) Serve(ctx context.Context, ws *websocket.Conn, accountID int64, summary *pbcommon.ProfileSummary) {
+// Serve runs one WS connection end-to-end. The opening frame decides the path:
+//   - FindMatchReq  -> matchmaking (queue by ELO, wait for a pair) -> battle
+//   - JoinRoomReq   -> reconnect to the account's live room (V4-S3f)
+//
+// then it pumps frames between the socket and the battle room until the match
+// ends or the connection drops. Blocks until done.
+func (l *Lobby) Serve(ctx context.Context, ws *websocket.Conn, accountID int64, summary *pbcommon.ProfileSummary) {
 	defer ws.Close()
 	ws.SetReadLimit(maxMsgSize)
 	_ = ws.SetReadDeadline(time.Now().Add(readWait))
 
-	// 1. The opening frame must be JoinRoomReq (carries this player's deck).
 	_, data, err := ws.ReadMessage()
 	if err != nil {
 		return
 	}
 	msgID, payload, ok := decodeFrame(data)
-	if !ok || msgID != pbcommon.MsgId_JOIN_ROOM_REQ {
-		return
-	}
-	var jr pbbattle.JoinRoomReq
-	if proto.Unmarshal(payload, &jr) != nil {
+	if !ok {
 		return
 	}
 
-	p := &player{accountID: accountID, deck: jr.Deck, summary: summary, send: make(chan []byte, 64)}
-
-	// 2. Write pump: drain p.send to the socket. Exits on quit (read loop ended)
-	// or a write error. p.send is never closed — the room owns it and may swap
-	// it on reconnect, so closing here could race a send into a closed channel.
+	send := make(chan []byte, 64)
 	quit := make(chan struct{})
 	writeDone := make(chan struct{})
-	go func() {
-		defer close(writeDone)
-		for {
+	go writePump(ws, send, quit, writeDone)
+	stop := func() { close(quit); <-writeDone }
+
+	// Read goroutine: forwards every subsequent frame to inbox, closing it on drop.
+	inbox := make(chan inbound, 64)
+	go readPump(ws, inbox)
+
+	var room *Room
+	var side int32
+
+	switch msgID {
+	case pbcommon.MsgId_FIND_MATCH_REQ:
+		var req pbmatch.FindMatchReq
+		if proto.Unmarshal(payload, &req) != nil {
+			stop()
+			return
+		}
+		w, err := l.EnterQueue(ctx, accountID, summary, send, req.DeckSlot)
+		if err != nil {
+			stop()
+			return
+		}
+		// Wait for a match while staying responsive to cancel / disconnect.
+		matched := false
+		for !matched {
 			select {
-			case frame := <-p.send:
-				_ = ws.SetWriteDeadline(time.Now().Add(writeWait))
-				if ws.WriteMessage(websocket.BinaryMessage, frame) != nil {
+			case mi := <-w.matched:
+				room, side = mi.room, mi.side
+				matched = true
+			case m, more := <-inbox:
+				if !more { // disconnected while queued
+					l.LeaveQueue(ctx, accountID)
+					stop()
 					return
 				}
-			case <-quit:
+				if m.msgID == pbcommon.MsgId_CANCEL_MATCH_REQ {
+					l.LeaveQueue(ctx, accountID)
+					send <- encodeFrame(pbcommon.MsgId_CANCEL_MATCH_RESP, &pbmatch.CancelMatchResp{Ok: true})
+					stop()
+					return
+				}
+				// ignore other frames while queuing
+			case <-ctx.Done():
+				l.LeaveQueue(ctx, accountID)
+				stop()
 				return
 			}
 		}
-	}()
 
-	// 3. Pair or reconnect (blocks until in a room). Room.Run is started by side 2.
-	room := h.Join(p)
+	case pbcommon.MsgId_JOIN_ROOM_REQ:
+		// Reconnect path: rejoin the account's live room.
+		p := &player{accountID: accountID, summary: summary, send: send}
+		room = l.Reconnect(p)
+		if room == nil {
+			stop()
+			return
+		}
+		side = p.side
 
-	// 4. Closing the socket on room end / shutdown unblocks the read loop below.
-	// On a normal end, give the write pump a brief grace to flush the final
-	// BattleResultPush before the socket closes (otherwise close races the frame).
+	default:
+		stop()
+		return
+	}
+
+	// Battle phase. Close the socket on room end / shutdown to unblock readPump.
 	go func() {
 		select {
 		case <-room.done:
-			time.Sleep(300 * time.Millisecond)
+			time.Sleep(300 * time.Millisecond) // let the result frame flush
 		case <-ctx.Done():
 		}
 		_ = ws.Close()
 	}()
 
-	// 5. Read pump: forward inbound frames to the room until end/disconnect.
+	for m := range inbox {
+		select {
+		case room.in <- inbound{side: side, msgID: m.msgID, payload: m.payload}:
+		case <-room.done:
+		}
+	}
+
+	// Connection dropped. If the match is still live, open the reconnect window.
+	stop()
+	if !room.isEnded() {
+		select {
+		case room.disc <- side:
+		case <-room.done:
+		}
+	}
+}
+
+// writePump drains send to the socket. Exits on quit or a write error. send is
+// never closed here — the room owns it and may swap it on reconnect.
+func writePump(ws *websocket.Conn, send chan []byte, quit, done chan struct{}) {
+	defer close(done)
+	for {
+		select {
+		case frame := <-send:
+			_ = ws.SetWriteDeadline(time.Now().Add(writeWait))
+			if ws.WriteMessage(websocket.BinaryMessage, frame) != nil {
+				return
+			}
+		case <-quit:
+			return
+		}
+	}
+}
+
+// readPump decodes every inbound frame into inbox (side filled in by Serve) and
+// closes inbox when the socket drops.
+func readPump(ws *websocket.Conn, inbox chan inbound) {
+	defer close(inbox)
 	for {
 		_, data, err := ws.ReadMessage()
 		if err != nil {
-			break
+			return
 		}
 		_ = ws.SetReadDeadline(time.Now().Add(readWait))
 		mid, pl, ok := decodeFrame(data)
 		if !ok {
 			continue
 		}
-		select {
-		case room.in <- inbound{side: p.side, msgID: mid, payload: pl}:
-		case <-room.done:
-		}
-	}
-
-	// 6. Connection dropped. If the match is still live, tell the room so the
-	// reconnect window opens; the opponent pauses until we (or the window) return.
-	close(quit)
-	<-writeDone
-	if !room.isEnded() {
-		select {
-		case room.disc <- p.side:
-		case <-room.done:
-		}
+		inbox <- inbound{msgID: mid, payload: pl}
 	}
 }

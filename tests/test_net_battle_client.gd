@@ -9,6 +9,7 @@ const BattleClient := preload("res://net/battle_client.gd")
 const WSClient := preload("res://net/ws_client.gd")
 const CommonPb := preload("res://net/proto/common.gd")
 const BattlePb := preload("res://net/proto/battle.gd")
+const MatchPb := preload("res://net/proto/match.gd")
 const ConfigLoaderScript := preload("res://logic/config_loader.gd")
 
 const DECK := ["knight", "archers", "giant", "goblins", "minions", "fireball", "arrows", "zap"]
@@ -140,3 +141,52 @@ func test_heartbeat_sent_after_interval() -> void:
 	assert_eq(fake.count(CommonPb.MsgId.HEARTBEAT_PING), 0)
 	bc.poll(3.5)   # 累计 5.5s ≥ 5s，发一次
 	assert_eq(fake.count(CommonPb.MsgId.HEARTBEAT_PING), 1, "5s 后应发一次心跳")
+
+
+# —— V4-S4 匹配流程 ——
+
+func _match_found_bytes(side: int, opp_name: String, room: String) -> PackedByteArray:
+	var mf = MatchPb.MatchFoundPush.new()
+	mf.set_room_id(room)
+	mf.set_your_side(side)
+	var opp = mf.new_opponent()
+	opp.set_account_id(99)
+	opp.set_nickname(opp_name)
+	return mf.to_bytes()
+
+func test_on_opened_sends_find_match() -> void:
+	var pair = _new_client()
+	var bc = pair[0]
+	var fake = pair[1]
+	bc._on_opened()   # 首次连上 → FindMatch
+	assert_eq(fake.count(CommonPb.MsgId.FIND_MATCH_REQ), 1)
+	var req = MatchPb.FindMatchReq.new()
+	req.from_bytes(fake.sent[0]["payload"])
+	assert_eq(req.get_deck_slot(), 1)
+
+func test_match_found_sets_room_and_emits() -> void:
+	var pair = _new_client()
+	var bc = pair[0]
+	var got := {"side": -1, "opp": ""}
+	bc.matched.connect(func(s, o): got["side"] = s; got["opp"] = o)
+	bc._on_frame(CommonPb.MsgId.MATCH_FOUND_PUSH, _match_found_bytes(2, "Rival", "room-7"))
+	assert_eq(bc._room_id, "room-7")
+	assert_eq(int(got["side"]), 2)
+	assert_eq(got["opp"], "Rival")
+
+func test_reconnect_after_match_sends_join_room() -> void:
+	var pair = _new_client()
+	var bc = pair[0]
+	var fake = pair[1]
+	bc._on_frame(CommonPb.MsgId.MATCH_FOUND_PUSH, _match_found_bytes(1, "X", "room-7"))
+	fake.sent.clear()
+	bc._on_opened()   # _room_id 已设 → 重连走 JoinRoom，而非 FindMatch
+	assert_eq(fake.count(CommonPb.MsgId.JOIN_ROOM_REQ), 1)
+	assert_eq(fake.count(CommonPb.MsgId.FIND_MATCH_REQ), 0)
+
+func test_cancel_sends_cancel_req() -> void:
+	var pair = _new_client()
+	var bc = pair[0]
+	var fake = pair[1]
+	bc.cancel_match()
+	assert_eq(fake.count(CommonPb.MsgId.CANCEL_MATCH_REQ), 1)

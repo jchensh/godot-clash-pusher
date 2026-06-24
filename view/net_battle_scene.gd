@@ -9,7 +9,7 @@ extends Node2D
 # 单机训练营 battle_scene.gd 完全不受影响（这是独立新场景）。
 
 const ConfigLoaderScript := preload("res://logic/config_loader.gd")
-const AuthScript := preload("res://net/auth.gd")
+const GameStateScript := preload("res://view/game_state.gd")
 const BattleClientScript := preload("res://net/battle_client.gd")
 const MainMenuScene := "res://view/main_menu.tscn"
 
@@ -27,9 +27,11 @@ const COL_OK := Color(0.45, 1.0, 0.55)
 const COL_BAD := Color(1.0, 0.42, 0.40)
 
 var _loader
-var _auth
+var _session
 var _client
 var _http: HTTPRequest
+var _matchmaking := false
+var _cancel_btn: Button
 var _font: Font
 var _status := "连接中…"
 var _flip := false
@@ -54,35 +56,56 @@ func _ready() -> void:
 
 
 func _connect_flow() -> void:
-	var net := _load_network()
-	_auth = AuthScript.new(net.get("api_url", "http://localhost:8080"))
+	_session = GameStateScript.session()
 	_status = "登录中…"
-	var lr = await _auth.login(_http)
-	if not lr.ok:
-		_status = "登录失败：%s" % lr.error
+	if not await _session.ensure(_http):
+		_status = "登录失败，请检查网络/服务器"
 		return
-	_status = "等待对手…"
+	_matchmaking = true
+	_status = "匹配中…"
+	_show_cancel_button()
 	_client = BattleClientScript.new(_loader)
+	_client.matched.connect(_on_matched)
 	_client.joined.connect(_on_joined)
 	_client.result.connect(_on_result)
 	_client.reconnecting.connect(_on_reconnecting)
 	_client.disconnected.connect(_on_disconnected)
-	_client.start(net.get("ws_url", "ws://localhost:8081/v4/battle/ws"), _auth.access_token, DEFAULT_DECK)
+	_client.start(_session.ws_url, _session.token(), 1)   # 卡组槽 1
 
 
-func _load_network() -> Dictionary:
-	var f := FileAccess.open("res://config/network.json", FileAccess.READ)
-	if f == null:
-		return {}
-	var d = JSON.parse_string(f.get_as_text())
-	return d if d is Dictionary else {}
+func _show_cancel_button() -> void:
+	if _cancel_btn != null:
+		return
+	_cancel_btn = Button.new()
+	_cancel_btn.text = "取消"
+	_cancel_btn.size = Vector2(160, 56)
+	_cancel_btn.position = Vector2(_vw * 0.5 - 80, _vh * 0.5 + 50)
+	_cancel_btn.pressed.connect(_on_cancel_pressed)
+	add_child(_cancel_btn)
+
+
+func _on_cancel_pressed() -> void:
+	if _client != null:
+		_client.cancel_match()
+	get_tree().change_scene_to_file(MainMenuScene)
+
+
+func _on_matched(_your_side: int, opponent_name: String) -> void:
+	if opponent_name != "":
+		_status = "已匹配：%s，准备开战…" % opponent_name
+	else:
+		_status = "已匹配，准备开战…"
 
 
 func _on_joined(your_side: int, opponent_name: String) -> void:
 	_flip = your_side == 2
+	_matchmaking = false
 	_status = ""
 	if opponent_name != "":
 		_status = "对手：%s" % opponent_name
+	if _cancel_btn != null:
+		_cancel_btn.queue_free()
+		_cancel_btn = null
 	_build_cards()
 
 
@@ -94,6 +117,9 @@ func _on_result(winner: int, _reason: int) -> void:
 		_result_text = "胜利！"
 	else:
 		_result_text = "失败"
+	# 刷新档案，回主菜单时杯数已更新。
+	if _session != null:
+		_session.refresh_profile(_http)
 
 
 func _on_disconnected() -> void:

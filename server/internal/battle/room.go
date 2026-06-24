@@ -17,6 +17,7 @@ package battle
 import (
 	"context"
 	"encoding/binary"
+	"log"
 	"time"
 
 	pbbattle "github.com/jchensh/godot-clash-pusher/server/internal/pb/battle"
@@ -260,6 +261,7 @@ func (r *Room) onDisconnect(side int32) {
 	if !r.paused {
 		r.paused = true
 		r.discAt = r.now()
+		log.Printf("battle %s: side %d dropped, reconnect window open", r.id, side)
 	}
 }
 
@@ -282,6 +284,7 @@ func (r *Room) onReconnect(req reconnReq) {
 	for _, b := range r.history {
 		r.sendTo(p, pbcommon.MsgId_TICK_BUNDLE, b)
 	}
+	log.Printf("battle %s: side %d reconnected, replayed %d ticks", r.id, req.side, len(r.history))
 	if r.p1.connected && r.p2.connected {
 		r.paused = false
 		r.discAt = time.Time{}
@@ -303,6 +306,7 @@ func (r *Room) finalize(winner int32, reason pbbattle.BattleResultPush_Reason, s
 	case 2:
 		d1, d2, winnerAcc = -trophyWin, trophyWin, r.p2.accountID
 	}
+	log.Printf("battle %s: end winner=%d reason=%s trophy=%d/%d", r.id, winner, reason, d1, d2)
 
 	r.broadcast(pbcommon.MsgId_BATTLE_RESULT_PUSH, &pbbattle.BattleResultPush{
 		Winner:              pbbattle.BattleResultPush_Winner(winner),

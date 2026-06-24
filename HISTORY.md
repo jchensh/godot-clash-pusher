@@ -77,11 +77,12 @@
 | V4-S0 | 协议/Go 脚手架/Docker/Makefile/Go·GDScript 双端 pb（a proto + b Go cmd + c Docker + d Makefile + e Go pb 生成与 compose 跑通 + f godobuf 接入） | ✅ 完成（单测 190/190；docker compose 5 容器+pg 16.14+redis 验收通过） | `d79dd25`/`d5c71af`/`107fed9`/`8ced7fd`/`9001c2c`/`d4a2698`/`e13a466` |
 | V4-S1 | 匿名 device_id 登录（a DB+migrations runner + accounts/profiles schema + b JWT HS256 access30d/refresh90d + device_id FindOrCreateByDevice + c HTTP server net/http + /v4/auth/{login,refresh} + d 客户端 net/auth.gd UUID4+token 持久化 + e 端到端真链路验收） | ✅ 完成（单测 197/197；Go unit 14 + integration 4 + smoke 真跑 PG 新增 row 全过；Jira KAN-37） | `db1e77d` |
 | V4-S2 | 玩家档案云存档（a decks 表 migration + b profile repo·乐观锁 CAS·卡组校验 + c HTTP /v4/profile/{get,deck-update}·Bearer 鉴权 middleware·httpx 共享包 + d 客户端 net/profile.gd 离线缓存·冲突重取 + e 端到端真链路验收）；顺带根治 godobuf `Deck`↔V3 全局 `class_name Deck` 撞名（proto 改名 `DeckMsg`，wire 不变） | ✅ 完成（单测 204/204；Go unit + integration auth4+profile6（`-p 1` 串行）全过；smoke PG 实查 decks 落库；Jira KAN-38） | `923733a` |
-| V4-S3 | lockstep 实时对战网络层★（a 确定性地基 advance_tick+state_hash + b 协议扩展+ladder 配置+matches 表 + c Go gateway WS+battle room·房间中继·哈希对帐·结算落库 + d 客户端 ws_client+battle_client + e 联机对战场景+LADDER 入口+端到端真链路 + f 心跳+断线重连重放+超时认输 + **g 两台 Windows 真机对战验收**） | ✅ **整阶段收官**（单测 217/217；Go battle 14 unit + integration 全过；端到端真 WS 856 比对 0 分叉 + PG 战绩落库 + 断线重连重放恢复；**两台真机完整对局+实时同步+胜负入库验收通过**；Jira KAN-39 Done） | a~e `7401b6c` / f `99c8d05` / 收尾 `本提交` |
+| V4-S3 | lockstep 实时对战网络层★（a 确定性地基 advance_tick+state_hash + b 协议扩展+ladder 配置+matches 表 + c Go gateway WS+battle room·房间中继·哈希对帐·结算落库 + d 客户端 ws_client+battle_client + e 联机对战场景+LADDER 入口+端到端真链路 + f 心跳+断线重连重放+超时认输 + **g 两台 Windows 真机对战验收**） | ✅ **整阶段收官**（单测 217/217；Go battle 14 unit + integration 全过；端到端真 WS 856 比对 0 分叉 + PG 战绩落库 + 断线重连重放恢复；**两台真机完整对局+实时同步+胜负入库验收通过**；Jira KAN-39 Done） | a~e `7401b6c` / f `99c8d05` / 收尾 `6ea58d5` |
+| V4-S4 | 匹配（Redis ZSET + ELO）（a profiles+rating·ELO 结算 + b 匹配器·Redis 队列·窗口放宽 + c Lobby 替代 Hub·FindMatch→配对→建房 + d 客户端匹配流程·会话·主菜单杯数 + e 日志打点+端到端真匹配 smoke）；**两台 Windows 真机验收待用户跑** | 🚧 a~e 完成（客户端 221/221；Go unit + integration 全过含 Redis 首接入；**端到端真匹配 smoke 235 比对 0 分叉 + ELO/杯数入库验证**）；Jira KAN-40 In Progress | a~e `本提交` |
 
-> **当前阶段 = V4 联网升级 + 实时对战**（账号/匹配/PvP/赛季/排行榜；长期 F2P 但前期玩法验证不实现支付）。权威规划见 [PLAN_V4.md](PLAN_V4.md)；方向锁定见决策日志 46。**V1/V2/V3 全部完成**——V1 机制白膜 → V2 3-lane + 程序化换皮 + AI 难度 + 内容平衡 → V3 2D 战斗 reboot + 空军 + 新积木 + Roguelite 主轴 + 交互手感 + 精灵美术 + 音频骨架 + 难度 5 档 + 像素 UI 设计系统 + 新手战役 + 引导。V1/V2 详细见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)，V3 详细见 [docs/HISTORY_V3_DETAILED.md](docs/HISTORY_V3_DETAILED.md)。**V3-9 平衡剩余子项**（数值/节奏调优 + 设置/导出/上架打磨）与 V4 早期阶段（S0~S2 账号/档案）可并行。**V4-S0/S1 整体收官**：S0（7 commits / 6 子步 a~f）打底 + S1（1 commit / 5 子步 a~e）匿名 device_id 登录端到端通（客户端 UUID4 → protobuf → docker api → PG accounts/profiles → JWT/refresh → user://auth.cfg 落盘）。Jira KAN-36/KAN-37 同步 Done。**V4-S2 收官**：玩家档案云存档端到端通（客户端 `net/profile.gd` ↔ `/v4/profile/{get,deck-update}` ↔ PG decks/profiles；Bearer 令牌鉴权 + 乐观锁版本冲突 409 + 离线缓存兜底；顺带根治 godobuf `Deck` 与 V3 全局 `class_name Deck` 撞名隐患 → proto 改 `DeckMsg`，wire 不变）。Jira KAN-38 Done。**V4-S3 整阶段收官**：lockstep 实时对战网络层★（a 确定性地基 `Match.advance_tick`+`state_hash` → b 协议扩展+ladder 配置+matches 表 → c Go gateway WS+battle room → d 客户端 `net/ws_client`+`net/battle_client` → e 联机对战场景+LADDER 入口 → f 心跳+断线重连重放+超时认输 → **g 两台 Windows 真机对战验收通过**）。**端到端真 WebSocket 856 比对 0 分叉 + PG 战绩落库 + 断线重连重放恢复 + 真机完整对局实时同步胜负入库 → lockstep 整条路线（不重写 Go 战斗逻辑、两端各跑 logic+哈希对帐）验证成立**。Jira KAN-39 Done。**下一站**：V4-S4（匹配，把临时配对换成 ELO/段位真匹配）。联机对战目前矢量白膜，单机精灵/特效搬入记于 Jira 待办。
+> **当前阶段 = V4 联网升级 + 实时对战**（账号/匹配/PvP/赛季/排行榜；长期 F2P 但前期玩法验证不实现支付）。权威规划见 [PLAN_V4.md](PLAN_V4.md)；方向锁定见决策日志 46。**V1/V2/V3 全部完成**——V1 机制白膜 → V2 3-lane + 程序化换皮 + AI 难度 + 内容平衡 → V3 2D 战斗 reboot + 空军 + 新积木 + Roguelite 主轴 + 交互手感 + 精灵美术 + 音频骨架 + 难度 5 档 + 像素 UI 设计系统 + 新手战役 + 引导。V1/V2 详细见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)，V3 详细见 [docs/HISTORY_V3_DETAILED.md](docs/HISTORY_V3_DETAILED.md)。**V3-9 平衡剩余子项**（数值/节奏调优 + 设置/导出/上架打磨）与 V4 早期阶段（S0~S2 账号/档案）可并行。**V4-S0/S1 整体收官**：S0（7 commits / 6 子步 a~f）打底 + S1（1 commit / 5 子步 a~e）匿名 device_id 登录端到端通（客户端 UUID4 → protobuf → docker api → PG accounts/profiles → JWT/refresh → user://auth.cfg 落盘）。Jira KAN-36/KAN-37 同步 Done。**V4-S2 收官**：玩家档案云存档端到端通（客户端 `net/profile.gd` ↔ `/v4/profile/{get,deck-update}` ↔ PG decks/profiles；Bearer 令牌鉴权 + 乐观锁版本冲突 409 + 离线缓存兜底；顺带根治 godobuf `Deck` 与 V3 全局 `class_name Deck` 撞名隐患 → proto 改 `DeckMsg`，wire 不变）。Jira KAN-38 Done。**V4-S3 整阶段收官**：lockstep 实时对战网络层★（a 确定性地基 `Match.advance_tick`+`state_hash` → b 协议扩展+ladder 配置+matches 表 → c Go gateway WS+battle room → d 客户端 `net/ws_client`+`net/battle_client` → e 联机对战场景+LADDER 入口 → f 心跳+断线重连重放+超时认输 → **g 两台 Windows 真机对战验收通过**）。**端到端真 WebSocket 856 比对 0 分叉 + PG 战绩落库 + 断线重连重放恢复 + 真机完整对局实时同步胜负入库 → lockstep 整条路线（不重写 Go 战斗逻辑、两端各跑 logic+哈希对帐）验证成立**。Jira KAN-39 Done。**V4-S4 a~e 进行中**：匹配（隐藏 MMR/ELO @1200 + Redis ZSET 队列 + 窗口放宽）——profiles 加 rating + ELO 结算 → Redis 匹配器 → Lobby 替代 Hub（FindMatch→配对→建房）→ 客户端匹配流程+会话+主菜单杯数 → 日志打点+真匹配 smoke。**端到端真匹配 smoke 235 比对 0 分叉 + ELO/杯数入库验证**。**下一步**：两台 Windows 真机匹配验收（用户跑）。联机对战仍矢量白膜（KAN-49）。
 
-**测试**：客户端 217/217（`HOME` 隔离）；服务端 Go unit（battle 房间 14）+ integration（auth 4 + profile 6，跨包 `-p 1` 串行）全过；V4-S3 端到端真 WS lockstep 856 比对 0 分叉 + 断线重连重放恢复。**分支/远端**：开发在 `develop`、`main` 稳定线、`release` 为 Antigravity（Google IDE）创建的安卓打包分支（跟随 develop，agent 默认不动）、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`；音频单独走 `config/AudioConfig.xlsx` → `config/audio_assets.json`，用 `tools/build_audio_config.py --check` 校验。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
+**测试**：客户端 221/221（`HOME` 隔离）；服务端 Go unit（battle 房间 14 + rating 6 + matchmaking 5）+ integration（auth/profile/battle 持久化·lobby/matchmaking·Redis 队列，跨包 `-p 1` 串行，需 PG+Redis）全过；V4-S4 端到端真匹配 smoke 235 比对 0 分叉 + ELO/杯数入库。**分支/远端**：开发在 `develop`、`main` 稳定线、`release` 为 Antigravity（Google IDE）创建的安卓打包分支（跟随 develop，agent 默认不动）、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`；音频单独走 `config/AudioConfig.xlsx` → `config/audio_assets.json`，用 `tools/build_audio_config.py --check` 校验。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
 ---
 
@@ -395,3 +396,45 @@
 - 备注：联机对战场景目前是**矢量白膜**（圆=单位/方块=塔），单机已有的精灵/特效/手感**未搬入**（S3 故意聚焦网络正确性）；「联机视觉对齐」记入 Jira 待办。
 
 > **V4-S3 整阶段收官**：a 确定性地基 → b 协议+ladder+matches → c Go gateway+battle room → d 客户端 net 层 → e 对战场景+真链路 → f 心跳+断线重连重放+超时认输 → **g 两台 Windows 真机对战验收通过**。客户端单测 **217/217**；Go unit(battle 14)+integration 全过；**端到端真 WS 856 比对 0 分叉 + PG 战绩落库 + 断线重连重放恢复 + 真机完整对局实时同步胜负入库**。**lockstep 整条路线（不重写 Go 战斗逻辑、两端各跑 logic+哈希对帐）验证成立**。Jira KAN-39 Done。**下一站 V4-S4（匹配）**：Redis ZSET 按段位分桶 + ELO 起评 1200 + 窗口扩展 + 取消，把"先到两人配一桌"换成真匹配。
+
+### V4-S4 — 匹配（Redis ZSET + ELO）（进行中：a~e 完成，真机验收待做）
+**前置决策**：路 B（用户 2026-06-25 拍板，全按推荐）：①profiles 加隐藏 `rating INT DEFAULT 1200`（MMR/ELO）；②杯数 trophies 保留作可见进度（存库 + 主界面显示），赢 +30/输 -30 封底 0，与 MMR 分开；③标准 ELO，K=32 平（不搞新手保护/定级赛）；④匹配窗口 ±50 起每 5s 放宽 → ±200 封顶；⑤S4 单一全局池（arena 恒 1，不分桶）；⑥队列后端 = **Redis ZSET**（S0~S3 一直闲置的 Redis 首次用上，S5 榜单复用）；⑦卡组按 `deck_slot` 查 S2 存档，无则 ladder 默认兜底；⑧主菜单进来自动登录 + 拉档显示杯数（会话 `net/session.gd` 跨场景复用）。拆 5 子步 a~e + 真机验收（用户跑）。**Jira KAN-40** In Progress。
+
+#### V4-S4a — schema + ELO 逻辑
+- `migrations/0005_rating.{up,down}.sql`：profiles +`rating INT DEFAULT 1200`；matches +`p1/p2_rating_delta`。
+- `internal/rating/elo.go`：纯 ELO——`Expected`（期望分，等分 0.5/400 分差 ~0.91）+ `Update`（零和调分，`delta=round(K*(score-E))`，K=32）。`elo_test.go` 6 测（等分 0.5/高分被看好/同分赢 ±16/平局不动/零和/爆冷涨更多）。
+- `battle/persist.go`：结算时读双方当前 rating（`FOR UPDATE` 锁行防并发）→ 套 ELO 写回 + matches 记 rating delta；杯数仍走房间算的 ±30（GREATEST floor 0）。`persist_integration_test.go` 真连库验（赢家 1216/30、输家 1184/0、delta ±16）。**房间逻辑不动**（只管谁赢 + 杯数 delta，ELO 在 persister）。
+
+#### V4-S4b — 匹配器 + Redis 队列
+- `internal/store/redis.go`：go-redis/v9 封装（`OpenRedis` ParseURL+Ping / `Client` / `Close`）。**首次用 Redis**。
+- `internal/matchmaking/queue.go`：`Queue` 接口 + `RedisQueue`——`Add`（ZADD `matchmaking:queue` score=mmr + HSET meta deck_slot/joined_at）/`All`（ZRANGEBYSCORE 全捞 + 补 meta，stale 成员清掉）/`Remove`（ZREM+DEL）。逻辑/存储分离便于单测。
+- `internal/matchmaking/matcher.go`：`windowFor`（±50 起每 5s+50 至 ±200 封顶）+ `FindPairs`（最久等待优先、配到「双方窗口都接受」的最近对手、配上即出队）。
+- `matcher_test.go` 5 测（窗口随等待放宽/近分立即配/远分等放宽后配/取消出队/三人配最近两个远的继续等）。`queue_integration_test.go` 真连 Redis 往返。
+
+#### V4-S4c — 接网关（Lobby 替代 Hub）
+- `internal/battle/lobby.go`（**取代 hub.go**）：匹配队列 + 建房 + MatchFound + 重连。`EnterQueue`（读 rating 入队，返回 waiter 供阻塞）/`LeaveQueue`（取消）/`RunMatchmaker`（每秒 FindPairs→createMatch）/`createMatch`（按 slot 查双方卡组→建 Room→推 MatchFound→signal 双方 waiter；一方中途取消则把另一方重入队）/`Reconnect`（active map 找活跃房）/`lookupDeck`（无存档兜底 ladder 默认）。
+- `conn.go`：Serve 重写——首帧 `FindMatchReq`→EnterQueue→select(matched/取消/断线)→对战；首帧 `JoinRoomReq`→`Reconnect`；读 goroutine 把后续帧灌 inbox 供 Serve 分流。
+- `cmd/gateway/main.go`：接 Redis（`REDIS_URL` 必填，缺失 fatal）+ Lobby + 启 `RunMatchmaker` goroutine；Serve 由 Lobby 提供。
+- `lobby_integration_test.go` 真连 Redis+PG：两人入队→matchTick→配进同房 + 双方收 MatchFound（side/对手/room_id 对）+ active 登记 + 队列清空。**删 hub.go**。
+
+#### V4-S4d — 客户端匹配流程 + 主菜单杯数
+- `net/session.gd`：联机会话（匿名登录 + 档案缓存，跨场景复用，GameState 静态持有，**非 autoload**避免测试/headless 自动跑网络）。`ensure`（登录+拉档幂等）/`refresh_profile`/`trophies`/`token`/`ws_url`。
+- `battle_client.gd`：`start(deck_slot)` → `_on_opened` 首发 `FindMatchReq(slot)` / 已匹配后重连发 `JoinRoomReq(room_id)`；`_handle_match_found`（记 `_room_id` + 发 `matched` 信号）；`cancel_match`。
+- `net_battle_scene.gd`：session 登录 + 匹配中 UI（状态「匹配中…」+取消按钮）+ `matched` 信号 + 对局后 `refresh_profile` 刷杯数。`main_menu.gd`：进菜单自动登录 + 显示「杯数 N」。`game_state.gd`：+`session()` 懒持有。
+- `test_net_battle_client.gd` +4 测（首发 FindMatch 带 slot / MatchFound 记 room+发 matched / 已匹配重连发 JoinRoom / 取消发 CancelReq）。Godot **221/221**。
+
+#### V4-S4e — 日志打点 + 端到端真匹配 smoke
+- 服务端日志：lobby（入队 mmr / 取消 / 配对）、room（结果 / 掉线 / 重连）、persist（ELO mmr 变化 + 杯数）、gateway（连接）。客户端 print（匹配 / 已匹配 / 进房 / 结果 / 重连）。`version.V4Stage` → `V4-S4`。
+- 重建 `gcp-server:dev` 镜像 → S4（gateway 连 Redis、:8081 listening、WS 端点 401）。
+- 端到端真匹配 smoke（临时 harness `tools/_match_smoke.gd`，验后即删）：两 client 真 WS 各发 FindMatch → 服务端按 ELO 配对 → MatchFound → 进房 lockstep（**235 比对 0 分叉**）→ 上报结束 → 结算。psql 实查：赢家 mmr 1200→**1216** 杯数 **+30**、输家 1200→**1184** 杯数 0；matches 行 rating ±16 / trophy ±30。服务端日志全流程呈现（ws connected → mm queued mmr=1200 → mm matched → battle end → persist mmr 1200→1216）。
+- **真机验收待用户跑**（两台 Windows pull S4 + 改 network.json 为服务器 IP + 点天梯：匹配中→配上→对战→杯数变）。
+
+**踩坑/设计点（V4-S4 a~e）**：
+1. **Hub→Lobby 重构**：配对逻辑从「先到两人配一桌」移到匹配器（Redis 队列 + ELO 窗口）；网关 Serve 重写成首帧分流（FindMatch→匹配 / JoinRoom→重连），匹配器配对后直接把两连接喂进房间（happy-path 不再需要客户端单独 JoinRoom）。
+2. **Redis 首次接入**：gateway 新增 `REDIS_URL` 硬依赖（缺失启动 fatal）；compose 早已注入。
+3. **会话用 GameState 静态变量持有，不做 autoload**：避免 autoload 在 headless 测试/test_runner 里 `_ready` 自动跑登录网络。
+4. **ELO 放 persister、杯数放房间**：rating 是隐藏匹配分（不进 ProfileSummary、不推客户端），结算入库时算；杯数是可见进度，房间算 ±30 推客户端。两者解耦。
+
+**Jira / PM**：KAN-40 In Progress（a~e 完成、真机验收待用户跑 → 过则 Done）。
+
+> **V4-S4 a~e 阶段性收尾**：a schema+ELO → b 匹配器+Redis 队列 → c Lobby 替代 Hub → d 客户端匹配流程+会话+杯数 → e 日志+真匹配 smoke。客户端 **221/221**；Go unit（rating 6 + matchmaking 5 + battle 14）+ integration（含 Redis 首接入、Lobby 真匹配）全过；**端到端真匹配 smoke：真 WS 按 ELO 配对 → lockstep 235 比对 0 分叉 → ELO（1200→1216/1184）+ 杯数（±30）入库**。复用 S3 lockstep 房间不重写。**剩**：两台 Windows 真机匹配验收（用户跑）→ 过则 KAN-40 Done → V4-S5（赛季 + 排行榜，Redis ZSET 复用）。
