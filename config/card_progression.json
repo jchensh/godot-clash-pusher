@@ -1,0 +1,19 @@
+{
+  "_comment": "V5 卡牌养成元数据（稀有度/初始解锁/战力基数/各阶解锁）。rank_unlocks 的 type=stat 为纯数值跳变，type=skill 为改/加 skills 积木（具体实现 V5-S5）。base_power 用于队伍战力折算。数值〔示意·待平衡，V5-S8 定〕。",
+  "knight":      { "rarity": "common",    "starter": true,  "base_power": 100, "rank_unlocks": { "2": { "type": "stat", "note": "数值跳" }, "3": { "type": "skill", "note": "攻击附带小溅射(on-hit aoe)" } } },
+  "archers":     { "rarity": "common",    "starter": true,  "base_power": 100, "rank_unlocks": { "2": { "type": "stat", "note": "数值跳" }, "3": { "type": "skill", "note": "+1 弓手(2->3)" } } },
+  "giant":       { "rarity": "rare",      "starter": true,  "base_power": 140, "rank_unlocks": { "2": { "type": "stat", "note": "数值跳" }, "3": { "type": "skill", "note": "亡语小溅击(死亡 aoe)" } } },
+  "goblins":     { "rarity": "common",    "starter": true,  "base_power": 100, "rank_unlocks": { "2": { "type": "skill", "note": "+1 哥布林(3->4)" }, "3": { "type": "stat", "note": "数值跳" } } },
+  "minions":     { "rarity": "rare",      "starter": true,  "base_power": 140, "rank_unlocks": { "2": { "type": "skill", "note": "+1 怨灵(3->4)" }, "3": { "type": "stat", "note": "数值跳" } } },
+  "fireball":    { "rarity": "rare",      "starter": true,  "base_power": 140, "rank_unlocks": { "2": { "type": "skill", "note": "半径+" }, "3": { "type": "skill", "note": "伤害+灼烧" } } },
+  "arrows":      { "rarity": "common",    "starter": true,  "base_power": 100, "rank_unlocks": { "2": { "type": "skill", "note": "半径+" }, "3": { "type": "skill", "note": "伤害+" } } },
+  "zap":         { "rarity": "common",    "starter": true,  "base_power": 100, "rank_unlocks": { "2": { "type": "skill", "note": "伤害+" }, "3": { "type": "skill", "note": "命中范围+" } } },
+  "skeletons":   { "rarity": "common",    "starter": false, "base_power": 100, "rank_unlocks": { "2": { "type": "skill", "note": "+1 骷髅(4->5)" }, "3": { "type": "skill", "note": "+1 骷髅(5->6)" } } },
+  "mini_pekka":  { "rarity": "rare",      "starter": false, "base_power": 140, "rank_unlocks": { "2": { "type": "stat", "note": "数值跳" }, "3": { "type": "skill", "note": "对塔/建筑加伤" } } },
+  "musketeer":   { "rarity": "epic",      "starter": false, "base_power": 190, "rank_unlocks": { "2": { "type": "stat", "note": "数值跳" }, "3": { "type": "skill", "note": "射程+/穿透" } } },
+  "baby_dragon": { "rarity": "epic",      "starter": false, "base_power": 190, "rank_unlocks": { "2": { "type": "stat", "note": "数值跳" }, "3": { "type": "skill", "note": "溅射半径+" } } },
+  "lightning":   { "rarity": "epic",      "starter": false, "base_power": 190, "rank_unlocks": { "2": { "type": "skill", "note": "伤害+" }, "3": { "type": "skill", "note": "连锁第二目标" } } },
+  "log":         { "rarity": "rare",      "starter": false, "base_power": 140, "rank_unlocks": { "2": { "type": "skill", "note": "滚更远(range+)" }, "3": { "type": "skill", "note": "伤害+" } } },
+  "golem":       { "rarity": "legendary", "starter": false, "base_power": 260, "rank_unlocks": { "2": { "type": "skill", "note": "解锁亡语召唤(death_spawn)" }, "3": { "type": "skill", "note": "召唤更多/更强" } } },
+  "heal":        { "rarity": "epic",      "starter": false, "base_power": 190, "rank_unlocks": { "2": { "type": "skill", "note": "治疗量+" }, "3": { "type": "skill", "note": "半径+/附护盾" } } }
+}

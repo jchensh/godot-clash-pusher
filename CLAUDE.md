@@ -2,10 +2,10 @@
 
 竖屏「皇室战争式对推小游戏」，**Godot 4.6.3 / GDScript**（客户端）+ **Go**（V4 起服务端），**Windows 开发**（早期 V1/V2 历史在 macOS）。玩家 vs 规则 AI（V3 完）/ 玩家 vs 玩家（V4 起，lockstep 联网）；圣水 + 循环卡组、**2D 场地自由部署、绕桥推塔决胜**；单机：短战役 + Roguelite（V3 已完，留作单人训练营）；联机：天梯 + 赛季 + 排行榜（V4 玩法验证阶段）。长期 F2P，但前期不实现支付。
 
-> **编码前必读**：[PLAN_GRAND.md](PLAN_GRAND.md)（全项目 roadmap）→ [PLAN_V4.md](PLAN_V4.md)（**当前阶段权威规划**）；[docs/PLAN_V3.md](docs/PLAN_V3.md) / [docs/PLAN_V2.md](docs/PLAN_V2.md) / [docs/PLAN_V1.md](docs/PLAN_V1.md) 是已完成阶段的规格（存档备查）。本文件只是操作手册，当前阶段规格以 PLAN_V4.md 为准。
+> **编码前必读**：[PLAN_GRAND.md](PLAN_GRAND.md)（全项目 roadmap）→ [PLAN_V5.md](PLAN_V5.md)（**当前阶段权威规划：单机闯关养成**）；[PLAN_V4.md](PLAN_V4.md)（V4 联网线，S0~S4 完成、S5+ 暂缓）；[docs/PLAN_V3.md](docs/PLAN_V3.md) / [docs/PLAN_V2.md](docs/PLAN_V2.md) / [docs/PLAN_V1.md](docs/PLAN_V1.md) 是已完成阶段的规格（存档备查）。本文件只是操作手册，当前阶段规格以 PLAN_V5.md 为准。
 
 ## 开发纪律（最高优先级）
-- **一步一确认**：严格按 PLAN_V4.md 的施工图步骤顺序；**每完成一步停下等用户确认**，再进下一步，不要一次做多步。
+- **一步一确认**：严格按 PLAN_V5.md 的施工图步骤顺序；**每完成一步停下等用户确认**，再进下一步，不要一次做多步。
 - **每步一次 git commit**，message 描述本步内容（如 `V4-S0: proto schema + go scaffold`）。
 - **每步同时更新 [HISTORY.md](HISTORY.md)**：记录新增/修改文件、决策、踩坑与修复、验收结果，随该步一起 commit。它是跨对话的进度与历史真相源。V3 及更早的详细段写到 `docs/HISTORY_V3_DETAILED.md`（V3）/ `docs/HISTORY_ARCHIVE.md`（V1/V2），不再追加到主 HISTORY.md。
 - **每步同步 Jira 看板（project `KAN`）**：规划时把步骤建成 issue（确定做→`To Do` / 仅构思→`Idea`）；开工时改 `In Progress`；**做完 + 测试通过 + 经用户明确同意后**才改 `Done`（等同 git commit，需用户拍板，不擅自标完成）。Jira KAN 与 HISTORY.md 并列为 PM 真相源，详见下文「PM 工作流 / Jira 看板」。**前提：必须装 Atlas（Atlassian）MCP 连接器**——Claude Code 与 Codex 都要装，没装就停下提示用户装、不要跳过 Jira 步骤；安装/注册见 [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
@@ -79,6 +79,7 @@ godot --path . -e                                                               
 ## 分支 / 提交 / 推送约定
 - **开发在 `develop` 分支进行**；`main` 为稳定线，远端 `origin` = https://github.com/jchensh/godot-clash-pusher 。
 - **`release` 分支**：用户用 Antigravity（Google IDE）创建，用于打安卓包；跟随 `develop` 推进，**agent 默认不在此分支提交、不主动同步**，需同步由用户主动指示。
+- **打包前必检**：①`config/network.json` 的 `api_url`/`ws_url`（默认 localhost，真机/公网需改）；②安卓明文流量（cleartext）—— 当前定走 HTTPS/WSS（方式 B），公网服务端就绪前不打包正式联机包，详见 HISTORY.md「发布与打包」附录。
 - **仅当用户说"提交"时**才 `git commit`；提交后**顺带 `git push`**（develop 首次推送用 `git push -u origin develop` 建立跟踪）。
 - 仍遵守"一步一确认"：每步做完先停下报告，待用户说提交再 commit+push。
 
@@ -100,4 +101,5 @@ godot --path . -e                                                               
   - **当前阶段 = 玩法验证**：S0 脚手架 → S1 匿名登录 → S2 档案云存档 → **S3 lockstep 实时对战（头号工程）** → S4 匹配 → S5 赛季+榜。
   - **产品化推后**：S6 战绩回放 / S7 反作弊深化 / S8 部署上线 / S9 版本管理 / S10 IAP+养成 / S11 正式登录+合规 / S12 聊天好友。
   - **V3 Roguelite + 短战役 + 平衡剩余子项**作为单人训练营保留不动；V3-9 平衡可与 V4-S0~S2 并行做。
-- **Now**：**V4-S0/S1/S2/S3 全部完成**。S0 脚手架 + 双端 protobuf；S1 匿名 device_id 登录；S2 玩家档案云存档（profile + decks + 乐观锁 + 离线缓存）；**S3 lockstep 实时对战（头号工程）整阶段收官**——确定性地基 + Go gateway/battle room + 客户端 net 层 + 联机对战场景 + 心跳/断线重连重放/超时认输，**两台 Windows 真机对战验收通过**（完整对局 + 实时同步 + 胜负入库）。客户端单测 **217/217**；Go battle 14 unit + auth/profile integration 全过。**V4-S0~S4 全部完成（KAN-36/37/38/39/40 Done）**。S4 匹配：profiles 加隐藏 MMR（ELO @1200，结算调分）+ 杯数（可见进度，主菜单显示）；Redis ZSET 队列（首次用 Redis）+ 窗口放宽匹配器 + Lobby 替代 Hub（FindMatch→配对→建房）；客户端匹配 UI（匹配中/取消）+ 会话自动登录。端到端真匹配 smoke + **两台 Windows 真机验收通过**（ELO 配对+对局+MMR/杯数入库）。客户端单测 **221/221**；Go unit + integration（含 Redis）全过。**下一站 V4-S5（赛季 + 排行榜）**：season cycle（月）+ Redis ZSET 全球杯数榜（复用 S4 的 Redis）+ 段位软重置 + 奖励占位。玩法验证 S0~S5 只剩 S5。联机对战仍矢量白膜（KAN-49）。
+- **Now**：**V4-S0/S1/S2/S3 全部完成**。S0 脚手架 + 双端 protobuf；S1 匿名 device_id 登录；S2 玩家档案云存档（profile + decks + 乐观锁 + 离线缓存）；**S3 lockstep 实时对战（头号工程）整阶段收官**——确定性地基 + Go gateway/battle room + 客户端 net 层 + 联机对战场景 + 心跳/断线重连重放/超时认输，**两台 Windows 真机对战验收通过**（完整对局 + 实时同步 + 胜负入库）。客户端单测 **217/217**；Go battle 14 unit + auth/profile integration 全过。**V4-S0~S4 全部完成（KAN-36/37/38/39/40 Done）**。S4 匹配：profiles 加隐藏 MMR（ELO @1200，结算调分）+ 杯数（可见进度，主菜单显示）；Redis ZSET 队列（首次用 Redis）+ 窗口放宽匹配器 + Lobby 替代 Hub（FindMatch→配对→建房）；客户端匹配 UI（匹配中/取消）+ 会话自动登录。端到端真匹配 smoke + **两台 Windows 真机验收通过**（ELO 配对+对局+MMR/杯数入库）。客户端单测 **221/221**；Go unit + integration（含 Redis）全过。**V4-S5（赛季+排行榜）暂缓**（KAN-41 退回 To Do）。
+- **Now = V5 单机闯关养成**（决策 47，权威规划 [PLAN_V5.md](PLAN_V5.md)，Epic KAN-50）：把单机升级为养成驱动的闯关 RPG——100+ 关闯关推关（难度系数）+ 货币经济（金币/碎片/宝石）+ 卡牌养成（升级提数值 / 升阶解锁技能积木）+ 挂机离线产出，**战力为底·操作为顶**，全程单机本地存档、不依赖服务端（V4-S0~S4 成果保留不动）。施工 S0~S8 = KAN-51~59。**唯一较重新管线 = 出兵数值乘区**（我方按卡 level/rank、敌方按关卡 coef，注入 SkillSystem，V5-S1）。**V5-S0 完成**：4 张配置表骨架（stages/encounters/economy/card_progression）+ ConfigLoader 接表校验 + PlayerData 存档草案 + 单测 **228/228**。联机对战仍矢量白膜（KAN-49）。

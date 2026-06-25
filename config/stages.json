@@ -1,0 +1,25 @@
+{
+  "_comment": "V5 闯关关卡表（章节制）。difficulty_coef=敌方单位/塔数值乘区；recommended_power=队伍推荐战力；stars=3 星目标；first_clear/repeat=金币/宝石/碎片奖励；shard_drop=按概率掉碎片。V5-S0 仅样例 2 关，V5-S8 铺满 100+。数值〔示意·待平衡〕。",
+  "stage_1_1": {
+    "chapter": 1, "index": 1,
+    "encounter": "starter_easy",
+    "difficulty_coef": 1.0,
+    "ai_difficulty": "rookie",
+    "recommended_power": 800,
+    "stars": [ { "goal": "win" }, { "goal": "king_hp_pct", "min": 0.5 }, { "goal": "time_under", "sec": 120 } ],
+    "first_clear": { "gold": 300, "gems": 5, "shards": {} },
+    "repeat": { "gold": 30 },
+    "shard_drop": {}
+  },
+  "stage_1_2": {
+    "chapter": 1, "index": 2,
+    "encounter": "tank_push_a",
+    "difficulty_coef": 1.05,
+    "ai_difficulty": "rookie",
+    "recommended_power": 900,
+    "stars": [ { "goal": "win" }, { "goal": "king_hp_pct", "min": 0.5 }, { "goal": "time_under", "sec": 120 } ],
+    "first_clear": { "gold": 320, "gems": 0, "shards": { "skeletons": 3 } },
+    "repeat": { "gold": 32 },
+    "shard_drop": { "skeletons": { "chance": 0.3, "amount": 1 } }
+  }
+}
