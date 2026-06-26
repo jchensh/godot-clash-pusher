@@ -81,8 +81,11 @@
 | V4-S4 | 匹配（Redis ZSET + ELO）（a profiles+rating·ELO 结算 + b 匹配器·Redis 队列·窗口放宽 + c Lobby 替代 Hub·FindMatch→配对→建房 + d 客户端匹配流程·会话·主菜单杯数 + e 日志打点+真匹配 smoke + **真机匹配验收**） | ✅ **整阶段收官**（客户端 221/221；Go unit + integration 全过含 Redis 首接入；端到端真匹配 smoke 235 比对 0 分叉 + ELO/杯数入库；**两台 Windows 真机 ELO 配对+完整对局+MMR/杯数入库验收通过**（room-2: 94 vs 97 → 1216/1184）；Jira KAN-40 Done） | a~e `81a1f89` / 收尾 `本提交` |
 | **V5-S0** | 配置表骨架（stages/encounters/economy/card_progression 四表 + 样例）+ ConfigLoader 接表校验 + PlayerData 存档草案 + PLAN_V5 定稿 | ✅ 完成（单测 **228/228**；ladder_01 Excel 镜像 drift 为 V4 既有、另行处理；Jira KAN-51 Done） | `61aee91` |
 | **V5-S1** | 出兵数值乘区管线（Unit.apply_stat_mult + SkillSystem 透传 + Match 注入双方 + Player 透传）；只缩 hp/damage，speed/range/tick 不动 | ✅ 完成（单测 **234/234**，228 旧测逐位零回归；Jira KAN-52 Done） | `bb9a3b0` |
-| **V5-S2** | 玩家存档系统（PlayerData 钱包/卡牌养成/关卡/挂机 + SaveSystem user:// + ensure_cards）+ 战力计算（card_stat_mult/card_power/team_power）+ 解锁解算 | ✅ 完成（单测 **240/240**；Jira KAN-53） | `本提交` |
-| **V5-S3** | 闯关骨架 StageProgress（线性推进/解锁/星级判定）+ Match.setup_stage 接 stage（coef→敌方乘区·encounter→敌方卡组·ai_difficulty）+ stages base_level | ✅ 完成（单测 **246/246**，含 headless 跑通一关；Jira KAN-54） | `本提交` |
+| **V5-S2** | 玩家存档系统（PlayerData 钱包/卡牌养成/关卡/挂机 + SaveSystem user:// + ensure_cards）+ 战力计算（card_stat_mult/card_power/team_power）+ 解锁解算 | ✅ 完成（单测 **240/240**；Jira KAN-53） | `71b6e3d` |
+| **V5-S3** | 闯关骨架 StageProgress（线性推进/解锁/星级判定）+ Match.setup_stage 接 stage（coef→敌方乘区·encounter→敌方卡组·ai_difficulty）+ stages base_level | ✅ 完成（单测 **246/246**，含 headless 跑通一关；Jira KAN-54） | `71b6e3d` |
+| **V5-S4** | 卡牌升级（金币·数值曲线·等级上限受阶）+ 养成接进战斗（我方 per-card 乘区） | ✅ 完成（单测 **252/252**；Jira KAN-55） | `本提交` |
+| **V5-S5** | 卡牌升阶（碎片+金币）+ 技能积木解锁机制（CardProgression ops：count/num/unit_field）+ golem 示范 | ✅ 完成（单测 **261/261**，V3 亡语零回归；Jira KAN-56） | `本提交` |
+| **V5-S6** | 经济产出（首通/重复/通用奖励 + seeded shard_drop + 解锁新卡 + 挂机离线金币累计/封顶/领取） | ✅ 完成（单测 **270/270**；Jira KAN-57） | `本提交` |
 
 > **当前阶段 = V4 联网升级 + 实时对战**（账号/匹配/PvP/赛季/排行榜；长期 F2P 但前期玩法验证不实现支付）。权威规划见 [PLAN_V4.md](PLAN_V4.md)；方向锁定见决策日志 46。**V1/V2/V3 全部完成**——V1 机制白膜 → V2 3-lane + 程序化换皮 + AI 难度 + 内容平衡 → V3 2D 战斗 reboot + 空军 + 新积木 + Roguelite 主轴 + 交互手感 + 精灵美术 + 音频骨架 + 难度 5 档 + 像素 UI 设计系统 + 新手战役 + 引导。V1/V2 详细见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)，V3 详细见 [docs/HISTORY_V3_DETAILED.md](docs/HISTORY_V3_DETAILED.md)。**V3-9 平衡剩余子项**（数值/节奏调优 + 设置/导出/上架打磨）与 V4 早期阶段（S0~S2 账号/档案）可并行。**V4-S0/S1 整体收官**：S0（7 commits / 6 子步 a~f）打底 + S1（1 commit / 5 子步 a~e）匿名 device_id 登录端到端通（客户端 UUID4 → protobuf → docker api → PG accounts/profiles → JWT/refresh → user://auth.cfg 落盘）。Jira KAN-36/KAN-37 同步 Done。**V4-S2 收官**：玩家档案云存档端到端通（客户端 `net/profile.gd` ↔ `/v4/profile/{get,deck-update}` ↔ PG decks/profiles；Bearer 令牌鉴权 + 乐观锁版本冲突 409 + 离线缓存兜底；顺带根治 godobuf `Deck` 与 V3 全局 `class_name Deck` 撞名隐患 → proto 改 `DeckMsg`，wire 不变）。Jira KAN-38 Done。**V4-S3 整阶段收官**：lockstep 实时对战网络层★（a 确定性地基 `Match.advance_tick`+`state_hash` → b 协议扩展+ladder 配置+matches 表 → c Go gateway WS+battle room → d 客户端 `net/ws_client`+`net/battle_client` → e 联机对战场景+LADDER 入口 → f 心跳+断线重连重放+超时认输 → **g 两台 Windows 真机对战验收通过**）。**端到端真 WebSocket 856 比对 0 分叉 + PG 战绩落库 + 断线重连重放恢复 + 真机完整对局实时同步胜负入库 → lockstep 整条路线（不重写 Go 战斗逻辑、两端各跑 logic+哈希对帐）验证成立**。Jira KAN-39 Done。**V4-S4 整阶段收官**：匹配（隐藏 MMR/ELO @1200 + Redis ZSET 队列 + 窗口放宽）——profiles 加 rating + ELO 结算 → Redis 匹配器 → Lobby 替代 Hub（FindMatch→配对→建房）→ 客户端匹配流程+会话+主菜单杯数 → 日志打点+真匹配 smoke → **两台 Windows 真机匹配验收通过**（room-2: acc 94 vs 97 ELO 配对+完整对局+MMR 1216/1184·杯数 ±30 入库）。Jira KAN-40 Done。**下一站**：V4-S5（赛季 + 排行榜，复用 Redis ZSET 做全球杯数榜）。联机对战仍矢量白膜（KAN-49）。
 
@@ -490,4 +493,23 @@
 - **单测** `tests/test_v5_stage.gd`（6：排序/解锁、推进+解锁下一关+章节星、星数取 max 不回退、未胜 no-op、三星判定 4 档、`setup_stage` 接 coef/deck/AI + **headless 跑通一关**：敌方 giant 2000×1.05=2100）。**246/246**（240 + 6，零回归）。
 - **设计决策**：①**敌塔 HP 暂用 base_level 值、不随 coef**（coef 只放大敌方单位 hp/damage；塔血缩放留 V5-S8 平衡）；②base_level 统一 `ladder_01`（标准对局参数：圣水 1.0/10、180s、塔 2500/1450）。
 
-> **下一步 V5-S4（卡牌升级）**：金币 sink + 等级数值曲线 + 等级上限受阶限制；并把 `PlayerData.card_stat_mult` 接进出牌（我方乘区按本卡 level/rank 注入 Match）——养成首次在战斗里"生效"。
+### V5-S4 — 卡牌升级（金币·数值曲线）（已完成）
+- `logic/player_data.gd`：+`level_cap(rank)`（economy.level_cap_per_rank：rank1→4/2→7/3→10）/ `upgrade_cost`（`base[rarity]·(1+(lvl-1)·growth)`，随等级线性涨）/ `upgrade_card`（花金币·level+1·受阶上限钳制）。
+- **养成接进战斗**：`logic/player.gd` +`player_data` 字段 + `_resolve_stat_mult(card_id)`（有 player_data → 按本卡 `card_stat_mult` per-card 乘区；否则 flat）；`logic/match.gd` `setup_stage(..., player_data)` 注入我方养成。**升级一张卡，战斗里它真变肉变疼**（养成首次在战斗生效）。
+- `config/economy.json`：`upgrade_total_gold` → `upgrade_cost_base`(80/160/320/600) + `upgrade_cost_growth`(0.5)；`config_loader` 校验 key 同步。
+- **单测** `tests/test_v5_card_upgrade.gd`（6：扣金币+升级 / 成本随等级涨 / 阶等级上限拦 / 金币不足拒 / 锁定卡拒 / 战斗内我方 knight L6R2 ×1.875=1125 变肉）。**252/252**。
+
+### V5-S5 — 卡牌升阶 + 技能积木解锁（已完成）
+- `logic/player_data.gd`：+`rank_up_card`（花碎片+金币·rank+1·抬等级上限）/ `rank_up_cost`（economy.rank_up[rarity][rank-1]）/ `_max_rank`。
+- **技能积木解锁机制** `logic/card_progression.gd`（新）：`effective_skills(base, rank_unlocks, rank)` 把 rank 2..当前的 `ops` 顺序叠加到 skills 深拷贝。op：`count_add`（spawn count+）/ `num_add`·`num_mult`（块 field 改，如 radius/damage）/ `unit_field`（spawn 块挂 `_unit_override` 改单位配置如 death_spawn）。
+- `logic/skill_system.gd`：`play_card` +`skills_override`（用 effective skills）；`_spawn_unit` 合并 `_unit_override` 进 unit 配置。`logic/player.gd` +`_resolve_skills(card_id)`（rank≥2 → effective skills）。
+- `config/card_progression.json`：给 11 张卡授 ops；**新机制类解锁**（on-hit 溅射 / 亡语溅击 / 对塔加伤 / 穿透 / 溅射 / 连锁 / 灼烧 / 护盾）engine 未支持 → **仅 note 占位、留 V5-S8**。
+- **golem 示范偏差（有意，记踩坑）**：PLAN 原想"death_spawn 从 0 在 2 阶解锁"，但 `test_arena` 的 V3-3 亡语测试依赖 golem 基础亡语（2 哥布林）——移走会破 2 个测 + 触发 Excel 重建。改为**保留基础亡语、用 `unit_field` op 把 death_spawn_count 升阶放大（2→3→4）**，同样端到端验证 unit_field 机制、零 V3 回归、不动 Excel。
+- **单测** `tests/test_v5_card_rank.gd`（9：effective_skills count/rank1/num_add/golem unit_field、升阶扣碎片+金币、升阶抬等级上限、最高阶+碎片不足拒、战斗内 goblins rank2 出 4 只、`_unit_override` 生成 golem 死兵 3）。**261/261**（V3 arena/skill_system 亡语测试零回归）。
+
+### V5-S6 — 经济产出（首通/重复/挂机/解锁）（已完成）
+- `logic/player_data.gd`：+`grant_reward`（通用：金币/宝石/碎片，任务/成就/章节宝箱占位复用）/ `grant_stage_reward`（首通 first_clear 大额 / 重复 repeat 小额 + 可选 seeded rng 概率 shard_drop）/ `unlock_card`（碎片够 → 扣 + 解锁）/ 挂机离线 `idle_rate_per_hour`（按最高通关章节）·`idle_pending`（累计封顶 cap_hours）·`collect_idle`（领取清零，`now_ts` 由 caller 注入、逻辑层不取系统时间）。
+- **单测** `tests/test_v5_economy.gd`（9：首通/重复奖励、通用奖励、seeded shard_drop 可复现、解锁扣碎片/不足拒、挂机累计+封顶(8h)、领取刷基准、无进度 0 产出）。**270/270**。
+- **占位说明**：日常任务/成就的"定义 + 每日重置"留后续；S6 提供其发奖机制（`grant_reward`）。
+
+> **下一步 V5-S7（UI 整合）**：闯关地图（章节/关卡/星级）+ 养成界面（升级/升阶/解锁）+ 钱包 + 挂机领取 + 战力提示 + deck builder 接已解锁卡。S0~S6 全 headless 逻辑就绪，S7 把它们接成可玩界面（真人验收）。

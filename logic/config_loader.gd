@@ -287,7 +287,7 @@ func _validate() -> void:
 					errors.append("stage '%s' shard_drop 引用了不存在的 card '%s'" % [str(sid), str(cid)])
 
 	# economy.json：含关键顶层键。
-	for ef in ["upgrade_total_gold", "rank_up", "unlock_shards", "idle", "rewards"]:
+	for ef in ["upgrade_cost_base", "rank_up", "unlock_shards", "idle", "rewards"]:
 		if not economy.has(ef):
 			errors.append("economy.json 缺少 %s" % ef)
 

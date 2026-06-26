@@ -8,6 +8,7 @@ extends RefCounted
 class_name Player
 
 const UnitScript = preload("res://logic/unit.gd")
+const CardProgressionScript = preload("res://logic/card_progression.gd")
 
 var owner_id: int = 0
 var elixir            # Elixir
@@ -15,6 +16,7 @@ var deck              # Deck
 var config            # ConfigLoader：查卡牌 elixir_cost
 var skill_system      # SkillSystem：执行技能积木
 var unit_stat_mult: float = 1.0   # V5-S1：本方出兵数值乘区（hp/damage），由 Match 注入；默认 1.0（行为同改前）
+var player_data = null            # V5-S4：本方养成存档（PlayerData）；非空时出兵乘区按本卡 level/rank 算（敌方为 null 用 flat）
 
 func _init(owner_id_ = 0, elixir_ = null, deck_ = null, config_ = null, skill_system_ = null) -> void:
 	owner_id = owner_id_
@@ -65,8 +67,28 @@ func try_play_card(hand_index: int, pos: Vector2 = Vector2.ZERO) -> bool:
 	if not elixir.spend(float(cost)):
 		return false
 	deck.play(hand_index)
-	skill_system.play_card(card_id, owner_id, pos, unit_stat_mult)
+	skill_system.play_card(card_id, owner_id, pos, _resolve_stat_mult(card_id), _resolve_skills(card_id))
 	return true
+
+# 本次出牌的出兵数值乘区：有 player_data（我方养成）→ 按本卡 level/rank 算；
+# 否则用注入的 flat 乘区（敌方 coef / 默认 1.0）。
+func _resolve_stat_mult(card_id) -> float:
+	if player_data != null and config != null:
+		return player_data.card_stat_mult(String(card_id), config)
+	return unit_stat_mult
+
+# 本次出牌的 effective skills：有 player_data 且本卡 rank≥2 → 应用升阶解锁 ops；否则 null（用卡 base skills）。
+func _resolve_skills(card_id):
+	if player_data == null or config == null:
+		return null
+	var rank := int(player_data.card_state(String(card_id)).get("rank", 1))
+	if rank <= 1:
+		return null
+	var base_skills = config.get_card(String(card_id)).get("skills", [])
+	var unlocks = config.get_card_progression(String(card_id)).get("rank_unlocks", {})
+	if typeof(unlocks) != TYPE_DICTIONARY:
+		return null
+	return CardProgressionScript.effective_skills(base_skills, unlocks, rank)
 
 # 该卡是否会生成单位（含 spawn_unit 积木）。纯伤害法术（fireball/arrows/zap）返回 false。
 func _spawns_troops(card_id) -> bool:

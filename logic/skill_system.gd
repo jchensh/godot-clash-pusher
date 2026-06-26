@@ -29,13 +29,14 @@ func _init(config_ = null, battle_ = null) -> void:
 
 # 出一张牌：按 skills 数组顺序执行每个积木。卡不存在返回 false。不校验/扣圣水（上层职责）。
 # stat_mult（V5-S1）：出兵数值乘区，仅作用于 spawn_unit 生成的单位 hp/damage；默认 1.0（行为同改前）。
-func play_card(card_id: String, owner_id: int, pos: Vector2 = Vector2.ZERO, stat_mult: float = 1.0) -> bool:
+func play_card(card_id: String, owner_id: int, pos: Vector2 = Vector2.ZERO, stat_mult: float = 1.0, skills_override = null) -> bool:
 	if config == null:
 		return false
 	var card: Dictionary = config.get_card(card_id)
 	if card.is_empty():
 		return false
-	var skills = card.get("skills", [])
+	# skills_override（V5-S5）：升阶解锁后的 effective skills；缺省用卡 base skills。
+	var skills = skills_override if typeof(skills_override) == TYPE_ARRAY else card.get("skills", [])
 	if typeof(skills) != TYPE_ARRAY:
 		return false
 	for block in skills:
@@ -65,6 +66,12 @@ func _spawn_unit(block: Dictionary, owner_id: int, pos: Vector2, stat_mult: floa
 	var unit_cfg: Dictionary = config.get_unit(unit_id)
 	if unit_cfg.is_empty():
 		return
+	# V5-S5：升阶解锁可在 spawn 块挂 _unit_override（如 death_spawn_count），生成单位前合并进 unit 配置。
+	var ov = block.get("_unit_override", {})
+	if typeof(ov) == TYPE_DICTIONARY and not ov.is_empty():
+		unit_cfg = unit_cfg.duplicate(true)
+		for k in ov:
+			unit_cfg[k] = ov[k]
 	var count := maxi(int(block.get("count", 1)), 0)
 	for i in count:
 		var offset: Vector2 = _SPREAD[i % _SPREAD.size()]

@@ -3,7 +3,8 @@
   "level_stat_per_level": 0.10,
   "rank_stat_mult": 1.25,
   "level_cap_per_rank": { "1": 4, "2": 7, "3": 10 },
-  "upgrade_total_gold": { "common": 4000, "rare": 8000, "epic": 16000, "legendary": 30000 },
+  "upgrade_cost_base": { "common": 80, "rare": 160, "epic": 320, "legendary": 600 },
+  "upgrade_cost_growth": 0.5,
   "rank_up": {
     "common":    [ { "shards": 20, "gold": 2000 }, { "shards": 50, "gold": 5000 } ],
     "rare":      [ { "shards": 30, "gold": 4000 }, { "shards": 80, "gold": 10000 } ],
