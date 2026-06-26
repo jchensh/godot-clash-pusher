@@ -29,7 +29,7 @@ const (
 )
 
 // 消息 ID 枚举，分段：0-9 = 心跳/错误，10-19 = auth，20-29 = profile，
-// 30-39 = match (lobby)，40-49 = battle，50-59 = leaderboard。
+// 30-39 = match (lobby)，40-49 = battle，50-59 = leaderboard，60-69 = V5 会话/经济（决策 48）。
 // 新增消息按段尾追加，**不复用**已用过的 id。
 type MsgId int32
 
@@ -62,6 +62,8 @@ const (
 	MsgId_BATTLE_END_REPORT    MsgId = 48 // 客户端 -> 服务端：本地 sim 判定对局结束（lockstep 服务端无 sim，靠两端上报）
 	MsgId_LEADERBOARD_TOP_REQ  MsgId = 50
 	MsgId_LEADERBOARD_TOP_RESP MsgId = 51
+	// 60-69 = V5 会话/经济（决策 48）
+	MsgId_CONFIG_PUSH MsgId = 60 // server->client：登录后配置下发（V5-N2）
 )
 
 // Enum value maps for MsgId.
@@ -95,6 +97,7 @@ var (
 		48: "BATTLE_END_REPORT",
 		50: "LEADERBOARD_TOP_REQ",
 		51: "LEADERBOARD_TOP_RESP",
+		60: "CONFIG_PUSH",
 	}
 	MsgId_value = map[string]int32{
 		"MSG_UNKNOWN":          0,
@@ -125,6 +128,7 @@ var (
 		"BATTLE_END_REPORT":    48,
 		"LEADERBOARD_TOP_REQ":  50,
 		"LEADERBOARD_TOP_RESP": 51,
+		"CONFIG_PUSH":          60,
 	}
 )
 
@@ -398,7 +402,7 @@ const file_common_proto_rawDesc = "" +
 	"\bnickname\x18\x02 \x01(\tR\bnickname\x12\x1b\n" +
 	"\tavatar_id\x18\x03 \x01(\x05R\bavatarId\x12\x14\n" +
 	"\x05level\x18\x04 \x01(\x05R\x05level\x12\x1a\n" +
-	"\btrophies\x18\x05 \x01(\x05R\btrophies*\xa5\x04\n" +
+	"\btrophies\x18\x05 \x01(\x05R\btrophies*\xb6\x04\n" +
 	"\x05MsgId\x12\x0f\n" +
 	"\vMSG_UNKNOWN\x10\x00\x12\b\n" +
 	"\x04PING\x10\x01\x12\b\n" +
@@ -431,7 +435,8 @@ const file_common_proto_rawDesc = "" +
 	"\x0eHEARTBEAT_PONG\x10/\x12\x15\n" +
 	"\x11BATTLE_END_REPORT\x100\x12\x17\n" +
 	"\x13LEADERBOARD_TOP_REQ\x102\x12\x18\n" +
-	"\x14LEADERBOARD_TOP_RESP\x103*\x9f\x03\n" +
+	"\x14LEADERBOARD_TOP_RESP\x103\x12\x0f\n" +
+	"\vCONFIG_PUSH\x10<*\x9f\x03\n" +
 	"\tErrorCode\x12\n" +
 	"\n" +
 	"\x06ERR_OK\x10\x00\x12\x10\n" +

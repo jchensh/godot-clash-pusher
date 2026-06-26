@@ -12,7 +12,7 @@ package game.v4;
 option go_package = "github.com/jchensh/godot-clash-pusher/server/internal/pb/common";
 
 // 消息 ID 枚举，分段：0-9 = 心跳/错误，10-19 = auth，20-29 = profile，
-// 30-39 = match (lobby)，40-49 = battle，50-59 = leaderboard。
+// 30-39 = match (lobby)，40-49 = battle，50-59 = leaderboard，60-69 = V5 会话/经济（决策 48）。
 // 新增消息按段尾追加，**不复用**已用过的 id。
 enum MsgId {
   MSG_UNKNOWN = 0;
@@ -48,6 +48,9 @@ enum MsgId {
 
   LEADERBOARD_TOP_REQ = 50;
   LEADERBOARD_TOP_RESP = 51;
+
+  // 60-69 = V5 会话/经济（决策 48）
+  CONFIG_PUSH = 60;         // server->client：登录后配置下发（V5-N2）
 }
 
 // 通用错误码。前 1000 为框架级（鉴权/限流），1000+ 为业务级（按模块分段）。

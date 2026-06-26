@@ -683,235 +683,66 @@ class PBPacker:
 ############### USER DATA BEGIN ################
 
 
-enum MsgId {
-	MSG_UNKNOWN = 0,
-	PING = 1,
-	PONG = 2,
-	ERROR_RESP = 3,
-	LOGIN_REQ = 10,
-	LOGIN_RESP = 11,
-	REFRESH_REQ = 12,
-	REFRESH_RESP = 13,
-	PROFILE_GET_REQ = 20,
-	PROFILE_GET_RESP = 21,
-	DECK_UPDATE_REQ = 22,
-	DECK_UPDATE_RESP = 23,
-	FIND_MATCH_REQ = 30,
-	FIND_MATCH_RESP = 31,
-	CANCEL_MATCH_REQ = 32,
-	CANCEL_MATCH_RESP = 33,
-	MATCH_FOUND_PUSH = 34,
-	JOIN_ROOM_REQ = 40,
-	JOIN_ROOM_RESP = 41,
-	DEPLOY_CMD = 42,
-	TICK_BUNDLE = 43,
-	STATE_HASH_UP = 44,
-	BATTLE_RESULT_PUSH = 45,
-	HEARTBEAT_PING = 46,
-	HEARTBEAT_PONG = 47,
-	BATTLE_END_REPORT = 48,
-	LEADERBOARD_TOP_REQ = 50,
-	LEADERBOARD_TOP_RESP = 51,
-	CONFIG_PUSH = 60
-}
-
-enum ErrorCode {
-	ERR_OK = 0,
-	ERR_INTERNAL = 1,
-	ERR_INVALID_ARG = 2,
-	ERR_UNAUTHORIZED = 3,
-	ERR_RATE_LIMITED = 4,
-	ERR_NOT_FOUND = 5,
-	ERR_AUTH_INVALID_TOKEN = 100,
-	ERR_AUTH_EXPIRED = 101,
-	ERR_AUTH_BANNED = 102,
-	ERR_PROFILE_VERSION_MISMATCH = 200,
-	ERR_PROFILE_DECK_INVALID = 201,
-	ERR_MATCH_ALREADY_QUEUED = 300,
-	ERR_MATCH_NOT_QUEUED = 301,
-	ERR_BATTLE_ROOM_NOT_FOUND = 400,
-	ERR_BATTLE_INVALID_DEPLOY = 401,
-	ERR_BATTLE_HASH_MISMATCH = 402
-}
-
-class ErrorResp:
+class ConfigPush:
 	extends RefCounted
 	func _init():
 		var service
 		
-		__code = PBField.new("code", PB_DATA_TYPE.ENUM, PB_RULE.OPTIONAL, 1, true, DEFAULT_VALUES_3[PB_DATA_TYPE.ENUM])
+		__version = PBField.new("version", PB_DATA_TYPE.STRING, PB_RULE.OPTIONAL, 1, true, DEFAULT_VALUES_3[PB_DATA_TYPE.STRING])
 		service = PBServiceField.new()
-		service.field = __code
-		data[__code.tag] = service
+		service.field = __version
+		data[__version.tag] = service
 		
-		__detail = PBField.new("detail", PB_DATA_TYPE.STRING, PB_RULE.OPTIONAL, 2, true, DEFAULT_VALUES_3[PB_DATA_TYPE.STRING])
+		__up_to_date = PBField.new("up_to_date", PB_DATA_TYPE.BOOL, PB_RULE.OPTIONAL, 2, true, DEFAULT_VALUES_3[PB_DATA_TYPE.BOOL])
 		service = PBServiceField.new()
-		service.field = __detail
-		data[__detail.tag] = service
+		service.field = __up_to_date
+		data[__up_to_date.tag] = service
 		
-		__in_reply_to = PBField.new("in_reply_to", PB_DATA_TYPE.ENUM, PB_RULE.OPTIONAL, 3, true, DEFAULT_VALUES_3[PB_DATA_TYPE.ENUM])
+		__bundle = PBField.new("bundle", PB_DATA_TYPE.BYTES, PB_RULE.OPTIONAL, 3, true, DEFAULT_VALUES_3[PB_DATA_TYPE.BYTES])
 		service = PBServiceField.new()
-		service.field = __in_reply_to
-		data[__in_reply_to.tag] = service
+		service.field = __bundle
+		data[__bundle.tag] = service
 		
 	var data = {}
 	
-	var __code: PBField
-	func has_code() -> bool:
-		if __code.value != null:
+	var __version: PBField
+	func has_version() -> bool:
+		if __version.value != null:
 			return true
 		return false
-	func get_code():
-		return __code.value
-	func clear_code() -> void:
+	func get_version() -> String:
+		return __version.value
+	func clear_version() -> void:
 		data[1].state = PB_SERVICE_STATE.UNFILLED
-		__code.value = DEFAULT_VALUES_3[PB_DATA_TYPE.ENUM]
-	func set_code(value) -> void:
-		__code.value = value
+		__version.value = DEFAULT_VALUES_3[PB_DATA_TYPE.STRING]
+	func set_version(value : String) -> void:
+		__version.value = value
 	
-	var __detail: PBField
-	func has_detail() -> bool:
-		if __detail.value != null:
+	var __up_to_date: PBField
+	func has_up_to_date() -> bool:
+		if __up_to_date.value != null:
 			return true
 		return false
-	func get_detail() -> String:
-		return __detail.value
-	func clear_detail() -> void:
+	func get_up_to_date() -> bool:
+		return __up_to_date.value
+	func clear_up_to_date() -> void:
 		data[2].state = PB_SERVICE_STATE.UNFILLED
-		__detail.value = DEFAULT_VALUES_3[PB_DATA_TYPE.STRING]
-	func set_detail(value : String) -> void:
-		__detail.value = value
+		__up_to_date.value = DEFAULT_VALUES_3[PB_DATA_TYPE.BOOL]
+	func set_up_to_date(value : bool) -> void:
+		__up_to_date.value = value
 	
-	var __in_reply_to: PBField
-	func has_in_reply_to() -> bool:
-		if __in_reply_to.value != null:
+	var __bundle: PBField
+	func has_bundle() -> bool:
+		if __bundle.value != null:
 			return true
 		return false
-	func get_in_reply_to():
-		return __in_reply_to.value
-	func clear_in_reply_to() -> void:
+	func get_bundle() -> PackedByteArray:
+		return __bundle.value
+	func clear_bundle() -> void:
 		data[3].state = PB_SERVICE_STATE.UNFILLED
-		__in_reply_to.value = DEFAULT_VALUES_3[PB_DATA_TYPE.ENUM]
-	func set_in_reply_to(value) -> void:
-		__in_reply_to.value = value
-	
-	func _to_string() -> String:
-		return PBPacker.message_to_string(data)
-		
-	func to_bytes() -> PackedByteArray:
-		return PBPacker.pack_message(data)
-		
-	func from_bytes(bytes : PackedByteArray, offset : int = 0, limit : int = -1) -> int:
-		var cur_limit = bytes.size()
-		if limit != -1:
-			cur_limit = limit
-		var result = PBPacker.unpack_message(data, bytes, offset, cur_limit)
-		if result == cur_limit:
-			if PBPacker.check_required(data):
-				if limit == -1:
-					return PB_ERR.NO_ERRORS
-			else:
-				return PB_ERR.REQUIRED_FIELDS
-		elif limit == -1 && result > 0:
-			return PB_ERR.PARSE_INCOMPLETE
-		return result
-	
-class ProfileSummary:
-	extends RefCounted
-	func _init():
-		var service
-		
-		__account_id = PBField.new("account_id", PB_DATA_TYPE.INT64, PB_RULE.OPTIONAL, 1, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT64])
-		service = PBServiceField.new()
-		service.field = __account_id
-		data[__account_id.tag] = service
-		
-		__nickname = PBField.new("nickname", PB_DATA_TYPE.STRING, PB_RULE.OPTIONAL, 2, true, DEFAULT_VALUES_3[PB_DATA_TYPE.STRING])
-		service = PBServiceField.new()
-		service.field = __nickname
-		data[__nickname.tag] = service
-		
-		__avatar_id = PBField.new("avatar_id", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 3, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
-		service = PBServiceField.new()
-		service.field = __avatar_id
-		data[__avatar_id.tag] = service
-		
-		__level = PBField.new("level", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 4, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
-		service = PBServiceField.new()
-		service.field = __level
-		data[__level.tag] = service
-		
-		__trophies = PBField.new("trophies", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 5, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
-		service = PBServiceField.new()
-		service.field = __trophies
-		data[__trophies.tag] = service
-		
-	var data = {}
-	
-	var __account_id: PBField
-	func has_account_id() -> bool:
-		if __account_id.value != null:
-			return true
-		return false
-	func get_account_id() -> int:
-		return __account_id.value
-	func clear_account_id() -> void:
-		data[1].state = PB_SERVICE_STATE.UNFILLED
-		__account_id.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT64]
-	func set_account_id(value : int) -> void:
-		__account_id.value = value
-	
-	var __nickname: PBField
-	func has_nickname() -> bool:
-		if __nickname.value != null:
-			return true
-		return false
-	func get_nickname() -> String:
-		return __nickname.value
-	func clear_nickname() -> void:
-		data[2].state = PB_SERVICE_STATE.UNFILLED
-		__nickname.value = DEFAULT_VALUES_3[PB_DATA_TYPE.STRING]
-	func set_nickname(value : String) -> void:
-		__nickname.value = value
-	
-	var __avatar_id: PBField
-	func has_avatar_id() -> bool:
-		if __avatar_id.value != null:
-			return true
-		return false
-	func get_avatar_id() -> int:
-		return __avatar_id.value
-	func clear_avatar_id() -> void:
-		data[3].state = PB_SERVICE_STATE.UNFILLED
-		__avatar_id.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
-	func set_avatar_id(value : int) -> void:
-		__avatar_id.value = value
-	
-	var __level: PBField
-	func has_level() -> bool:
-		if __level.value != null:
-			return true
-		return false
-	func get_level() -> int:
-		return __level.value
-	func clear_level() -> void:
-		data[4].state = PB_SERVICE_STATE.UNFILLED
-		__level.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
-	func set_level(value : int) -> void:
-		__level.value = value
-	
-	var __trophies: PBField
-	func has_trophies() -> bool:
-		if __trophies.value != null:
-			return true
-		return false
-	func get_trophies() -> int:
-		return __trophies.value
-	func clear_trophies() -> void:
-		data[5].state = PB_SERVICE_STATE.UNFILLED
-		__trophies.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
-	func set_trophies(value : int) -> void:
-		__trophies.value = value
+		__bundle.value = DEFAULT_VALUES_3[PB_DATA_TYPE.BYTES]
+	func set_bundle(value : PackedByteArray) -> void:
+		__bundle.value = value
 	
 	func _to_string() -> String:
 		return PBPacker.message_to_string(data)

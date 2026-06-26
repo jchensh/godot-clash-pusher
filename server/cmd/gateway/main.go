@@ -25,8 +25,10 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/jchensh/godot-clash-pusher/server/internal/auth"
 	"github.com/jchensh/godot-clash-pusher/server/internal/battle"
+	"github.com/jchensh/godot-clash-pusher/server/internal/gameconfig"
 	"github.com/jchensh/godot-clash-pusher/server/internal/matchmaking"
 	pbcommon "github.com/jchensh/godot-clash-pusher/server/internal/pb/common"
+	"github.com/jchensh/godot-clash-pusher/server/internal/session"
 	"github.com/jchensh/godot-clash-pusher/server/internal/store"
 	"github.com/jchensh/godot-clash-pusher/server/internal/version"
 )
@@ -84,6 +86,20 @@ func main() {
 	if err != nil {
 		log.Fatalf("gateway: build jwt issuer: %v", err)
 	}
+
+	// V5-N2 (决策 48)：服务器持权威配置，登录后下发给客户端。
+	cfgDir := os.Getenv("CONFIG_DIR")
+	if cfgDir == "" {
+		cfgDir = "/app/config"
+	}
+	cfgBundle, cfgErr := gameconfig.Load(cfgDir)
+	if cfgErr != nil {
+		log.Printf("gateway: config load (%s): %v — sessions get empty config", cfgDir, cfgErr)
+	} else {
+		log.Printf("gateway: config loaded ver=%s files=%d bytes=%d", cfgBundle.Version, cfgBundle.FileCount(), len(cfgBundle.Payload))
+	}
+	sessMgr := session.NewManager()
+
 	lobby := battle.NewLobby(matchmaking.NewRedisQueue(rdb.Client()), battle.NewPGPersister(db), db, levelID, nil)
 	go lobby.RunMatchmaker(rootCtx)
 
@@ -101,6 +117,21 @@ func main() {
 		}
 		log.Printf("ws: acc=%d connected", claims.AccountID)
 		lobby.Serve(rootCtx, ws, claims.AccountID, summary)
+	})
+
+	// V5-N1 (决策 48)：持久会话连接 + 登录后配置下发（断线即不可玩）。
+	mux.HandleFunc("GET /v5/session/ws", func(w http.ResponseWriter, r *http.Request) {
+		claims, err := issuer.Verify(r.URL.Query().Get("token"), auth.KindAccess)
+		if err != nil {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		ws, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		log.Printf("session: acc=%d connected (cfgver=%s, online=%d)", claims.AccountID, r.URL.Query().Get("cfgver"), sessMgr.Count()+1)
+		sessMgr.Serve(rootCtx, ws, claims.AccountID, r.URL.Query().Get("cfgver"), cfgBundle)
 	})
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		if err := db.Ping(r.Context()); err != nil {
