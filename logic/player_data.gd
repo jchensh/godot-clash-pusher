@@ -79,6 +79,22 @@ func load_dict(d: Dictionary) -> void:
 		idle = {}
 	idle_last_collect_ts = int(idle.get("last_collect_ts", 0))
 
+# V5-N7（决策 48）：从**服务器权威快照**重建自身（瘦客户端化）。
+# server_state 形状 = economy_client._state_to_dict 输出（gold/gems/idle_last_collect_ts/
+# highest_cleared 在顶层；cards={cid:{level,rank,shards,unlocked}}；stages={sid:{stars,cleared}}）。
+# 与 load_dict 的区别：load_dict 读本地存档 schema（wallet/idle 嵌套），本方法读服务器 schema。
+# all_card_ids 用于 ensure 缺失卡（服务器快照可能不含未触发的卡）。服务器为准、本地被覆盖。
+func apply_server_state(server_state: Dictionary, all_card_ids: Array) -> void:
+	gold = int(server_state.get("gold", 0))
+	gems = int(server_state.get("gems", 0))
+	idle_last_collect_ts = int(server_state.get("idle_last_collect_ts", 0))
+	highest_cleared = String(server_state.get("highest_cleared", ""))
+	var c = server_state.get("cards", {})
+	cards = (c as Dictionary).duplicate(true) if typeof(c) == TYPE_DICTIONARY else {}
+	var s = server_state.get("stages", {})
+	stages = (s as Dictionary).duplicate(true) if typeof(s) == TYPE_DICTIONARY else {}
+	ensure_cards(all_card_ids)   # 服务器快照缺的卡补默认锁定条目（保持卡池一致）
+
 # —— V5-S2：养成/战力解算（config 注入、不存储；纯函数式查询） ——
 
 # 本卡当前出兵数值乘区 = 等级乘 × 阶乘（读 economy 曲线）。

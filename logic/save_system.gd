@@ -48,12 +48,16 @@ static func clear_run_save(path: String = RUN_PATH) -> void:
 		if dir != null:
 			dir.remove(path.get_file())
 
-# —— Player（V5 闯关养成存档：钱包/卡牌养成/关卡进度/挂机） ——
+# —— Player（V5 闯关养成：**非权威本地缓存镜像**，决策 48 / V5-N7） ——
+# 注意：本文件存读的 player_save.json 是 EconomyStateCache 的**落盘镜像**（秒启动/离线只读展示），
+# **不是权威档**。养成/钱包/进度的权威在服务器（PG），开战/校验一律用 EconomyStateCache.for_battle()
+# （服务器拉来的状态），改本文件不影响开战数值。登录后 EconomyStateCache.refresh() 从服务器覆盖。
 static func save_player(player_data, path: String = PLAYER_PATH) -> void:
 	_write(path, player_data.to_dict())
 
-# 读玩家档；无档 → init_new（全卡建条目、starter 8 张解锁）。
+# 读玩家档（非权威缓存镜像）；无档 → init_new（全卡建条目、starter 8 张解锁）。
 # 有档 → load_dict 后 ensure_cards 补齐缺失卡（卡池后续新增时不丢档）。
+# 仅用于秒启动/离线兜底展示；权威状态登录后从服务器 EconomyStateCache.refresh() 覆盖。
 static func load_player(all_card_ids: Array, path: String = PLAYER_PATH):
 	var p = PlayerDataScript.new()
 	var d := _read(path)
