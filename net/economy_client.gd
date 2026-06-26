@@ -38,6 +38,12 @@ func report_stage_clear(http: HTTPRequest, token: String, stage_id: String, star
 	req.set_stars(stars)
 	return await _request(http, "POST", "/v5/economy/stage-clear", token, req.to_bytes())
 
+## V5-N6：领取挂机离线金币。无参（now 全服务器定，改本地时钟无效）。服务器按
+## (now − last_collect) 算累计（章节驱动产率 + 封顶）→ 发到 gold + 刷新基准，回新 EconomyState。
+func collect_idle(http: HTTPRequest, token: String) -> Dictionary:
+	var req = EconomyProto.CollectIdleReq.new()
+	return await _request(http, "POST", "/v5/economy/collect-idle", token, req.to_bytes())
+
 
 func _action(http: HTTPRequest, path: String, token: String, card_id: String) -> Dictionary:
 	var req = EconomyProto.EconomyActionReq.new()

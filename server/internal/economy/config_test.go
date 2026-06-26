@@ -18,7 +18,8 @@ func loadCfg(t *testing.T) *economy.Config {
 		"upgrade_cost_base": {"common":80,"rare":160},
 		"upgrade_cost_growth": 0.5,
 		"rank_up": {"common":[{"shards":20,"gold":2000},{"shards":50,"gold":5000}]},
-		"unlock_shards": {"common":30,"legendary":120}
+		"unlock_shards": {"common":30,"legendary":120},
+		"idle": {"gold_per_hour_per_chapter": 50, "cap_hours": 8}
 	}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -163,5 +164,47 @@ func TestParseStages(t *testing.T) {
 	// stars 上限：两关都没显式 stars 配置 → 默认 3。
 	if cfg.StarCap("stage_1_1") != 3 {
 		t.Fatalf("stage_1_1 starcap=%d", cfg.StarCap("stage_1_1"))
+	}
+}
+
+// idle 段解析：章节驱动产率 + 封顶小时 + highest_cleared→chapter 推算。
+func TestParseIdle(t *testing.T) {
+	cfg := loadCfg(t)
+	// gold_per_hour_per_chapter=50, cap_hours=8。
+	if cfg.Idle.GoldPerHourPerChapter != 50 || cfg.Idle.CapHours != 8 {
+		t.Fatalf("idle config=%+v", cfg.Idle)
+	}
+	// 章节驱动：chapter 3 → 50×3=150/h。
+	if cfg.IdleRatePerHour(3) != 150 {
+		t.Fatalf("idle rate chapter3=%d", cfg.IdleRatePerHour(3))
+	}
+	// chapter 0（未通关）→ 0。
+	if cfg.IdleRatePerHour(0) != 0 {
+		t.Fatalf("idle rate chapter0=%d", cfg.IdleRatePerHour(0))
+	}
+	if cfg.IdleCapHours() != 8 {
+		t.Fatalf("cap hours=%d", cfg.IdleCapHours())
+	}
+	// HighestChapter：从 stage_id 查章节。stage_1_2 → chapter 1；未知/空 → 0。
+	if cfg.HighestChapter("stage_1_2") != 1 {
+		t.Fatalf("highest chapter stage_1_2=%d", cfg.HighestChapter("stage_1_2"))
+	}
+	if cfg.HighestChapter("") != 0 || cfg.HighestChapter("nope") != 0 {
+		t.Fatal("highest chapter empty/unknown should be 0")
+	}
+}
+
+// 真实 economy.json 的 idle 段也应解析（50/h/chapter, cap 8h）。
+func TestParse_RealIdle(t *testing.T) {
+	b, err := gameconfig.Load("../../../config")
+	if err != nil {
+		t.Skipf("no real config: %v", err)
+	}
+	cfg, err := economy.ParseConfig(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Idle.GoldPerHourPerChapter != 50 || cfg.Idle.CapHours != 8 {
+		t.Fatalf("real idle=%+v (want 50/8)", cfg.Idle)
 	}
 }

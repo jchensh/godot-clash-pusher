@@ -3,6 +3,7 @@ package economy
 import (
 	"context"
 	"errors"
+	"math"
 	"math/rand"
 	"sort"
 	"time"
@@ -283,6 +284,72 @@ func (r *Repo) isStageCleared(ctx context.Context, accountID int64, stageID stri
 	return cleared, err
 }
 
+// CollectIdle settles an offline-gold collection (V5-N6)：now 全用服务器时间
+// （time.Now().Unix()，改本地时钟无效）。按 (now − last_collect) 算累计金币
+// （rate=GoldPerHourPerChapter×highest_chapter，封顶 CapHours）→ 发到 gold + last_collect=now。
+// 返回新状态（镜像 player_data.collect_idle；产率章节驱动、数值走 economy.json 配置）。
+func (r *Repo) CollectIdle(ctx context.Context, accountID int64, cfg *Config) (State, error) {
+	now := time.Now().Unix()
+	tx, err := r.db.Pool.Begin(ctx)
+	if err != nil {
+		return State{}, err
+	}
+	defer tx.Rollback(ctx)
+	if err := ensureSeeded(ctx, tx, accountID, cfg); err != nil {
+		return State{}, err
+	}
+
+	var gold, lastCollect int64
+	var highest string
+	if err := tx.QueryRow(ctx,
+		`SELECT gold, idle_last_collect_ts, highest_cleared FROM economy_state WHERE account_id=$1 FOR UPDATE`,
+		accountID).Scan(&gold, &lastCollect, &highest); err != nil {
+		return State{}, err
+	}
+
+	pending := idlePending(now, lastCollect, highest, cfg)
+	if pending > 0 {
+		gold += int64(pending)
+	}
+	if _, err := tx.Exec(ctx,
+		`UPDATE economy_state SET gold=$2, idle_last_collect_ts=$3, updated_at=NOW() WHERE account_id=$1`,
+		accountID, gold, now); err != nil {
+		return State{}, err
+	}
+
+	st, err := readState(ctx, tx, accountID)
+	if err != nil {
+		return State{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return State{}, err
+	}
+	return st, nil
+}
+
+// idlePending computes offline gold since lastCollect (mirrors player_data.idle_pending).
+// 章节驱动产率 + 封顶 CapHours；lastCollect<=0 → 0（防御，播种已设 now 故不应出现）。
+func idlePending(now, lastCollect int64, highestCleared string, cfg *Config) int {
+	if lastCollect <= 0 {
+		return 0
+	}
+	chapter := cfg.HighestChapter(highestCleared)
+	rate := cfg.IdleRatePerHour(chapter)
+	if rate <= 0 {
+		return 0
+	}
+	elapsed := now - lastCollect
+	if elapsed < 0 {
+		elapsed = 0
+	}
+	capH := cfg.IdleCapHours()
+	hours := float64(elapsed) / 3600.0
+	if capH > 0 && hours > float64(capH) {
+		hours = float64(capH)
+	}
+	return int(math.Floor(float64(rate) * hours))
+}
+
 // computeHighestCleared returns the last cleared stage_id in the ordered sequence.
 func computeHighestCleared(ctx context.Context, tx pgx.Tx, accountID int64, cfg *Config) (string, error) {
 	ordered := cfg.OrderedStageIDs()
@@ -391,7 +458,9 @@ func ensureSeeded(ctx context.Context, tx pgx.Tx, accountID int64, cfg *Config) 
 	if exists {
 		return nil
 	}
-	if _, err := tx.Exec(ctx, `INSERT INTO economy_state (account_id) VALUES ($1)`, accountID); err != nil {
+	if _, err := tx.Exec(ctx,
+		`INSERT INTO economy_state (account_id, idle_last_collect_ts) VALUES ($1, $2)`,
+		accountID, time.Now().Unix()); err != nil {
 		return err
 	}
 	ids := make([]string, 0, len(cfg.Cards))

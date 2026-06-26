@@ -29,6 +29,7 @@ func (h *Handler) Mount(mux *http.ServeMux, mw *auth.Middleware) {
 	mux.HandleFunc("POST /v5/economy/rank-up", mw.Require(h.rankUp))
 	mux.HandleFunc("POST /v5/economy/unlock", mw.Require(h.unlock))
 	mux.HandleFunc("POST /v5/economy/stage-clear", mw.Require(h.stageClear))
+	mux.HandleFunc("POST /v5/economy/collect-idle", mw.Require(h.collectIdle))
 }
 
 func (h *Handler) getState(w http.ResponseWriter, r *http.Request) {
@@ -76,6 +77,30 @@ func (h *Handler) stageClear(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		code, status := mapErr(err)
 		httpx.WriteError(w, status, code, err.Error(), pbcommon.MsgId_ECONOMY_STAGE_CLEAR_REQ)
+		return
+	}
+	httpx.WriteProto(w, http.StatusOK, toProto(st))
+}
+
+// collectIdle (V5-N6)：挂机领取。无业务入参（CollectIdleReq 空），now 全服务器定
+// （改本地时钟无效）。服务器按 (now − last_collect) 算累计金币 → 发到 gold + 刷新基准。
+func (h *Handler) collectIdle(w http.ResponseWriter, r *http.Request) {
+	accountID, ok := auth.AccountIDFromContext(r.Context())
+	if !ok {
+		httpx.WriteError(w, http.StatusUnauthorized, pbcommon.ErrorCode_ERR_UNAUTHORIZED, "no account in context", pbcommon.MsgId_ECONOMY_COLLECT_IDLE_REQ)
+		return
+	}
+	var req pbeconomy.CollectIdleReq
+	if err := httpx.ReadProto(r, &req); err != nil {
+		httpx.WriteError(w, http.StatusBadRequest, pbcommon.ErrorCode_ERR_INVALID_ARG, err.Error(), pbcommon.MsgId_ECONOMY_COLLECT_IDLE_REQ)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	st, err := h.repo.CollectIdle(ctx, accountID, h.cfg)
+	if err != nil {
+		code, status := mapErr(err)
+		httpx.WriteError(w, status, code, err.Error(), pbcommon.MsgId_ECONOMY_COLLECT_IDLE_REQ)
 		return
 	}
 	httpx.WriteProto(w, http.StatusOK, toProto(st))

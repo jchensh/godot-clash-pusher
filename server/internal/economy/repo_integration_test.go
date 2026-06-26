@@ -263,6 +263,90 @@ func TestRepo_StageClear_RejectsSkip(t *testing.T) {
 	}
 }
 
+// N6 挂机领取：服务器时钟结算。新号播种 last_collect=now（注册即计时）；
+// 把 last_collect 倒拨模拟过去时间 → CollectIdle 按服务器时间累计/封顶/发金币/刷新基准。
+func TestRepo_CollectIdle(t *testing.T) {
+	repo, cfg, acc := setupRepo(t)
+	ctx := context.Background()
+
+	// ① 新号 Get → 播种。idle_last_collect_ts 应≈now（注册即计时，非 0）。
+	st, err := repo.Get(ctx, acc, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st.IdleLastCollect <= 0 {
+		t.Fatalf("seeded idle_last_collect=%d (want >0, 注册即计时)", st.IdleLastCollect)
+	}
+
+	// ② 新号未通关（highest 空）→ chapter 0 → rate 0。倒拨 10h 后领取仍是 0。
+	repo.db.Pool.Exec(ctx,
+		`UPDATE economy_state SET idle_last_collect_ts = $2 WHERE account_id=$1`,
+		acc, st.IdleLastCollect-36000) // -10h
+	st, err = repo.CollectIdle(ctx, acc, cfg)
+	if err != nil {
+		t.Fatalf("collect (no progress): %v", err)
+	}
+	if st.Gold != 0 {
+		t.Fatalf("no-progress collect gold=%d (want 0)", st.Gold)
+	}
+
+	// ③ 通关到 chapter 1（stage_1_2）→ rate 50/h。倒拨 2h → +100。
+	repo.StageClear(ctx, acc, "stage_1_1", 1, cfg)
+	repo.StageClear(ctx, acc, "stage_1_2", 1, cfg) // highest=stage_1_2 (chapter 1)
+	repo.db.Pool.Exec(ctx,
+		`UPDATE economy_state SET idle_last_collect_ts = $2 WHERE account_id=$1`,
+		acc, st.IdleLastCollect-7200) // -2h
+	st, _ = repo.Get(ctx, acc, cfg)
+	prevGold := st.Gold
+	lastBefore := st.IdleLastCollect
+	st, err = repo.CollectIdle(ctx, acc, cfg)
+	if err != nil {
+		t.Fatalf("collect chapter1 2h: %v", err)
+	}
+	if st.Gold != prevGold+100 {
+		t.Fatalf("chapter1 2h gold=%d (want %d)", st.Gold, prevGold+100)
+	}
+	if st.IdleLastCollect <= lastBefore {
+		t.Fatalf("last_collect not advanced: %d <= %d", st.IdleLastCollect, lastBefore)
+	}
+
+	// ④ 封顶：倒拨 100h（cap 8h）→ chapter1 rate 50 × 8 = 400。
+	repo.db.Pool.Exec(ctx,
+		`UPDATE economy_state SET idle_last_collect_ts = $2 WHERE account_id=$1`,
+		acc, st.IdleLastCollect-3600*100) // -100h
+	prevGold = st.Gold
+	st, _ = repo.CollectIdle(ctx, acc, cfg)
+	if st.Gold != prevGold+400 {
+		t.Fatalf("100h capped gold=%d (want %d)", st.Gold, prevGold+400)
+	}
+
+	// ⑤ 连续领取：刚领完立即再领 → elapsed≈0 → +0（无重复领）。
+	prevGold = st.Gold
+	st, _ = repo.CollectIdle(ctx, acc, cfg)
+	if st.Gold != prevGold {
+		t.Fatalf("immediate re-collect gold=%d (want %d, no double collect)", st.Gold, prevGold)
+	}
+}
+
+// 改本地时钟无效验证：CollectIdle 用 time.Now()，客户端改 last_collect 入参无影响
+// （CollectIdle 无入参）；服务器只信自己存的 last_collect + 自己的 now。
+func TestRepo_CollectIdle_ServerAuthoritative(t *testing.T) {
+	repo, cfg, acc := setupRepo(t)
+	ctx := context.Background()
+	repo.Get(ctx, acc, cfg)
+	repo.StageClear(ctx, acc, "stage_1_1", 1, cfg)
+	repo.StageClear(ctx, acc, "stage_1_2", 1, cfg)
+
+	// 倒拨 3h，领取应 +150（chapter1 50/h × 3）。
+	repo.db.Pool.Exec(ctx, `UPDATE economy_state SET idle_last_collect_ts = (SELECT EXTRACT(EPOCH FROM NOW())::bigint - 10800) WHERE account_id=$1`, acc)
+	st, _ := repo.Get(ctx, acc, cfg)
+	prevGold := st.Gold
+	st, _ = repo.CollectIdle(ctx, acc, cfg)
+	if st.Gold <= prevGold {
+		t.Fatalf("server-authoritative collect should add gold: %d -> %d", prevGold, st.Gold)
+	}
+}
+
 // shard_drop 概率掉落：stage_1_2 skeletons 30% 掉 1。重复刷很多次应至少掉过一次。
 func TestRepo_StageClear_ShardDrop(t *testing.T) {
 	repo, cfg, acc := setupRepo(t)

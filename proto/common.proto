@@ -57,6 +57,7 @@ enum MsgId {
   ECONOMY_RANK_UP_REQ = 64; // V5-N4：升阶
   ECONOMY_UNLOCK_REQ = 65;  // V5-N4：解锁
   ECONOMY_STAGE_CLEAR_REQ = 66; // V5-N5：通关上报（stage_id, stars）
+  ECONOMY_COLLECT_IDLE_REQ = 67; // V5-N6：挂机领取（now 全服务器定）
 }
 
 // 通用错误码。前 1000 为框架级（鉴权/限流），1000+ 为业务级（按模块分段）。

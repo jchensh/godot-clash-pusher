@@ -1,4 +1,4 @@
-// economy.proto — V5-N3/N4/N5（决策 48）：服务器权威经济状态 + 结算动作。
+// economy.proto — V5-N3/N4/N5/N6（决策 48）：服务器权威经济状态 + 结算动作。
 //
 // HTTP（api:8080，Bearer 会话令牌）：
 //   GET  /v5/economy/state          → EconomyState
@@ -6,7 +6,8 @@
 //   POST /v5/economy/rank-up        EconomyActionReq{card_id} → EconomyState（升阶）
 //   POST /v5/economy/unlock         EconomyActionReq{card_id} → EconomyState（解锁）
 //   POST /v5/economy/stage-clear    StageClearReq{stage_id,stars} → EconomyState（N5 通关发奖）
-// 成本/上限/解锁门槛/进度连续/星数上限全在服务器用服务器侧配置算（改本地无效）。
+//   POST /v5/economy/collect-idle   CollectIdleReq{} → EconomyState（N6 挂机领取，now 全服务器定）
+// 成本/上限/解锁门槛/进度连续/星数上限/挂机时钟全在服务器用服务器侧配置 + 服务器时间算（改本地无效）。
 
 syntax = "proto3";
 
@@ -47,4 +48,9 @@ message EconomyActionReq {
 message StageClearReq {
   string stage_id = 1;
   int32 stars = 2;   // 0=未取胜（拒）；≥1=通关星数（不能超该关 stars 配置条数）
+}
+
+// N6 挂机领取：无参（now 全服务器定，改本地时钟无效）。服务器按 (now − last_collect)
+// 算累计金币（rate × min(elapsed/cap_hours)，章节驱动）→ 发到 gold + last_collect=now。
+message CollectIdleReq {
 }

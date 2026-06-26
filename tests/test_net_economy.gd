@@ -51,6 +51,13 @@ func test_stage_clear_req() -> void:
 	assert_eq(req2.get_stage_id(), "stage_1_2", "stage id roundtrip")
 	assert_eq(req2.get_stars(), 3, "stars roundtrip")
 
+# V5-N6：CollectIdleReq proto roundtrip（空消息，纯触发领取；now 全服务器定）。
+func test_collect_idle_req() -> void:
+	var req = EconomyProto.CollectIdleReq.new()
+	var req2 = EconomyProto.CollectIdleReq.new()
+	assert_eq(req2.from_bytes(req.to_bytes()), EconomyProto.PB_ERR.NO_ERRORS, "collect idle decode")
+	# CollectIdleReq 无业务字段，往返成功即可（无 getter 可断言）。
+
 func test_default_and_override_url() -> void:
 	assert_eq(EconomyClient.new().api_url, "http://localhost:8080", "default url")
 	assert_eq(EconomyClient.new("http://x").api_url, "http://x", "override url")

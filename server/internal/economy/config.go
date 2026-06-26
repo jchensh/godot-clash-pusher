@@ -50,9 +50,16 @@ type CardMeta struct {
 	BasePower int
 }
 
+// Idle is the offline-gold config (parsed from economy.json idle 段)。挂机金币
+// 产率按玩家最高通关章节驱动：rate = GoldPerHourPerChapter × chapter；累计封顶 CapHours。
+type Idle struct {
+	GoldPerHourPerChapter int
+	CapHours              int
+}
+
 // Config mirrors the养成/经济 curves the server needs to settle actions
 // (parsed from the gameconfig bundle's economy.json + card_progression.json +
-// stages.json — N5 起通关发奖需读 stages 的奖励/掉落/星数上限).
+// stages.json — N5 起通关发奖需读 stages 的奖励/掉落/星数上限; N6 起挂机结算读 idle).
 type Config struct {
 	LevelStatPerLevel float64
 	RankStatMult      float64
@@ -63,6 +70,7 @@ type Config struct {
 	UnlockShards      map[string]int
 	Cards             map[string]CardMeta
 	Stages            map[string]Stage
+	Idle              Idle
 	orderedStages     []string // stage_id 按 (chapter,index) 升序；线性解锁/防跳关用
 	maxRank           int
 }
@@ -89,6 +97,10 @@ func ParseConfig(b *gameconfig.Bundle) (*Config, error) {
 		UpgradeCostGrowth float64                     `json:"upgrade_cost_growth"`
 		RankUp            map[string][]map[string]int `json:"rank_up"`
 		UnlockShards      map[string]int              `json:"unlock_shards"`
+		Idle              struct {
+			GoldPerHourPerChapter int `json:"gold_per_hour_per_chapter"`
+			CapHours              int `json:"cap_hours"`
+		} `json:"idle"`
 	}
 	if err := json.Unmarshal(econRaw, &econ); err != nil {
 		return nil, fmt.Errorf("parse economy.json: %w", err)
@@ -103,6 +115,7 @@ func ParseConfig(b *gameconfig.Bundle) (*Config, error) {
 		RankUp:            map[string][]RankCost{},
 		UnlockShards:      econ.UnlockShards,
 		Cards:             map[string]CardMeta{},
+		Idle:              Idle{GoldPerHourPerChapter: econ.Idle.GoldPerHourPerChapter, CapHours: econ.Idle.CapHours},
 	}
 	for k, v := range econ.LevelCapPerRank {
 		r, err := strconv.Atoi(k)
@@ -290,6 +303,30 @@ func (c *Config) PrevStage(id string) (string, bool) {
 func (c *Config) StarCap(id string) int {
 	if s, ok := c.Stages[id]; ok {
 		return s.starCap
+	}
+	return 0
+}
+
+// —— Idle 查询（N6 挂机服务器时钟结算用） ——
+
+// IdleRatePerHour returns the挂机金币产率 for a given highest cleared chapter
+// (rate = GoldPerHourPerChapter × chapter; mirrors player_data.idle_rate_per_hour)。
+// chapter=0（未通关）→ 0。
+func (c *Config) IdleRatePerHour(chapter int) int {
+	return c.Idle.GoldPerHourPerChapter * chapter
+}
+
+// IdleCapHours returns the offline-gold accumulation cap (hours).
+func (c *Config) IdleCapHours() int { return c.Idle.CapHours }
+
+// HighestChapter returns the chapter number of the given highest_cleared stage_id
+// (0 if empty/unknown). N6 用它从 highest_cleared 推章节 → idle 产率。
+func (c *Config) HighestChapter(highestCleared string) int {
+	if highestCleared == "" {
+		return 0
+	}
+	if s, ok := c.Stages[highestCleared]; ok {
+		return s.Chapter
 	}
 	return 0
 }
