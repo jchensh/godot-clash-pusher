@@ -80,7 +80,9 @@
 | V4-S3 | lockstep 实时对战网络层★（a 确定性地基 advance_tick+state_hash + b 协议扩展+ladder 配置+matches 表 + c Go gateway WS+battle room·房间中继·哈希对帐·结算落库 + d 客户端 ws_client+battle_client + e 联机对战场景+LADDER 入口+端到端真链路 + f 心跳+断线重连重放+超时认输 + **g 两台 Windows 真机对战验收**） | ✅ **整阶段收官**（单测 217/217；Go battle 14 unit + integration 全过；端到端真 WS 856 比对 0 分叉 + PG 战绩落库 + 断线重连重放恢复；**两台真机完整对局+实时同步+胜负入库验收通过**；Jira KAN-39 Done） | a~e `7401b6c` / f `99c8d05` / 收尾 `6ea58d5` |
 | V4-S4 | 匹配（Redis ZSET + ELO）（a profiles+rating·ELO 结算 + b 匹配器·Redis 队列·窗口放宽 + c Lobby 替代 Hub·FindMatch→配对→建房 + d 客户端匹配流程·会话·主菜单杯数 + e 日志打点+真匹配 smoke + **真机匹配验收**） | ✅ **整阶段收官**（客户端 221/221；Go unit + integration 全过含 Redis 首接入；端到端真匹配 smoke 235 比对 0 分叉 + ELO/杯数入库；**两台 Windows 真机 ELO 配对+完整对局+MMR/杯数入库验收通过**（room-2: 94 vs 97 → 1216/1184）；Jira KAN-40 Done） | a~e `81a1f89` / 收尾 `本提交` |
 | **V5-S0** | 配置表骨架（stages/encounters/economy/card_progression 四表 + 样例）+ ConfigLoader 接表校验 + PlayerData 存档草案 + PLAN_V5 定稿 | ✅ 完成（单测 **228/228**；ladder_01 Excel 镜像 drift 为 V4 既有、另行处理；Jira KAN-51 Done） | `61aee91` |
-| **V5-S1** | 出兵数值乘区管线（Unit.apply_stat_mult + SkillSystem 透传 + Match 注入双方 + Player 透传）；只缩 hp/damage，speed/range/tick 不动 | ✅ 完成（单测 **234/234**，228 旧测逐位零回归；Jira KAN-52） | `本提交` |
+| **V5-S1** | 出兵数值乘区管线（Unit.apply_stat_mult + SkillSystem 透传 + Match 注入双方 + Player 透传）；只缩 hp/damage，speed/range/tick 不动 | ✅ 完成（单测 **234/234**，228 旧测逐位零回归；Jira KAN-52 Done） | `bb9a3b0` |
+| **V5-S2** | 玩家存档系统（PlayerData 钱包/卡牌养成/关卡/挂机 + SaveSystem user:// + ensure_cards）+ 战力计算（card_stat_mult/card_power/team_power）+ 解锁解算 | ✅ 完成（单测 **240/240**；Jira KAN-53） | `本提交` |
+| **V5-S3** | 闯关骨架 StageProgress（线性推进/解锁/星级判定）+ Match.setup_stage 接 stage（coef→敌方乘区·encounter→敌方卡组·ai_difficulty）+ stages base_level | ✅ 完成（单测 **246/246**，含 headless 跑通一关；Jira KAN-54） | `本提交` |
 
 > **当前阶段 = V4 联网升级 + 实时对战**（账号/匹配/PvP/赛季/排行榜；长期 F2P 但前期玩法验证不实现支付）。权威规划见 [PLAN_V4.md](PLAN_V4.md)；方向锁定见决策日志 46。**V1/V2/V3 全部完成**——V1 机制白膜 → V2 3-lane + 程序化换皮 + AI 难度 + 内容平衡 → V3 2D 战斗 reboot + 空军 + 新积木 + Roguelite 主轴 + 交互手感 + 精灵美术 + 音频骨架 + 难度 5 档 + 像素 UI 设计系统 + 新手战役 + 引导。V1/V2 详细见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)，V3 详细见 [docs/HISTORY_V3_DETAILED.md](docs/HISTORY_V3_DETAILED.md)。**V3-9 平衡剩余子项**（数值/节奏调优 + 设置/导出/上架打磨）与 V4 早期阶段（S0~S2 账号/档案）可并行。**V4-S0/S1 整体收官**：S0（7 commits / 6 子步 a~f）打底 + S1（1 commit / 5 子步 a~e）匿名 device_id 登录端到端通（客户端 UUID4 → protobuf → docker api → PG accounts/profiles → JWT/refresh → user://auth.cfg 落盘）。Jira KAN-36/KAN-37 同步 Done。**V4-S2 收官**：玩家档案云存档端到端通（客户端 `net/profile.gd` ↔ `/v4/profile/{get,deck-update}` ↔ PG decks/profiles；Bearer 令牌鉴权 + 乐观锁版本冲突 409 + 离线缓存兜底；顺带根治 godobuf `Deck` 与 V3 全局 `class_name Deck` 撞名隐患 → proto 改 `DeckMsg`，wire 不变）。Jira KAN-38 Done。**V4-S3 整阶段收官**：lockstep 实时对战网络层★（a 确定性地基 `Match.advance_tick`+`state_hash` → b 协议扩展+ladder 配置+matches 表 → c Go gateway WS+battle room → d 客户端 `net/ws_client`+`net/battle_client` → e 联机对战场景+LADDER 入口 → f 心跳+断线重连重放+超时认输 → **g 两台 Windows 真机对战验收通过**）。**端到端真 WebSocket 856 比对 0 分叉 + PG 战绩落库 + 断线重连重放恢复 + 真机完整对局实时同步胜负入库 → lockstep 整条路线（不重写 Go 战斗逻辑、两端各跑 logic+哈希对帐）验证成立**。Jira KAN-39 Done。**V4-S4 整阶段收官**：匹配（隐藏 MMR/ELO @1200 + Redis ZSET 队列 + 窗口放宽）——profiles 加 rating + ELO 结算 → Redis 匹配器 → Lobby 替代 Hub（FindMatch→配对→建房）→ 客户端匹配流程+会话+主菜单杯数 → 日志打点+真匹配 smoke → **两台 Windows 真机匹配验收通过**（room-2: acc 94 vs 97 ELO 配对+完整对局+MMR 1216/1184·杯数 ±30 入库）。Jira KAN-40 Done。**下一站**：V4-S5（赛季 + 排行榜，复用 Redis ZSET 做全球杯数榜）。联机对战仍矢量白膜（KAN-49）。
 
@@ -474,4 +476,18 @@
 - **边界（故意，标在代码注释）**：①法术伤害（火球/闪电）不走通用乘区，养成对法术走升阶积木（V5-S5）；②亡语召唤的单位暂用基础数值（V5-S5 再议）。
 - **顺带**（前置 housekeeping，commit `3699ad6`）：`build_config.py --check` 跳过结构性关卡 `ladder_*`（比照 arena.json 不进 Excel 镜像；check / --from-json / 反生成三向一致），修掉 V4-S3 遗留的 --check 红。
 
-> **下一步 V5-S2（玩家存档系统 + 战力计算）**：`player_data.gd` 接 SaveSystem 落 `user://`；钱包/卡牌等级阶/关卡星数/挂机时间戳真存读盘；战力计算（card power → team power）+ 解锁解算。S1 的我方乘区来源（卡 level/rank → mult）在 S2/S4 接上。
+### V5-S2 — 玩家存档系统 + 战力计算（已完成）
+- `logic/player_data.gd`：+`card_stat_mult`（= 等级乘 `1+(lvl-1)·0.10` × 阶乘 `1.25^(rank-1)`，读 economy 曲线）/ `card_power`（base_power × 乘区）/ `team_power`（卡组求和取整）/ `can_unlock`（碎片 ≥ 稀有度门槛）/ `ensure_cards`（卡池新增时补齐缺失卡、不丢档）。
+- `logic/save_system.gd`：+`save_player`/`load_player`/`has_player_save`/`clear_player_save`（`user://player_save.json`）；无档 → `init_new`（初始 8 张解锁），有档 → `load_dict` + `ensure_cards`。
+- **单测** `tests/test_v5_progression.gd`（6：落盘往返 / 无档建新档 / ensure_cards 补齐不覆盖 / 乘区曲线（满养成 ×2.969）/ 战力（knight L5=140·初始队伍=960）/ 解锁门控（golem 120 碎片））。**240/240**（234 + 6，零回归）。
+- **设计点**：S2 只算"数值/战力/解锁"，**不接战斗**——我方乘区来源 `card_stat_mult` 由 V5-S4 出牌时注入、敌方 coef 由 V5-S3 注入。S2 是数据 + 计算层。
+
+### V5-S3 — 闯关骨架 + 星级判定（已完成）
+- `logic/stage_progress.gd`（新）：关卡按 (chapter,index) 排线性序列；`is_unlocked`（首关恒解锁 / 前关通关才解锁）、`next_stage`、`is_all_cleared`、`chapter_stars`、`apply_result`（≥1 星=通关，星数取 max 不回退，刷 `highest_cleared`）；进度持久在 `PlayerData.stages`（复用 CampaignState 二元推进范式）。
+- **星级判定** `StageProgress.judge_stars(stars_cfg, outcome)`（静态纯函数）：未胜=0 星；胜=命中目标数（`win` 必中 → ≥1 星），支持 `king_hp_pct`（保塔血）/ `time_under`（限时）。`outcome={won,king_hp_pct,duration_sec}` 由 view/battle 结束时算（接 UI 留 S7）。
+- `logic/match.gd`：+`setup_stage(stage_id, player_deck_override, player_stat_mult)`——读 stage：`difficulty_coef`→`set_stat_mults(_, coef)` 敌方出兵乘区、`encounter`→敌方卡组、`ai_difficulty`→AI 档；对局参数走 `base_level`（默认 ladder_01）。**S1 的敌方乘区在此真正用上**。
+- `config/stages.json` +`base_level` 字段；`logic/config_loader.gd` 校验 base_level 引用存在。
+- **单测** `tests/test_v5_stage.gd`（6：排序/解锁、推进+解锁下一关+章节星、星数取 max 不回退、未胜 no-op、三星判定 4 档、`setup_stage` 接 coef/deck/AI + **headless 跑通一关**：敌方 giant 2000×1.05=2100）。**246/246**（240 + 6，零回归）。
+- **设计决策**：①**敌塔 HP 暂用 base_level 值、不随 coef**（coef 只放大敌方单位 hp/damage；塔血缩放留 V5-S8 平衡）；②base_level 统一 `ladder_01`（标准对局参数：圣水 1.0/10、180s、塔 2500/1450）。
+
+> **下一步 V5-S4（卡牌升级）**：金币 sink + 等级数值曲线 + 等级上限受阶限制；并把 `PlayerData.card_stat_mult` 接进出牌（我方乘区按本卡 level/rank 注入 Match）——养成首次在战斗里"生效"。

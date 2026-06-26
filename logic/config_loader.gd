@@ -273,6 +273,8 @@ func _validate() -> void:
 			errors.append("stage '%s' 的 ai_difficulty 非法" % str(sid))
 		if st.has("difficulty_coef") and (not _is_number(st.get("difficulty_coef")) or float(st.get("difficulty_coef")) < 1.0):
 			errors.append("stage '%s' 的 difficulty_coef 应为 ≥1.0 的数字" % str(sid))
+		if st.has("base_level") and not levels.has(str(st.get("base_level"))):
+			errors.append("stage '%s' 的 base_level 引用了不存在的 level '%s'" % [str(sid), str(st.get("base_level"))])
 		var fc = st.get("first_clear", {})
 		if typeof(fc) == TYPE_DICTIONARY and typeof(fc.get("shards")) == TYPE_DICTIONARY:
 			for cid in (fc["shards"] as Dictionary):

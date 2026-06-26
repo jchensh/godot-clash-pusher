@@ -78,3 +78,56 @@ func load_dict(d: Dictionary) -> void:
 	if typeof(idle) != TYPE_DICTIONARY:
 		idle = {}
 	idle_last_collect_ts = int(idle.get("last_collect_ts", 0))
+
+# —— V5-S2：养成/战力解算（config 注入、不存储；纯函数式查询） ——
+
+# 本卡当前出兵数值乘区 = 等级乘 × 阶乘（读 economy 曲线）。
+# 等级乘 = 1 + (level-1)·level_stat_per_level；阶乘 = rank_stat_mult^(rank-1)。
+# 这是 S1 我方 spawn 乘区的来源（V5-S4 接进战斗：出牌时按本卡 level/rank 注入）。
+func card_stat_mult(card_id: String, config) -> float:
+	var st := card_state(card_id)
+	if st.is_empty() or config == null:
+		return 1.0
+	var econ: Dictionary = config.get_economy()
+	var per_level := float(econ.get("level_stat_per_level", 0.0))
+	var rank_mult := float(econ.get("rank_stat_mult", 1.0))
+	var level := int(st.get("level", 1))
+	var rank := int(st.get("rank", 1))
+	var lvl_factor := 1.0 + float(maxi(level - 1, 0)) * per_level
+	return lvl_factor * pow(rank_mult, float(maxi(rank - 1, 0)))
+
+# 本卡战力 = base_power（card_progression）× 数值乘区。
+func card_power(card_id: String, config) -> float:
+	if config == null:
+		return 0.0
+	var cp: Dictionary = config.get_card_progression(card_id)
+	if cp.is_empty():
+		return 0.0
+	return float(cp.get("base_power", 0)) * card_stat_mult(card_id, config)
+
+# 队伍战力 = 卡组各卡战力之和（取整）。
+func team_power(card_ids: Array, config) -> int:
+	var total := 0.0
+	for cid in card_ids:
+		total += card_power(String(cid), config)
+	return int(round(total))
+
+# 解锁解算：未解锁 且 碎片 ≥ 该稀有度解锁门槛 → 可解锁（实际解锁动作 V5-S6）。
+func can_unlock(card_id: String, config) -> bool:
+	if is_unlocked(card_id) or config == null:
+		return false
+	var cp: Dictionary = config.get_card_progression(card_id)
+	if cp.is_empty():
+		return false
+	var unlock_tbl = config.get_economy().get("unlock_shards", {})
+	if typeof(unlock_tbl) != TYPE_DICTIONARY:
+		return false
+	var need := int(unlock_tbl.get(str(cp.get("rarity", "")), 1 << 30))
+	return int(card_state(card_id).get("shards", 0)) >= need
+
+# 补齐缺失卡条目（存档读入后若卡池新增了卡 → 默认锁定 level1/rank1；已有卡不动）。
+func ensure_cards(all_card_ids: Array) -> void:
+	for cid in all_card_ids:
+		var key := String(cid)
+		if not cards.has(key):
+			cards[key] = {"level": 1, "rank": 1, "shards": 0, "unlocked": STARTER_CARDS.has(key)}
