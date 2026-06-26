@@ -683,125 +683,102 @@ class PBPacker:
 ############### USER DATA BEGIN ################
 
 
-enum MsgId {
-	MSG_UNKNOWN = 0,
-	PING = 1,
-	PONG = 2,
-	ERROR_RESP = 3,
-	LOGIN_REQ = 10,
-	LOGIN_RESP = 11,
-	REFRESH_REQ = 12,
-	REFRESH_RESP = 13,
-	PROFILE_GET_REQ = 20,
-	PROFILE_GET_RESP = 21,
-	DECK_UPDATE_REQ = 22,
-	DECK_UPDATE_RESP = 23,
-	FIND_MATCH_REQ = 30,
-	FIND_MATCH_RESP = 31,
-	CANCEL_MATCH_REQ = 32,
-	CANCEL_MATCH_RESP = 33,
-	MATCH_FOUND_PUSH = 34,
-	JOIN_ROOM_REQ = 40,
-	JOIN_ROOM_RESP = 41,
-	DEPLOY_CMD = 42,
-	TICK_BUNDLE = 43,
-	STATE_HASH_UP = 44,
-	BATTLE_RESULT_PUSH = 45,
-	HEARTBEAT_PING = 46,
-	HEARTBEAT_PONG = 47,
-	BATTLE_END_REPORT = 48,
-	LEADERBOARD_TOP_REQ = 50,
-	LEADERBOARD_TOP_RESP = 51,
-	CONFIG_PUSH = 60,
-	ECONOMY_STATE_REQ = 61,
-	ECONOMY_STATE_RESP = 62,
-	ECONOMY_UPGRADE_REQ = 63,
-	ECONOMY_RANK_UP_REQ = 64,
-	ECONOMY_UNLOCK_REQ = 65
-}
-
-enum ErrorCode {
-	ERR_OK = 0,
-	ERR_INTERNAL = 1,
-	ERR_INVALID_ARG = 2,
-	ERR_UNAUTHORIZED = 3,
-	ERR_RATE_LIMITED = 4,
-	ERR_NOT_FOUND = 5,
-	ERR_AUTH_INVALID_TOKEN = 100,
-	ERR_AUTH_EXPIRED = 101,
-	ERR_AUTH_BANNED = 102,
-	ERR_PROFILE_VERSION_MISMATCH = 200,
-	ERR_PROFILE_DECK_INVALID = 201,
-	ERR_MATCH_ALREADY_QUEUED = 300,
-	ERR_MATCH_NOT_QUEUED = 301,
-	ERR_BATTLE_ROOM_NOT_FOUND = 400,
-	ERR_BATTLE_INVALID_DEPLOY = 401,
-	ERR_BATTLE_HASH_MISMATCH = 402,
-	ERR_ECONOMY_INSUFFICIENT = 500,
-	ERR_ECONOMY_AT_CAP = 501,
-	ERR_ECONOMY_LOCKED = 502
-}
-
-class ErrorResp:
+class CardState:
 	extends RefCounted
 	func _init():
 		var service
 		
-		__code = PBField.new("code", PB_DATA_TYPE.ENUM, PB_RULE.OPTIONAL, 1, true, DEFAULT_VALUES_3[PB_DATA_TYPE.ENUM])
+		__card_id = PBField.new("card_id", PB_DATA_TYPE.STRING, PB_RULE.OPTIONAL, 1, true, DEFAULT_VALUES_3[PB_DATA_TYPE.STRING])
 		service = PBServiceField.new()
-		service.field = __code
-		data[__code.tag] = service
+		service.field = __card_id
+		data[__card_id.tag] = service
 		
-		__detail = PBField.new("detail", PB_DATA_TYPE.STRING, PB_RULE.OPTIONAL, 2, true, DEFAULT_VALUES_3[PB_DATA_TYPE.STRING])
+		__level = PBField.new("level", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 2, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
 		service = PBServiceField.new()
-		service.field = __detail
-		data[__detail.tag] = service
+		service.field = __level
+		data[__level.tag] = service
 		
-		__in_reply_to = PBField.new("in_reply_to", PB_DATA_TYPE.ENUM, PB_RULE.OPTIONAL, 3, true, DEFAULT_VALUES_3[PB_DATA_TYPE.ENUM])
+		__rank = PBField.new("rank", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 3, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
 		service = PBServiceField.new()
-		service.field = __in_reply_to
-		data[__in_reply_to.tag] = service
+		service.field = __rank
+		data[__rank.tag] = service
+		
+		__shards = PBField.new("shards", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 4, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
+		service = PBServiceField.new()
+		service.field = __shards
+		data[__shards.tag] = service
+		
+		__unlocked = PBField.new("unlocked", PB_DATA_TYPE.BOOL, PB_RULE.OPTIONAL, 5, true, DEFAULT_VALUES_3[PB_DATA_TYPE.BOOL])
+		service = PBServiceField.new()
+		service.field = __unlocked
+		data[__unlocked.tag] = service
 		
 	var data = {}
 	
-	var __code: PBField
-	func has_code() -> bool:
-		if __code.value != null:
+	var __card_id: PBField
+	func has_card_id() -> bool:
+		if __card_id.value != null:
 			return true
 		return false
-	func get_code():
-		return __code.value
-	func clear_code() -> void:
+	func get_card_id() -> String:
+		return __card_id.value
+	func clear_card_id() -> void:
 		data[1].state = PB_SERVICE_STATE.UNFILLED
-		__code.value = DEFAULT_VALUES_3[PB_DATA_TYPE.ENUM]
-	func set_code(value) -> void:
-		__code.value = value
+		__card_id.value = DEFAULT_VALUES_3[PB_DATA_TYPE.STRING]
+	func set_card_id(value : String) -> void:
+		__card_id.value = value
 	
-	var __detail: PBField
-	func has_detail() -> bool:
-		if __detail.value != null:
+	var __level: PBField
+	func has_level() -> bool:
+		if __level.value != null:
 			return true
 		return false
-	func get_detail() -> String:
-		return __detail.value
-	func clear_detail() -> void:
+	func get_level() -> int:
+		return __level.value
+	func clear_level() -> void:
 		data[2].state = PB_SERVICE_STATE.UNFILLED
-		__detail.value = DEFAULT_VALUES_3[PB_DATA_TYPE.STRING]
-	func set_detail(value : String) -> void:
-		__detail.value = value
+		__level.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
+	func set_level(value : int) -> void:
+		__level.value = value
 	
-	var __in_reply_to: PBField
-	func has_in_reply_to() -> bool:
-		if __in_reply_to.value != null:
+	var __rank: PBField
+	func has_rank() -> bool:
+		if __rank.value != null:
 			return true
 		return false
-	func get_in_reply_to():
-		return __in_reply_to.value
-	func clear_in_reply_to() -> void:
+	func get_rank() -> int:
+		return __rank.value
+	func clear_rank() -> void:
 		data[3].state = PB_SERVICE_STATE.UNFILLED
-		__in_reply_to.value = DEFAULT_VALUES_3[PB_DATA_TYPE.ENUM]
-	func set_in_reply_to(value) -> void:
-		__in_reply_to.value = value
+		__rank.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
+	func set_rank(value : int) -> void:
+		__rank.value = value
+	
+	var __shards: PBField
+	func has_shards() -> bool:
+		if __shards.value != null:
+			return true
+		return false
+	func get_shards() -> int:
+		return __shards.value
+	func clear_shards() -> void:
+		data[4].state = PB_SERVICE_STATE.UNFILLED
+		__shards.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
+	func set_shards(value : int) -> void:
+		__shards.value = value
+	
+	var __unlocked: PBField
+	func has_unlocked() -> bool:
+		if __unlocked.value != null:
+			return true
+		return false
+	func get_unlocked() -> bool:
+		return __unlocked.value
+	func clear_unlocked() -> void:
+		data[5].state = PB_SERVICE_STATE.UNFILLED
+		__unlocked.value = DEFAULT_VALUES_3[PB_DATA_TYPE.BOOL]
+	func set_unlocked(value : bool) -> void:
+		__unlocked.value = value
 	
 	func _to_string() -> String:
 		return PBPacker.message_to_string(data)
@@ -824,102 +801,248 @@ class ErrorResp:
 			return PB_ERR.PARSE_INCOMPLETE
 		return result
 	
-class ProfileSummary:
+class StageState:
 	extends RefCounted
 	func _init():
 		var service
 		
-		__account_id = PBField.new("account_id", PB_DATA_TYPE.INT64, PB_RULE.OPTIONAL, 1, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT64])
+		__stage_id = PBField.new("stage_id", PB_DATA_TYPE.STRING, PB_RULE.OPTIONAL, 1, true, DEFAULT_VALUES_3[PB_DATA_TYPE.STRING])
 		service = PBServiceField.new()
-		service.field = __account_id
-		data[__account_id.tag] = service
+		service.field = __stage_id
+		data[__stage_id.tag] = service
 		
-		__nickname = PBField.new("nickname", PB_DATA_TYPE.STRING, PB_RULE.OPTIONAL, 2, true, DEFAULT_VALUES_3[PB_DATA_TYPE.STRING])
+		__stars = PBField.new("stars", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 2, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
 		service = PBServiceField.new()
-		service.field = __nickname
-		data[__nickname.tag] = service
+		service.field = __stars
+		data[__stars.tag] = service
 		
-		__avatar_id = PBField.new("avatar_id", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 3, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
+		__cleared = PBField.new("cleared", PB_DATA_TYPE.BOOL, PB_RULE.OPTIONAL, 3, true, DEFAULT_VALUES_3[PB_DATA_TYPE.BOOL])
 		service = PBServiceField.new()
-		service.field = __avatar_id
-		data[__avatar_id.tag] = service
-		
-		__level = PBField.new("level", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 4, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
-		service = PBServiceField.new()
-		service.field = __level
-		data[__level.tag] = service
-		
-		__trophies = PBField.new("trophies", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 5, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
-		service = PBServiceField.new()
-		service.field = __trophies
-		data[__trophies.tag] = service
+		service.field = __cleared
+		data[__cleared.tag] = service
 		
 	var data = {}
 	
-	var __account_id: PBField
-	func has_account_id() -> bool:
-		if __account_id.value != null:
+	var __stage_id: PBField
+	func has_stage_id() -> bool:
+		if __stage_id.value != null:
 			return true
 		return false
-	func get_account_id() -> int:
-		return __account_id.value
-	func clear_account_id() -> void:
+	func get_stage_id() -> String:
+		return __stage_id.value
+	func clear_stage_id() -> void:
 		data[1].state = PB_SERVICE_STATE.UNFILLED
-		__account_id.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT64]
-	func set_account_id(value : int) -> void:
-		__account_id.value = value
+		__stage_id.value = DEFAULT_VALUES_3[PB_DATA_TYPE.STRING]
+	func set_stage_id(value : String) -> void:
+		__stage_id.value = value
 	
-	var __nickname: PBField
-	func has_nickname() -> bool:
-		if __nickname.value != null:
+	var __stars: PBField
+	func has_stars() -> bool:
+		if __stars.value != null:
 			return true
 		return false
-	func get_nickname() -> String:
-		return __nickname.value
-	func clear_nickname() -> void:
+	func get_stars() -> int:
+		return __stars.value
+	func clear_stars() -> void:
 		data[2].state = PB_SERVICE_STATE.UNFILLED
-		__nickname.value = DEFAULT_VALUES_3[PB_DATA_TYPE.STRING]
-	func set_nickname(value : String) -> void:
-		__nickname.value = value
+		__stars.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
+	func set_stars(value : int) -> void:
+		__stars.value = value
 	
-	var __avatar_id: PBField
-	func has_avatar_id() -> bool:
-		if __avatar_id.value != null:
+	var __cleared: PBField
+	func has_cleared() -> bool:
+		if __cleared.value != null:
 			return true
 		return false
-	func get_avatar_id() -> int:
-		return __avatar_id.value
-	func clear_avatar_id() -> void:
+	func get_cleared() -> bool:
+		return __cleared.value
+	func clear_cleared() -> void:
 		data[3].state = PB_SERVICE_STATE.UNFILLED
-		__avatar_id.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
-	func set_avatar_id(value : int) -> void:
-		__avatar_id.value = value
+		__cleared.value = DEFAULT_VALUES_3[PB_DATA_TYPE.BOOL]
+	func set_cleared(value : bool) -> void:
+		__cleared.value = value
 	
-	var __level: PBField
-	func has_level() -> bool:
-		if __level.value != null:
+	func _to_string() -> String:
+		return PBPacker.message_to_string(data)
+		
+	func to_bytes() -> PackedByteArray:
+		return PBPacker.pack_message(data)
+		
+	func from_bytes(bytes : PackedByteArray, offset : int = 0, limit : int = -1) -> int:
+		var cur_limit = bytes.size()
+		if limit != -1:
+			cur_limit = limit
+		var result = PBPacker.unpack_message(data, bytes, offset, cur_limit)
+		if result == cur_limit:
+			if PBPacker.check_required(data):
+				if limit == -1:
+					return PB_ERR.NO_ERRORS
+			else:
+				return PB_ERR.REQUIRED_FIELDS
+		elif limit == -1 && result > 0:
+			return PB_ERR.PARSE_INCOMPLETE
+		return result
+	
+class EconomyState:
+	extends RefCounted
+	func _init():
+		var service
+		
+		__gold = PBField.new("gold", PB_DATA_TYPE.INT64, PB_RULE.OPTIONAL, 1, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT64])
+		service = PBServiceField.new()
+		service.field = __gold
+		data[__gold.tag] = service
+		
+		__gems = PBField.new("gems", PB_DATA_TYPE.INT64, PB_RULE.OPTIONAL, 2, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT64])
+		service = PBServiceField.new()
+		service.field = __gems
+		data[__gems.tag] = service
+		
+		__idle_last_collect_ts = PBField.new("idle_last_collect_ts", PB_DATA_TYPE.INT64, PB_RULE.OPTIONAL, 3, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT64])
+		service = PBServiceField.new()
+		service.field = __idle_last_collect_ts
+		data[__idle_last_collect_ts.tag] = service
+		
+		__highest_cleared = PBField.new("highest_cleared", PB_DATA_TYPE.STRING, PB_RULE.OPTIONAL, 4, true, DEFAULT_VALUES_3[PB_DATA_TYPE.STRING])
+		service = PBServiceField.new()
+		service.field = __highest_cleared
+		data[__highest_cleared.tag] = service
+		
+		var __cards_default: Array[CardState] = []
+		__cards = PBField.new("cards", PB_DATA_TYPE.MESSAGE, PB_RULE.REPEATED, 5, true, __cards_default)
+		service = PBServiceField.new()
+		service.field = __cards
+		service.func_ref = Callable(self, "add_cards")
+		data[__cards.tag] = service
+		
+		var __stages_default: Array[StageState] = []
+		__stages = PBField.new("stages", PB_DATA_TYPE.MESSAGE, PB_RULE.REPEATED, 6, true, __stages_default)
+		service = PBServiceField.new()
+		service.field = __stages
+		service.func_ref = Callable(self, "add_stages")
+		data[__stages.tag] = service
+		
+	var data = {}
+	
+	var __gold: PBField
+	func has_gold() -> bool:
+		if __gold.value != null:
 			return true
 		return false
-	func get_level() -> int:
-		return __level.value
-	func clear_level() -> void:
+	func get_gold() -> int:
+		return __gold.value
+	func clear_gold() -> void:
+		data[1].state = PB_SERVICE_STATE.UNFILLED
+		__gold.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT64]
+	func set_gold(value : int) -> void:
+		__gold.value = value
+	
+	var __gems: PBField
+	func has_gems() -> bool:
+		if __gems.value != null:
+			return true
+		return false
+	func get_gems() -> int:
+		return __gems.value
+	func clear_gems() -> void:
+		data[2].state = PB_SERVICE_STATE.UNFILLED
+		__gems.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT64]
+	func set_gems(value : int) -> void:
+		__gems.value = value
+	
+	var __idle_last_collect_ts: PBField
+	func has_idle_last_collect_ts() -> bool:
+		if __idle_last_collect_ts.value != null:
+			return true
+		return false
+	func get_idle_last_collect_ts() -> int:
+		return __idle_last_collect_ts.value
+	func clear_idle_last_collect_ts() -> void:
+		data[3].state = PB_SERVICE_STATE.UNFILLED
+		__idle_last_collect_ts.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT64]
+	func set_idle_last_collect_ts(value : int) -> void:
+		__idle_last_collect_ts.value = value
+	
+	var __highest_cleared: PBField
+	func has_highest_cleared() -> bool:
+		if __highest_cleared.value != null:
+			return true
+		return false
+	func get_highest_cleared() -> String:
+		return __highest_cleared.value
+	func clear_highest_cleared() -> void:
 		data[4].state = PB_SERVICE_STATE.UNFILLED
-		__level.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
-	func set_level(value : int) -> void:
-		__level.value = value
+		__highest_cleared.value = DEFAULT_VALUES_3[PB_DATA_TYPE.STRING]
+	func set_highest_cleared(value : String) -> void:
+		__highest_cleared.value = value
 	
-	var __trophies: PBField
-	func has_trophies() -> bool:
-		if __trophies.value != null:
+	var __cards: PBField
+	func get_cards() -> Array[CardState]:
+		return __cards.value
+	func clear_cards() -> void:
+		data[5].state = PB_SERVICE_STATE.UNFILLED
+		__cards.value.clear()
+	func add_cards() -> CardState:
+		var element = CardState.new()
+		__cards.value.append(element)
+		return element
+	
+	var __stages: PBField
+	func get_stages() -> Array[StageState]:
+		return __stages.value
+	func clear_stages() -> void:
+		data[6].state = PB_SERVICE_STATE.UNFILLED
+		__stages.value.clear()
+	func add_stages() -> StageState:
+		var element = StageState.new()
+		__stages.value.append(element)
+		return element
+	
+	func _to_string() -> String:
+		return PBPacker.message_to_string(data)
+		
+	func to_bytes() -> PackedByteArray:
+		return PBPacker.pack_message(data)
+		
+	func from_bytes(bytes : PackedByteArray, offset : int = 0, limit : int = -1) -> int:
+		var cur_limit = bytes.size()
+		if limit != -1:
+			cur_limit = limit
+		var result = PBPacker.unpack_message(data, bytes, offset, cur_limit)
+		if result == cur_limit:
+			if PBPacker.check_required(data):
+				if limit == -1:
+					return PB_ERR.NO_ERRORS
+			else:
+				return PB_ERR.REQUIRED_FIELDS
+		elif limit == -1 && result > 0:
+			return PB_ERR.PARSE_INCOMPLETE
+		return result
+	
+class EconomyActionReq:
+	extends RefCounted
+	func _init():
+		var service
+		
+		__card_id = PBField.new("card_id", PB_DATA_TYPE.STRING, PB_RULE.OPTIONAL, 1, true, DEFAULT_VALUES_3[PB_DATA_TYPE.STRING])
+		service = PBServiceField.new()
+		service.field = __card_id
+		data[__card_id.tag] = service
+		
+	var data = {}
+	
+	var __card_id: PBField
+	func has_card_id() -> bool:
+		if __card_id.value != null:
 			return true
 		return false
-	func get_trophies() -> int:
-		return __trophies.value
-	func clear_trophies() -> void:
-		data[5].state = PB_SERVICE_STATE.UNFILLED
-		__trophies.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
-	func set_trophies(value : int) -> void:
-		__trophies.value = value
+	func get_card_id() -> String:
+		return __card_id.value
+	func clear_card_id() -> void:
+		data[1].state = PB_SERVICE_STATE.UNFILLED
+		__card_id.value = DEFAULT_VALUES_3[PB_DATA_TYPE.STRING]
+	func set_card_id(value : String) -> void:
+		__card_id.value = value
 	
 	func _to_string() -> String:
 		return PBPacker.message_to_string(data)

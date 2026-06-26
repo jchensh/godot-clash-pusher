@@ -63,7 +63,12 @@ const (
 	MsgId_LEADERBOARD_TOP_REQ  MsgId = 50
 	MsgId_LEADERBOARD_TOP_RESP MsgId = 51
 	// 60-69 = V5 会话/经济（决策 48）
-	MsgId_CONFIG_PUSH MsgId = 60 // server->client：登录后配置下发（V5-N2）
+	MsgId_CONFIG_PUSH         MsgId = 60 // server->client：登录后配置下发（V5-N2）
+	MsgId_ECONOMY_STATE_REQ   MsgId = 61 // V5-N3 client->server：拉经济状态
+	MsgId_ECONOMY_STATE_RESP  MsgId = 62 // V5-N3 server->client：经济状态
+	MsgId_ECONOMY_UPGRADE_REQ MsgId = 63 // V5-N4：升级
+	MsgId_ECONOMY_RANK_UP_REQ MsgId = 64 // V5-N4：升阶
+	MsgId_ECONOMY_UNLOCK_REQ  MsgId = 65 // V5-N4：解锁
 )
 
 // Enum value maps for MsgId.
@@ -98,6 +103,11 @@ var (
 		50: "LEADERBOARD_TOP_REQ",
 		51: "LEADERBOARD_TOP_RESP",
 		60: "CONFIG_PUSH",
+		61: "ECONOMY_STATE_REQ",
+		62: "ECONOMY_STATE_RESP",
+		63: "ECONOMY_UPGRADE_REQ",
+		64: "ECONOMY_RANK_UP_REQ",
+		65: "ECONOMY_UNLOCK_REQ",
 	}
 	MsgId_value = map[string]int32{
 		"MSG_UNKNOWN":          0,
@@ -129,6 +139,11 @@ var (
 		"LEADERBOARD_TOP_REQ":  50,
 		"LEADERBOARD_TOP_RESP": 51,
 		"CONFIG_PUSH":          60,
+		"ECONOMY_STATE_REQ":    61,
+		"ECONOMY_STATE_RESP":   62,
+		"ECONOMY_UPGRADE_REQ":  63,
+		"ECONOMY_RANK_UP_REQ":  64,
+		"ECONOMY_UNLOCK_REQ":   65,
 	}
 )
 
@@ -179,6 +194,9 @@ const (
 	ErrorCode_ERR_BATTLE_ROOM_NOT_FOUND    ErrorCode = 400
 	ErrorCode_ERR_BATTLE_INVALID_DEPLOY    ErrorCode = 401
 	ErrorCode_ERR_BATTLE_HASH_MISMATCH     ErrorCode = 402
+	ErrorCode_ERR_ECONOMY_INSUFFICIENT     ErrorCode = 500 // V5-N4：金币/碎片不足
+	ErrorCode_ERR_ECONOMY_AT_CAP           ErrorCode = 501 // V5-N4：已达等级/阶上限
+	ErrorCode_ERR_ECONOMY_LOCKED           ErrorCode = 502 // V5-N4：卡未解锁 / 不满足解锁条件
 )
 
 // Enum value maps for ErrorCode.
@@ -200,6 +218,9 @@ var (
 		400: "ERR_BATTLE_ROOM_NOT_FOUND",
 		401: "ERR_BATTLE_INVALID_DEPLOY",
 		402: "ERR_BATTLE_HASH_MISMATCH",
+		500: "ERR_ECONOMY_INSUFFICIENT",
+		501: "ERR_ECONOMY_AT_CAP",
+		502: "ERR_ECONOMY_LOCKED",
 	}
 	ErrorCode_value = map[string]int32{
 		"ERR_OK":                       0,
@@ -218,6 +239,9 @@ var (
 		"ERR_BATTLE_ROOM_NOT_FOUND":    400,
 		"ERR_BATTLE_INVALID_DEPLOY":    401,
 		"ERR_BATTLE_HASH_MISMATCH":     402,
+		"ERR_ECONOMY_INSUFFICIENT":     500,
+		"ERR_ECONOMY_AT_CAP":           501,
+		"ERR_ECONOMY_LOCKED":           502,
 	}
 )
 
@@ -402,7 +426,7 @@ const file_common_proto_rawDesc = "" +
 	"\bnickname\x18\x02 \x01(\tR\bnickname\x12\x1b\n" +
 	"\tavatar_id\x18\x03 \x01(\x05R\bavatarId\x12\x14\n" +
 	"\x05level\x18\x04 \x01(\x05R\x05level\x12\x1a\n" +
-	"\btrophies\x18\x05 \x01(\x05R\btrophies*\xb6\x04\n" +
+	"\btrophies\x18\x05 \x01(\x05R\btrophies*\xaf\x05\n" +
 	"\x05MsgId\x12\x0f\n" +
 	"\vMSG_UNKNOWN\x10\x00\x12\b\n" +
 	"\x04PING\x10\x01\x12\b\n" +
@@ -436,7 +460,12 @@ const file_common_proto_rawDesc = "" +
 	"\x11BATTLE_END_REPORT\x100\x12\x17\n" +
 	"\x13LEADERBOARD_TOP_REQ\x102\x12\x18\n" +
 	"\x14LEADERBOARD_TOP_RESP\x103\x12\x0f\n" +
-	"\vCONFIG_PUSH\x10<*\x9f\x03\n" +
+	"\vCONFIG_PUSH\x10<\x12\x15\n" +
+	"\x11ECONOMY_STATE_REQ\x10=\x12\x16\n" +
+	"\x12ECONOMY_STATE_RESP\x10>\x12\x17\n" +
+	"\x13ECONOMY_UPGRADE_REQ\x10?\x12\x17\n" +
+	"\x13ECONOMY_RANK_UP_REQ\x10@\x12\x16\n" +
+	"\x12ECONOMY_UNLOCK_REQ\x10A*\xf0\x03\n" +
 	"\tErrorCode\x12\n" +
 	"\n" +
 	"\x06ERR_OK\x10\x00\x12\x10\n" +
@@ -454,7 +483,10 @@ const file_common_proto_rawDesc = "" +
 	"\x14ERR_MATCH_NOT_QUEUED\x10\xad\x02\x12\x1e\n" +
 	"\x19ERR_BATTLE_ROOM_NOT_FOUND\x10\x90\x03\x12\x1e\n" +
 	"\x19ERR_BATTLE_INVALID_DEPLOY\x10\x91\x03\x12\x1d\n" +
-	"\x18ERR_BATTLE_HASH_MISMATCH\x10\x92\x03BAZ?github.com/jchensh/godot-clash-pusher/server/internal/pb/commonb\x06proto3"
+	"\x18ERR_BATTLE_HASH_MISMATCH\x10\x92\x03\x12\x1d\n" +
+	"\x18ERR_ECONOMY_INSUFFICIENT\x10\xf4\x03\x12\x17\n" +
+	"\x12ERR_ECONOMY_AT_CAP\x10\xf5\x03\x12\x17\n" +
+	"\x12ERR_ECONOMY_LOCKED\x10\xf6\x03BAZ?github.com/jchensh/godot-clash-pusher/server/internal/pb/commonb\x06proto3"
 
 var (
 	file_common_proto_rawDescOnce sync.Once

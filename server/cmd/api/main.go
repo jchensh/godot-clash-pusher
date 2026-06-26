@@ -21,6 +21,8 @@ import (
 	"time"
 
 	"github.com/jchensh/godot-clash-pusher/server/internal/auth"
+	"github.com/jchensh/godot-clash-pusher/server/internal/economy"
+	"github.com/jchensh/godot-clash-pusher/server/internal/gameconfig"
 	"github.com/jchensh/godot-clash-pusher/server/internal/profile"
 	"github.com/jchensh/godot-clash-pusher/server/internal/store"
 	"github.com/jchensh/godot-clash-pusher/server/internal/version"
@@ -60,9 +62,26 @@ func main() {
 	authMW := auth.NewMiddleware(issuer)
 	profileH := profile.NewHandler(profile.NewRepo(db.Pool))
 
+	// V5-N3/N4 (决策 48)：服务器权威经济。从同一 config/ 读配置算成本（双份同源）。
+	cfgDir := os.Getenv("CONFIG_DIR")
+	if cfgDir == "" {
+		cfgDir = "/app/config"
+	}
+	bundle, err := gameconfig.Load(cfgDir)
+	if err != nil {
+		log.Fatalf("api: load config (%s): %v", cfgDir, err)
+	}
+	econCfg, err := economy.ParseConfig(bundle)
+	if err != nil {
+		log.Fatalf("api: parse economy config: %v", err)
+	}
+	economyH := economy.NewHandler(economy.NewRepo(db), econCfg)
+	log.Printf("api: economy config loaded (%d cards, cfg ver=%s)", len(econCfg.Cards), bundle.Version)
+
 	mux := http.NewServeMux()
 	authH.Mount(mux)
 	profileH.Mount(mux, authMW)
+	economyH.Mount(mux, authMW)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		if err := db.Ping(r.Context()); err != nil {
 			http.Error(w, "db down", http.StatusServiceUnavailable)

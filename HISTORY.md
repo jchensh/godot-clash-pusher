@@ -86,7 +86,8 @@
 | **V5-S4** | 卡牌升级（金币·数值曲线·等级上限受阶）+ 养成接进战斗（我方 per-card 乘区） | ✅ 完成（单测 **252/252**；Jira KAN-55） | `e73b348` |
 | **V5-S5** | 卡牌升阶（碎片+金币）+ 技能积木解锁机制（CardProgression ops：count/num/unit_field）+ golem 示范 | ✅ 完成（单测 **261/261**，V3 亡语零回归；Jira KAN-56） | `e73b348` |
 | **V5-S6** | 经济产出（首通/重复/通用奖励 + seeded shard_drop + 解锁新卡 + 挂机离线金币累计/封顶/领取） | ✅ 完成（单测 **270/270**；Jira KAN-57） | `e73b348` |
-| **V5-N1+N2** | 在线地基（决策 48）：持久 WS 会话（登录门/心跳/驱逐/重连）+ 配置服务器化（gameconfig 版本包 + 登录下发 + 客户端薄缓存） | ✅ 完成（客户端 274/274 + Go gameconfig/session 全绿；真 docker 端到端自验：82KB 配置下发+解析+up_to_date 重连；Jira KAN-60/61） | `本提交` |
+| **V5-N1+N2** | 在线地基（决策 48）：持久 WS 会话（登录门/心跳/驱逐/重连）+ 配置服务器化（gameconfig 版本包 + 登录下发 + 客户端薄缓存） | ✅ 完成（客户端 274/274 + Go gameconfig/session 全绿；真 docker 端到端自验：82KB 配置下发+解析+up_to_date 重连；Jira KAN-60/61） | `ada841e` |
+| **V5-N3+N4** | 服务器权威经济（决策 48）：状态 + DB（钱包/卡牌养成/关卡进度，懒播种）+ 结算动作（升级/升阶/解锁，服务器算成本+校验+扣+落库） | ✅ 完成（客户端 278/278 + Go economy 单测/集成全绿；真 docker 端到端：服务器播种/拒绝刷/扣费升级；Jira KAN-62/63） | `本提交` |
 
 > **当前阶段 = V4 联网升级 + 实时对战**（账号/匹配/PvP/赛季/排行榜；长期 F2P 但前期玩法验证不实现支付）。权威规划见 [PLAN_V4.md](PLAN_V4.md)；方向锁定见决策日志 46。**V1/V2/V3 全部完成**——V1 机制白膜 → V2 3-lane + 程序化换皮 + AI 难度 + 内容平衡 → V3 2D 战斗 reboot + 空军 + 新积木 + Roguelite 主轴 + 交互手感 + 精灵美术 + 音频骨架 + 难度 5 档 + 像素 UI 设计系统 + 新手战役 + 引导。V1/V2 详细见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)，V3 详细见 [docs/HISTORY_V3_DETAILED.md](docs/HISTORY_V3_DETAILED.md)。**V3-9 平衡剩余子项**（数值/节奏调优 + 设置/导出/上架打磨）与 V4 早期阶段（S0~S2 账号/档案）可并行。**V4-S0/S1 整体收官**：S0（7 commits / 6 子步 a~f）打底 + S1（1 commit / 5 子步 a~e）匿名 device_id 登录端到端通（客户端 UUID4 → protobuf → docker api → PG accounts/profiles → JWT/refresh → user://auth.cfg 落盘）。Jira KAN-36/KAN-37 同步 Done。**V4-S2 收官**：玩家档案云存档端到端通（客户端 `net/profile.gd` ↔ `/v4/profile/{get,deck-update}` ↔ PG decks/profiles；Bearer 令牌鉴权 + 乐观锁版本冲突 409 + 离线缓存兜底；顺带根治 godobuf `Deck` 与 V3 全局 `class_name Deck` 撞名隐患 → proto 改 `DeckMsg`，wire 不变）。Jira KAN-38 Done。**V4-S3 整阶段收官**：lockstep 实时对战网络层★（a 确定性地基 `Match.advance_tick`+`state_hash` → b 协议扩展+ladder 配置+matches 表 → c Go gateway WS+battle room → d 客户端 `net/ws_client`+`net/battle_client` → e 联机对战场景+LADDER 入口 → f 心跳+断线重连重放+超时认输 → **g 两台 Windows 真机对战验收通过**）。**端到端真 WebSocket 856 比对 0 分叉 + PG 战绩落库 + 断线重连重放恢复 + 真机完整对局实时同步胜负入库 → lockstep 整条路线（不重写 Go 战斗逻辑、两端各跑 logic+哈希对帐）验证成立**。Jira KAN-39 Done。**V4-S4 整阶段收官**：匹配（隐藏 MMR/ELO @1200 + Redis ZSET 队列 + 窗口放宽）——profiles 加 rating + ELO 结算 → Redis 匹配器 → Lobby 替代 Hub（FindMatch→配对→建房）→ 客户端匹配流程+会话+主菜单杯数 → 日志打点+真匹配 smoke → **两台 Windows 真机匹配验收通过**（room-2: acc 94 vs 97 ELO 配对+完整对局+MMR 1216/1184·杯数 ±30 入库）。Jira KAN-40 Done。**下一站**：V4-S5（赛季 + 排行榜，复用 Redis ZSET 做全球杯数榜）。联机对战仍矢量白膜（KAN-49）。
 
@@ -531,4 +532,15 @@
 - **端到端自验**（临时 harness `tools/_session_smoke.gd`，验后即删）：真 docker——登录 → 持久会话 WS → 收 82KB 配置（ver `2d6c03b…`，15 文件，cards 16 张 knight cost 3）→ 连接稳定 → 重连用缓存 cfgver → 服务器回 **up_to_date 不重发**。全通过。
 - **踩坑**：①客户端方法名 `is_connected()` 撞 Object 原生（签名不符警告升错）→ 改 `is_online()`。②配置包 82KB > WebSocketPeer 默认入站缓冲 64KB → 收不到大帧 → 调 2MB。③Bash cwd 跨命令保留（`cd server` 后 godot `--path .` 找不到 test_runner）。
 
-> **下一步 V5-N3（服务器经济状态 + DB）**：migrations（per-account wallet/养成/进度/挂机）+ 读取 API + 客户端 `net/economy.gd`。
+### V5-N3+N4 — 服务器权威经济状态 + 结算动作（已完成）
+**前置**：决策 48。把本地原型 S0~S6 的养成/经济搬上服务器做权威（Go + PG，复用 V4 库 + auth + httpx）。一起做、自验。
+- **proto**：`economy.proto`（`EconomyState`{wallet+卡牌+关卡} / `CardState` / `StageState` / `EconomyActionReq`）+ `common.proto` MsgId `ECONOMY_*=61~65` + ErrorCode `ERR_ECONOMY_INSUFFICIENT/AT_CAP/LOCKED=500~502`。双端重生成。
+- **N3 DB + 状态**：`migrations/0006_economy`（`economy_state` 钱包/货币/挂机/highest + `economy_cards` 每卡 level/rank/shards/unlocked + `economy_stages` 每关 stars/cleared，FK accounts CASCADE）。`internal/economy/repo.go`：`Get` 懒播种（首次访问 → 全卡 level1/rank1，starter 解锁，镜像 PlayerData.init_new）+ 读取。`GET /v5/economy/state`（Bearer，account 取自令牌）。
+- **N4 结算**：`internal/economy/config.go`（`ParseConfig` 从 bundle 的 economy.json + card_progression.json 解析曲线，镜像 player_data 的 cost/level_cap/rank_up/unlock）。`repo.go` `Upgrade`/`RankUp`/`Unlock`：单 tx `FOR UPDATE` 锁卡+state 行 → **服务器算成本 + 校验（解锁/上限/金币碎片够）+ 扣 + 落库**，拒绝映射 409 + 业务码。`POST /v5/economy/{upgrade,rank-up,unlock}`。
+- **客户端**：`net/economy_client.gd`（HTTP + protobuf + Bearer：`get_state`/`upgrade`/`rank_up`/`unlock`，返回服务器状态快照或业务错误码）。
+- **api 接线**：`cmd/api` 加载 gameconfig + ParseConfig + 挂经济路由；compose 把 `../config` 也挂进 api（双份同源，服务器用它算成本）。
+- **测试**：Go `economy` config（成本/上限/真实 16 卡）+ repo 集成（PG：播种 16 卡 8 解锁 / 升级扣金币 / 升阶扣碎片抬上限 / 解锁 / 上限拒·不足拒·未知卡拒）；客户端 `tests/test_net_economy.gd`（4）。**客户端 278/278**；Go 全绿。
+- **端到端自验**（临时 harness，验后即删）：真 docker——登录 → 拉状态（服务器播种 16 卡 / 8 starter 解锁 / gold 0）→ 升级 knight **被服务器拒绝**（gold 0，ERR_ECONOMY_INSUFFICIENT，证明客户端刷不了）→ 服务器侧授金币 → 再升级 **服务器扣 gold 10000→9920、knight level→2**。全通过。
+- **踩坑**：①`docker compose build api` 是 no-op（只有 gateway 有 `build:`，api 共享镜像）→ 改 build gateway 重建 `gcp-server:dev`。②login 的 `account_id` 在 V4-S1 服务端恒 0（smoke 授金币改用 device_id join accounts）。
+
+> **下一步 V5-N5（通关发奖 + sanity 校验）**：客户端上报 (stage_id, stars)，服务器校验（关卡已解锁/进度连续）+ 发首通/重复奖励 + 记进度（`economy_stages`）。

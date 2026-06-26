@@ -61,6 +61,9 @@ services:
       DB_URL: ${DB_URL:-postgres://app:dev@postgres:5432/gcp?sslmode=disable}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       JWT_SECRET: ${JWT_SECRET:-dev-only-change-me}
+      CONFIG_DIR: /app/config
+    volumes:
+      - ../config:/app/config:ro   # V5-N3/N4 (决策 48)：服务器权威经济用同一配置算成本
     depends_on:
       gateway:
         condition: service_started

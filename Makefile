@@ -29,7 +29,7 @@ GODOT          ?= /c/Users/user/AppData/Local/Microsoft/WinGet/Links/godot_conso
 GODOT_TMP_HOME ?= /private/tmp/godot-home
 
 # Proto file base names (no path, no extension). Hardcoded for stable iteration order.
-PROTO_NAMES := common auth profile match battle leaderboard session
+PROTO_NAMES := common auth profile match battle leaderboard session economy
 
 help:
 	@echo "V4 Makefile targets:"
