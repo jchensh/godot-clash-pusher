@@ -91,6 +91,14 @@ TARGETS = ["first_enemy_in_lane"]
 SIDES = ["player", "ai"]
 DIFFICULTIES = ["rookie", "easy", "normal", "hard", "extreme"]
 
+# 结构性关卡（不进 Excel 镜像，比照 arena.json）：天梯固定对战配置（V4 加在 levels.json）
+# 不是策划在 Excel 里调的关卡，只活在 JSON。check / --from-json / 反生成三个方向都跳过这些前缀。
+MIRROR_EXCLUDED_LEVEL_PREFIXES = ("ladder_",)
+
+
+def _is_excel_mirrored_level(level_id: Any) -> bool:
+    return not str(level_id).startswith(MIRROR_EXCLUDED_LEVEL_PREFIXES)
+
 
 class ConfigError(RuntimeError):
     pass
@@ -319,6 +327,12 @@ def write_json_outputs(cards: dict[str, Any], units: dict[str, Any], levels: dic
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     _write_json(CARDS_JSON, cards)
     _write_json(UNITS_JSON, units)
+    # 结构性关卡（ladder_*）只活在 levels.json、不进 Excel；从 Excel 反生成 JSON 时保留它们，
+    # 避免一跑 build（Excel→JSON）就把天梯关从 levels.json 删掉。
+    if LEVELS_JSON.exists():
+        for lid, lv in _load_json(LEVELS_JSON).items():
+            if not _is_excel_mirrored_level(lid):
+                levels[lid] = lv
     _write_json(LEVELS_JSON, levels)
 
 
@@ -408,6 +422,8 @@ def workbook_from_json(workbook_path: Path = WORKBOOK_PATH) -> None:
     ws_levels = wb.create_sheet("Levels")
     _setup_sheet(ws_levels, LEVEL_HEADERS, {"level_id": 16, "name": 14, "ai_difficulty": 16, "notes": 26})
     for level_id, level in levels.items():
+        if not _is_excel_mirrored_level(level_id):
+            continue   # 结构性关卡（ladder_*）不写进 Excel 镜像
         tower_hp = level.get("tower_hp", {})
         ws_levels.append(
             [
@@ -427,6 +443,8 @@ def workbook_from_json(workbook_path: Path = WORKBOOK_PATH) -> None:
     ws_decks = wb.create_sheet("Decks")
     _setup_sheet(ws_decks, DECK_HEADERS, {"level_id": 16, "side": 12, "notes": 26})
     for level_id, level in levels.items():
+        if not _is_excel_mirrored_level(level_id):
+            continue   # 结构性关卡（ladder_*）不写进 Excel 镜像
         ws_decks.append([level_id, "player", *level.get("player_deck", []), ""])
         ws_decks.append([level_id, "ai", *level.get("ai_deck", []), ""])
     _add_list_validation(ws_decks, "side", SIDES)
@@ -482,10 +500,13 @@ def workbook_from_json(workbook_path: Path = WORKBOOK_PATH) -> None:
 
 
 def check_outputs(cards: dict[str, Any], units: dict[str, Any], levels: dict[str, Any]) -> None:
+    disk_levels = _load_json(LEVELS_JSON)
+    # 结构性关卡（ladder_*）不进 Excel 镜像；比较时两边都只看"被镜像"的关卡。
+    disk_levels_mirrored = {k: v for k, v in disk_levels.items() if _is_excel_mirrored_level(k)}
     current = {
         "cards.json": _load_json(CARDS_JSON),
         "units.json": _load_json(UNITS_JSON),
-        "levels.json": _load_json(LEVELS_JSON),
+        "levels.json": disk_levels_mirrored,
     }
     generated = {"cards.json": cards, "units.json": units, "levels.json": levels}
     mismatches = [name for name in generated if generated[name] != current[name]]
