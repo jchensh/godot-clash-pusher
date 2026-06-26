@@ -57,6 +57,14 @@ func _make_player(owner_id: int, deck_ids: Array, emax: float, regen: float, est
 	var deck = DeckScript.new(deck_ids)
 	return PlayerScript.new(owner_id, elixir, deck, config, skill_system)
 
+# V5-S1：注入双方出兵数值乘区——我方 power_mult（卡 level/rank，V5-S4/5）/ 敌方 coef（关卡难度系数，V5-S3）。
+# 仅缩放 spawn 的单位 hp/damage，不动 speed/range/tick。默认双方 1.0（行为同改前）。
+func set_stat_mults(player_mult: float = 1.0, opponent_mult: float = 1.0) -> void:
+	if player != null:
+		player.unit_stat_mult = player_mult
+	if opponent != null:
+		opponent.unit_stat_mult = opponent_mult
+
 # 注入对手控制器（规则 AI）。不注入则对手被动（Step 7 行为）。
 func set_opponent_controller(controller) -> void:
 	opponent_controller = controller

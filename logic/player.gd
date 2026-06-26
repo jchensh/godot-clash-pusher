@@ -14,6 +14,7 @@ var elixir            # Elixir
 var deck              # Deck
 var config            # ConfigLoader：查卡牌 elixir_cost
 var skill_system      # SkillSystem：执行技能积木
+var unit_stat_mult: float = 1.0   # V5-S1：本方出兵数值乘区（hp/damage），由 Match 注入；默认 1.0（行为同改前）
 
 func _init(owner_id_ = 0, elixir_ = null, deck_ = null, config_ = null, skill_system_ = null) -> void:
 	owner_id = owner_id_
@@ -64,7 +65,7 @@ func try_play_card(hand_index: int, pos: Vector2 = Vector2.ZERO) -> bool:
 	if not elixir.spend(float(cost)):
 		return false
 	deck.play(hand_index)
-	skill_system.play_card(card_id, owner_id, pos)
+	skill_system.play_card(card_id, owner_id, pos, unit_stat_mult)
 	return true
 
 # 该卡是否会生成单位（含 spawn_unit 积木）。纯伤害法术（fireball/arrows/zap）返回 false。
