@@ -2,7 +2,7 @@
 
 竖屏「皇室战争式对推小游戏」，**Godot 4.6.3 / GDScript**（客户端）+ **Go**（服务端），**Windows 开发**（早期 V1/V2 历史在 macOS）。**当前定位（决策 48，2026-06-26 起）= 实时在线 F2P 商业手游**：进游戏强制登录 + 持久连接、**服务器唯一权威**（账号/钱包/养成/进度/配置全在服务器 + PG DB）、客户端为瘦表现层（UI + 客户端 lockstep 战斗 sim + 非权威缓存）、**断线即不可玩**。玩法：圣水 + 循环卡组、**2D 场地自由部署、绕桥推塔决胜**；PvE 在线闯关养成（100+ 关 + 货币经济 + 卡牌升级/升阶 + 挂机）+ PvP lockstep 联网对战。早期 V1~V3「买断/单机」与决策 47「单机本地」**已被决策 48 取代**。
 
-> **编码前必读**：[PLAN_GRAND.md](PLAN_GRAND.md)（全项目 roadmap）→ [PLAN_V5.md](PLAN_V5.md)（**当前阶段权威规划：单机闯关养成**）；[PLAN_V4.md](PLAN_V4.md)（V4 联网线，S0~S4 完成、S5+ 暂缓）；[docs/PLAN_V3.md](docs/PLAN_V3.md) / [docs/PLAN_V2.md](docs/PLAN_V2.md) / [docs/PLAN_V1.md](docs/PLAN_V1.md) 是已完成阶段的规格（存档备查）。本文件只是操作手册，当前阶段规格以 PLAN_V5.md 为准。
+> **编码前必读**：[PLAN_GRAND.md](PLAN_GRAND.md)（全项目 roadmap）→ [PLAN_V5.md](PLAN_V5.md)（**当前阶段权威规划：实时在线 F2P 闯关养成**）；[PLAN_V4.md](PLAN_V4.md)（V4 联网线，S0~S4 完成、转 V5 主干）；[docs/PLAN_V3.md](docs/PLAN_V3.md) / [docs/PLAN_V2.md](docs/PLAN_V2.md) / [docs/PLAN_V1.md](docs/PLAN_V1.md) 是已完成阶段的规格（存档备查）。本文件只是操作手册，当前阶段规格以 PLAN_V5.md 为准。
 
 ## 开发纪律（最高优先级）
 - **一步一确认**：严格按 PLAN_V5.md 的施工图步骤顺序；**每完成一步停下等用户确认**，再进下一步，不要一次做多步。
@@ -88,7 +88,7 @@ godot --path . -e                                                               
 
 项目用 **Jira project `KAN`**（站点 `jchensh.atlassian.net`）作为 PM 真相源，与 [HISTORY.md](HISTORY.md) 并列：HISTORY.md 记**叙事/决策/踩坑**，Jira 记**结构化进度看板**。读写经 **Atlas（Atlassian）MCP 连接器**——**Claude Code 与 Codex 都必须装该 MCP**；没连上就停下提示用户装，**不要静默跳过 Jira 维护**。安装/注册/连通性检查见 [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
-- **层级映射**（团队管理项目，Epic 下只有一层，故不用 Feature）：**Epic = 版本线**（V1=`KAN-5` / V2=`KAN-6` / V3=`KAN-7` / V4=`KAN-8`）；**Story = 玩法/玩家价值步**；**Task = 工程/基建步**；**Bug = 回归修复**。小步（a/b/c）按中粒度折进 issue 描述，不单独建 Subtask（除非用户要求）。
+- **层级映射**（团队管理项目，Epic 下只有一层，故不用 Feature）：**Epic = 版本线**（V1=`KAN-5` / V2=`KAN-6` / V3=`KAN-7` / V4=`KAN-8` / **V5=`KAN-50`**）；**Story = 玩法/玩家价值步**；**Task = 工程/基建步**；**Bug = 回归修复**。小步（a/b/c）按中粒度折进 issue 描述，不单独建 Subtask（除非用户要求）。
 - **状态语义（按状态名理解，不看 Jira 内部 category）**：`Idea` = 构思中可能不做（建单默认）；`To Do` = 已明确排进计划、确定要做；`In Progress` = 正在开发中；`Done` = 做完且测过、**经用户同意**。
 - **生命周期（主动维护，与「一步一确认」一致）**：①规划建单 → ②开工改 `In Progress` → ③完成 + 测过 + 用户同意 → 改 `Done`。改 `Done` 与 `git commit` 同属需用户拍板的收尾动作。
 

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"sort"
 	"strconv"
 
 	"github.com/jchensh/godot-clash-pusher/server/internal/gameconfig"
@@ -18,6 +19,30 @@ type RankCost struct {
 	Gold   int
 }
 
+// Reward is a fixed gold/gems/shards payout (from first_clear / repeat).
+type Reward struct {
+	Gold   int
+	Gems   int
+	Shards map[string]int // card_id -> amount
+}
+
+// ShardDrop is a probabilistic per-card shard drop on stage clear.
+type ShardDrop struct {
+	Chance float64 // 0~1
+	Amount int
+}
+
+// Stage is one level's definition (parsed from stages.json). 镜像 player_data.grant_stage_reward.
+type Stage struct {
+	Chapter    int
+	Index      int
+	Coef       float64
+	FirstClear Reward
+	Repeat     Reward
+	ShardDrop  map[string]ShardDrop // card_id -> {chance, amount}
+	starCap    int                  // len(stars)；缺省 3
+}
+
 // CardMeta from card_progression.json.
 type CardMeta struct {
 	Rarity    string
@@ -26,7 +51,8 @@ type CardMeta struct {
 }
 
 // Config mirrors the养成/经济 curves the server needs to settle actions
-// (parsed from the gameconfig bundle's economy.json + card_progression.json).
+// (parsed from the gameconfig bundle's economy.json + card_progression.json +
+// stages.json — N5 起通关发奖需读 stages 的奖励/掉落/星数上限).
 type Config struct {
 	LevelStatPerLevel float64
 	RankStatMult      float64
@@ -36,6 +62,8 @@ type Config struct {
 	RankUp            map[string][]RankCost
 	UnlockShards      map[string]int
 	Cards             map[string]CardMeta
+	Stages            map[string]Stage
+	orderedStages     []string // stage_id 按 (chapter,index) 升序；线性解锁/防跳关用
 	maxRank           int
 }
 
@@ -114,6 +142,74 @@ func ParseConfig(b *gameconfig.Bundle) (*Config, error) {
 	if len(cfg.Cards) == 0 {
 		return nil, fmt.Errorf("card_progression.json has no cards")
 	}
+
+	// stages.json（N5 通关发奖用）：{stage_id:{chapter,index,difficulty_coef,stars:[...],
+	// first_clear/repeat:{gold,gems,shards:{card:n}}, shard_drop:{card:{chance,amount}}}}.
+	// 跳过 _ 开头元字段；缺 stars → starCap 默认 3。
+	stagesRaw, ok := b.File("stages.json")
+	if ok {
+		var stagesMap map[string]json.RawMessage
+		if err := json.Unmarshal(stagesRaw, &stagesMap); err != nil {
+			return nil, fmt.Errorf("parse stages.json: %w", err)
+		}
+		cfg.Stages = map[string]Stage{}
+		for id, raw := range stagesMap {
+			if len(id) > 0 && id[0] == '_' {
+				continue
+			}
+			var s struct {
+				Chapter int     `json:"chapter"`
+				Index   int     `json:"index"`
+				Coef    float64 `json:"difficulty_coef"`
+				Stars   []any   `json:"stars"`
+				First   struct {
+					Gold   int            `json:"gold"`
+					Gems   int            `json:"gems"`
+					Shards map[string]int `json:"shards"`
+				} `json:"first_clear"`
+				Repeat struct {
+					Gold   int            `json:"gold"`
+					Gems   int            `json:"gems"`
+					Shards map[string]int `json:"shards"`
+				} `json:"repeat"`
+				Drop map[string]struct {
+					Chance float64 `json:"chance"`
+					Amount int     `json:"amount"`
+				} `json:"shard_drop"`
+			}
+			if json.Unmarshal(raw, &s) != nil {
+				continue
+			}
+			st := Stage{
+				Chapter: s.Chapter, Index: s.Index, Coef: s.Coef,
+				FirstClear: Reward{Gold: s.First.Gold, Gems: s.First.Gems, Shards: s.First.Shards},
+				Repeat:     Reward{Gold: s.Repeat.Gold, Gems: s.Repeat.Gems, Shards: s.Repeat.Shards},
+				ShardDrop:  map[string]ShardDrop{},
+				starCap:    3,
+			}
+			if len(s.Stars) > 0 {
+				st.starCap = len(s.Stars)
+			}
+			for cid, d := range s.Drop {
+				st.ShardDrop[cid] = ShardDrop{Chance: d.Chance, Amount: d.Amount}
+			}
+			cfg.Stages[id] = st
+		}
+		// 有序序列：按 (chapter, index) 升序（镜像 StageProgress.build）。
+		ids := make([]string, 0, len(cfg.Stages))
+		for id := range cfg.Stages {
+			ids = append(ids, id)
+		}
+		sort.Slice(ids, func(i, j int) bool {
+			a, b := cfg.Stages[ids[i]], cfg.Stages[ids[j]]
+			if a.Chapter != b.Chapter {
+				return a.Chapter < b.Chapter
+			}
+			return a.Index < b.Index
+		})
+		cfg.orderedStages = ids
+	}
+
 	return cfg, nil
 }
 
@@ -159,4 +255,41 @@ func (c *Config) UnlockCost(rarity string) (int, bool) {
 func (c *Config) Rarity(cardID string) (string, bool) {
 	cm, ok := c.Cards[cardID]
 	return cm.Rarity, ok
+}
+
+// —— Stage 查询（N5 通关发奖 / 防跳关用） ——
+
+// Stage returns one stage's definition (and whether it exists).
+func (c *Config) Stage(id string) (Stage, bool) {
+	s, ok := c.Stages[id]
+	return s, ok
+}
+
+// OrderedStageIDs returns stage_ids sorted by (chapter, index) ascending.
+func (c *Config) OrderedStageIDs() []string {
+	out := make([]string, len(c.orderedStages))
+	copy(out, c.orderedStages)
+	return out
+}
+
+// PrevStage returns the stage immediately before id in the linear sequence
+// (and whether id has a predecessor — first stage has none).
+func (c *Config) PrevStage(id string) (string, bool) {
+	for i, sid := range c.orderedStages {
+		if sid == id {
+			if i == 0 {
+				return "", false
+			}
+			return c.orderedStages[i-1], true
+		}
+	}
+	return "", false
+}
+
+// StarCap returns the max stars for a stage (len of its stars config, default 3).
+func (c *Config) StarCap(id string) int {
+	if s, ok := c.Stages[id]; ok {
+		return s.starCap
+	}
+	return 0
 }

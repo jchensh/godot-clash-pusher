@@ -1,11 +1,12 @@
-// economy.proto — V5-N3/N4（决策 48）：服务器权威经济状态 + 结算动作。
+// economy.proto — V5-N3/N4/N5（决策 48）：服务器权威经济状态 + 结算动作。
 //
 // HTTP（api:8080，Bearer 会话令牌）：
-//   GET  /v5/economy/state    → EconomyState
-//   POST /v5/economy/upgrade  EconomyActionReq{card_id} → EconomyState（升级）
-//   POST /v5/economy/rank-up  EconomyActionReq{card_id} → EconomyState（升阶）
-//   POST /v5/economy/unlock   EconomyActionReq{card_id} → EconomyState（解锁）
-// 成本/上限/解锁门槛全在服务器用服务器侧配置算（改本地无效）。
+//   GET  /v5/economy/state          → EconomyState
+//   POST /v5/economy/upgrade        EconomyActionReq{card_id} → EconomyState（升级）
+//   POST /v5/economy/rank-up        EconomyActionReq{card_id} → EconomyState（升阶）
+//   POST /v5/economy/unlock         EconomyActionReq{card_id} → EconomyState（解锁）
+//   POST /v5/economy/stage-clear    StageClearReq{stage_id,stars} → EconomyState（N5 通关发奖）
+// 成本/上限/解锁门槛/进度连续/星数上限全在服务器用服务器侧配置算（改本地无效）。
 
 syntax = "proto3";
 
@@ -39,4 +40,11 @@ message EconomyState {
 // upgrade / rank_up / unlock 共用（按 HTTP 路径区分动作）。
 message EconomyActionReq {
   string card_id = 1;
+}
+
+// N5 通关上报：客户端把 (stage_id, stars) 报上来，服务器 sanity 校验（关卡存在/
+// stars≥1/stars≤配置上限/进度连续防跳关）+ 发首通/重复奖励 + 记进度，回新 EconomyState。
+message StageClearReq {
+  string stage_id = 1;
+  int32 stars = 2;   // 0=未取胜（拒）；≥1=通关星数（不能超该关 stars 配置条数）
 }

@@ -30,6 +30,14 @@ func rank_up(http: HTTPRequest, token: String, card_id: String) -> Dictionary:
 func unlock(http: HTTPRequest, token: String, card_id: String) -> Dictionary:
 	return await _action(http, "/v5/economy/unlock", token, card_id)
 
+## V5-N5：上报通关结果。服务器 sanity 校验（关存在/stars≥1/stars≤上限/线性解锁）+
+## 发首通/重复奖励 + 记进度，回新 EconomyState。失败返回 {ok:false, error_code,...}。
+func report_stage_clear(http: HTTPRequest, token: String, stage_id: String, stars: int) -> Dictionary:
+	var req = EconomyProto.StageClearReq.new()
+	req.set_stage_id(stage_id)
+	req.set_stars(stars)
+	return await _request(http, "POST", "/v5/economy/stage-clear", token, req.to_bytes())
+
 
 func _action(http: HTTPRequest, path: String, token: String, card_id: String) -> Dictionary:
 	var req = EconomyProto.EconomyActionReq.new()

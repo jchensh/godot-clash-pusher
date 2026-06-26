@@ -29,6 +29,19 @@ func loadCfg(t *testing.T) *economy.Config {
 	}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	if err := os.WriteFile(filepath.Join(dir, "stages.json"), []byte(`{
+		"_comment":"x",
+		"stage_1_1":{"chapter":1,"index":1,"difficulty_coef":1.0,
+			"first_clear":{"gold":300,"gems":5,"shards":{}},
+			"repeat":{"gold":30},
+			"shard_drop":{"knight":{"chance":0.5,"amount":1}}},
+		"stage_1_2":{"chapter":1,"index":2,"difficulty_coef":1.05,
+			"first_clear":{"gold":320,"gems":0,"shards":{"golem":3}},
+			"repeat":{"gold":32},
+			"shard_drop":{}}
+	}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	b, err := gameconfig.Load(dir)
 	if err != nil {
 		t.Fatal(err)
@@ -92,5 +105,63 @@ func TestParse_RealConfig(t *testing.T) {
 	}
 	if r, _ := cfg.Rarity("golem"); r != "legendary" {
 		t.Fatalf("golem rarity=%s", r)
+	}
+	// stages.json 也应被解析：真实 config 有 stage_1_1 / stage_1_2。
+	if _, ok := cfg.Stage("stage_1_1"); !ok {
+		t.Fatal("real config missing stage_1_1")
+	}
+	if ids := cfg.OrderedStageIDs(); len(ids) < 2 {
+		t.Fatalf("real config stages=%d (want >=2)", len(ids))
+	}
+}
+
+// stages.json 解析：有序序列 + reward/drop 查询 + stars 上限。
+func TestParseStages(t *testing.T) {
+	cfg := loadCfg(t)
+
+	// 有序序列：stage_1_1 在前、stage_1_2 在后。
+	ids := cfg.OrderedStageIDs()
+	if len(ids) != 2 || ids[0] != "stage_1_1" || ids[1] != "stage_1_2" {
+		t.Fatalf("ordered ids=%v", ids)
+	}
+	// 前驱查询：第一关无前驱，第二关前驱 = 第一关。
+	if prev, ok := cfg.PrevStage("stage_1_1"); ok {
+		t.Fatalf("stage_1_1 should have no prev, got %q", prev)
+	}
+	if prev, ok := cfg.PrevStage("stage_1_2"); !ok || prev != "stage_1_1" {
+		t.Fatalf("stage_1_2 prev=%q ok=%v", prev, ok)
+	}
+	// 未知关卡。
+	if _, ok := cfg.Stage("nope"); ok {
+		t.Fatal("unknown stage should be absent")
+	}
+	if _, ok := cfg.PrevStage("nope"); ok {
+		t.Fatal("unknown stage prev should be absent")
+	}
+
+	// stage_1_2 first_clear 含 golem:3 碎片。
+	s, _ := cfg.Stage("stage_1_2")
+	if s.FirstClear.Gold != 320 || s.FirstClear.Gems != 0 {
+		t.Fatalf("stage_1_2 first_clear=%+v", s.FirstClear)
+	}
+	if s.FirstClear.Shards["golem"] != 3 {
+		t.Fatalf("stage_1_2 first_clear shards=%+v", s.FirstClear.Shards)
+	}
+	// repeat。
+	if s.Repeat.Gold != 32 || len(s.Repeat.Shards) != 0 {
+		t.Fatalf("stage_1_2 repeat=%+v", s.Repeat)
+	}
+	// shard_drop：stage_1_1 knight 50% 掉 1。
+	s1, _ := cfg.Stage("stage_1_1")
+	if len(s1.ShardDrop) != 1 {
+		t.Fatalf("stage_1_1 drop len=%d", len(s1.ShardDrop))
+	}
+	d := s1.ShardDrop["knight"]
+	if d.Chance != 0.5 || d.Amount != 1 {
+		t.Fatalf("knight drop=%+v", d)
+	}
+	// stars 上限：两关都没显式 stars 配置 → 默认 3。
+	if cfg.StarCap("stage_1_1") != 3 {
+		t.Fatalf("stage_1_1 starcap=%d", cfg.StarCap("stage_1_1"))
 	}
 }

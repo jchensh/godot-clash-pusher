@@ -3,7 +3,9 @@ package economy
 import (
 	"context"
 	"errors"
+	"math/rand"
 	"sort"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jchensh/godot-clash-pusher/server/internal/store"
@@ -15,6 +17,12 @@ var (
 	ErrAtCap        = errors.New("at level/rank cap")
 	ErrLocked       = errors.New("card locked or not unlockable")
 	ErrUnknownCard  = errors.New("unknown card")
+
+	// N5 通关发奖拒绝原因（0星/超上限/未知关 → ERR_INVALID_ARG；跳关 → ERR_ECONOMY_STAGE_LOCKED）。
+	ErrInvalidStars = errors.New("stars must be >= 1")
+	ErrTooManyStars = errors.New("stars exceed stage star cap")
+	ErrUnknownStage = errors.New("unknown stage")
+	ErrStageLocked  = errors.New("stage not unlocked: previous stage not cleared")
 )
 
 type CardRow struct {
@@ -142,6 +150,174 @@ func (r *Repo) Unlock(ctx context.Context, accountID int64, cardID string, cfg *
 		return nil
 	})
 }
+
+// StageClear settles a stage-clear report (V5-N5)：客户端上报 (stageID, stars)，
+// 服务器 sanity 校验（关存在 / stars≥1 / stars≤starCap / 线性解锁防跳关）+ 发首通/重复
+// 奖励（含 shard_drop 概率掉落）+ 记进度（stars 取 max、cleared=true、刷 highest_cleared）。
+// 返回新状态。校验/发奖全服务器权威（镜像 player_data.grant_stage_reward + stage_progress）。
+func (r *Repo) StageClear(ctx context.Context, accountID int64, stageID string, stars int, cfg *Config) (State, error) {
+	stage, ok := cfg.Stage(stageID)
+	if !ok {
+		return State{}, ErrUnknownStage
+	}
+	if stars < 1 {
+		return State{}, ErrInvalidStars
+	}
+	if stars > cfg.StarCap(stageID) {
+		return State{}, ErrTooManyStars
+	}
+	// 线性解锁：第一关恒可；其余要求前一关已 cleared。
+	if prev, hasPrev := cfg.PrevStage(stageID); hasPrev {
+		cleared, err := r.isStageCleared(ctx, accountID, prev)
+		if err != nil {
+			return State{}, err
+		}
+		if !cleared {
+			return State{}, ErrStageLocked
+		}
+	}
+
+	tx, err := r.db.Pool.Begin(ctx)
+	if err != nil {
+		return State{}, err
+	}
+	defer tx.Rollback(ctx)
+	if err := ensureSeeded(ctx, tx, accountID, cfg); err != nil {
+		return State{}, err
+	}
+
+	// 锁住 stage 行 + state 行（FOR UPDATE）。
+	var prevStars int
+	var alreadyCleared bool
+	err = tx.QueryRow(ctx,
+		`SELECT stars, cleared FROM economy_stages WHERE account_id=$1 AND stage_id=$2 FOR UPDATE`,
+		accountID, stageID).Scan(&prevStars, &alreadyCleared)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return State{}, err
+	}
+	if errors.Is(err, pgx.ErrNoRows) {
+		prevStars, alreadyCleared = 0, false
+	}
+
+	var gold, gems int64
+	if err := tx.QueryRow(ctx,
+		`SELECT gold, gems FROM economy_state WHERE account_id=$1 FOR UPDATE`, accountID).
+		Scan(&gold, &gems); err != nil {
+		return State{}, err
+	}
+
+	// 发奖：首通(未通) = first_clear；重复(已通) = repeat。两者都叠加 shard_drop 概率掉落。
+	reward := stage.Repeat
+	if !alreadyCleared {
+		reward = stage.FirstClear
+	}
+	gold += int64(reward.Gold)
+	gems += int64(reward.Gems)
+	// 固定碎片（first_clear/repeat 的 shards:{card:n}）——镜像 player_data.grant_reward._add_shards。
+	for cid, n := range reward.Shards {
+		if n <= 0 {
+			continue
+		}
+		if _, err := tx.Exec(ctx,
+			`UPDATE economy_cards SET shards=shards+$3 WHERE account_id=$1 AND card_id=$2`,
+			accountID, cid, n); err != nil {
+			return State{}, err
+		}
+	}
+
+	// 写/更新 stage 进度（stars 取 max、cleared=true）。
+	newStars := prevStars
+	if stars > newStars {
+		newStars = stars
+	}
+	if _, err := tx.Exec(ctx,
+		`INSERT INTO economy_stages (account_id, stage_id, stars, cleared) VALUES ($1,$2,$3,TRUE)
+		 ON CONFLICT (account_id, stage_id) DO UPDATE SET stars=EXCLUDED.stars, cleared=TRUE`,
+		accountID, stageID, newStars); err != nil {
+		return State{}, err
+	}
+
+	// 刷 highest_cleared：在新 cleared 集合里按有序序列取最后一个 cleared。
+	highest, err := computeHighestCleared(ctx, tx, accountID, cfg)
+	if err != nil {
+		return State{}, err
+	}
+
+	// shard_drop 概率掉落 + 更新对应卡碎片（首通/重复都掉）。
+	for cid, drop := range stage.ShardDrop {
+		if drop.Amount <= 0 || rng().Float64() >= drop.Chance {
+			continue
+		}
+		if _, err := tx.Exec(ctx,
+			`UPDATE economy_cards SET shards=shards+$3 WHERE account_id=$1 AND card_id=$2`,
+			accountID, cid, drop.Amount); err != nil {
+			return State{}, err
+		}
+	}
+
+	if _, err := tx.Exec(ctx,
+		`UPDATE economy_state SET gold=$2, gems=$3, highest_cleared=$4, updated_at=NOW() WHERE account_id=$1`,
+		accountID, gold, gems, highest); err != nil {
+		return State{}, err
+	}
+
+	st, err := readState(ctx, tx, accountID)
+	if err != nil {
+		return State{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return State{}, err
+	}
+	return st, nil
+}
+
+// isStageCleared reads (without lock) whether a stage is already cleared.
+func (r *Repo) isStageCleared(ctx context.Context, accountID int64, stageID string) (bool, error) {
+	var cleared bool
+	err := r.db.Pool.QueryRow(ctx,
+		`SELECT cleared FROM economy_stages WHERE account_id=$1 AND stage_id=$2`,
+		accountID, stageID).Scan(&cleared)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	return cleared, err
+}
+
+// computeHighestCleared returns the last cleared stage_id in the ordered sequence.
+func computeHighestCleared(ctx context.Context, tx pgx.Tx, accountID int64, cfg *Config) (string, error) {
+	ordered := cfg.OrderedStageIDs()
+	if len(ordered) == 0 {
+		return "", nil
+	}
+	rows, err := tx.Query(ctx,
+		`SELECT stage_id FROM economy_stages WHERE account_id=$1 AND cleared=TRUE`, accountID)
+	if err != nil {
+		return "", err
+	}
+	cleared := map[string]bool{}
+	for rows.Next() {
+		var sid string
+		if err := rows.Scan(&sid); err != nil {
+			rows.Close()
+			return "", err
+		}
+		cleared[sid] = true
+	}
+	rows.Close()
+	highest := ""
+	for _, sid := range ordered {
+		if cleared[sid] {
+			highest = sid
+		}
+	}
+	return highest, nil
+}
+
+// rng returns a package-level random source (非 lockstep 路径，无需确定性——
+// shard_drop 是服务端权威的产出概率，客户端只收结果)。
+var globalRand = rand.New(rand.NewSource(time.Now().UnixNano()))
+
+func rng() *rand.Rand { return globalRand }
 
 type cardLock struct {
 	level, rank, shards int

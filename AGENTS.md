@@ -1,11 +1,11 @@
 # AGENTS.md
 
-竖屏「皇室战争式对推小游戏」，**Godot 4.6.3 / GDScript**（客户端）+ **Go**（V4 起服务端），**Windows 开发**（早期 V1/V2 历史在 macOS）。玩家 vs 规则 AI（V3 完）/ 玩家 vs 玩家（V4 起，lockstep 联网）；圣水 + 循环卡组、**2D 场地自由部署、绕桥推塔决胜**；单机：短战役 + Roguelite（V3 已完，留作单人训练营）；联机：天梯 + 赛季 + 排行榜（V4 玩法验证阶段）。长期 F2P，但前期不实现支付。
+竖屏「皇室战争式对推小游戏」，**Godot 4.6.3 / GDScript**（客户端）+ **Go**（服务端），**Windows 开发**（早期 V1/V2 历史在 macOS）。**当前定位（决策 48，2026-06-26 起）= 实时在线 F2P 商业手游**：进游戏强制登录 + 持久连接、**服务器唯一权威**（账号/钱包/养成/进度/配置全在服务器 + PG DB）、客户端为瘦表现层（UI + 客户端 lockstep 战斗 sim + 非权威缓存）、**断线即不可玩**。玩法：圣水 + 循环卡组、**2D 场地自由部署、绕桥推塔决胜**；PvE 在线闯关养成（100+ 关 + 货币经济 + 卡牌升级/升阶 + 挂机）+ PvP lockstep 联网对战。早期 V1~V3「买断/单机」与决策 47「单机本地」**已被决策 48 取代**。
 
-> **编码前必读**：[PLAN_GRAND.md](PLAN_GRAND.md)（全项目 roadmap）→ [PLAN_V4.md](PLAN_V4.md)（**当前阶段权威规划**）；[docs/PLAN_V3.md](docs/PLAN_V3.md) / [docs/PLAN_V2.md](docs/PLAN_V2.md) / [docs/PLAN_V1.md](docs/PLAN_V1.md) 是已完成阶段的规格（存档备查）。本文件只是操作手册，当前阶段规格以 PLAN_V4.md 为准。
+> **编码前必读**：[PLAN_GRAND.md](PLAN_GRAND.md)（全项目 roadmap）→ [PLAN_V5.md](PLAN_V5.md)（**当前阶段权威规划：实时在线 F2P 闯关养成**）；[PLAN_V4.md](PLAN_V4.md)（V4 联网线，S0~S4 完成、转 V5 主干）；[docs/PLAN_V3.md](docs/PLAN_V3.md) / [docs/PLAN_V2.md](docs/PLAN_V2.md) / [docs/PLAN_V1.md](docs/PLAN_V1.md) 是已完成阶段的规格（存档备查）。本文件只是操作手册，当前阶段规格以 PLAN_V5.md 为准。
 
 ## 开发纪律（最高优先级）
-- **一步一确认**：严格按 PLAN_V4.md 的施工图步骤顺序；**每完成一步停下等用户确认**，再进下一步，不要一次做多步。
+- **一步一确认**：严格按 PLAN_V5.md 的施工图步骤顺序；**每完成一步停下等用户确认**，再进下一步，不要一次做多步。
 - **每步一次 git commit**，message 描述本步内容（如 `V4-S0: proto schema + go scaffold`）。
 - **每步同时更新 [HISTORY.md](HISTORY.md)**：记录新增/修改文件、决策、踩坑与修复、验收结果，随该步一起 commit。它是跨对话的进度与历史真相源。V3 及更早的详细段写到 `docs/HISTORY_V3_DETAILED.md`（V3）/ `docs/HISTORY_ARCHIVE.md`（V1/V2），不再追加到主 HISTORY.md。
 - **每步同步 Jira 看板（project `KAN`）**：规划时把步骤建成 issue（确定做→`To Do` / 仅构思→`Idea`）；开工时改 `In Progress`；**做完 + 测试通过 + 经用户明确同意后**才改 `Done`（等同 git commit，需用户拍板，不擅自标完成）。Jira KAN 与 HISTORY.md 并列为 PM 真相源，详见下文「PM 工作流 / Jira 看板」。**前提：必须装 Atlas（Atlassian）MCP 连接器**——Claude Code 与 Codex 都要装，没装就停下提示用户装、不要跳过 Jira 步骤；安装/注册见 [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
@@ -19,7 +19,8 @@
 - ❌ 逻辑层禁用**渲染/屏幕像素坐标**——单位位置用**抽象 2D 场地坐标**（tile 空间，view 负责映射）。详见 [docs/PLAN_V3.md](docs/PLAN_V3.md) §4。
 - ❌ 游戏速度禁绑渲染帧率——圣水/时间/推进用**固定逻辑 tick (10Hz)** 结算，显示层做插值。**确定性无随机**（V4 lockstep 依赖此前提）。
 - ❌ **V4 起：客户端禁止权威化战斗状态**——所有出兵/法术指令必须经服务端转发；战斗状态以双方+服务端三方 hash 对帐为准（lockstep 路线）；客户端本地预测仅用于显示插值，不影响仲裁。
-- ❌ 不过度设计，不写用不到的「未来扩展」代码。**V4 schema 预留的 F2P 字段（IAP/养成/货币）属玩法验证范围外，仅建表不实现逻辑**。
+- ❌ **决策 48 起：客户端禁止权威化任何经济/养成/进度/配置**——钱包/货币/卡养成(等级·阶·解锁·碎片)/关卡进度/挂机全由**服务器算 + PG 落库**（服务器时钟，改本地存档/改时钟均无效）；所有产出/扣费/解锁/升级/升阶/领奖/挂机结算走服务器 API 校验；配置以**服务器为权威源**（登录下发带版本配置包），客户端只内存持有 + 薄版本缓存、不落权威。客户端本地缓存仅供秒启动/只读展示，永远以服务器覆盖。**注：战斗仍是客户端 lockstep（决策 46）——服务器给权威输入（卡组 + 卡牌等级/阶），客户端确定性算战斗数值，服务器不算逐单位战斗血量。**
+- ❌ 不过度设计，不写用不到的「未来扩展」代码。（注：决策 48 起养成/货币/经济已是 V5 实做范围；仅 IAP 支付/合规 按上线节奏推后。）
 - ❌ 不擅自删改与当前任务无关的代码/注释。
 
 ## 架构铁律
@@ -86,18 +87,17 @@ godot --path . -e                                                               
 
 项目用 **Jira project `KAN`**（站点 `jchensh.atlassian.net`）作为 PM 真相源，与 [HISTORY.md](HISTORY.md) 并列：HISTORY.md 记**叙事/决策/踩坑**，Jira 记**结构化进度看板**。读写经 **Atlas（Atlassian）MCP 连接器**——**Claude Code 与 Codex 都必须装该 MCP**；没连上就停下提示用户装，**不要静默跳过 Jira 维护**。安装/注册/连通性检查见 [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
-- **层级映射**（团队管理项目，Epic 下只有一层，故不用 Feature）：**Epic = 版本线**（V1=`KAN-5` / V2=`KAN-6` / V3=`KAN-7` / V4=`KAN-8`）；**Story = 玩法/玩家价值步**；**Task = 工程/基建步**；**Bug = 回归修复**。小步（a/b/c）按中粒度折进 issue 描述，不单独建 Subtask（除非用户要求）。
+- **层级映射**（团队管理项目，Epic 下只有一层，故不用 Feature）：**Epic = 版本线**（V1=`KAN-5` / V2=`KAN-6` / V3=`KAN-7` / V4=`KAN-8` / **V5=`KAN-50`**）；**Story = 玩法/玩家价值步**；**Task = 工程/基建步**；**Bug = 回归修复**。小步（a/b/c）按中粒度折进 issue 描述，不单独建 Subtask（除非用户要求）。
 - **状态语义（按状态名理解，不看 Jira 内部 category）**：`Idea` = 构思中可能不做（建单默认）；`To Do` = 已明确排进计划、确定要做；`In Progress` = 正在开发中；`Done` = 做完且测过、**经用户同意**。
 - **生命周期（主动维护，与「一步一确认」一致）**：①规划建单 → ②开工改 `In Progress` → ③完成 + 测过 + 用户同意 → 改 `Done`。改 `Done` 与 `git commit` 同属需用户拍板的收尾动作。
 
 ## 当前进度
 > 完整进度总览表 + 决策日志 + 当前阶段逐步见 [HISTORY.md](HISTORY.md)；V1/V2 详细历史归档于 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)；V3 详细历史归档于 [docs/HISTORY_V3_DETAILED.md](docs/HISTORY_V3_DETAILED.md)。这里只放一句话现状。
 
-- **V1 / V2 / V3 全部完成**：V1 机制白膜 → V2 3-lane + 程序化换皮 + AI 难度 + 内容平衡 → V3 2D 战斗 reboot + 空军 + 新积木 + Roguelite 主轴 + 交互手感 + 精灵美术 + 音频骨架 + 难度 5 档 + 像素 UI 设计系统 + 新手战役 + 引导。客户端单测 **186/186**。
-- **V4 进行中**（联网升级 + 实时对战，权威规划 [PLAN_V4.md](PLAN_V4.md)，方向锁定见决策 46）：
-  - **战斗权威 = lockstep + 状态哈希校验**（沿用现有 `logic/` 10Hz 确定性 tick，不重写 Go 战斗逻辑）。
-  - **服务端 Go / 协议 WS+protobuf / 库 PG+Redis / 认证 JWT+匿名 device_id**。
-  - **当前阶段 = 玩法验证**：S0 脚手架 → S1 匿名登录 → S2 档案云存档 → **S3 lockstep 实时对战（头号工程）** → S4 匹配 → S5 赛季+榜。
-  - **产品化推后**：S6 战绩回放 / S7 反作弊深化 / S8 部署上线 / S9 版本管理 / S10 IAP+养成 / S11 正式登录+合规 / S12 聊天好友。
-  - **V3 Roguelite + 短战役 + 平衡剩余子项**作为单人训练营保留不动；V3-9 平衡可与 V4-S0~S2 并行做。
-- **Now**：**V4-S0 起步**（写 PLAN_V4 ✅ → 写 protobuf schema + Go 项目脚手架 + Docker Compose + Makefile）。
+- **V1 / V2 / V3 全部完成**（机制白膜 → 程序化换皮 + AI 难度 → 2D 战斗 reboot + Roguelite + 精灵美术 + 像素 UI + 新手战役）。
+- **V4-S0~S4 全部完成**（KAN-36~40 Done）：S0 脚手架 + 双端 protobuf；S1 匿名 device_id 登录；S2 玩家档案云存档；**S3 lockstep 实时对战（头号工程）整阶段收官**（两台 Windows 真机对战验收过）；S4 匹配（ELO MMR + Redis ZSET 队列 + Lobby，真机验收过）。V4-S5 赛季/榜暂缓（KAN-41）。
+- **Now = V5 实时在线 F2P 闯关养成（决策 48，服务器权威；权威规划 [PLAN_V5.md](PLAN_V5.md)，Epic KAN-50）**：100+ 关闯关 + 货币经济 + 卡牌升级/升阶 + 挂机，**全部服务器权威**（账号/钱包/养成/进度/配置在服务器 + PG），客户端瘦表现层 + 持久连接 + 断线不可玩。
+  - **本地原型 S0~S6 完成**（单测 **279/279**；养成/经济/闯关逻辑——逻辑算法镜像进 Go 做权威结算，客户端那份保留 UI 预览 + 战斗内计算）。
+  - **在线化施工 N1~N5 完成**：N1 持久会话 + 登录门 / N2 配置服务器化下发（登录推带版本配置包 + 客户端薄缓存）/ N3 服务器经济状态 + DB / N4 升级·升阶·解锁服务器结算（服务器算成本 + 校验 + 落库）/ **N5 通关发奖 + sanity 校验（客户端报 stage_id+stars，服务器校验关存在/stars 范围/线性解锁防跳关 + 发首通/重复奖励 + shard_drop 概率掉落 + 记进度，真 docker 端到端 6 场景验过）**。
+  - **下一站**：**N6 挂机服务器时钟（挂机刷资源的直接修复）** → N7 瘦客户端 → S7 UI（接服务器）/ S8 100 关 + 内容平衡。
+  - 复用 V4 的 Go+PG+账号+WS+lockstep 作地基（V4 服务端线从"暂缓"转主干）。联机对战仍矢量白膜（KAN-49）。

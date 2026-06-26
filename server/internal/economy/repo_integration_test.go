@@ -58,6 +58,15 @@ func cardOf(st State, id string) (CardRow, bool) {
 	return CardRow{}, false
 }
 
+func stageOf(st State, id string) (StageRow, bool) {
+	for _, s := range st.Stages {
+		if s.StageID == id {
+			return s, true
+		}
+	}
+	return StageRow{}, false
+}
+
 func TestRepo_SeedAndUpgrade(t *testing.T) {
 	repo, cfg, acc := setupRepo(t)
 	ctx := context.Background()
@@ -145,5 +154,133 @@ func TestRepo_RankUpUnlockCaps(t *testing.T) {
 	// unknown card → ErrUnknownCard
 	if _, err := repo.Upgrade(ctx, acc, "nonexistent", cfg); !errors.Is(err, ErrUnknownCard) {
 		t.Fatalf("want ErrUnknownCard, got %v", err)
+	}
+}
+
+// N5 通关发奖：首通/重复奖励、stars 取 max、highest 更新、进度连续防跳关、
+// 0星/超上限/未知关拒绝（detail 说明原因）。
+func TestRepo_StageClear(t *testing.T) {
+	repo, cfg, acc := setupRepo(t)
+	ctx := context.Background()
+	repo.Get(ctx, acc, cfg) // seed（gold=0）
+
+	// 真实 config 奖励：stage_1_1 first{300g,5gem}/repeat{30g}；
+	// stage_1_2 first{320g,0gem,skeletons:3}/repeat{32g}。两关 starCap=3（stars 配 3 条 goal）。
+
+	// —— 首通 stage_1_1（2 星）：发首通奖励 +300g/+5gem + 记进度。
+	st, err := repo.StageClear(ctx, acc, "stage_1_1", 2, cfg)
+	if err != nil {
+		t.Fatalf("first clear 1_1: %v", err)
+	}
+	if st.Gold != 300 || st.Gems != 5 {
+		t.Fatalf("after first 1_1 gold=%d gems=%d (want 300/5)", st.Gold, st.Gems)
+	}
+	s, _ := stageOf(st, "stage_1_1")
+	if !s.Cleared || s.Stars != 2 {
+		t.Fatalf("stage_1_1 cleared=%v stars=%d", s.Cleared, s.Stars)
+	}
+	if st.HighestCleared != "stage_1_1" {
+		t.Fatalf("highest=%q (want stage_1_1)", st.HighestCleared)
+	}
+
+	// —— 重复 stage_1_1（3 星）：发重复奖励 +30g；stars 取 max(2,3)=3；gold=300+30=330。
+	st, err = repo.StageClear(ctx, acc, "stage_1_1", 3, cfg)
+	if err != nil {
+		t.Fatalf("repeat 1_1: %v", err)
+	}
+	if st.Gold != 330 {
+		t.Fatalf("after repeat 1_1 gold=%d (want 330)", st.Gold)
+	}
+	s, _ = stageOf(st, "stage_1_1")
+	if s.Stars != 3 {
+		t.Fatalf("stage_1_1 stars should be max(2,3)=3, got %d", s.Stars)
+	}
+
+	// —— stars 不回退：再以 1 星重复 → stars 仍 3。
+	st, _ = repo.StageClear(ctx, acc, "stage_1_1", 1, cfg)
+	s, _ = stageOf(st, "stage_1_1")
+	if s.Stars != 3 {
+		t.Fatalf("stars regressed to %d (want 3)", s.Stars)
+	}
+
+	// —— 0 星 → 拒绝（ERR_INVALID_ARG / ErrInvalidStars）。
+	if _, err := repo.StageClear(ctx, acc, "stage_1_1", 0, cfg); !errors.Is(err, ErrInvalidStars) {
+		t.Fatalf("0 stars want ErrInvalidStars, got %v", err)
+	}
+
+	// —— 超上限（4 星 > starCap 3）→ 拒绝（ErrTooManyStars）。
+	if _, err := repo.StageClear(ctx, acc, "stage_1_1", 4, cfg); !errors.Is(err, ErrTooManyStars) {
+		t.Fatalf("4 stars want ErrTooManyStars, got %v", err)
+	}
+
+	// —— 未知关 → 拒绝（ErrUnknownStage）。
+	if _, err := repo.StageClear(ctx, acc, "nope_stage", 1, cfg); !errors.Is(err, ErrUnknownStage) {
+		t.Fatalf("unknown stage want ErrUnknownStage, got %v", err)
+	}
+
+	// —— 首通 stage_1_2（1_1 已通 → 解锁）：发首通 +320g + skeletons:3 碎片。
+	goldBefore := st.Gold
+	st, err = repo.StageClear(ctx, acc, "stage_1_2", 1, cfg)
+	if err != nil {
+		t.Fatalf("first clear 1_2: %v", err)
+	}
+	if st.Gold != goldBefore+320 {
+		t.Fatalf("after first 1_2 gold=%d (want %d)", st.Gold, goldBefore+320)
+	}
+	if c, _ := cardOf(st, "skeletons"); c.Shards != 3 {
+		t.Fatalf("skeletons shards=%d (want 3)", c.Shards)
+	}
+	if st.HighestCleared != "stage_1_2" {
+		t.Fatalf("highest=%q (want stage_1_2)", st.HighestCleared)
+	}
+}
+
+// 进度连续防跳关：1_1 未通就报 1_2 → 拒绝（ErrStageLocked）。新号独立验证。
+func TestRepo_StageClear_RejectsSkip(t *testing.T) {
+	repo, cfg, acc := setupRepo(t)
+	ctx := context.Background()
+	repo.Get(ctx, acc, cfg)
+
+	// 直接报 1_2（1_1 没通）→ 拒。
+	if _, err := repo.StageClear(ctx, acc, "stage_1_2", 1, cfg); !errors.Is(err, ErrStageLocked) {
+		t.Fatalf("skip want ErrStageLocked, got %v", err)
+	}
+	// 状态未变：无 stage 记录、gold 仍 0。
+	st, _ := repo.Get(ctx, acc, cfg)
+	if st.Gold != 0 {
+		t.Fatalf("rejected clear leaked gold=%d", st.Gold)
+	}
+	if _, ok := stageOf(st, "stage_1_2"); ok {
+		t.Fatal("rejected clear should not create stage row")
+	}
+
+	// 通了 1_1 后再报 1_2 → 允许。
+	if _, err := repo.StageClear(ctx, acc, "stage_1_1", 1, cfg); err != nil {
+		t.Fatalf("clear 1_1: %v", err)
+	}
+	if _, err := repo.StageClear(ctx, acc, "stage_1_2", 1, cfg); err != nil {
+		t.Fatalf("clear 1_2 after 1_1: %v", err)
+	}
+}
+
+// shard_drop 概率掉落：stage_1_2 skeletons 30% 掉 1。重复刷很多次应至少掉过一次。
+func TestRepo_StageClear_ShardDrop(t *testing.T) {
+	repo, cfg, acc := setupRepo(t)
+	ctx := context.Background()
+	repo.Get(ctx, acc, cfg)
+
+	// 先打通 1_1 + 1_2（首通已发 skeletons:3）。
+	repo.StageClear(ctx, acc, "stage_1_1", 3, cfg)
+	repo.StageClear(ctx, acc, "stage_1_2", 3, cfg)
+
+	// 重复刷 1_2 共 200 次：30% 掉落 → 累计 shards 远超首通的 3。
+	for i := 0; i < 200; i++ {
+		repo.StageClear(ctx, acc, "stage_1_2", 1, cfg)
+	}
+	st, _ := repo.Get(ctx, acc, cfg)
+	c, _ := cardOf(st, "skeletons")
+	// 200 次 30% ≈ 期望 60，远 > 首通 3；放宽下界确保掉落确有发生。
+	if c.Shards < 20 {
+		t.Fatalf("skeletons shards after 200 repeats=%d (drop not firing?)", c.Shards)
 	}
 }

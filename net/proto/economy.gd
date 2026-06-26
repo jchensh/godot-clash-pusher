@@ -1065,4 +1065,68 @@ class EconomyActionReq:
 			return PB_ERR.PARSE_INCOMPLETE
 		return result
 	
+class StageClearReq:
+	extends RefCounted
+	func _init():
+		var service
+		
+		__stage_id = PBField.new("stage_id", PB_DATA_TYPE.STRING, PB_RULE.OPTIONAL, 1, true, DEFAULT_VALUES_3[PB_DATA_TYPE.STRING])
+		service = PBServiceField.new()
+		service.field = __stage_id
+		data[__stage_id.tag] = service
+		
+		__stars = PBField.new("stars", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 2, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
+		service = PBServiceField.new()
+		service.field = __stars
+		data[__stars.tag] = service
+		
+	var data = {}
+	
+	var __stage_id: PBField
+	func has_stage_id() -> bool:
+		if __stage_id.value != null:
+			return true
+		return false
+	func get_stage_id() -> String:
+		return __stage_id.value
+	func clear_stage_id() -> void:
+		data[1].state = PB_SERVICE_STATE.UNFILLED
+		__stage_id.value = DEFAULT_VALUES_3[PB_DATA_TYPE.STRING]
+	func set_stage_id(value : String) -> void:
+		__stage_id.value = value
+	
+	var __stars: PBField
+	func has_stars() -> bool:
+		if __stars.value != null:
+			return true
+		return false
+	func get_stars() -> int:
+		return __stars.value
+	func clear_stars() -> void:
+		data[2].state = PB_SERVICE_STATE.UNFILLED
+		__stars.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
+	func set_stars(value : int) -> void:
+		__stars.value = value
+	
+	func _to_string() -> String:
+		return PBPacker.message_to_string(data)
+		
+	func to_bytes() -> PackedByteArray:
+		return PBPacker.pack_message(data)
+		
+	func from_bytes(bytes : PackedByteArray, offset : int = 0, limit : int = -1) -> int:
+		var cur_limit = bytes.size()
+		if limit != -1:
+			cur_limit = limit
+		var result = PBPacker.unpack_message(data, bytes, offset, cur_limit)
+		if result == cur_limit:
+			if PBPacker.check_required(data):
+				if limit == -1:
+					return PB_ERR.NO_ERRORS
+			else:
+				return PB_ERR.REQUIRED_FIELDS
+		elif limit == -1 && result > 0:
+			return PB_ERR.PARSE_INCOMPLETE
+		return result
+	
 ################ USER DATA END #################

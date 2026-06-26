@@ -41,6 +41,16 @@ func test_action_req() -> void:
 	req2.from_bytes(req.to_bytes())
 	assert_eq(req2.get_card_id(), "fireball", "action req card_id")
 
+# V5-N5：StageClearReq proto roundtrip + 新增错误码/消息 id 常量到位。
+func test_stage_clear_req() -> void:
+	var req = EconomyProto.StageClearReq.new()
+	req.set_stage_id("stage_1_2")
+	req.set_stars(3)
+	var req2 = EconomyProto.StageClearReq.new()
+	assert_eq(req2.from_bytes(req.to_bytes()), EconomyProto.PB_ERR.NO_ERRORS, "stage clear decode")
+	assert_eq(req2.get_stage_id(), "stage_1_2", "stage id roundtrip")
+	assert_eq(req2.get_stars(), 3, "stars roundtrip")
+
 func test_default_and_override_url() -> void:
 	assert_eq(EconomyClient.new().api_url, "http://localhost:8080", "default url")
 	assert_eq(EconomyClient.new("http://x").api_url, "http://x", "override url")

@@ -28,6 +28,7 @@ func (h *Handler) Mount(mux *http.ServeMux, mw *auth.Middleware) {
 	mux.HandleFunc("POST /v5/economy/upgrade", mw.Require(h.upgrade))
 	mux.HandleFunc("POST /v5/economy/rank-up", mw.Require(h.rankUp))
 	mux.HandleFunc("POST /v5/economy/unlock", mw.Require(h.unlock))
+	mux.HandleFunc("POST /v5/economy/stage-clear", mw.Require(h.stageClear))
 }
 
 func (h *Handler) getState(w http.ResponseWriter, r *http.Request) {
@@ -54,6 +55,30 @@ func (h *Handler) rankUp(w http.ResponseWriter, r *http.Request) {
 }
 func (h *Handler) unlock(w http.ResponseWriter, r *http.Request) {
 	h.action(w, r, h.repo.Unlock, pbcommon.MsgId_ECONOMY_UNLOCK_REQ)
+}
+
+// stageClear (V5-N5)：客户端上报 (stage_id, stars)，服务器 sanity 校验 + 发奖 + 记进度。
+// 与 upgrade/rank-up/unlock 不同（带 stars，不是单 card_id），单独处理。
+func (h *Handler) stageClear(w http.ResponseWriter, r *http.Request) {
+	accountID, ok := auth.AccountIDFromContext(r.Context())
+	if !ok {
+		httpx.WriteError(w, http.StatusUnauthorized, pbcommon.ErrorCode_ERR_UNAUTHORIZED, "no account in context", pbcommon.MsgId_ECONOMY_STAGE_CLEAR_REQ)
+		return
+	}
+	var req pbeconomy.StageClearReq
+	if err := httpx.ReadProto(r, &req); err != nil {
+		httpx.WriteError(w, http.StatusBadRequest, pbcommon.ErrorCode_ERR_INVALID_ARG, err.Error(), pbcommon.MsgId_ECONOMY_STAGE_CLEAR_REQ)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	st, err := h.repo.StageClear(ctx, accountID, req.GetStageId(), int(req.GetStars()), h.cfg)
+	if err != nil {
+		code, status := mapErr(err)
+		httpx.WriteError(w, status, code, err.Error(), pbcommon.MsgId_ECONOMY_STAGE_CLEAR_REQ)
+		return
+	}
+	httpx.WriteProto(w, http.StatusOK, toProto(st))
 }
 
 type actionFn func(context.Context, int64, string, *Config) (State, error)
@@ -88,7 +113,12 @@ func mapErr(err error) (pbcommon.ErrorCode, int) {
 		return pbcommon.ErrorCode_ERR_ECONOMY_AT_CAP, http.StatusConflict
 	case errors.Is(err, ErrLocked):
 		return pbcommon.ErrorCode_ERR_ECONOMY_LOCKED, http.StatusConflict
-	case errors.Is(err, ErrUnknownCard):
+	case errors.Is(err, ErrStageLocked):
+		return pbcommon.ErrorCode_ERR_ECONOMY_STAGE_LOCKED, http.StatusConflict
+	case errors.Is(err, ErrUnknownCard),
+		errors.Is(err, ErrInvalidStars),
+		errors.Is(err, ErrTooManyStars),
+		errors.Is(err, ErrUnknownStage):
 		return pbcommon.ErrorCode_ERR_INVALID_ARG, http.StatusBadRequest
 	default:
 		return pbcommon.ErrorCode_ERR_INTERNAL, http.StatusInternalServerError
