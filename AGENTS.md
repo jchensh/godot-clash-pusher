@@ -48,17 +48,21 @@
 
 ## 目录布局
 ```
-/logic   客户端逻辑层（不依赖 Godot 渲染；V4 lockstep 沿用本层确定性 tick）
-/view    客户端显示层脚本与场景
-/ai      AIController（单机训练营用；V4 联机模式不调用）
-/net     V4 网络层：WS 客户端 + protobuf 解析 + token 存盘（S1+ 起加）
-/config  GameConfig.xlsx（策划源表）+ cards.json / units.json / levels.json / arena.json / run.json / relics.json / campaign.json / tutorial.json / i18n.json / audio_assets.json（运行时读）
-/sound   音乐/音效文件根目录（运行时路径来自 config/audio_assets.json）
-/tests   客户端单元测试（test_*.gd） + test_runner.gd + test_case.gd
-/tools   配置生成脚本等项目工具
-/proto   V4 共享 protobuf 定义（.proto 源 + 生成产物入 client net/proto + server internal/pb）
-/server  V4 Go 服务端（cmd/{gateway,api,battle,migrate} + internal/* + migrations/ + Dockerfile + go.mod + Makefile）
-/docs    归档文档（PLAN_V1/V2/V3、HISTORY_ARCHIVE、HISTORY_V3_DETAILED、ART_ASSETS、ENVIRONMENT）
+/logic       客户端逻辑层（不依赖 Godot 渲染；V4 lockstep 沿用本层确定性 tick）
+/view        客户端显示层脚本与场景
+/ai          AIController（单机训练营用；V4 联机模式不调用）
+/net         客户端网络层：WS 客户端 + protobuf 解析 + token 存盘（V4）+ economy_client / economy_state_cache（V5 N7 瘦客户端权威缓存）
+/addons      Godot 插件：godobuf（base64）+ godot_ai（编辑器联动 MCP，见下）
+/assets      美术资源（bosses/towers/units/ui/map/terrain/fx/fonts）
+/config      GameConfig.xlsx + AudioConfig.xlsx（策划源表）+ 运行时读的 JSON：cards / units / levels / arena / run / relics / campaign / tutorial / i18n / audio_assets / economy / encounters / stages / stages_spec / card_progression / network
+/sound       音乐/音效文件根目录（运行时路径来自 config/audio_assets.json）
+/scripts     一次性脚本（如 setup-godot-ai.ps1）
+/tests       客户端单元测试（test_*.gd） + test_runner.gd + test_case.gd
+/testAssets  测试用美术素材
+/tools       配置生成脚本（build_config.py / build_audio_config.py 等）等项目工具
+/proto       V4 共享 protobuf 定义（.proto 源 + 生成产物入 client net/proto + server internal/pb）
+/server      V4 Go 服务端（cmd/{gateway,api,battle,migrate} + internal/* + migrations/ + Dockerfile + go.mod + Makefile）
+/docs        归档文档（PLAN_V1/V2/V3、HISTORY_ARCHIVE、HISTORY_V3_DETAILED、ART_ASSETS、ENVIRONMENT）
 ```
 
 ## 工具链 / 常用命令
@@ -78,9 +82,21 @@ godot --path . -e                                                               
 > 安装/注册、管理命令、**画面/FX 验收协议**（截图序列/临时 harness 定格/日志掐时机）→ 见 [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
 ## 分支 / 提交 / 推送约定
-- **开发在 `develop` 分支进行**；`main` 为稳定线，远端 `origin` = https://github.com/jchensh/godot-clash-pusher 。
-- **`release` 分支**：用户用 Antigravity（Google IDE）创建，用于打安卓包；跟随 `develop` 推进，**agent 默认不在此分支提交、不主动同步**，需同步由用户主动指示。
-- **仅当用户说"提交"时**才 `git commit`；提交后**顺带 `git push`**（develop 首次推送用 `git push -u origin develop` 建立跟踪）。
+- **稳定线 = `master`**（原 `main`，已于 2026-06-28 重命名合并；旧的 `develop` 分支已并入 `master`，不再单独维护）。远端 `origin` = https://github.com/jchensh/godot-clash-pusher 。
+- **开发用 worktree + 临时 feature 分支**：每个任务从 `master` 切一个临时 feature 分支，**在独立 worktree 里开发**（不在 `master` 工作树直接改），开发完 + 验证（单测过 / 真人验收过）后**直接合回 `master`**，再删掉临时分支与 worktree。这样 `master` 工作树始终干净，多任务可并行不互扰。
+  ```bash
+  # 起新任务（在主仓库目录里执行）
+  git worktree add ../master-<feature> -b feat/<feature>   # 建 worktree + 临时分支
+  cd ../master-<feature>                                     # 进 worktree 开发
+  # ... 开发 + 提交 + 测试 ...
+  # 验证通过后合回 master（回主目录执行）
+  cd <master 目录>
+  git merge --no-ff feat/<feature>                          # 合入稳定线
+  git worktree remove ../master-<feature>                   # 清理 worktree
+  git branch -d feat/<feature>                              # 删临时分支
+  ```
+- **`release` 分支**：用户用 Antigravity（Google IDE）创建，用于打安卓包；跟随 `master` 推进，**agent 默认不在此分支提交、不主动同步**，需同步由用户主动指示。
+- **仅当用户说"提交"时**才 `git commit`；提交后**顺带 `git push`**。feature 分支首次推送用 `git push -u origin feat/<feature>` 建立跟踪（worktree 内推送同理）。
 - 仍遵守"一步一确认"：每步做完先停下报告，待用户说提交再 commit+push。
 
 ## PM 工作流 / Jira 看板（Atlas MCP，**Claude Code + Codex 都适用**）
