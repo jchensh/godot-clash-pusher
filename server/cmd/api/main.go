@@ -75,13 +75,21 @@ func main() {
 	if err != nil {
 		log.Fatalf("api: parse economy config: %v", err)
 	}
-	economyH := economy.NewHandler(economy.NewRepo(db), econCfg)
+	econRepo := economy.NewRepo(db)
+	economyH := economy.NewHandler(econRepo, econCfg)
 	log.Printf("api: economy config loaded (%d cards, cfg ver=%s)", len(econCfg.Cards), bundle.Version)
 
 	mux := http.NewServeMux()
 	authH.Mount(mux)
 	profileH.Mount(mux, authMW)
 	economyH.Mount(mux, authMW)
+
+	// GM / 开发作弊工具（V5）：仅当 GM_ENABLED=1 时挂 /v5/gm/*（直接改本账号经济 DB）。
+	// ⚠️ 仅开发用——prod 部署必须不设此环境变量。仍走会话鉴权（只能改自己账号）。
+	if os.Getenv("GM_ENABLED") == "1" {
+		economy.NewGMHandler(econRepo, econCfg).Mount(mux, authMW)
+		log.Printf("api: ⚠️ GM endpoints ENABLED (/v5/gm/*) — DEV ONLY, must be OFF in prod")
+	}
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		if err := db.Ping(r.Context()); err != nil {
 			http.Error(w, "db down", http.StatusServiceUnavailable)

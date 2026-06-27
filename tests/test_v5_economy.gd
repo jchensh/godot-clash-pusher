@@ -18,21 +18,32 @@ func _pd(config):
 	return p
 
 # —— 关卡奖励 ——
+# 配置驱动（S8c 后 stages.json 由生成器铺 100 关，勿钉魔数）：首通发 first_clear.gold + 配置碎片。
 func test_grant_stage_reward_first_clear() -> void:
 	var config = _config()
 	var p = _pd(config)
-	# stage_1_2 first_clear: gold 320, shards skeletons 3
+	var stage = config.get_stage("stage_1_2")
+	var fc: Dictionary = stage["first_clear"]
+	var exp_gold := int(fc["gold"])
 	var g = p.grant_stage_reward("stage_1_2", true, config)
-	assert_eq(p.gold, 320, "金币 +320")
-	assert_eq(int(p.card_state("skeletons").get("shards")), 3, "skeletons +3 碎片")
-	assert_eq(int(g["gold"]), 320, "返回实发金币")
-	assert_eq(int(g["shards"].get("skeletons", 0)), 3, "返回实发碎片")
+	assert_eq(p.gold, exp_gold, "首通金币 = 配置 first_clear.gold (%d)" % exp_gold)
+	assert_eq(int(g["gold"]), exp_gold, "返回实发金币")
+	var fc_shards: Dictionary = fc.get("shards", {})
+	assert_true(fc_shards.size() >= 1, "stage_1_2 首通含碎片（解锁铺垫）")
+	for cid in fc_shards:
+		var n := int(fc_shards[cid])
+		assert_eq(int(p.card_state(cid).get("shards")), n, "%s 碎片发放 %d" % [str(cid), n])
+		assert_eq(int(g["shards"].get(cid, 0)), n, "返回 %s 碎片" % str(cid))
 
 func test_grant_stage_reward_repeat_small() -> void:
 	var config = _config()
 	var p = _pd(config)
+	var stage = config.get_stage("stage_1_2")
+	var first_gold := int((stage["first_clear"] as Dictionary)["gold"])
+	var repeat_gold := int((stage["repeat"] as Dictionary)["gold"])
 	p.grant_stage_reward("stage_1_2", false, config)
-	assert_eq(p.gold, 32, "重复奖励小额 32（< 首通 320）")
+	assert_eq(p.gold, repeat_gold, "重复奖励 = 配置 repeat.gold (%d)" % repeat_gold)
+	assert_true(repeat_gold < first_gold, "重复 < 首通")
 
 func test_grant_reward_generic() -> void:
 	var config = _config()

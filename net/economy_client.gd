@@ -45,6 +45,35 @@ func collect_idle(http: HTTPRequest, token: String) -> Dictionary:
 	return await _request(http, "POST", "/v5/economy/collect-idle", token, req.to_bytes())
 
 
+## V5 GM 工具（仅服务器 GM_ENABLED 时存在）：发 JSON 操作到 /v5/gm/apply，服务器改 DB 后回新
+## EconomyState（proto，复用解码）。ops = {add_gold,add_gems,add_shards_all,unlock_all,max_all_cards,
+## clear_through_chapter,reset,add_shards:{card:n}}。请求是 JSON、响应是 proto，故不走 _request。
+func gm_apply(http: HTTPRequest, token: String, ops: Dictionary) -> Dictionary:
+	var headers := [
+		"Content-Type: application/json",
+		"Accept: " + CONTENT_TYPE,
+		"Authorization: Bearer " + token,
+	]
+	var body := JSON.stringify(ops).to_utf8_buffer()
+	var err := http.request_raw(api_url + "/v5/gm/apply", headers, HTTPClient.METHOD_POST, body)
+	if err != OK:
+		return {"ok": false, "status_code": 0, "error": "request err %d" % err}
+	var res = await http.request_completed
+	var status: int = res[1]
+	var resp_body: PackedByteArray = res[3]
+	if status == 200:
+		var es = EconomyProto.EconomyState.new()
+		if es.from_bytes(resp_body) != EconomyProto.PB_ERR.NO_ERRORS:
+			return {"ok": false, "status_code": status, "error": "decode fail"}
+		state = _state_to_dict(es)
+		return {"ok": true, "status_code": status, "state": state}
+	var ecode := 0
+	var er = CommonProto.ErrorResp.new()
+	if er.from_bytes(resp_body) == CommonProto.PB_ERR.NO_ERRORS:
+		ecode = er.get_code()
+	return {"ok": false, "status_code": status, "error_code": ecode}
+
+
 func _action(http: HTTPRequest, path: String, token: String, card_id: String) -> Dictionary:
 	var req = EconomyProto.EconomyActionReq.new()
 	req.set_card_id(card_id)

@@ -62,6 +62,7 @@ services:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       JWT_SECRET: ${JWT_SECRET:-dev-only-change-me}
       CONFIG_DIR: /app/config
+      GM_ENABLED: ${GM_ENABLED:-1}   # ⚠️ 开发作弊工具 /v5/gm/*（设置内 GM 面板）。dev 默认开；prod 必须设 0/不设
     volumes:
       - ../config:/app/config:ro   # V5-N3/N4 (决策 48)：服务器权威经济用同一配置算成本
     depends_on:

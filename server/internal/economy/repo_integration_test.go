@@ -164,16 +164,21 @@ func TestRepo_StageClear(t *testing.T) {
 	ctx := context.Background()
 	repo.Get(ctx, acc, cfg) // seed（gold=0）
 
-	// 真实 config 奖励：stage_1_1 first{300g,5gem}/repeat{30g}；
-	// stage_1_2 first{320g,0gem,skeletons:3}/repeat{32g}。两关 starCap=3（stars 配 3 条 goal）。
+	// 配置驱动（S8c 后 stages.json 由 build_stages.py 生成 100 关，勿钉魔数）：从 cfg 读 1_1/1_2 奖励。
+	// 金币/宝石/星级确定可断；碎片受 shard_drop 概率掉落（StageClear 首通/重复都 roll）→ 用 >= 容差。
+	s11, _ := cfg.Stage("stage_1_1")
+	s12, _ := cfg.Stage("stage_1_2")
+	fc1Gold, fc1Gems := int64(s11.FirstClear.Gold), int64(s11.FirstClear.Gems)
+	rep1Gold := int64(s11.Repeat.Gold)
+	fc2Gold := int64(s12.FirstClear.Gold)
 
-	// —— 首通 stage_1_1（2 星）：发首通奖励 +300g/+5gem + 记进度。
+	// —— 首通 stage_1_1（2 星）：发首通奖励 + 记进度。
 	st, err := repo.StageClear(ctx, acc, "stage_1_1", 2, cfg)
 	if err != nil {
 		t.Fatalf("first clear 1_1: %v", err)
 	}
-	if st.Gold != 300 || st.Gems != 5 {
-		t.Fatalf("after first 1_1 gold=%d gems=%d (want 300/5)", st.Gold, st.Gems)
+	if st.Gold != fc1Gold || st.Gems != fc1Gems {
+		t.Fatalf("after first 1_1 gold=%d gems=%d (want %d/%d)", st.Gold, st.Gems, fc1Gold, fc1Gems)
 	}
 	s, _ := stageOf(st, "stage_1_1")
 	if !s.Cleared || s.Stars != 2 {
@@ -183,13 +188,13 @@ func TestRepo_StageClear(t *testing.T) {
 		t.Fatalf("highest=%q (want stage_1_1)", st.HighestCleared)
 	}
 
-	// —— 重复 stage_1_1（3 星）：发重复奖励 +30g；stars 取 max(2,3)=3；gold=300+30=330。
+	// —— 重复 stage_1_1（3 星）：发重复奖励；stars 取 max(2,3)=3；金币 = 首通 + 重复。
 	st, err = repo.StageClear(ctx, acc, "stage_1_1", 3, cfg)
 	if err != nil {
 		t.Fatalf("repeat 1_1: %v", err)
 	}
-	if st.Gold != 330 {
-		t.Fatalf("after repeat 1_1 gold=%d (want 330)", st.Gold)
+	if st.Gold != fc1Gold+rep1Gold {
+		t.Fatalf("after repeat 1_1 gold=%d (want %d)", st.Gold, fc1Gold+rep1Gold)
 	}
 	s, _ = stageOf(st, "stage_1_1")
 	if s.Stars != 3 {
@@ -218,17 +223,22 @@ func TestRepo_StageClear(t *testing.T) {
 		t.Fatalf("unknown stage want ErrUnknownStage, got %v", err)
 	}
 
-	// —— 首通 stage_1_2（1_1 已通 → 解锁）：发首通 +320g + skeletons:3 碎片。
+	// —— 首通 stage_1_2（1_1 已通 → 解锁）：金币 += first_clear.gold；碎片 ≥ before + 首通固定发放量。
 	goldBefore := st.Gold
+	var skelBefore int64
+	if c, ok := cardOf(st, "skeletons"); ok {
+		skelBefore = int64(c.Shards)
+	}
 	st, err = repo.StageClear(ctx, acc, "stage_1_2", 1, cfg)
 	if err != nil {
 		t.Fatalf("first clear 1_2: %v", err)
 	}
-	if st.Gold != goldBefore+320 {
-		t.Fatalf("after first 1_2 gold=%d (want %d)", st.Gold, goldBefore+320)
+	if st.Gold != goldBefore+fc2Gold {
+		t.Fatalf("after first 1_2 gold=%d (want %d)", st.Gold, goldBefore+fc2Gold)
 	}
-	if c, _ := cardOf(st, "skeletons"); c.Shards != 3 {
-		t.Fatalf("skeletons shards=%d (want 3)", c.Shards)
+	wantMinSkel := skelBefore + int64(s12.FirstClear.Shards["skeletons"])
+	if c, _ := cardOf(st, "skeletons"); int64(c.Shards) < wantMinSkel {
+		t.Fatalf("skeletons shards=%d (want >= %d, 首通固定 + 可能掉落)", c.Shards, wantMinSkel)
 	}
 	if st.HighestCleared != "stage_1_2" {
 		t.Fatalf("highest=%q (want stage_1_2)", st.HighestCleared)

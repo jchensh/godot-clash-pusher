@@ -67,8 +67,8 @@ func set_stat_mults(player_mult: float = 1.0, opponent_mult: float = 1.0) -> voi
 
 # V5-S3：按闯关关卡搭一局——读 stages 配置：encounter→敌方卡组、difficulty_coef→敌方出兵乘区、
 # ai_difficulty→AI 行为档；其余对局参数（圣水/塔血/时长）走 base_level（默认 ladder_01）。
-# 敌塔 HP 暂用 base_level 值、不随 coef（留 V5-S8 平衡）。player_data 非空 → 我方按本卡 level/rank
-# 养成乘区（V5-S4，per-card）；敌方按 coef flat 乘区。
+# 敌塔 HP 随 coef 放大（V5-S8d，scale_opponent_towers）；我方塔不缩放。player_data 非空 → 我方按本卡
+# level/rank 养成乘区（V5-S4，per-card）；敌方按 coef flat 乘区。
 func setup_stage(stage_id: String, player_deck_override: Array = [], player_data = null) -> void:
 	var stage: Dictionary = config.get_stage(stage_id)
 	var coef := float(stage.get("difficulty_coef", 1.0))
@@ -77,9 +77,19 @@ func setup_stage(stage_id: String, player_deck_override: Array = [], player_data
 	var base_level := String(stage.get("base_level", "ladder_01"))
 	setup(base_level, player_deck_override, [], enemy_deck)
 	ai_difficulty = String(stage.get("ai_difficulty", ai_difficulty))
-	set_stat_mults(1.0, coef)   # 敌方 coef；我方 flat 1.0（养成走 player_data per-card）
+	set_stat_mults(1.0, coef)        # 敌方 coef；我方 flat 1.0（养成走 player_data per-card）
+	scale_opponent_towers(coef)      # V5-S8d：敌塔 HP 也随 coef 放大（我方塔不动）→ 高系数关推塔更难
 	if player_data != null:
 		player.player_data = player_data
+
+# V5-S8d：把敌方(OWNER_OPPONENT)三塔 HP 乘 mult（满血开局）。我方塔不动 → 高 coef 关推塔更难、
+# 防守相对更易（吻合「战力为底」：需养成才推得动）。mult≈1.0 时 no-op（零回归）。
+func scale_opponent_towers(mult: float) -> void:
+	if battle == null or is_equal_approx(mult, 1.0):
+		return
+	for t in battle.opponent_towers:
+		t.max_hp *= mult
+		t.hp = t.max_hp
 
 # 注入对手控制器（规则 AI）。不注入则对手被动（Step 7 行为）。
 func set_opponent_controller(controller) -> void:

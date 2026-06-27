@@ -15,6 +15,7 @@ const BattleScript = preload("res://logic/battle.gd")
 # 跑一局确定性 AI-vs-AI。params 字段（均可缺省）：
 #   base_level(String=ladder_01) / player_deck(Array=空用 base 默认) / enemy_deck(Array=空用 base ai_deck) /
 #   coef(float=1.0 敌方出兵乘区) / player_mult(float=1.0 我方出兵乘区) /
+#   enemy_tower_mult(float=1.0 敌塔 HP 乘区；真关卡 = coef，镜像 Match.scale_opponent_towers) /
 #   ai_difficulty(String=normal 敌方档) / player_difficulty(String=normal 我方档) /
 #   max_seconds(float=0 用关卡时长封顶)
 # 返回 {won:bool, result:int, king_hp_pct:float(我方王塔), duration_sec:float, ticks:int}。
@@ -24,6 +25,7 @@ func run_one(config, params: Dictionary) -> Dictionary:
 	var enemy_deck: Array = params.get("enemy_deck", [])
 	var coef := float(params.get("coef", 1.0))
 	var player_mult := float(params.get("player_mult", 1.0))
+	var enemy_tower_mult := float(params.get("enemy_tower_mult", 1.0))
 	var ai_diff := String(params.get("ai_difficulty", "normal"))
 	var player_diff := String(params.get("player_difficulty", "normal"))
 	var max_seconds := float(params.get("max_seconds", 0.0))
@@ -32,6 +34,7 @@ func run_one(config, params: Dictionary) -> Dictionary:
 	m.setup(base_level, player_deck, [], enemy_deck)
 	m.ai_difficulty = ai_diff
 	m.set_stat_mults(player_mult, coef)
+	m.scale_opponent_towers(enemy_tower_mult)
 	var enemy_ai = AIControllerScript.new(m, config, ai_diff, AIControllerScript.OWNER_OPPONENT)
 	var player_ai = AIControllerScript.new(m, config, player_diff, AIControllerScript.OWNER_PLAYER)
 

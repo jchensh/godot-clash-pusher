@@ -96,6 +96,19 @@ func report_stage_clear(http, token: String, stage_id: String, stars: int, all_c
 	return res
 
 
+## V5 GM 工具门面（仅服务器 GM_ENABLED 时有效）：发 GM 操作改服务器 DB → 回新状态刷新缓存。
+## ops 见 EconomyClient.gm_apply。成功 → {ok:true}（缓存已刷新）；失败 → {ok:false,...}。
+func gm_apply(http, token: String, ops: Dictionary, all_card_ids: Array) -> Dictionary:
+	var res: Dictionary = await _client.gm_apply(http, token, ops)
+	if bool(res.get("ok", false)):
+		_apply(res["state"], all_card_ids)
+		print("[V5][GM] apply ok → gold=%d gems=%d 解锁=%d/%d highest=%s" % [cache.gold, cache.gems, cache.unlocked_card_ids().size(), cache.cards.size(), cache.highest_cleared])
+	else:
+		last_error = res
+		print("[V5][GM] apply 失败 status=%d code=%d" % [int(res.get("status_code", 0)), int(res.get("error_code", 0))])
+	return res
+
+
 ## 返回适合注入 Match.setup_stage 的 PlayerData（开战用）。
 ## 已加载 → 返回缓存（权威来自服务器）；未加载 → 返回全默认新档（保证战斗能跑，数值=未养成 baseline）。
 ## all_card_ids 来自 config（确保卡池完整）。
