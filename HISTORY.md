@@ -618,3 +618,10 @@
 - **GM 作弊工具（KAN-68 Done）**：随 S8 提交，服务器权威改 `economy_*` 表（加货币/碎片/解锁/满养成/通关到第 N 章/重置）+ 设置内 GM 面板；env `GM_ENABLED` 门控、**prod 必关**，走会话鉴权只能改自己账号。真 PG 集成测全过 + 真人验收过。提交 `d7730dd`。
 
 > **下一步 = V5-S8e 真人验收**：从第 1 章推进体验难度曲线（用例 [docs/ACCEPTANCE_V5_S8.md](docs/ACCEPTANCE_V5_S8.md)），验收过 + 用户同意后 KAN-59 → Done。之后：联机对战美术对齐（KAN-49，把单机精灵/FX/手感搬进 `net_battle_scene`）/ 上线化（IAP·合规·赛季榜，V6+）。
+
+### 工程迁移 + 多 agent 共享工作树踩坑（2026-06-28）
+**迁移**：`Move-Item F:\godotProject F:\godotTowerPush\master`（同盘瞬时重命名、零拷贝）→ git 仓库/对象/远端全部无损、`.git/config` 无旧路径泄漏；工程 `res://` 相对路径天然不受影响、`.godot/` 缓存 gitignore 重建即可。仅**文档线滞后**于代码（CLAUDE 进度停在 N5、README 290 单测、多处旧绝对路径 + 旧 `develop` 分支约定）→ 本轮统一对齐到现实（主干流 / S8 进行中 / 313 单测 / 旧路径清理），提交 `cfa15d7`。
+**踩坑（两个 agent 抢同一个工作树）**：文档作业期间，另一个 agent（ZCode）在**同一个工作树**里 `git checkout` 把分支从 `master` 切到新建临时分支 `zaiDev`，我那批**未提交**的文档改动被一起带了过去（切分支时未提交改动会跟随 HEAD）。
+- **诊断**：`git reflog` 还原序列（`commit 247c15f` → `checkout: moving from master to zaiDev`）；`git stash` 空、无提交吞掉改动；关键发现——`zaiDev` 从 `master` 尖端刚拉出、**两者指向同一 commit `247c15f`**。
+- **无损还原**：因两分支零差异，`git checkout master` 时 Git 不改任何工作区文件、未提交改动原样留下、HEAD 重指 master → 改动安全归位（不可能冲突或丢失）。随后用**显式文件名** `git add`（避免在共享树里卷入异己改动）+ 提交 `cfa15d7`，工作树转干净、解开两 agent 纠缠。
+- **教训**：① **多个 agent 绝不共享一个工作树**——每任务用 `git worktree add ../master-<feat> <branch>` 开独立树作业（正是 CLAUDE.md / AGENTS.md「分支约定」要求的纪律，这次正是没遵守才撞）；② 提交前先 `git rev-parse --abbrev-ref HEAD` 验分支、`git add` 用显式文件名不用 `-A`；③ 已关停乱切的 ZCode；`zaiDev` 待其任务合回 master 或废弃后 `git branch -d zaiDev` 清理。
