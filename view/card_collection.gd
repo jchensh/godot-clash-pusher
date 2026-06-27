@@ -2,11 +2,12 @@
 #
 # 全卡池网格（2 列）：肖像 + 稀有度边框 + 等级 + 锁卡(碎片进度) + 可养成红点。
 # 点卡 → card_detail。读经济缓存(服务器快照)；展示算用本地 ConfigLoader。
-# 排序为默认（稀有度→config 序）；多维排序 = KAN-67 独立 Story，本屏预留不实现。
+# 多维排序（KAN-67）：顶部分段控件切 稀有度/费/等级/可养成 + 升降序，记忆上次选择（本地 settings.cfg）。
 extends Control
 
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const HudWidgets := preload("res://view/ui/hud_widgets.gd")
+const CardSortScript := preload("res://logic/card_sort.gd")
 const GameStateScript := preload("res://view/game_state.gd")
 const SpriteDB := preload("res://view/sprite_db.gd")
 const BG_TEX := preload("res://assets/ui/menu_bg.png")
@@ -18,15 +19,21 @@ const RARITY_COL := {
 	"common": Color("9aa0ad"), "rare": Color("4a6db0"),
 	"epic": Color("7c5ea8"), "legendary": Color("d8a23a"),
 }
-const RARITY_RANK := {"common": 0, "rare": 1, "epic": 2, "legendary": 3}
+const SORT_PREF_PATH := "user://settings.cfg"
+const SORT_LABELS := {"rarity": "稀有度", "cost": "费", "level": "等级", "actionable": "可养成"}
 
 var _http: HTTPRequest
 var _wallet_holder: Control
 var _grid: GridContainer
 var _status: Label
+var _sort_key := "rarity"
+var _sort_asc := true                 # 记忆上次选择；默认稀有度升序（普通→传说）
+var _key_btns := {}
+var _dir_btn: Button
 
 func _ready() -> void:
 	AudioManager.play_music("music_main_menu")
+	_load_sort_pref()
 	_build_static()
 	_http = HTTPRequest.new()
 	add_child(_http)
@@ -46,11 +53,12 @@ func _build_static() -> void:
 	_wallet_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_wallet_holder)
 	_title("养成", 84, 52)
-	_status = _center_label("连接中…", 150, 20, PixelUI.COL_HINT)
+	_status = _center_label("连接中…", 128, 18, PixelUI.COL_HINT)
+	_build_sort_bar(160)
 
 	var scroll := ScrollContainer.new()
-	scroll.position = Vector2(40, 196)
-	scroll.size = Vector2(640, 936)
+	scroll.position = Vector2(40, 212)
+	scroll.size = Vector2(640, 920)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	add_child(scroll)
 	_grid = GridContainer.new()
@@ -79,7 +87,7 @@ func _populate(cache, config) -> void:
 		_status.text = "（离线）"
 		return
 	_set_wallet(cache.gold, cache.gems)
-	var ids := _sorted_ids(config)
+	var ids := CardSortScript.sort_ids(config.cards.keys(), cache, config, _sort_key, _sort_asc)
 	var unlocked := 0
 	for cid in ids:
 		if cache.is_unlocked(cid):
@@ -87,16 +95,75 @@ func _populate(cache, config) -> void:
 		_grid.add_child(_card_tile(cid, cache, config))
 	_status.text = "已解锁 %d / %d" % [unlocked, ids.size()]
 
-# 默认排序：稀有度升序 → config 序（KAN-67 再做多维可选）。
-func _sorted_ids(config) -> Array:
-	var ids: Array = config.cards.keys()
-	ids.sort_custom(func(a, b):
-		var ra := int(RARITY_RANK.get(str(config.get_card_progression(a).get("rarity", "")), 0))
-		var rb := int(RARITY_RANK.get(str(config.get_card_progression(b).get("rarity", "")), 0))
-		if ra != rb:
-			return ra < rb
-		return String(a) < String(b))
-	return ids
+# —— KAN-67 多维排序控件 ——
+func _build_sort_bar(y: float) -> void:
+	var x := 40.0
+	for key in CardSortScript.KEYS:
+		var w: float = 130.0 if key == "actionable" else (80.0 if key == "cost" else (90.0 if key == "level" else 110.0))
+		_key_btns[key] = _sort_btn(String(SORT_LABELS[key]), x, y, w, _on_sort_key.bind(key))
+		x += w + 8.0
+	_dir_btn = _sort_btn(_dir_label(), 580, y, 100, _on_sort_dir)
+	_refresh_sort_buttons()
+
+func _sort_btn(label: String, x: float, y: float, w: float, cb: Callable) -> Button:
+	var btn := Button.new()
+	btn.text = label
+	btn.position = Vector2(x, y)
+	btn.size = Vector2(w, 40)
+	btn.focus_mode = Control.FOCUS_NONE
+	PixelUI.style_button(btn, "stone", 20)
+	btn.pressed.connect(cb)
+	add_child(btn)
+	return btn
+
+func _dir_label() -> String:
+	return "升序" if _sort_asc else "降序"
+
+# 切某键时套该键的自然默认方向（可再按升降序翻转）。
+func _default_asc(key: String) -> bool:
+	match key:
+		"cost", "rarity": return true    # 便宜在前 / 普通→传说
+		_: return false                  # 等级高在前 / 可养成在前
+	return true
+
+func _on_sort_key(key: String) -> void:
+	AudioManager.play_sfx("ui_button_press")
+	_sort_key = key
+	_sort_asc = _default_asc(key)
+	_dir_btn.text = _dir_label()
+	_save_sort_pref()
+	_refresh_sort_buttons()
+	_rebuild()
+
+func _on_sort_dir() -> void:
+	AudioManager.play_sfx("ui_button_press")
+	_sort_asc = not _sort_asc
+	_dir_btn.text = _dir_label()
+	_save_sort_pref()
+	_rebuild()
+
+func _refresh_sort_buttons() -> void:
+	for key in _key_btns:
+		PixelUI.style_button(_key_btns[key], "gold" if key == _sort_key else "stone", 20)
+
+# 即时重排（不重拉服务器，用缓存重建网格）。
+func _rebuild() -> void:
+	_populate(GameStateScript.economy().get_cache(), GameStateScript.config())
+
+func _load_sort_pref() -> void:
+	var c := ConfigFile.new()
+	if c.load(SORT_PREF_PATH) == OK:
+		var k := String(c.get_value("card_sort", "key", "rarity"))
+		if CardSortScript.KEYS.has(k):
+			_sort_key = k
+		_sort_asc = bool(c.get_value("card_sort", "asc", true))
+
+func _save_sort_pref() -> void:
+	var c := ConfigFile.new()
+	c.load(SORT_PREF_PATH)   # 忽略返回：不存在则空配置
+	c.set_value("card_sort", "key", _sort_key)
+	c.set_value("card_sort", "asc", _sort_asc)
+	c.save(SORT_PREF_PATH)
 
 func _card_tile(cid: String, cache, config) -> Control:
 	var rarity := str(config.get_card_progression(cid).get("rarity", "common"))
@@ -133,17 +200,7 @@ func _card_tile(cid: String, cache, config) -> Control:
 	return tile
 
 func _actionable(cache, config, cid: String) -> bool:
-	if not cache.is_unlocked(cid):
-		return cache.can_unlock(cid, config)
-	var st: Dictionary = cache.card_state(cid)
-	var level := int(st.get("level", 1))
-	var rank := int(st.get("rank", 1))
-	if level < cache.level_cap(rank, config) and int(cache.gold) >= cache.upgrade_cost(cid, config):
-		return true
-	var rc: Dictionary = cache.rank_up_cost(cid, config)
-	if not rc.is_empty() and int(st.get("shards", 0)) >= int(rc.get("shards", 1 << 30)) and int(cache.gold) >= int(rc.get("gold", 1 << 30)):
-		return true
-	return false
+	return CardSortScript.actionable(cache, config, cid)
 
 # ---------- handlers ----------
 func _open_detail(cid: String) -> void:
