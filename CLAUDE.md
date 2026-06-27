@@ -47,18 +47,33 @@
   `AudioAssets` sheet 中 `path` 是 **Godot 目标资源路径**，不是“文件已存在”的证明；`asset_status=planned/sourced/imported/final` 才表示素材状态。表内有 `display_name_zh` 中文资源名，`effect_notes` 必须写中文声音设计说明；`ColumnGuide` sheet 解释每一列用途。首版允许“清单先行、音频文件后补”：`AudioManager` 找不到实际 `.ogg/.wav` 时会静默跳过，避免空资源阶段阻塞开发。
 
 ## 目录布局
+> **一句话仓库地图**：单一 monorepo = 🎮Godot 客户端（**仓库根即 Godot 工程根**）+ 🖥Go 服务端（`server/`，独立 module）+ 🔗双端共享（`config/`·`proto/`）+ 📚文档（`docs/`）。
+> **边界铁律**：Godot 的 `res://` **不能跨工程根** → 客户端相关目录（含 `config/`，客户端用 `res://config/*.json` 读）必须留在仓库根、**不能装进子文件夹**；只有 `server/` 可独立隔离。（这也是为何**不采用**"前端/后端/配置/文档"四平级——会断在 config 上；2026-06-28 评估结论。）
 ```
-/logic   客户端逻辑层（不依赖 Godot 渲染；V4 lockstep 沿用本层确定性 tick）
-/view    客户端显示层脚本与场景
-/ai      AIController（单机训练营用；V4 联机模式不调用）
-/net     V4 网络层：WS 客户端 + protobuf 解析 + token 存盘（S1+ 起加）
-/config  GameConfig.xlsx（策划源表）+ cards.json / units.json / levels.json / arena.json / run.json / relics.json / campaign.json / tutorial.json / i18n.json / audio_assets.json（运行时读）
-/sound   音乐/音效文件根目录（运行时路径来自 config/audio_assets.json）
-/tests   客户端单元测试（test_*.gd） + test_runner.gd + test_case.gd
-/tools   配置生成脚本等项目工具
-/proto   V4 共享 protobuf 定义（.proto 源 + 生成产物入 client net/proto + server internal/pb）
-/server  V4 Go 服务端（cmd/{gateway,api,battle,migrate} + internal/* + migrations/ + Dockerfile + go.mod + Makefile）
-/docs    归档文档（PLAN_V1/V2/V3、HISTORY_ARCHIVE、HISTORY_V3_DETAILED、ART_ASSETS、ENVIRONMENT）
+# ── 🎮 客户端 = Godot 工程（根 = project.godot 所在；res:// 相对此根）──
+/logic    逻辑层（不依赖渲染；lockstep 沿用本层 10Hz 确定性 tick）
+/view     显示层脚本与场景（autoload I18n/AudioManager；主场景 main_menu.tscn）
+/ai       AIController（单机训练营 + V5-S8 平衡 probe 驱动；联机不调用）
+/net      网络层：WS 客户端 + protobuf(net/proto/) + 会话/token + EconomyStateCache
+/assets   在用美术（bosses/fonts/fx/map/terrain/towers/ui/units，已 import）
+/sound    音乐/音效（路径来自 config/audio_assets.json）
+/addons   godot-ai MCP 插件（编辑器联动辅助）
+/tests    客户端单测 test_*.gd + test_runner.gd + test_case.gd
+project.godot   Godot 工程入口（把工程根钉死在仓库根）
+
+# ── 🔗 双端共享（客户端 res:// 读 + 服务端 CONFIG_DIR 挂载 / proto 双生成）──
+/config   GameConfig.xlsx(策划源) + cards/units/levels/arena/stages/encounters/run/relics/campaign/tutorial/i18n/audio_assets.json（客户端 res://config/；服务端 docker 挂 ../config，决策48 同源）
+/proto    共享 .proto 源 → 双生成：客户端 net/proto/*.gd + 服务端 internal/pb/*
+
+# ── 🖥 服务端 = Go（独立 module，可隔离）──
+/server   cmd/{gateway,api,battle,migrate} + internal/* + migrations/ + Dockerfile + docker-compose + go.mod + Makefile
+
+# ── 📚 文档 / 工具 / 素材源 ──
+/docs       归档与专题（PLAN_V1~V3、HISTORY_ARCHIVE、HISTORY_V3_DETAILED、ART_ASSETS、ENVIRONMENT、DESIGN/ACCEPTANCE/BALANCE_V5_*）
+/tools      配置/平衡脚本（build_config.py、build_stages.py、balance_probe.gd…）
+/scripts    环境脚本（setup-godot-ai.ps1）
+/testAssets 原始美术素材源（84 PNG，加工后进 /assets；非运行时引用）
+根 *.md     README / CLAUDE / AGENTS / PLAN_GRAND / PLAN_V5(+V4) / HISTORY（AI agent 真相源，刻意放根便于发现）
 ```
 
 ## 工具链 / 常用命令

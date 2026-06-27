@@ -47,6 +47,8 @@
   `AudioAssets` sheet 中 `path` 是 **Godot 目标资源路径**，不是“文件已存在”的证明；`asset_status=planned/sourced/imported/final` 才表示素材状态。表内有 `display_name_zh` 中文资源名，`effect_notes` 必须写中文声音设计说明；`ColumnGuide` sheet 解释每一列用途。首版允许“清单先行、音频文件后补”：`AudioManager` 找不到实际 `.ogg/.wav` 时会静默跳过，避免空资源阶段阻塞开发。
 
 ## 目录布局
+> **一句话仓库地图**：monorepo = 🎮Godot 客户端（**仓库根即 Godot 工程根**）+ 🖥Go 服务端（`server/`，独立 module）+ 🔗双端共享（`config/`·`proto/`）+ 📚文档（`docs/`）。
+> **边界铁律**：Godot 的 `res://` **不能跨工程根** → 客户端目录（含 `config/`，客户端用 `res://config/` 读）必须留在仓库根、不能装进子文件夹；只有 `server/` 可独立隔离。故**不采用**"前端/后端/配置/文档"四平级（会断在 config 上；2026-06-28 评估，同口径见 [CLAUDE.md](CLAUDE.md)）。
 ```
 /logic       客户端逻辑层（不依赖 Godot 渲染；V4 lockstep 沿用本层确定性 tick）
 /view        客户端显示层脚本与场景

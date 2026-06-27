@@ -42,6 +42,19 @@ cd server && docker compose up && make migrate
 
 环境前置与详细配置见 [Wiki · 环境配置](https://github.com/jchensh/godot-clash-pusher/wiki/附录-环境配置)。
 
+## 仓库结构
+
+单一 monorepo:Godot **客户端在仓库根**(`project.godot` 即工程根),Go **服务端在 `server/`**,配置与协议**双端共享**。
+
+```
+客户端(仓库根)  logic/ view/ ai/ net/ assets/ sound/ tests/   ← Godot 工程,res:// 相对此根
+server/         Go 服务端(gateway/api/battle/migrate + PG/Redis,独立 module)
+config/ proto/  双端共享:客户端 res:// 读 + 服务端挂载;proto 一份源双生成
+docs/ tools/    文档归档 + 配置·平衡脚本
+```
+
+> ⚠️ Godot 的 `res://` 不能跨工程根 → 客户端目录(含 `config/`)留在仓库根、不另装子文件夹;只有 `server/` 独立隔离。完整目录表与边界说明见 [`CLAUDE.md`](CLAUDE.md) / [`AGENTS.md`](AGENTS.md)「目录布局」。
+
 ## 文档
 
 | 文档 | 内容 |
