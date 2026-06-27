@@ -34,6 +34,26 @@ func refresh(http, token: String, all_card_ids: Array) -> Dictionary:
 	return {"ok": true}
 
 
+## 把一次服务器返回的状态快照应用到缓存（refresh/动作共用）。
+func _apply(state_dict: Dictionary, all_card_ids: Array) -> void:
+	if cache == null:
+		cache = PlayerDataScript.new()
+	cache.apply_server_state(state_dict, all_card_ids)
+	is_loaded = true
+	last_error = {}
+
+
+## V5-S7（决策48）动作门面：领取挂机金币。服务器算 (now−last_collect) 产出 + 落库，回新状态 → 更新缓存。
+## 成功 → {ok:true}（缓存已刷新）；失败 → {ok:false,...}（缓存不变）。token=会话令牌；all_card_ids 来自 config。
+func collect_idle(http, token: String, all_card_ids: Array) -> Dictionary:
+	var res: Dictionary = await _client.collect_idle(http, token)
+	if bool(res.get("ok", false)):
+		_apply(res["state"], all_card_ids)
+	else:
+		last_error = res
+	return res
+
+
 ## 返回适合注入 Match.setup_stage 的 PlayerData（开战用）。
 ## 已加载 → 返回缓存（权威来自服务器）；未加载 → 返回全默认新档（保证战斗能跑，数值=未养成 baseline）。
 ## all_card_ids 来自 config（确保卡池完整）。
