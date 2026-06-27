@@ -1,7 +1,7 @@
 # run_balance_probe.gd —— V5-S8b 平衡 probe 跑批（headless，SceneTree 脚本）。
 #
 # 用法（git bash 用 Godot 全路径 console exe）：
-#   "$GODOT" --headless --path 'F:\godotProject' --script res://tools/run_balance_probe.gd
+#   "$GODOT" --headless --path 'F:\godotTowerPush\master' --script res://tools/run_balance_probe.gd
 #
 # 对「计划曲线预览」（10 章代表遭遇 × 计划系数 coef(idx)=1+(idx-1)*0.016）扫我方战力门槛，
 # 打印报告表，供 S8d 调参（系数斜率 / recommended_power 的 T / 升级% / 成本）。

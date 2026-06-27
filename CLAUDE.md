@@ -78,10 +78,18 @@ godot --path . -e                                                               
 > 安装/注册、管理命令、**画面/FX 验收协议**（截图序列/临时 harness 定格/日志掐时机）→ 见 [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
 ## 分支 / 提交 / 推送约定
-- **开发在 `develop` 分支进行**；`main` 为稳定线，远端 `origin` = https://github.com/jchensh/godot-clash-pusher 。
-- **`release` 分支**：用户用 Antigravity（Google IDE）创建，用于打安卓包；跟随 `develop` 推进，**agent 默认不在此分支提交、不主动同步**，需同步由用户主动指示。
+> 与 [AGENTS.md](AGENTS.md)「分支 / 提交 / 推送约定」同口径（2026-06-28 起：`develop` 已删、改主干 + 临时 feature 分支流）。
+- **稳定线 = `master`**（原 `main`，已于 2026-06-28 重命名合并；旧的 `develop` 分支已并入 `master`、不再维护）。远端 `origin` = https://github.com/jchensh/godot-clash-pusher 。
+- **开发用 worktree + 临时 feature 分支（主干开发）**：每个任务从 `master` 切一个临时 feature 分支、**在独立 worktree 里开发**（不在 `master` 工作树直接改），开发完 + 验证（单测过 / 真人验收过）后**直接合回 `master`**，再删临时分支与 worktree。`master` 工作树始终干净，多任务可并行不互扰。
+  ```bash
+  git worktree add ../master-<feature> -b feat/<feature>   # 建 worktree + 临时分支
+  cd ../master-<feature>                                     # 进 worktree 开发 + 提交 + 测试
+  cd <master 目录> && git merge --no-ff feat/<feature>       # 验证通过后合回稳定线
+  git worktree remove ../master-<feature> && git branch -d feat/<feature>   # 清理
+  ```
+- **`release` 分支**：用户用 Antigravity（Google IDE）创建，用于打安卓包；跟随 `master` 推进，**agent 默认不在此分支提交、不主动同步**，需同步由用户主动指示。
 - **打包前必检**：①`config/network.json` 的 `api_url`/`ws_url`（默认 localhost，真机/公网需改）；②安卓明文流量（cleartext）—— 当前定走 HTTPS/WSS（方式 B），公网服务端就绪前不打包正式联机包，详见 HISTORY.md「发布与打包」附录。
-- **仅当用户说"提交"时**才 `git commit`；提交后**顺带 `git push`**（develop 首次推送用 `git push -u origin develop` 建立跟踪）。
+- **仅当用户说"提交"时**才 `git commit`；提交后**顺带 `git push`**。feature 分支首次推送用 `git push -u origin feat/<feature>` 建立跟踪（worktree 内推送同理）。
 - 仍遵守"一步一确认"：每步做完先停下报告，待用户说提交再 commit+push。
 
 ## PM 工作流 / Jira 看板（Atlas MCP，**Claude Code + Codex 都适用**）
@@ -102,5 +110,8 @@ godot --path . -e                                                               
   - **当前阶段 = 玩法验证**：S0 脚手架 → S1 匿名登录 → S2 档案云存档 → **S3 lockstep 实时对战（头号工程）** → S4 匹配 → S5 赛季+榜。
   - **产品化推后**：S6 战绩回放 / S7 反作弊深化 / S8 部署上线 / S9 版本管理 / S10 IAP+养成 / S11 正式登录+合规 / S12 聊天好友。
   - **V3 Roguelite + 短战役 + 平衡剩余子项**作为单人训练营保留不动；V3-9 平衡可与 V4-S0~S2 并行做。
-- **Now**：**V4-S0/S1/S2/S3 全部完成**。S0 脚手架 + 双端 protobuf；S1 匿名 device_id 登录；S2 玩家档案云存档（profile + decks + 乐观锁 + 离线缓存）；**S3 lockstep 实时对战（头号工程）整阶段收官**——确定性地基 + Go gateway/battle room + 客户端 net 层 + 联机对战场景 + 心跳/断线重连重放/超时认输，**两台 Windows 真机对战验收通过**（完整对局 + 实时同步 + 胜负入库）。客户端单测 **217/217**；Go battle 14 unit + auth/profile integration 全过。**V4-S0~S4 全部完成（KAN-36/37/38/39/40 Done）**。S4 匹配：profiles 加隐藏 MMR（ELO @1200，结算调分）+ 杯数（可见进度，主菜单显示）；Redis ZSET 队列（首次用 Redis）+ 窗口放宽匹配器 + Lobby 替代 Hub（FindMatch→配对→建房）；客户端匹配 UI（匹配中/取消）+ 会话自动登录。端到端真匹配 smoke + **两台 Windows 真机验收通过**（ELO 配对+对局+MMR/杯数入库）。客户端单测 **221/221**；Go unit + integration（含 Redis）全过。**V4-S5（赛季+排行榜）暂缓**（KAN-41 退回 To Do）。
-- **Now = V5 在线 F2P 闯关养成**（**决策 48 推翻 47**：服务器权威、实时在线；权威规划 [PLAN_V5.md](PLAN_V5.md)，Epic KAN-50）：100+ 关闯关（难度系数）+ 货币经济（金币/碎片/宝石）+ 卡牌升级/升阶（数值 + 技能解锁）+ 挂机，**全部服务器权威**（账号/钱包/养成/进度/配置在服务器 + PG），客户端瘦表现层 + 持久连接 + 断线不可玩。**本地原型 S0~S6 完成**（单测 **270/270**；逻辑算法将镜像进 Go 做权威结算，客户端那份保留 UI 预览 + 战斗内计算）：S0 配置骨架 / S1 出兵数值乘区 / S2 存档+战力 / S3 闯关+星级 / S4 升级 / S5 升阶+技能解锁 / S6 经济产出。**转向后施工**：在线地基 **N1/N2 完成**（持久会话+登录门 + 配置服务器化下发）+ 服务器经济 **N3/N4 完成**（状态+DB / 升级升阶解锁结算，服务器算成本+校验+落库，真 docker 端到端验过）→ N5/N6（发奖/挂机服务器时钟）→ 瘦客户端 N7 → 原 S7 UI（接服务器）/ S8 内容平衡顺延。复用 V4 的 Go+PG+账号+WS+lockstep 作地基（V4 服务端线从"暂缓"转主干）。联机对战仍矢量白膜（KAN-49）。
+- **V4 完成线**：**V4-S0/S1/S2/S3 全部完成**。S0 脚手架 + 双端 protobuf；S1 匿名 device_id 登录；S2 玩家档案云存档（profile + decks + 乐观锁 + 离线缓存）；**S3 lockstep 实时对战（头号工程）整阶段收官**——确定性地基 + Go gateway/battle room + 客户端 net 层 + 联机对战场景 + 心跳/断线重连重放/超时认输，**两台 Windows 真机对战验收通过**（完整对局 + 实时同步 + 胜负入库）。客户端单测 **217/217**；Go battle 14 unit + auth/profile integration 全过。**V4-S0~S4 全部完成（KAN-36/37/38/39/40 Done）**。S4 匹配：profiles 加隐藏 MMR（ELO @1200，结算调分）+ 杯数（可见进度，主菜单显示）；Redis ZSET 队列（首次用 Redis）+ 窗口放宽匹配器 + Lobby 替代 Hub（FindMatch→配对→建房）；客户端匹配 UI（匹配中/取消）+ 会话自动登录。端到端真匹配 smoke + **两台 Windows 真机验收通过**（ELO 配对+对局+MMR/杯数入库）。客户端单测 **221/221**；Go unit + integration（含 Redis）全过。**V4-S5（赛季+排行榜）暂缓**（KAN-41 退回 To Do）。
+- **Now = V5 在线 F2P 闯关养成**（**决策 48 推翻 47**：服务器权威、实时在线；权威规划 [PLAN_V5.md](PLAN_V5.md)，Epic KAN-50）：100+ 关闯关（难度系数）+ 货币经济（金币/碎片/宝石）+ 卡牌升级/升阶（数值 + 技能解锁）+ 挂机，**全部服务器权威**（账号/钱包/养成/进度/配置在服务器 + PG），客户端瘦表现层 + 持久连接 + 断线不可玩。**本地原型 S0~S6 完成**（单测 **270/270**；逻辑算法将镜像进 Go 做权威结算，客户端那份保留 UI 预览 + 战斗内计算）：S0 配置骨架 / S1 出兵数值乘区 / S2 存档+战力 / S3 闯关+星级 / S4 升级 / S5 升阶+技能解锁 / S6 经济产出。**转向后施工**：在线地基 + 服务器经济 **N1~N7 整线收官**——N1/N2 持久会话+登录门 + 配置服务器化下发；N3/N4 服务器权威经济状态+DB / 升级升阶解锁结算（服务器算成本+校验+落库）；N5 通关发奖+sanity；N6 挂机服务器时钟结算（堵改时钟刷资源）；N7 瘦客户端化（养成数据服务器权威 + 本地档降为非权威缓存，堵改存档）。复用 V4 的 Go+PG+账号+WS+lockstep 作地基（V4 服务端线从"暂缓"转主干）。
+  - **S7 UI 整合完成（KAN-58 Done）**：基地 Hub + 闯关地图 + 领奖开箱 + 养成 collection/detail + 钱包/挂机/战力 + deck builder 接已解锁卡（接 EconomyStateCache + 服务器权威经济），真人全流程验收过；派生 **S7+ 养成卡多维排序（KAN-67 Done）** + **GM 作弊工具（KAN-68 Done，服务器权威改库、`GM_ENABLED` 门控 prod 必关）**。
+  - **🚧 Now = V5-S8 内容铺量 + 平衡（KAN-59 进行中）**：S8a 遭遇模板池→15 / S8b 平衡 probe harness（AIController 可选边）/ S8c stages 生成器铺 **100 关** / S8d 敌塔随 coef 平衡 pass——**代码均已完成并提交**，剩 **S8e 真人验收**（从第 1 章推进体验难度曲线，`docs/ACCEPTANCE_V5_S8.md`）未签收。**客户端单测 313/313**。
+  - 联机对战仍矢量白膜（KAN-49 待办，顺延）；V4-S5 赛季+榜暂缓（KAN-41）。

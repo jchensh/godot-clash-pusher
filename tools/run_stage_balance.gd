@@ -1,6 +1,6 @@
 # run_stage_balance.gd —— V5-S8d 真关卡平衡 probe 跑批（headless，SceneTree）。
 #
-# 用法："$GODOT" --headless --path 'F:\godotProject' --script res://tools/run_stage_balance.gd
+# 用法："$GODOT" --headless --path 'F:\godotTowerPush\master' --script res://tools/run_stage_balance.gd
 #
 # 对真 stages.json 的每关（采样每章 首/中/boss 控时长）跑 AI-vs-AI：我方=hard(技术型推塔基准) +
 # 养成乘区 = recommended_power/920；敌方 = 关卡 coef(单位) + coef(敌塔 HP) + ai_difficulty。

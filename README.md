@@ -8,8 +8,8 @@
 |---|---|
 | **阶段** | 🚧 V5 进行中(实时在线 F2P 闯关养成) |
 | **已完成** | V1~V4(机制白膜 → 3-lane → 2D 战斗 reboot+Roguelite+精灵 → 联网地基/lockstep/匹配) |
-| **V5** | 在线化 N1~N7 收官 + S7 UI 完成;下站 S8 内容铺量 |
-| **客户端单测** | ✅ **290 / 290 通过** |
+| **V5** | 在线化 N1~N7 收官 + S7 UI 完成;🚧 S8 内容铺量+平衡(100 关)进行中 |
+| **客户端单测** | ✅ **313 / 313 通过** |
 
 📖 **详细文档请见 [Wiki](https://github.com/jchensh/godot-clash-pusher/wiki)** —— 玩法 / 技术架构 / 开发路线 / 48 条决策日志 / V1~V4 完整历史 / 美术圣经 / UI 设计稿等 18 页一站式文档。
 
@@ -56,4 +56,4 @@ cd server && docker compose up && make migrate
 
 多 AI agent 协作(Claude Code / Codex / Antigravity / ZCode),开发者人工主导 + Jira KAN 看板管理。详见 [Wiki · 多Agent协作](https://github.com/jchensh/godot-clash-pusher/wiki/7-多Agent协作)。
 
-开发在 `develop` 分支;仅当用户说"提交"时才 commit + push。详见 [Wiki · 开发纪律](https://github.com/jchensh/godot-clash-pusher/wiki/6-开发纪律)。
+稳定线 = `master`(主干开发:每任务从 master 切临时 feature 分支/worktree,验证过再合回;`release` 跟随 master 打安卓包);仅当用户说"提交"时才 commit + push。详见 [Wiki · 开发纪律](https://github.com/jchensh/godot-clash-pusher/wiki/6-开发纪律) 与 [`AGENTS.md`](AGENTS.md)。

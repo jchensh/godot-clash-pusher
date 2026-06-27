@@ -143,7 +143,7 @@ Persist those exports in your shell profile if desired.
 Run all logic tests:
 
 ```powershell
-godot --headless --path F:\godotProject --script res://tests/test_runner.gd
+godot --headless --path F:\godotTowerPush\master --script res://tests/test_runner.gd
 ```
 
 macOS example:
@@ -155,7 +155,7 @@ godot --headless --path /path/to/godotProject --script res://tests/test_runner.g
 Open the editor:
 
 ```powershell
-godot --path F:\godotProject -e
+godot --path F:\godotTowerPush\master -e
 ```
 
 ## Using Godot AI MCP
