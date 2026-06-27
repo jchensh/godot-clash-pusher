@@ -247,9 +247,38 @@
 
 **分期取舍**：S1（乘区管线）是命门地基，先于一切养成/关卡；S2/S3 把"存档 + 闯关"立起来即可 headless 跑通；S4/S5 是养成两件套；S6 接通经济水龙头；S7 才贴 UI；S8 铺量 + 平衡（真正调手感）。S0~S6 全 headless 单测覆盖，S7/S8 交真人。
 
+### 11.3 V5-S8 施工细表（口径 + 子步，2026-06-27 用户拍板；Jira KAN-59）
+
+> **关键前提（已查证）**：服务器经济**完全配置驱动**——`server/internal/economy/config.go: ParseConfig` 从下发 gameconfig 包读 `stages.json`/`encounters.json`，按 `(chapter,index)` 线性解锁、`starCap=len(stars)`、首通/重复/碎片掉落/挂机产率全读配置；客户端 `ConfigLoader._validate()` 已对两表做结构+引用校验。**→ 铺量是纯配置工作，客户端与服务器两端自动吃到，无需改 Go/GDScript 业务逻辑**（除非新增字段/校验）。S8 难点不在"写关卡"，在"调出合理曲线"（probe 平衡 pass）。
+
+**拍板口径**（数值仍〔示意·probe 校准〕）：
+| 项 | 决议 |
+|---|---|
+| 铺量方式 | **生成器**：compact `config/stages_spec.json`（10 章块 + 曲线参数）+ `tools/build_stages.py` → 生成 `config/stages.json`（100 关）。boss 关手工 override。DRY、调曲线=改一个旋钮、呼应 JSON↔Excel 工作流。 |
+| 章节规模 | **10 章 × 10 关 = 100**；每章第 10 关为 boss（系数 ×1.1）。 |
+| 难度系数 | `coef(idx) = 1.0 + (idx−1)×0.016`（idx = 全局关序 1..100）→ idx1=1.0 / idx50≈1.78 / idx100≈2.58。 |
+| 推荐战力 | `rec(idx) = round(920 × coef(idx) × T)`；920 = 初始 8 卡满编 L1R1 战力（S7b "920绿" 坐实），`T` = 松紧旋钮(~0.85–1.0)，**probe 校准**。 |
+| 奖励曲线 | 首通金 = `300 + 270×(chapter−1)`（复用 economy.rewards 基数）、重复金 = 首通×0.1、定点掉碎片解锁后续卡；faucet 随进度放大（S8d 经济平衡）。 |
+| 敌塔 HP（§12 遗留） | **随 coef 放大**（单旋钮最省心）；boss 关另叠 `base_level` 变体显式抬塔血。 |
+| probe 我方驱动 | 把 `ai/ai_controller.gd` 改为**可选边**（加 side 参数，默认 `OWNER_OPPONENT` 不变、现有调用零改动）；probe 用它驱动我方 → 真游戏 AI 双边对打、门槛最贴实战、可复用。 |
+| 章节主题 | PLAN §7 的 10 主题区；ch1 用全新 V5 stages 缓坡；**不动现有新手战役 campaign**（独立训练营，保留不动）。 |
+
+**子步**（一步一确认，每步 commit + 单测/真人验收）：
+| 子步 | 类型 | 内容 | 验收 |
+|---|---|---|---|
+| **S8a** | 配置 | 遭遇模板池 3→~15（按原型补 12 个 deck：亡灵海/快攻/双坦/法术压制/空军/远程风筝/综合/费用倾泻/boss…）+ ConfigLoader 校验加固 | 单测：15 模板各 8 张合法卡、原型齐 |
+| **S8b** | 逻辑/工具 | 平衡 probe harness `tools/balance_probe.gd`（headless AI-vs-AI 扫 战力门槛/操作窗口 → 报告表）+ **AIController 可选边改造** | 单测：probe 确定性可复跑；AIController 双边零回归（295 全过） |
+| **S8c** | 配置/工具 | `config/stages_spec.json` + `tools/build_stages.py` 生成 100 关 stages.json（系数/战力/奖励曲线）+ boss 特化 | 单测：100 关连续/系数单调/引用合法；config check |
+| **S8d** | 平衡 | 平衡 pass：probe 跑全表 → 调旋钮（系数斜率/rec/T/升级%/成本）迭代至操作窗口符合 §4 | probe 报告：门槛随章节单调、窗口合理 |
+| **S8e** | 验收 | `docs/ACCEPTANCE_V5_S8.md`（真人从第 1 章推进体验难度曲线，照 ACCEPTANCE_V5_S7 范式）+ 真机跑 | 真人逐用例 ✅ |
+
+**依赖顺序**：S8a → S8b → S8c → S8d → S8e。probe（S8b）先于铺量（S8c）= 先有量尺再铺量、避免拍脑袋；probe 可对**合成 stage**（coef × 我方乘区 × 模板 × AI档）扫描，不必等 100 关写完。
+
 ---
 
 ## 12. 待细化（到对应步骤前展开）
+
+> **2026-06-27（KAN-59）**：下列多项 S8 口径已在 §11.3 固化——铺量方式（生成器）、章节规模（10×10）、系数/推荐战力公式、敌塔 HP（随 coef）、probe 我方驱动（AIController 可选边）、章节主题/ch1 与 campaign 关系。剩余数值（T/斜率/成本）由 S8d probe 校准。
 
 - **数值平衡全交 V5-S8 probe**：升级 %/级、阶乘区、系数斜率、各关 recommended_power、成本曲线、挂机产率——本文件数字均〔示意〕。
 - **敌塔 HP**：随 coef 放大 vs 每关显式配（V5-S3 定）。

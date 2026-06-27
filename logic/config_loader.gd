@@ -238,7 +238,9 @@ func _validate() -> void:
 		if not card_progression.has(cid):
 			errors.append("card '%s' 缺少 card_progression 条目" % str(cid))
 
-	# encounters.json：每模板 deck 正好 8 张、卡须在 cards 中。
+	# encounters.json（V5-S8a 加固）：每模板 deck 正好 8 张【且互不重复】、卡须在 cards 中；
+	# archetype 须为已知原型枚举（铺量多样性 + 防笔误）。
+	var _archetypes := ["balanced", "tank", "swarm", "undead", "control", "air", "ranged", "siege", "boss"]
 	for eid in encounters:
 		if String(eid).begins_with("_"):
 			continue
@@ -246,13 +248,19 @@ func _validate() -> void:
 		if typeof(enc) != TYPE_DICTIONARY:
 			errors.append("encounter '%s' 应为对象" % str(eid))
 			continue
+		if not _archetypes.has(str(enc.get("archetype", ""))):
+			errors.append("encounter '%s' 的 archetype 非法('%s')" % [str(eid), str(enc.get("archetype", ""))])
 		var edeck = enc.get("deck", [])
 		if typeof(edeck) != TYPE_ARRAY or (edeck as Array).size() != 8:
 			errors.append("encounter '%s' 的 deck 应为 8 张卡数组" % str(eid))
 		else:
+			var _seen := {}
 			for cid in edeck:
 				if not cards.has(cid):
 					errors.append("encounter '%s' 的 deck 引用了不存在的 card '%s'" % [str(eid), str(cid)])
+				if _seen.has(str(cid)):
+					errors.append("encounter '%s' 的 deck 含重复卡 '%s'" % [str(eid), str(cid)])
+				_seen[str(cid)] = true
 
 	# stages.json：含 chapter/index/encounter/difficulty_coef/ai_difficulty；encounter 须在
 	# encounters 中；ai_difficulty 合法；difficulty_coef ≥1.0；奖励/掉落 card 须在 cards 中。
