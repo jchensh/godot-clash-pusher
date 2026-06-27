@@ -5,11 +5,14 @@
 extends Control
 
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
+const HudWidgets := preload("res://view/ui/hud_widgets.gd")
 const GameStateScript = preload("res://view/game_state.gd")
 const ConfigLoaderScript = preload("res://logic/config_loader.gd")
 const SpriteDB = preload("res://view/sprite_db.gd")
 const BATTLE_SCENE := "res://view/battle_scene.tscn"
 const LEVEL_SELECT_SCENE := "res://view/level_select.tscn"
+const STAGE_MAP_SCENE := "res://view/stage_map.tscn"
+const BASE_CAMP_SCENE := "res://view/base_camp.tscn"
 const DECK_SIZE := 8
 
 const TROOP_BG := Color(0.20, 0.30, 0.42)
@@ -26,20 +29,42 @@ var _frames := {}              # card_id -> 选中金边 Panel（切换 visible�
 var _slots := []               # 8 x {btn, label, portrait}
 var _count_label: Label
 var _battle_btn: Button
+# —— V5-S7e：已解锁池 + 实时战力达标 ——
+var _power_label: Label
+var _cache                              # EconomyStateCache 缓存的 PlayerData（服务器快照）；null=离线/自由对战
+var _recommended := 0                   # 闯关模式下本关推荐战力（着色基准）
+var _mode := ""                         # 组卡上下文：stage / edit / 其它(自由对战)
 
 func _ready() -> void:
 	_loader = ConfigLoaderScript.new()
 	_loader.load_all()
+	_mode = GameStateScript.deck_mode
+	var econ = GameStateScript.economy()
+	_cache = econ.get_cache() if econ.is_loaded else null
+	if GameStateScript.stage_id != "":
+		_recommended = int(_loader.get_stage(GameStateScript.stage_id).get("recommended_power", 0))
 	_init_selection()
 	_build()
 	_refresh()
 
+# 候选池：登录后 = 已解锁卡；离线/自由对战 = 全卡池（保留 V3 自由对战）。
+func _card_pool() -> Array:
+	if _cache != null:
+		return _cache.unlocked_card_ids()
+	return _loader.cards.keys()
+
+func _card_available(id) -> bool:
+	return _loader.has_card(id) and (_cache == null or _cache.is_unlocked(id))
+
 func _init_selection() -> void:
 	var src: Array = GameStateScript.player_deck
 	if src.is_empty():
-		src = (_loader.get_level(GameStateScript.level_id).get("player_deck", []) as Array)
+		if _cache != null:
+			src = _cache.unlocked_card_ids()
+		else:
+			src = (_loader.get_level(GameStateScript.level_id).get("player_deck", []) as Array)
 	for id in src:
-		if _loader.has_card(id) and not (id in _selected) and _selected.size() < DECK_SIZE:
+		if _card_available(id) and not (id in _selected) and _selected.size() < DECK_SIZE:
 			_selected.append(id)
 
 func _cost(id) -> int:
@@ -57,7 +82,16 @@ func _is_troop(id) -> bool:
 func _build() -> void:
 	PixelUI.add_background(self)
 	_title(tr("deck_title"), 40, 46)
-	_center_label(tr("deck_stage") % GameStateScript.level_id.to_upper(), 116, 22, PixelUI.COL_MUTED)
+	var subtitle := ""
+	if GameStateScript.stage_id != "":
+		var s = _loader.get_stage(GameStateScript.stage_id)
+		subtitle = "关卡 %d-%d" % [int(s.get("chapter", 0)), int(s.get("index", 0))]
+	elif _mode == "edit":
+		subtitle = "编辑卡组"
+	else:
+		subtitle = tr("deck_stage") % GameStateScript.level_id.to_upper()
+	_center_label(subtitle, 108, 22, PixelUI.COL_MUTED)
+	_power_label = _center_label("", 138, 22, PixelUI.COL_GOLD)
 
 	# 当前卡组 8 格（2 行 x 4）
 	_pin_label(tr("deck_your"), Vector2(30, 162), Vector2(360, 28), 24, PixelUI.COL_PARCHMENT, HORIZONTAL_ALIGNMENT_LEFT)
@@ -91,7 +125,7 @@ func _build() -> void:
 	# 分隔线 + 卡池
 	_rect(Color(0.30, 0.34, 0.30, 0.8), Vector2(30, 386), Vector2(660, 3))
 	_pin_label(tr("deck_pool"), Vector2(30, 398), Vector2(660, 26), 20, PixelUI.COL_MUTED, HORIZONTAL_ALIGNMENT_LEFT)
-	var ids: Array = _loader.cards.keys()
+	var ids: Array = _card_pool()
 	for i in ids.size():
 		var id = ids[i]
 		var col := i % 4
@@ -102,7 +136,8 @@ func _build() -> void:
 
 	# 底部按钮
 	_action_button(tr("btn_back"), 70, 988, 240, "dark", _on_back)
-	_battle_btn = _action_button(tr("btn_battle"), 410, 988, 240, "gold", _on_battle)
+	var confirm_label: String = "保存" if _mode == "edit" else tr("btn_battle")
+	_battle_btn = _action_button(confirm_label, 410, 988, 240, "gold", _on_battle)
 	_battle_btn.add_theme_stylebox_override("disabled", PixelUI.sbpixel(Color(0.18, 0.18, 0.20), 3, Color(0.30, 0.30, 0.33)))
 	_battle_btn.add_theme_color_override("font_disabled_color", Color(0.5, 0.5, 0.55))
 	_center_label(tr("deck_need8"), 1086, 20, PixelUI.COL_HINT)
@@ -169,15 +204,36 @@ func _refresh() -> void:
 	_count_label.add_theme_color_override("font_color", Color(0.5, 0.9, 0.55) if full else GOLD)
 	if _battle_btn != null:
 		_battle_btn.disabled = not full
+	if _power_label != null:
+		var p: int = int(_cache.team_power(_selected, _loader)) if _cache != null else 0
+		if _recommended > 0:
+			_power_label.text = "战力 %s / 推荐 %s" % [HudWidgets.format_int(p), HudWidgets.format_int(_recommended)]
+			_power_label.add_theme_color_override("font_color", HudWidgets.power_tier_color(HudWidgets.power_tier(p, _recommended)))
+		else:
+			_power_label.text = "战力 %s" % HudWidgets.format_int(p)
+			_power_label.add_theme_color_override("font_color", PixelUI.COL_GOLD)
 
 func _on_battle() -> void:
 	if _selected.size() != DECK_SIZE:
 		return
 	GameStateScript.player_deck = _selected.duplicate()
+	# edit 模式（基地编辑）= 只存卡组回基地；其余 = 进战斗（battle 读 stage_id 选闯关/自由）。
+	if _mode == "edit":
+		print("[V5][deck] 保存卡组回基地 deck=%s" % str(_selected))
+		get_tree().change_scene_to_file(BASE_CAMP_SCENE)
+		return
+	# ★ 单人对战上下文互斥：清掉 roguelite/战役 静态状态，避免 battle 因 stale run/campaign
+	#   误判模式（战后弹去肉鸽/战役并推进）。battle 据 stage_id 选闯关 vs 自由。
+	GameStateScript.run = null
+	GameStateScript.campaign = null
+	print("[V5][deck] 出战 mode=%s stage_id='%s' deck=%s" % [_mode, GameStateScript.stage_id, str(_selected)])
 	get_tree().change_scene_to_file(BATTLE_SCENE)
 
 func _on_back() -> void:
-	get_tree().change_scene_to_file(LEVEL_SELECT_SCENE)
+	match _mode:
+		"stage": get_tree().change_scene_to_file(STAGE_MAP_SCENE)
+		"edit": get_tree().change_scene_to_file(BASE_CAMP_SCENE)
+		_: get_tree().change_scene_to_file(LEVEL_SELECT_SCENE)
 
 # ---------- 小工具 ----------
 func _rect(color: Color, pos: Vector2, size: Vector2) -> ColorRect:

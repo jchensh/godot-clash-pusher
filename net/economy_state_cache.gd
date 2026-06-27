@@ -24,6 +24,7 @@ func refresh(http, token: String, all_card_ids: Array) -> Dictionary:
 	var res: Dictionary = await _client.get_state(http, token)
 	if not bool(res.get("ok", false)):
 		last_error = res
+		print("[V5][econ] 拉状态失败 status=%d" % int(res.get("status_code", 0)))
 		return res
 	# 服务器快照 → PlayerData（apply_server_state 用服务器 schema 重建）。
 	if cache == null:
@@ -31,6 +32,7 @@ func refresh(http, token: String, all_card_ids: Array) -> Dictionary:
 	cache.apply_server_state(res["state"], all_card_ids)
 	is_loaded = true
 	last_error = {}
+	print("[V5][econ] 拉状态 ok gold=%d gems=%d 解锁=%d/%d highest=%s" % [cache.gold, cache.gems, cache.unlocked_card_ids().size(), cache.cards.size(), cache.highest_cleared])
 	return {"ok": true}
 
 
@@ -46,11 +48,51 @@ func _apply(state_dict: Dictionary, all_card_ids: Array) -> void:
 ## V5-S7（决策48）动作门面：领取挂机金币。服务器算 (now−last_collect) 产出 + 落库，回新状态 → 更新缓存。
 ## 成功 → {ok:true}（缓存已刷新）；失败 → {ok:false,...}（缓存不变）。token=会话令牌；all_card_ids 来自 config。
 func collect_idle(http, token: String, all_card_ids: Array) -> Dictionary:
+	var before := int(cache.gold) if cache != null else 0
 	var res: Dictionary = await _client.collect_idle(http, token)
 	if bool(res.get("ok", false)):
 		_apply(res["state"], all_card_ids)
+		print("[V5][econ] 领挂机 ok gold %d→%d" % [before, cache.gold])
 	else:
 		last_error = res
+		print("[V5][econ] 领挂机失败 status=%d code=%d" % [int(res.get("status_code", 0)), int(res.get("error_code", 0))])
+	return res
+
+
+## V5-S7d 养成动作门面：升级 / 升阶 / 解锁。服务器算成本+校验+落库 → 回新状态更新缓存。
+func upgrade(http, token: String, card_id: String, all_card_ids: Array) -> Dictionary:
+	return await _action(http, "upgrade", token, card_id, all_card_ids)
+
+func rank_up(http, token: String, card_id: String, all_card_ids: Array) -> Dictionary:
+	return await _action(http, "rank_up", token, card_id, all_card_ids)
+
+func unlock(http, token: String, card_id: String, all_card_ids: Array) -> Dictionary:
+	return await _action(http, "unlock", token, card_id, all_card_ids)
+
+func _action(http, op: String, token: String, card_id: String, all_card_ids: Array) -> Dictionary:
+	var res: Dictionary
+	match op:
+		"upgrade": res = await _client.upgrade(http, token, card_id)
+		"rank_up": res = await _client.rank_up(http, token, card_id)
+		_: res = await _client.unlock(http, token, card_id)
+	if bool(res.get("ok", false)):
+		_apply(res["state"], all_card_ids)
+		var cs: Dictionary = cache.card_state(card_id)
+		print("[V5][econ] %s %s ok → gold=%d level=%d rank=%d unlocked=%s" % [op, card_id, cache.gold, int(cs.get("level", 0)), int(cs.get("rank", 0)), str(cache.is_unlocked(card_id))])
+	else:
+		last_error = res
+		print("[V5][econ] %s %s 失败 status=%d code=%d" % [op, card_id, int(res.get("status_code", 0)), int(res.get("error_code", 0))])
+	return res
+
+## V5-S7c 闯关上报门面：报 (stage_id, stars)，服务器 sanity + 发奖 + 记进度 → 回新状态更新缓存。
+func report_stage_clear(http, token: String, stage_id: String, stars: int, all_card_ids: Array) -> Dictionary:
+	var res: Dictionary = await _client.report_stage_clear(http, token, stage_id, stars)
+	if bool(res.get("ok", false)):
+		_apply(res["state"], all_card_ids)
+		print("[V5][econ] 上报通关 %s stars=%d ok → gold=%d highest=%s" % [stage_id, stars, cache.gold, cache.highest_cleared])
+	else:
+		last_error = res
+		print("[V5][econ] 上报通关 %s stars=%d 失败 status=%d code=%d" % [stage_id, stars, int(res.get("status_code", 0)), int(res.get("error_code", 0))])
 	return res
 
 

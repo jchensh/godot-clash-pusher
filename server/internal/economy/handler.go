@@ -3,6 +3,7 @@ package economy
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"time"
 
@@ -49,13 +50,13 @@ func (h *Handler) getState(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) upgrade(w http.ResponseWriter, r *http.Request) {
-	h.action(w, r, h.repo.Upgrade, pbcommon.MsgId_ECONOMY_UPGRADE_REQ)
+	h.action(w, r, "upgrade", h.repo.Upgrade, pbcommon.MsgId_ECONOMY_UPGRADE_REQ)
 }
 func (h *Handler) rankUp(w http.ResponseWriter, r *http.Request) {
-	h.action(w, r, h.repo.RankUp, pbcommon.MsgId_ECONOMY_RANK_UP_REQ)
+	h.action(w, r, "rank_up", h.repo.RankUp, pbcommon.MsgId_ECONOMY_RANK_UP_REQ)
 }
 func (h *Handler) unlock(w http.ResponseWriter, r *http.Request) {
-	h.action(w, r, h.repo.Unlock, pbcommon.MsgId_ECONOMY_UNLOCK_REQ)
+	h.action(w, r, "unlock", h.repo.Unlock, pbcommon.MsgId_ECONOMY_UNLOCK_REQ)
 }
 
 // stageClear (V5-N5)：客户端上报 (stage_id, stars)，服务器 sanity 校验 + 发奖 + 记进度。
@@ -76,9 +77,11 @@ func (h *Handler) stageClear(w http.ResponseWriter, r *http.Request) {
 	st, err := h.repo.StageClear(ctx, accountID, req.GetStageId(), int(req.GetStars()), h.cfg)
 	if err != nil {
 		code, status := mapErr(err)
+		log.Printf("economy: acct=%d stage_clear stage=%q stars=%d rejected: %v", accountID, req.GetStageId(), req.GetStars(), err)
 		httpx.WriteError(w, status, code, err.Error(), pbcommon.MsgId_ECONOMY_STAGE_CLEAR_REQ)
 		return
 	}
+	log.Printf("economy: acct=%d stage_clear stage=%q stars=%d ok -> gold=%d highest=%q", accountID, req.GetStageId(), req.GetStars(), st.Gold, st.HighestCleared)
 	httpx.WriteProto(w, http.StatusOK, toProto(st))
 }
 
@@ -100,15 +103,17 @@ func (h *Handler) collectIdle(w http.ResponseWriter, r *http.Request) {
 	st, err := h.repo.CollectIdle(ctx, accountID, h.cfg)
 	if err != nil {
 		code, status := mapErr(err)
+		log.Printf("economy: acct=%d collect_idle rejected: %v", accountID, err)
 		httpx.WriteError(w, status, code, err.Error(), pbcommon.MsgId_ECONOMY_COLLECT_IDLE_REQ)
 		return
 	}
+	log.Printf("economy: acct=%d collect_idle ok -> gold=%d", accountID, st.Gold)
 	httpx.WriteProto(w, http.StatusOK, toProto(st))
 }
 
 type actionFn func(context.Context, int64, string, *Config) (State, error)
 
-func (h *Handler) action(w http.ResponseWriter, r *http.Request, fn actionFn, reqMsg pbcommon.MsgId) {
+func (h *Handler) action(w http.ResponseWriter, r *http.Request, name string, fn actionFn, reqMsg pbcommon.MsgId) {
 	accountID, ok := auth.AccountIDFromContext(r.Context())
 	if !ok {
 		httpx.WriteError(w, http.StatusUnauthorized, pbcommon.ErrorCode_ERR_UNAUTHORIZED, "no account in context", reqMsg)
@@ -124,9 +129,11 @@ func (h *Handler) action(w http.ResponseWriter, r *http.Request, fn actionFn, re
 	st, err := fn(ctx, accountID, req.GetCardId(), h.cfg)
 	if err != nil {
 		code, status := mapErr(err)
+		log.Printf("economy: acct=%d %s card=%q rejected: %v", accountID, name, req.GetCardId(), err)
 		httpx.WriteError(w, status, code, err.Error(), reqMsg)
 		return
 	}
+	log.Printf("economy: acct=%d %s card=%q ok -> gold=%d", accountID, name, req.GetCardId(), st.Gold)
 	httpx.WriteProto(w, http.StatusOK, toProto(st))
 }
 

@@ -95,8 +95,10 @@ func _build_idle_card(y: float) -> void:
 
 # ---------- 数据 ----------
 func _bootstrap() -> void:
+	print("[V5][base] 进入基地 → 登录 + 拉经济状态")
 	var session = GameStateScript.session()
 	if not await session.ensure(_http):
+		print("[V5][base] 登录失败 → 离线展示")
 		_set_offline()
 		return
 	var config = GameStateScript.config()
@@ -178,6 +180,8 @@ func _on_progression_pressed() -> void:
 	_go(CARD_COLLECTION_SCENE, "养成界面（S7d）即将上线")
 
 func _on_deck_pressed() -> void:
+	GameStateScript.deck_mode = "edit"   # 基地编辑：deck_builder 存卡组后回基地（不进战斗）
+	GameStateScript.stage_id = ""
 	get_tree().change_scene_to_file(DECK_BUILDER_SCENE)
 
 func _on_ladder_pressed() -> void:

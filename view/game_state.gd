@@ -8,6 +8,12 @@ extends RefCounted
 static var level_id := "level_01"     # 选关界面写入；battle_scene 读取后 match.setup(level_id)
 static var player_deck: Array = []    # 组卡界面写入的玩家卡组（8 张 card_id）；空=用关卡默认 player_deck
 
+# —— V5-S7（决策48）闯关流转 ——
+static var stage_id := ""              # 非空 = 闯关模式（battle 走 setup_stage；deck_builder 回 stage_map）
+static var stage_last_result := {}     # 战后回传 {stage_id, stars, outcome}；stage_map 读后上报服务器+开箱+清空
+static var deck_mode := ""             # 组卡上下文：""/"level"=自由对战 / "stage"=闯关挑战 / "edit"=基地编辑
+static var detail_card := ""           # 养成详情 card_detail 要展示的 card_id（card_collection 写）
+
 # —— V3-4 Roguelite run 模式 ——
 # run 非空时 battle_scene 进入「run 模式」：用 run 当前节点的 level_id + run 卡组 + relic/节点修正，
 # 战斗结束把结果写 run_last_result 并回到 run_scene（由 run_scene 推进 run / 给奖励 / 结算）。

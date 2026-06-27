@@ -93,7 +93,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:              ":" + port,
-		Handler:           mux,
+		Handler:           withRequestLog(mux),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
@@ -111,4 +111,26 @@ func main() {
 	shutdownCtx, shutdownCancel := context.WithTimeout(rootCtx, 10*time.Second)
 	defer shutdownCancel()
 	_ = srv.Shutdown(shutdownCtx)
+}
+
+// statusRecorder 记录响应状态码，供请求日志中间件读取。
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (r *statusRecorder) WriteHeader(code int) {
+	r.status = code
+	r.ResponseWriter.WriteHeader(code)
+}
+
+// withRequestLog 给每个 HTTP 请求打一行访问日志：方法 路径 -> 状态码 (耗时)。
+// 配合 economy handler 的业务日志，F5/docker logs 能看清整条经济流。
+func withRequestLog(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
+		next.ServeHTTP(rec, r)
+		log.Printf("%s %s -> %d (%s)", r.Method, r.URL.Path, rec.status, time.Since(start).Round(time.Millisecond))
+	})
 }
