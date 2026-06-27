@@ -18,6 +18,8 @@ const GameStateScript = preload("res://view/game_state.gd")
 const RunModifiersScript = preload("res://logic/run_modifiers.gd")
 const SpriteDB = preload("res://view/sprite_db.gd")
 const RunSceneScene := "res://view/run_scene.tscn"
+const StageProgressScript = preload("res://logic/stage_progress.gd")   # V5-S7c 闯关判星
+const STAGE_MAP_SCENE := "res://view/stage_map.tscn"
 
 const TOPBAR_H := 54.0
 const HUD_BOTTOM_H := 176.0
@@ -26,7 +28,8 @@ const COL_BG := Color(0.10, 0.12, 0.11)
 const COL_PLAYER := Color(0.35, 0.60, 1.0)
 const COL_OPPONENT := Color(1.0, 0.42, 0.38)
 const COL_ELIXIR := Color(0.80, 0.33, 0.96)
-const COL_PANEL := Color(0.05, 0.07, 0.06, 0.88)
+const COL_PANEL := Color(0.10, 0.08, 0.14, 0.96)   # HUD 底，对齐 PixelUI 夜色石板
+const COL_PANEL_EDGE := Color(0.34, 0.30, 0.45)    # HUD 底板像素高光描边
 const COL_OK := Color(0.45, 1.0, 0.55)        # 落点合法（ghost/高亮）
 const COL_BAD := Color(1.0, 0.42, 0.40)       # 落点非法
 
@@ -50,9 +53,9 @@ const HITSTOP_DMG := 200.0                      # 触发顿帧的单次伤害阈
 const HITSTOP_DUR := 0.06                       # 顿帧（冻结 sim）时长
 
 # —— V3-6c HUD 反馈 ——
-const COL_CARD_BG := Color(0.12, 0.13, 0.18, 0.95)
-const COL_CARD_SEL := Color(0.22, 0.19, 0.10, 0.97)
-const COL_CROWN := Color(1.0, 0.85, 0.32)
+const COL_CARD_BG := Color(0.23, 0.21, 0.32, 0.96)    # 卡面底 = PixelUI 石板
+const COL_CARD_SEL := Color(0.40, 0.33, 0.16, 0.97)   # 选中卡 = 暗金
+const COL_CROWN := Color(0.925, 0.725, 0.305)         # 王冠/强调金 = PixelUI COL_GOLD
 
 # —— V3-6d 胜负演出 ——
 const END_BTN_DELAY := 0.85                     # 结算按钮淡入延迟（先放胜负演出）
@@ -109,10 +112,14 @@ var loader
 var _font: Font
 var selected_card := -1
 var _card_btns: Array = []
+# —— V3-5b 新手引导（仅战役有 tutorial 脚本的关）——
+var _tut_steps: Array = []   # 当前关引导步骤（tutorial.json）；空=无引导
+var _tut_i: int = -1         # 当前步下标；-1=无引导/已结束
 var _result_layer: Control
 var _dragging := false
 var _drag_screen := Vector2.ZERO
 var _elapsed := 0.0
+var _battle_elapsed := 0.0    # V5-S7c：累计 sim 战斗时长（不含顿帧/结束后），供星级 time_under 判定
 var _fx: Array = []           # 落地涟漪：[{pos:Vector2(tile), t0:float, dur:float}]
 var _seen: Dictionary = {}    # 单位 instance_id → 首见 _elapsed（入场缩放）
 var _card_base_pos: Array = []
@@ -125,6 +132,7 @@ var _dmgnums: Array = []      # [{pos:Vector2(tile), text, col, size, t0, dur}]
 var _sparks: Array = []       # [{pos:Vector2(tile), t0, dur}]
 var _projectiles: Array = [] # 远程投射物：[{from,to:Vector2(tile), t0, dur, kind}]
 var _atkcd: Dictionary = {}  # 单位 id → 上帧 _attack_cooldown（检测开火上升沿）
+var _tatkcd: Dictionary = {} # 塔 id → 上帧 _attack_cooldown（塔射箭开火检测，A5-2）
 var _shake := Vector2.ZERO
 var _shake_mag := 0.0
 var _hitstop_t := 0.0
@@ -145,8 +153,15 @@ func _ready() -> void:
 	loader.load_all()
 	match_obj = MatchScript.new(loader)
 	var run = GameStateScript.run
+	var campaign = GameStateScript.campaign
 	var battle_music_id := "music_battle_normal"
-	if run != null and not run.is_over():
+	if campaign != null and not campaign.is_over():
+		# 战役模式：当前关 level_id + 关卡默认教学卡组（不受组卡影响）。
+		if campaign.current_focus() == "boss":
+			battle_music_id = "music_battle_boss"
+		print("[V5][battle] 模式=战役 关=%s" % campaign.current_level_id())
+		match_obj.setup(campaign.current_level_id(), [])
+	elif run != null and not run.is_over():
 		# Roguelite 模式：当前节点 level_id + run 卡组 + relic/节点难度修正器。
 		var node: Dictionary = run.current_node()
 		var node_type := String(node.get("type", "battle"))
@@ -156,14 +171,22 @@ func _ready() -> void:
 		var nm: Dictionary = RunModifiersScript.node_mod(loader.get_run("default"), node_type)
 		if not nm.is_empty():
 			mods.append(nm)
+		print("[V5][battle] 模式=肉鸽 关=%s" % String(node.get("level_id")))
 		match_obj.setup(String(node.get("level_id")), run.deck, mods)
+	elif GameStateScript.stage_id != "":
+		# V5-S7c 闯关模式：setup_stage 注入 coef/遭遇/ai + 服务器拉来的养成档（for_battle，权威 level/rank）。
+		var pdata = GameStateScript.economy().for_battle(loader.cards.keys())
+		print("[V5][battle] 模式=闯关 stage=%s deck=%s" % [GameStateScript.stage_id, str(GameStateScript.player_deck)])
+		match_obj.setup_stage(GameStateScript.stage_id, GameStateScript.player_deck, pdata)
 	else:
+		print("[V5][battle] 模式=自由 关=%s" % GameStateScript.level_id)
 		match_obj.setup(GameStateScript.level_id, GameStateScript.player_deck)
 	AudioManager.play_music(battle_music_id)
 	AudioManager.play_ambience("amb_battle_wind")
 	match_obj.set_opponent_controller(AIControllerScript.new(match_obj, loader))
 	_build_cards()
 	_build_result_panel()
+	_init_tutorial()
 	set_process(true)
 
 func _process(delta: float) -> void:
@@ -174,6 +197,7 @@ func _process(delta: float) -> void:
 		_hitstop_t -= delta            # 顿帧：冻结 sim、画面继续
 	elif not match_obj.is_over():
 		match_obj.update(delta)
+		_battle_elapsed += delta       # V5-S7c：仅活跃战斗时长计入（判 time_under 星）
 	_detect_events()                   # 逐帧 diff hp → 伤害数字/闪白/火花/顿帧/震屏（路线 A）
 	_detect_attacks()                  # 远程兵开火上升沿 → 投射物（路线 A）
 	_update_disp(delta)                # 10Hz→60fps 位置插值
@@ -230,6 +254,7 @@ func _draw() -> void:
 	_draw_elixir()
 	_draw_cards()
 	_draw_end_screen()
+	_draw_tutorial()
 
 func _draw_terrain(a) -> void:
 	var tp := _tile_px()
@@ -354,6 +379,7 @@ func _draw_units(a) -> void:
 
 func _draw_topbar() -> void:
 	draw_rect(Rect2(0, 0, _vw, TOPBAR_H), COL_PANEL)
+	draw_rect(Rect2(0, TOPBAR_H - 3.0, _vw, 3.0), COL_PANEL_EDGE)   # 底部像素描边分隔
 	var p_crowns := _crowns(match_obj.battle.opponent_towers)   # 你拆掉的敌塔
 	var o_crowns := _crowns(match_obj.battle.player_towers)
 	_text(Vector2(12, 28), tr("hud_you"), COL_PLAYER, 16)
@@ -704,6 +730,36 @@ func _detect_attacks() -> void:
 				_projectiles.append({"from": _disp_pos(u), "to": ct.pos, "t0": _elapsed,
 						"dur": clampf(dist / PROJ_SPEED, 0.1, 0.45), "kind": PROJ_KIND[u.unit_id]})
 				_play_projectile_audio(String(PROJ_KIND[u.unit_id]))
+	# 塔射箭（A5-2）：塔反击冷却上升沿 = 刚 mark_attacked → 从塔身射箭到射程内最近敌兵。
+	for side in [match_obj.battle.player_towers, match_obj.battle.opponent_towers]:
+		for t in side:
+			if not t.is_alive() or t.damage <= 0.0:
+				continue
+			var tid: int = t.get_instance_id()
+			var tcur: float = t._attack_cooldown
+			var tprev: float = _tatkcd.get(tid, tcur)
+			_tatkcd[tid] = tcur
+			if tcur > tprev + 0.01:
+				var victim = _tower_target(t)
+				if victim != null:
+					var muzzle: Vector2 = (t.pos as Vector2) - Vector2(0.0, float(t.fh) * 0.4)
+					var tdist: float = muzzle.distance_to(victim.pos)
+					_projectiles.append({"from": muzzle, "to": victim.pos, "t0": _elapsed,
+							"dur": clampf(tdist / PROJ_SPEED, 0.1, 0.5), "kind": "arrow"})
+
+# 塔射程内最近的存活敌方单位（view 侧复刻 arena 选择，路线 A）；无则 null。
+func _tower_target(t):
+	var best = null
+	var best_d := INF
+	var r: float = float(t.attack_range) + 0.001
+	for u in match_obj.battle.arena.get_units():
+		if not u.is_alive() or u.owner_id == t.owner_id:
+			continue
+		var d: float = (t.pos as Vector2).distance_to(u.pos as Vector2)
+		if d <= r and d < best_d:
+			best_d = d
+			best = u
+	return best
 
 # 投射物：from→to 线性飞行，按 kind 画箭/法术弹/火球。
 func _draw_projectiles() -> void:
@@ -843,6 +899,7 @@ func _on_card_up(i: int) -> void:
 		var info: Dictionary = _card_info(cid)
 		_fx.append({"pos": drop_tile, "t0": _elapsed, "dur": _fx_dur(kind), "kind": kind, "radius": float(info["radius"])})
 		_play_card_audio(cid, info)
+		_tut_on_action("card_played")   # 新手引导：出兵步骤推进
 	else:
 		AudioManager.play_sfx("ui_card_drop_invalid")
 
@@ -882,7 +939,7 @@ func _draw_cards() -> void:
 		if sel:
 			draw_rect(rect, COL_CROWN, false, 3.0)
 		else:
-			draw_rect(rect, Color(0, 0, 0, 0.5), false, 1.0)
+			draw_rect(rect, COL_PANEL_EDGE, false, 2.0)   # 石板高光描边（像素质感）
 
 # 卡面图：兵牌=单位精灵正面静帧（自然色，不染队伍色）；法术牌=代表特效图标。
 func _draw_card_art(cid: String, c: Vector2, box: float) -> void:
@@ -950,8 +1007,12 @@ func _start_ending() -> void:
 
 func _add_result_buttons() -> void:
 	_end_buttons_added = true
-	if GameStateScript.run != null:
+	if GameStateScript.campaign != null:
+		_result_btn(tr("btn_continue"), _vh * 0.62, _on_campaign_continue)   # 战役：回中枢推进/重打
+	elif GameStateScript.run != null:
 		_result_btn(tr("btn_continue"), _vh * 0.62, _on_run_continue)   # Roguelite：回 run 中枢推进/给奖励/结算
+	elif GameStateScript.stage_id != "":
+		_result_btn(tr("btn_back"), _vh * 0.62, _on_stage_return)   # V5-S7c：回闯关地图（地图侧上报+开箱）
 	else:
 		_result_btn(tr("btn_rematch"), _vh * 0.62, _on_rematch)
 		_result_btn(tr("btn_menu"), _vh * 0.62 + 70.0, _on_menu)
@@ -1009,6 +1070,11 @@ func _on_run_continue() -> void:
 	GameStateScript.run_last_result = match_obj.get_result()
 	get_tree().change_scene_to_file(RunSceneScene)
 
+func _on_campaign_continue() -> void:
+	AudioManager.play_sfx("ui_button_press")
+	GameStateScript.campaign_last_result = match_obj.get_result()
+	get_tree().change_scene_to_file("res://view/campaign_scene.tscn")
+
 func _on_rematch() -> void:
 	AudioManager.play_sfx("ui_button_press")
 	get_tree().reload_current_scene()
@@ -1016,3 +1082,108 @@ func _on_rematch() -> void:
 func _on_menu() -> void:
 	AudioManager.play_sfx("ui_button_back")
 	get_tree().change_scene_to_file("res://view/main_menu.tscn")
+
+# V5-S7c 闯关战后：判星 + 存结果（stage_map 负责上报服务器 + 领奖开箱）+ 回闯关地图。
+func _on_stage_return() -> void:
+	AudioManager.play_sfx("ui_button_press")
+	var sid: String = GameStateScript.stage_id
+	var outcome := {
+		"won": _end_result == BattleScript.RESULT_PLAYER_WIN,
+		"king_hp_pct": _player_king_hp_pct(),
+		"duration_sec": _battle_elapsed,
+	}
+	var goals = loader.get_stage(sid).get("stars", [])
+	var stars: int = StageProgressScript.judge_stars(goals if goals is Array else [], outcome)
+	print("[V5][battle] 闯关战后 stage=%s won=%s king_hp=%.2f dur=%.1fs → stars=%d" % [sid, str(outcome.won), outcome.king_hp_pct, outcome.duration_sec, stars])
+	GameStateScript.stage_last_result = {"stage_id": sid, "stars": stars}
+	GameStateScript.stage_id = ""
+	GameStateScript.deck_mode = ""
+	get_tree().change_scene_to_file(STAGE_MAP_SCENE)
+
+func _player_king_hp_pct() -> float:
+	for t in match_obj.battle.player_towers:
+		if t.is_king():
+			return clampf(t.hp / t.max_hp, 0.0, 1.0)
+	return 0.0
+
+# —— V3-5b 新手引导：加载 / 推进 / 覆盖层绘制（数据驱动 tutorial.json，决策 45）——
+func _init_tutorial() -> void:
+	_tut_i = -1
+	var campaign = GameStateScript.campaign
+	if campaign == null or campaign.is_over():
+		return
+	var tut: Dictionary = loader.get_tutorial(campaign.current_level_id())
+	var steps = tut.get("steps", [])
+	if typeof(steps) == TYPE_ARRAY and not (steps as Array).is_empty():
+		_tut_steps = steps
+		_tut_i = 0
+
+func _input(event: InputEvent) -> void:
+	if _tut_i < 0 or _tut_i >= _tut_steps.size():
+		return
+	var step: Dictionary = _tut_steps[_tut_i]
+	if str(step.get("advance", "tap")) == "tap" and event is InputEventMouseButton and event.pressed:
+		_tut_next()
+		get_viewport().set_input_as_handled()   # tap 步骤吃掉点击，不触发出牌
+
+func _tut_next() -> void:
+	if _tut_i < 0:
+		return
+	_tut_i += 1
+	if _tut_i >= _tut_steps.size():
+		_tut_i = -1   # 引导结束
+
+func _tut_on_action(action: String) -> void:
+	if _tut_i < 0 or _tut_i >= _tut_steps.size():
+		return
+	if str(_tut_steps[_tut_i].get("advance", "")) == action:
+		_tut_next()
+
+func _draw_tutorial() -> void:
+	if _tut_i < 0 or _ending or _tut_i >= _tut_steps.size():
+		return
+	var step: Dictionary = _tut_steps[_tut_i]
+	var hl := str(step.get("highlight", "none"))
+	if hl == "none":
+		draw_rect(Rect2(0, 0, _vw, _vh), Color(0, 0, 0, 0.55))
+	else:
+		var r: Rect2 = _tut_rect(hl)
+		_tut_dim_except(r)
+		var pulse: float = 0.6 + 0.4 * sin(_elapsed * 5.0)
+		draw_rect(r, Color(COL_CROWN.r, COL_CROWN.g, COL_CROWN.b, pulse), false, 4.0)
+		if str(step.get("finger", "")) != "":
+			_tut_finger(r)
+	_tut_bubble(tr(str(step.get("text_key", ""))), str(step.get("advance", "tap")) == "tap")
+
+func _tut_dim_except(r: Rect2) -> void:
+	var c := Color(0, 0, 0, 0.58)
+	draw_rect(Rect2(0, 0, _vw, r.position.y), c)
+	draw_rect(Rect2(0, r.end.y, _vw, _vh - r.end.y), c)
+	draw_rect(Rect2(0, r.position.y, r.position.x, r.size.y), c)
+	draw_rect(Rect2(r.end.x, r.position.y, _vw - r.end.x, r.size.y), c)
+
+func _tut_rect(hl: String) -> Rect2:
+	match hl:
+		"elixir":
+			return Rect2(10, _vh - HUD_BOTTOM_H + 4, _vw - 124, 30)
+		"hand":
+			return Rect2(6, _vh - HUD_BOTTOM_H + 38, _vw - 12, HUD_BOTTOM_H - 44)
+		"field":
+			return Rect2(0, TOPBAR_H + (_vh - TOPBAR_H - HUD_BOTTOM_H) * 0.5, _vw, (_vh - TOPBAR_H - HUD_BOTTOM_H) * 0.5)
+	return Rect2(0, 0, _vw, _vh)
+
+func _tut_finger(r: Rect2) -> void:
+	var bob: float = 8.0 * sin(_elapsed * 5.0)
+	var tip := Vector2(r.get_center().x, r.position.y - 12.0 + bob)
+	draw_colored_polygon(PackedVector2Array([tip, tip + Vector2(-13, -20), tip + Vector2(13, -20)]), COL_CROWN)
+
+func _tut_bubble(text: String, show_tap: bool) -> void:
+	var bw := _vw - 80.0
+	var bx := 40.0
+	var by := _vh * 0.40
+	var bh := 140.0
+	draw_rect(Rect2(bx, by, bw, bh), Color(0.10, 0.08, 0.14, 0.96))
+	draw_rect(Rect2(bx, by, bw, bh), COL_CROWN, false, 3.0)
+	draw_multiline_string(_font, Vector2(bx + 20, by + 42), text, HORIZONTAL_ALIGNMENT_LEFT, bw - 40, 26, -1, Color(0.93, 0.88, 0.78))
+	if show_tap:
+		draw_string(_font, Vector2(bx, by + bh - 16), tr("tut_continue"), HORIZONTAL_ALIGNMENT_CENTER, bw, 18, Color(0.72, 0.72, 0.78))

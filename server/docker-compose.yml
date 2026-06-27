@@ -1,0 +1,86 @@
+# V4 服务端本地编排
+# 5 容器：postgres + redis + gateway + api + battle
+# 启动：cd server && docker compose up -d
+# 关闭：docker compose down            (保留卷)
+#       docker compose down -v         (连 pg 数据卷一起删)
+# 真值环境变量请用 .env（拷贝 .env.example）
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev}
+      POSTGRES_DB: ${POSTGRES_DB:-gcp}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-gcp}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: gcp-server:dev
+    command: ["/usr/local/bin/gateway"]
+    environment:
+      DB_URL: ${DB_URL:-postgres://app:dev@postgres:5432/gcp?sslmode=disable}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-change-me}
+      CONFIG_DIR: /app/config
+    volumes:
+      - ../config:/app/config:ro   # V5-N2 (决策 48)：服务器持权威配置（与客户端双份同源）
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${GATEWAY_PORT:-8081}:8081"
+
+  api:
+    image: gcp-server:dev
+    pull_policy: never
+    command: ["/usr/local/bin/api"]
+    environment:
+      DB_URL: ${DB_URL:-postgres://app:dev@postgres:5432/gcp?sslmode=disable}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-change-me}
+      CONFIG_DIR: /app/config
+      GM_ENABLED: ${GM_ENABLED:-1}   # ⚠️ 开发作弊工具 /v5/gm/*（设置内 GM 面板）。dev 默认开；prod 必须设 0/不设
+    volumes:
+      - ../config:/app/config:ro   # V5-N3/N4 (决策 48)：服务器权威经济用同一配置算成本
+    depends_on:
+      gateway:
+        condition: service_started
+    ports:
+      - "${API_PORT:-8080}:8080"
+
+  battle:
+    image: gcp-server:dev
+    pull_policy: never
+    command: ["/usr/local/bin/battle"]
+    environment:
+      DB_URL: ${DB_URL:-postgres://app:dev@postgres:5432/gcp?sslmode=disable}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+    depends_on:
+      gateway:
+        condition: service_started
+
+volumes:
+  pg_data:

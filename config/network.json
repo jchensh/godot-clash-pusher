@@ -1,0 +1,5 @@
+{
+  "_comment": "V4 网络层服务端地址。真机对战(g)时把 host 改成跑服务端那台机器的局域网 IP，两端都改。",
+  "api_url": "http://localhost:8080",
+  "ws_url": "ws://localhost:8081/v4/battle/ws"
+}

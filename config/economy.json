@@ -1,0 +1,17 @@
+{
+  "_comment": "V5 经济数值（升级/升阶/解锁成本 + 数值曲线 + 挂机 + 奖励）。全部〔示意·待平衡，V5-S8 probe 定〕。升级花金币、升阶花碎片+金币、解锁攒碎片。",
+  "level_stat_per_level": 0.10,
+  "rank_stat_mult": 1.25,
+  "level_cap_per_rank": { "1": 4, "2": 7, "3": 10 },
+  "upgrade_cost_base": { "common": 80, "rare": 160, "epic": 320, "legendary": 600 },
+  "upgrade_cost_growth": 0.5,
+  "rank_up": {
+    "common":    [ { "shards": 20, "gold": 2000 }, { "shards": 50, "gold": 5000 } ],
+    "rare":      [ { "shards": 30, "gold": 4000 }, { "shards": 80, "gold": 10000 } ],
+    "epic":      [ { "shards": 40, "gold": 8000 }, { "shards": 120, "gold": 20000 } ],
+    "legendary": [ { "shards": 60, "gold": 15000 }, { "shards": 200, "gold": 40000 } ]
+  },
+  "unlock_shards": { "common": 30, "rare": 50, "epic": 80, "legendary": 120 },
+  "idle": { "gold_per_hour_per_chapter": 50, "cap_hours": 8 },
+  "rewards": { "first_clear_gold_base": 300, "first_clear_gold_per_chapter": 270, "repeat_gold_ratio": 0.1 }
+}

@@ -1,0 +1,36 @@
+// leaderboard.proto — 赛季排行榜
+//
+// V4-S5：Redis ZSET 实时存读。
+//   - 全球榜：leaderboard:global:s<season_id>
+//   - 段位榜：leaderboard:arena:<arena>:s<season_id>
+// 客户端不订阅、按需轮询拉。
+
+syntax = "proto3";
+
+package game.v4;
+
+import "common.proto";
+
+option go_package = "github.com/jchensh/godot-clash-pusher/server/internal/pb/leaderboard";
+
+message LeaderboardTopReq {
+  enum Scope {
+    GLOBAL = 0;
+    ARENA = 1;
+  }
+  Scope scope = 1;
+  int32 season_id = 2;          // 0 = 当前赛季
+  int32 arena = 3;              // scope=ARENA 时必填
+  int32 limit = 4;              // 1..100
+}
+
+message LeaderboardEntry {
+  int32 rank = 1;
+  ProfileSummary profile = 2;
+  int32 trophies = 3;
+}
+
+message LeaderboardTopResp {
+  repeated LeaderboardEntry entries = 1;
+  int32 season_id = 2;          // 实际查到的赛季（确认与 req 一致）
+}

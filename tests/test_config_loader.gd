@@ -8,6 +8,16 @@ func _make_loaded():
 	loader.load_all()
 	return loader
 
+func test_v3_campaign_config_loaded() -> void:
+	var loader = _make_loaded()
+	assert_true(loader.errors.is_empty(), "配置加载无错: %s" % str(loader.errors))
+	var camp = loader.get_campaign("default")
+	assert_false(camp.is_empty(), "campaign default 存在")
+	var lv = camp.get("levels", [])
+	assert_eq((lv as Array).size(), 6, "战役 6 关")
+	assert_eq(str((lv[0] as Dictionary).get("level_id")), "campaign_01", "首关 campaign_01")
+	assert_true(loader.has_level("campaign_06"), "教学关 campaign_06 已入 levels")
+
 func test_load_all_succeeds() -> void:
 	var loader = ConfigLoaderScript.new()
 	var ok = loader.load_all()

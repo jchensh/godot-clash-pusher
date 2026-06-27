@@ -1,0 +1,19 @@
+// session.proto — V5-N1/N2（决策 48）：持久会话 + 登录后配置下发。
+//
+// 客户端登录后连 /v5/session/ws?token=&cfgver=，服务器：
+//   - 比对 cfgver 与当前配置版本：一致 → ConfigPush{up_to_date:true}（不带 bundle）；
+//     否则 → ConfigPush{version, bundle}（全量配置 JSON）。
+//   - 心跳复用 common 的 PING/PONG（无 payload）。
+
+syntax = "proto3";
+
+package game.v4;
+
+option go_package = "github.com/jchensh/godot-clash-pusher/server/internal/pb/session";
+
+// server->client：登录后配置下发。
+message ConfigPush {
+  string version = 1;      // 配置包版本（服务器算，sha256 前缀 16 hex）
+  bool up_to_date = 2;     // 客户端 cfgver 已最新 → bundle 空
+  bytes bundle = 3;        // 全量配置 JSON：{ "cards.json": {...}, "units.json": {...}, ... }
+}

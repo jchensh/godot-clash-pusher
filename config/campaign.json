@@ -1,0 +1,13 @@
+{
+  "default": {
+    "name": "main_campaign",
+    "levels": [
+      { "level_id": "campaign_01", "focus": "deploy" },
+      { "level_id": "campaign_02", "focus": "elixir" },
+      { "level_id": "campaign_03", "focus": "bridge" },
+      { "level_id": "campaign_04", "focus": "defend" },
+      { "level_id": "campaign_05", "focus": "spell" },
+      { "level_id": "campaign_06", "focus": "boss" }
+    ]
+  }
+}

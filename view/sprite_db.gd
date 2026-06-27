@@ -37,17 +37,17 @@ static var DB := {
 	"knight_body": {  # 骑士：nc 24×24 4列(走) + cb 32×32 4列(劈砍)
 		"scale": 1.35,
 		"walk":   {"tex": T_KNIGHT_NC, "fw": 24, "fh": 24, "cols": 4, "row": 0, "row_up": 16, "n": 4, "fps": 8.0},
-		"attack": {"tex": T_KNIGHT_CB, "fw": 32, "fh": 32, "cols": 4, "row": 8, "n": 4, "fps": 10.0, "sc": 1.25},
+		"attack": {"tex": T_KNIGHT_CB, "fw": 32, "fh": 32, "cols": 4, "row": 0, "row_up": 5, "n": 4, "fps": 10.0, "sc": 1.25},
 	},
 	"archer_body": {  # 弓箭手：nc 16×16 4列(走) + cb 32×32 4列(射击)
 		"scale": 1.5,
 		"walk":   {"tex": T_ARCHER_NC, "fw": 16, "fh": 16, "cols": 4, "row": 0, "row_up": 14, "n": 4, "fps": 8.0},
-		"attack": {"tex": T_ARCHER_CB, "fw": 32, "fh": 32, "cols": 4, "row": 4, "n": 4, "fps": 8.0, "sc": 1.5},
+		"attack": {"tex": T_ARCHER_CB, "fw": 32, "fh": 32, "cols": 4, "row": 2, "row_up": 3, "n": 4, "fps": 8.0, "sc": 1.5},
 	},
 	"musketeer_body": {  # 女巫：mage nc 16×16 4列(走) + cb 32×32 2列(施法)
 		"scale": 1.5,
 		"walk":   {"tex": T_MAGE_NC, "fw": 16, "fh": 16, "cols": 4, "row": 0, "row_up": 14, "n": 4, "fps": 7.0},
-		"attack": {"tex": T_MAGE_CB, "fw": 32, "fh": 32, "cols": 2, "row": 4, "n": 2, "fps": 8.0, "sc": 1.5},
+		"attack": {"tex": T_MAGE_CB, "fw": 16, "fh": 16, "cols": 4, "row": 0, "row_up": 6, "n": 4, "fps": 9.0},
 	},
 	"mini_pekka_body": {  # 狂战士：axe cb 32×32 4列(走 rows14-18 / 攻 rows0-13 挥斧)
 		"scale": 1.3,

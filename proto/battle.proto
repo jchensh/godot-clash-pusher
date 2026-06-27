@@ -1,0 +1,106 @@
+// battle.proto — 实时对战（lockstep）
+//
+// V4-S3（**头号工程**）：
+//   1. 双方各发 JoinRoomReq（带自己的卡组）-> 服务端回 JoinRoomResp（含双方卡组/关卡/side/start_tick）
+//   2. 客户端每出兵/法术 -> 发 DeployCmd（带 tick=current+2，留出 RTT 缓冲）
+//   3. 服务端每 tick 汇总双方 DeployCmd -> 广播 TickBundle 给双方
+//   4. 双方各自 logic/ 推进同一 tick -> 周期上报 StateHashUp -> 服务端两端对帐
+//   5. 一方 sim 判定结束 -> 发 BattleEndReport -> 服务端核对 -> 广播 BattleResultPush
+//
+// 注：lockstep 服务端**不跑 sim**，故对局结束（王塔归零/超时）由两端各自 sim 判定后上报，
+// 服务端核对一致后拍板。状态哈希两端对帐捕获不同步（完整仲裁见 PLAN_V4 §5.4，S3 先记录）。
+
+syntax = "proto3";
+
+package game.v4;
+
+import "common.proto";
+
+option go_package = "github.com/jchensh/godot-clash-pusher/server/internal/pb/battle";
+
+message JoinRoomReq {
+  string room_id = 1;
+  repeated string deck = 2;     // 本方 8 张卡组（lockstep 要两端互知对方牌）
+}
+
+message JoinRoomResp {
+  bool ok = 1;
+  ProfileSummary opponent = 2;
+  int32 your_side = 3;          // 与 MatchFoundPush 一致：1 或 2
+  int32 start_tick = 4;         // 双方都 join 后服务端拍板开局 tick（含倒数缓冲）
+  uint64 seed = 5;
+  repeated string side1_deck = 6;  // side 1 的卡组（两端都收，建同一初始态）
+  repeated string side2_deck = 7;  // side 2 的卡组
+  string level_id = 8;          // 天梯关卡配置 id（如 ladder_01），两端各自本地加载
+}
+
+// 客户端 -> 服务端：单条出兵/法术指令。
+// 坐标用 tile 量纲 × 1000 编码（避开浮点跨设备差异），客户端发前 round。
+// 例：tile (4.5, 17.0) -> x=4500, y=17000。
+message DeployCmd {
+  int32 tick = 1;               // 客户端指定的执行 tick（current_tick + 2）
+  string card_id = 2;
+  int32 x_milli = 3;            // tile × 1000
+  int32 y_milli = 4;
+}
+
+// 服务端 -> 客户端：本 tick 双方所有 deploy 的打包广播。
+// 双方收到同一 TickBundle 后 logic/ 推进相同 tick。
+// 空 deploys 也照发（保证 tick 同步、断线检测）。
+message TickBundle {
+  int32 tick = 1;
+  message SideDeploy {
+    int32 side = 1;             // 1 或 2
+    DeployCmd deploy = 2;
+  }
+  repeated SideDeploy deploys = 2;
+}
+
+// 客户端 -> 服务端：周期上报本地状态哈希（每 10 tick 一次）。
+// 服务端比对双方上报，hash 不一致 -> 标记不同步（S3 先记录，仲裁见 PLAN_V4 §5.4）。
+message StateHashUp {
+  int32 tick = 1;
+  bytes hash = 2;               // sha256(units_state + towers_state + elixir)，32 bytes
+}
+
+// 客户端 -> 服务端：本地 sim 判定对局结束（王塔归零 / 超时）。
+// 服务端无 sim，靠两端上报；核对一致（或一方上报另一方未异议）后拍板。
+message BattleEndReport {
+  int32 tick = 1;               // 结束发生的 tick
+  int32 winner = 2;             // 0=DRAW / 1=SIDE_1 / 2=SIDE_2（对齐 BattleResultPush.Winner）
+  int32 reason = 3;             // 对齐 BattleResultPush.Reason
+  int32 side_1_score = 4;       // 剩余塔血总和（超时判定/核对用）
+  int32 side_2_score = 5;
+}
+
+// 服务端 -> 客户端：对局结果推送。
+message BattleResultPush {
+  enum Winner {
+    DRAW = 0;
+    SIDE_1 = 1;
+    SIDE_2 = 2;
+  }
+  enum Reason {
+    REASON_UNKNOWN = 0;
+    KING_DESTROYED = 1;         // 一方王塔归零
+    TIMEOUT = 2;                // match_duration 到，按剩余塔血总和判
+    SURRENDER = 3;              // 一方主动认输
+    DISCONNECT = 4;             // 一方断线超时
+    HASH_DIVERGENCE = 5;        // 状态哈希仲裁判负
+  }
+  Winner winner = 1;
+  Reason reason = 2;
+  int32 side_1_score = 3;       // 剩余塔血总和（超时用）
+  int32 side_2_score = 4;
+  int32 trophies_delta_side_1 = 5;  // ELO/段位变化
+  int32 trophies_delta_side_2 = 6;
+}
+
+// 战斗内心跳，60s 无心跳 -> 判定断线超时认输。
+message HeartbeatPing {
+  int64 client_time = 1;        // unix millis（用于 RTT 估算）
+}
+
+message HeartbeatPong {
+  int64 server_time = 1;        // unix millis
+}

@@ -1,0 +1,18 @@
+{
+  "_comment": "V5 遭遇模板池（敌方 8 张卡组 + 原型 archetype）。stages.json 的每关引用一个模板，配不同 difficulty_coef/ai_difficulty 复用。V5-S8a 铺到 15 个原型。deck 卡须在 cards.json 中、正好 8 张且互不重复。archetype 枚举：balanced/tank/swarm/undead/control/air/ranged/siege/boss（ConfigLoader 校验）。逐章排布见 PLAN_V5 §7。",
+  "starter_easy":      { "archetype": "balanced", "deck": ["knight", "archers", "goblins", "skeletons", "minions", "arrows", "zap", "giant"] },
+  "undead_horde":      { "archetype": "undead",   "deck": ["skeletons", "minions", "goblins", "knight", "archers", "arrows", "zap", "log"] },
+  "graveyard_control": { "archetype": "control",  "deck": ["minions", "skeletons", "musketeer", "knight", "fireball", "arrows", "zap", "giant"] },
+  "orc_blitz":         { "archetype": "swarm",    "deck": ["goblins", "skeletons", "mini_pekka", "knight", "archers", "zap", "log", "minions"] },
+  "swarm_rush_a":      { "archetype": "swarm",    "deck": ["goblins", "skeletons", "minions", "knight", "archers", "arrows", "zap", "log"] },
+  "tank_push_a":       { "archetype": "tank",     "deck": ["giant", "musketeer", "minions", "goblins", "fireball", "zap", "knight", "archers"] },
+  "double_tank":       { "archetype": "tank",     "deck": ["giant", "mini_pekka", "musketeer", "minions", "knight", "fireball", "zap", "arrows"] },
+  "spell_siege":       { "archetype": "control",  "deck": ["giant", "musketeer", "fireball", "lightning", "zap", "arrows", "archers", "knight"] },
+  "lich_control":      { "archetype": "control",  "deck": ["musketeer", "minions", "skeletons", "fireball", "lightning", "log", "knight", "baby_dragon"] },
+  "vampire_balanced":  { "archetype": "balanced", "deck": ["knight", "mini_pekka", "musketeer", "minions", "giant", "fireball", "arrows", "zap"] },
+  "air_raid":          { "archetype": "air",      "deck": ["minions", "baby_dragon", "musketeer", "archers", "knight", "arrows", "zap", "giant"] },
+  "ranged_kite":       { "archetype": "ranged",   "deck": ["musketeer", "archers", "baby_dragon", "minions", "knight", "fireball", "zap", "giant"] },
+  "throne_combined":   { "archetype": "balanced", "deck": ["giant", "mini_pekka", "musketeer", "baby_dragon", "minions", "fireball", "lightning", "knight"] },
+  "abyss_overload":    { "archetype": "siege",    "deck": ["golem", "giant", "musketeer", "baby_dragon", "minions", "fireball", "lightning", "knight"] },
+  "final_boss":        { "archetype": "boss",     "deck": ["golem", "mini_pekka", "musketeer", "baby_dragon", "minions", "lightning", "fireball", "knight"] }
+}

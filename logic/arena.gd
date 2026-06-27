@@ -313,10 +313,13 @@ func _apply_push(unit, push: Vector2) -> void:
 	unit.pos = np
 
 # aggro_radius 内最逼近的存活敌方单位（分心目标）；无则 null。确定性 tie-break = units 顺序。
+# A5-1：地面兵只对「直线可达」的敌兵分心——隔河/隔塔的敌兵不分心，继续走流场绕桥过河，
+# 否则近战兵会直奔对岸撞水、卡在岸/桥边被对岸远程单位风筝。飞兵不受限（本就直线越河）。
 func _nearest_enemy_unit_in_aggro(unit):
 	var r: float = float(unit.aggro_radius)
 	if r <= 0.0:
 		return null
+	var ground_seeker: bool = not unit.is_flying()
 	var best = null
 	var best_d := INF
 	for o in units:
@@ -325,12 +328,30 @@ func _nearest_enemy_unit_in_aggro(unit):
 		if not unit.can_hit_type(o.target_type):
 			continue   # V3-2：打不到的类型（如纯地面 vs 空军）不分心、不锁
 		var d: float = unit.pos.distance_to(o.pos)
-		if d <= r and d < best_d:
-			best_d = d
-			best = o
+		if d > r or d >= best_d:
+			continue
+		if ground_seeker and not _ground_path_clear(unit.pos, o.pos):
+			continue   # A5-1：隔水不可直线到达 → 不分心，改走流场绕桥
+		best_d = d
+		best = o
 	return best
 
-# 直线趋向某点（分心追单位用）；安全网不踏水/出界。
+# 地面直线可达性：a→b 直线上是否无水/界外阻隔。沿线每 ~1 tile 采一点，确定性。
+# 用于「分心只追可直线到达的敌兵」（A5-1，见 _nearest_enemy_unit_in_aggro）。
+func _ground_path_clear(a: Vector2, b: Vector2) -> bool:
+	var dist: float = a.distance_to(b)
+	if dist <= _EPSILON:
+		return true
+	var steps: int = int(ceil(dist))
+	for k in range(1, steps + 1):
+		var p: Vector2 = a.lerp(b, float(k) / float(steps))
+		var tt := tile_type_at(p)
+		if tt == TILE_WATER or tt == TILE_OOB:
+			return false
+	return true
+
+# 直线趋向某点（分心追单位用）。若直奔会撞水/出界（目标在桥外或对岸、或单步滑出窄桥），
+# 回退走流场绕桥推进，绝不原地冻结——否则会卡在岸/桥边被对岸远程风筝（A5-1）。
 func _step_toward_point(unit, point: Vector2, dt: float) -> void:
 	var dir: Vector2 = point - (unit.pos as Vector2)
 	if dir.length() <= _EPSILON:
@@ -338,6 +359,9 @@ func _step_toward_point(unit, point: Vector2, dt: float) -> void:
 	var np: Vector2 = (unit.pos as Vector2) + dir.normalized() * float(unit.move_speed) * dt
 	var tt := tile_type_at(np)
 	if tt == TILE_WATER or tt == TILE_OOB:
+		var tower = nearest_enemy_tower(unit)
+		if tower != null:
+			_step_toward(unit, tower, dt)   # 撞水 → 回退流场绕桥，不冻结
 		return
 	unit.pos = np
 
@@ -403,6 +427,22 @@ func _step_toward(unit, tower, dt: float) -> void:
 func _in_grid(t: Vector2i) -> bool:
 	return t.x >= 0 and t.x < grid_w and t.y >= 0 and t.y < grid_h
 
+# 把位置钳到最近的可走地面 tile 中心（亡语/召唤的地面裂兵防止落水/塔/界外）。
+# 确定性环形向外搜索；找不到则返回原位（极端兜底）。
+func _clamp_to_ground(pos: Vector2) -> Vector2:
+	if is_ground_walkable_at(pos):
+		return pos
+	var cx: int = int(floor(pos.x))
+	var cy: int = int(floor(pos.y))
+	for ring in range(1, 7):
+		for dy in range(-ring, ring + 1):
+			for dx in range(-ring, ring + 1):
+				if absi(dx) != ring and absi(dy) != ring:
+					continue
+				if is_ground_walkable(cx + dx, cy + dy):
+					return Vector2(cx + dx + 0.5, cy + dy + 0.5)
+	return pos
+
 func _remove_dead() -> void:
 	var spawns: Array = []
 	for i in range(units.size() - 1, -1, -1):
@@ -410,9 +450,13 @@ func _remove_dead() -> void:
 		if not u.is_alive():
 			# 亡语召唤（V3-3）：死亡时在原地裂出 death_spawn_count 个单位。
 			if u.death_spawn_count > 0 and u.death_spawn_id != "" and not (u.death_spawn_config as Dictionary).is_empty():
+				var fly: bool = (u.death_spawn_config as Dictionary).get("target_type", "ground") == "air"
 				for k in u.death_spawn_count:
 					var off: Vector2 = _DEATH_SPREAD[k % _DEATH_SPREAD.size()]
-					spawns.append(UnitScript.new(u.death_spawn_id, u.owner_id, u.death_spawn_config, (u.pos as Vector2) + off))
+					var sp: Vector2 = (u.pos as Vector2) + off
+					if not fly:
+						sp = _clamp_to_ground(sp)   # 亡语地面裂兵防落水/塔/界外
+					spawns.append(UnitScript.new(u.death_spawn_id, u.owner_id, u.death_spawn_config, sp))
 			units.remove_at(i)
 	for s in spawns:
 		units.append(s)
