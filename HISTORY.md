@@ -50,12 +50,13 @@
 | V3-2 | 空军（飞兵越河 + 对空克制 `attack_targets`） | ✅ 完成（单测；画面待真人验收） | `7ad503d` |
 | V3-3 | 新技能积木（亡语召唤 `golem` / 治疗术 `heal`）→ 16 卡 / 10 单位 | ✅ 完成（单测） | `73f99c1` |
 | V3-4a | Roguelite 骨架：RunState + 节点地图（线性连战链）+ 连战流转（二元永久死亡） | ✅ 完成（单测 + headless 跑通一条 run） | `9a6fc55` |
-| V3-4b | 战间 draft 三选一（确定性候选、改写本 run 卡组、卡组可增长） | ✅ 完成（单测） | 待提交 |
-| V3-4c | relic 系统（JSON 数值修正器、effective level 不污染 base、起手圣水） | ✅ 完成（单测） | 待提交 |
-| V3-4d | boss/精英节点难度修正 + 局间 meta 解锁 + 存档（user:// 往返）+ 最简 run view | ✅ 完成（单测 + headless smoke；引擎内流程交真人验收） | 待提交 |
-| V3-6a | 拖拽部署（CR 式）+ 落点 ghost/合法红绿 + 半场高亮 + 落地涟漪 + 入场缩放（仅 view） | ✅ 代码完成（headless smoke + 单测 172/172 零回归；手感待真人验收） | 待提交 |
+| V3-4b | 战间 draft 三选一（确定性候选、改写本 run 卡组、卡组可增长） | ✅ 完成（单测） | `239012b` |
+| V3-4c | relic 系统（JSON 数值修正器、effective level 不污染 base、起手圣水） | ✅ 完成（单测） | `239012b` |
+| V3-4d | boss/精英节点难度修正 + 局间 meta 解锁 + 存档（user:// 往返）+ 最简 run view | ✅ 完成（单测 + headless smoke；引擎内流程交真人验收） | `239012b` |
+| V3-6a | 拖拽部署（CR 式）+ 落点 ghost/合法红绿 + 半场高亮 + 落地涟漪 + 入场缩放（仅 view） | ✅ 代码完成（headless smoke + 单测 172/172 零回归；手感待真人验收） | `1999797` |
+| V3-6b | 战斗 juice：10Hz→60fps 插值、受击闪白/浮字、命中 stub FX、轻顿帧/震屏（仅 view） | ✅ 代码完成（Godot CLI 缺失，自动化验收待可用环境补跑；手感待真人验收） | 本次提交 |
 
-> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）进行中**：V3-6a（拖拽部署 + 落点反馈，仅 view）代码完成、手感待真人验收；下一步 V3-6b（战斗 juice：插值/受击数字/顿帧/震屏）。V3-5 短战役 + 新手引导按决策 40 推迟到 V3-6/V3-7 之后执行。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
+> **当前阶段 = V3**（战斗核心 2D 重构 + 买断制单机：短战役 + Roguelite + 2D 卡通精灵）。权威规划见 [PLAN_V3.md](PLAN_V3.md)；方向/取舍见决策日志 36/37。**V3-1（2D reboot）+ V3-2（空军）+ V3-3（新积木）+ V3-4 全 a/b/c/d（Roguelite 主轴：骨架+draft+relic+boss/meta/存档+最简 view）已完成**；**V3-1h/V3-2/V3-3 的战斗画面/手感 + V3-4 的 run 引擎内流程留真人实机验收**。**V3-6（交互与游戏手感）进行中**：V3-6a（拖拽部署 + 落点反馈，仅 view）与 V3-6b（战斗 juice：插值/受击数字/顿帧/震屏）代码完成、手感待真人验收；下一步 V3-6c（圣水/HUD 反馈：分段圣水条、满槽脉动、卡牌冷却扫光、下一张预览、可用/不可用态、王冠/倒计时强调）。V3-5 短战役 + 新手引导按决策 40 推迟到 V3-6/V3-7 之后执行。V1（机制白膜）与 V2（3-lane+换皮+AI+内容）全部完成，详细逐步见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)。
 
 **测试**：172/172（macOS，`HOME` 隔离）。**分支/远端**：开发在 `develop`、`main` 稳定线、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
@@ -442,7 +443,7 @@
 
 > 方向见 PLAN_V3 §3，范围/拆步见决策日志 41。纯显示层（零逻辑改，决策 30 路线 A），拆 4 个真人验收 gate：6a 部署交互 → 6b 战斗 juice → 6c 圣水/HUD → 6d 胜负/run 总结。全部在白膜上装「手感系统」，V3-7 再贴精灵皮。
 
-### V3-6a — 拖拽部署 + 落点反馈（仅 view）  （待提交）
+### V3-6a — 拖拽部署 + 落点反馈（仅 view）  （已提交 `1999797`）
 **前置决策**：见决策日志 41（拖拽部署 CR 式、纯显示层）。
 
 **修改（仅 `view/battle_scene.gd`，零逻辑改）**
@@ -465,3 +466,27 @@
 - **拖拽手感 + 落点反馈 + 涟漪/入场缩放留真人实机验收**（清单见下）。
 
 **V3-6a 真人实机验收清单（交用户）**：F5 运行（编辑器已开，Play 读盘最新脚本）→ ROGUELITE/任意关进战斗，确认：① 按兵牌拖到场上有**兵剪影 ghost**（数量正确、抬在手指上方），松手落子；② ghost/落点环 **己方半场地面=绿、敌方半场/水/塔=红**，拖兵牌时己方半场**脉动高亮**；③ 法术：火球/箭/滚木拖出 **AOE 圈**、电击/闪电出**准星**，且**敌方半场也绿**（可放）；④ 出不起的牌**置灰拖不动**，拖动的卡**抬起高亮**；⑤ 松手在 HUD/非法处=**取消**（不扣圣水不出兵）；⑥ 成功落子有**涟漪**、新兵（含 AI 兵）**弹入**；⑦ 胜负结算/CONTINUE 仍正常。回报「通过/哪条不对」。
+
+### V3-6b — 战斗 juice：插值 + 受击反馈 + 顿帧/震屏（仅 view）  （本次提交）
+**前置决策**：见决策日志 41（V3-6 纯显示层、零逻辑改、逐帧 diff 逻辑状态还原反馈；本步是 6b gate）。
+
+**修改（仅 `view/battle_scene.gd`，零 logic/config 改）**
+- **10Hz→60fps 移动插值**：显示层记录单位 `instance_id` 的上/下逻辑 tick tile 位置（`_interp_from` / `_interp_to`），绘制时用 `match_obj.get_interpolation_fraction()` 做 `Vector2.lerp`，逻辑仍按固定 tick 推进，view 只平滑显示。
+- **逐帧 HP diff 事件**：每帧在 `match_obj.update` 前后 snapshot 单位/塔的 `pos/hp`，发现 hp 下降/上升即生成显示层事件；不要求逻辑层发事件，延续决策 30 的 view diff 路线。
+- **受击/治疗反馈**：hp 下降生成黄色 `-N` 浮动数字、命中星芒 stub FX、单位/塔闪白；hp 上升（如 heal）生成绿色 `+N` 浮动数字与绿色 hit FX。
+- **轻顿帧 + 震屏**：伤害事件触发短 hitstop（`HITSTOP_DUR=0.045s`）与衰减 screen shake（`SHAKE_DUR=0.16s`、`SHAKE_MAX_PX=7`）；震屏只通过 `_t2s` 对场地/单位/塔/场上 FX 加偏移，HUD 与结算 UI 不抖。
+- **FX 生命周期**：复用 `_fx` 承载落地涟漪与命中 stub FX，新增 `_float_texts` / `_hit_flash` 并按时长剔除；已有拖拽部署、落点 ghost、入场缩放、run 结算路径保持不变。
+
+**范围边界**：仅 view；不改 `logic/*`、`config/*`、`tests/*`。6c 的圣水/HUD 分段、冷却扫光、下一张预览、可用态强化仍留下一步；6d 的胜负/run 总结演出仍留后续。V3-6b 的视觉/手感需真人实机验收。
+
+**踩坑与修复**
+- 当前 container 没有 `godot` 可执行文件（`command -v godot` 为空），因此本步无法在 container 内实际跑 Godot headless 单测/场景 smoke；已保留精确命令，待有 Godot CLI 的环境补跑。
+- 仅用显示层 snapshot diff 还原受击事件，无法区分同一帧内多次命中来源；本步按总 hp 差显示一个聚合数字，足够做白膜手感 gate，若后续需要精准攻击事件再考虑逻辑事件缓冲。
+
+**验收**
+- `command -v godot || command -v Godot || find /workspace -maxdepth 3 -iname 'godot*' -type f | head -20` → 无输出，确认当前 container 缺 Godot CLI ⚠️
+- `HOME=/private/tmp/godot-home godot --headless --path . --script res://tests/test_runner.gd` → 未能运行：`godot: command not found` ⚠️
+- `HOME=/private/tmp/godot-home godot --headless --editor --path . --quit` → 未能运行：`godot: command not found` ⚠️
+- **待补跑**：`HOME=/private/tmp/godot-home godot --headless --path . --script res://tests/test_runner.gd`（预期 172/172 零回归）
+- **待补跑**：`HOME=/private/tmp/godot-home godot --headless --editor --path . --quit`（预期零解析/导入错误）
+- **V3-6b 真人实机验收清单（交用户）**：F5 运行 → ROGUELITE/任意关进战斗，确认：① 单位移动比 10Hz 逻辑更平滑、没有明显一格一跳；② 单位/塔受击时闪白，命中点有短星芒 stub FX；③ 受击时飘黄色 `-N` 数字，治疗术飘绿色 `+N` 数字；④ 重击/塔被打时有轻微顿帧与短震屏，HUD/手牌/结算 UI 不跟着乱抖；⑤ 拖拽部署、落点 ghost、涟漪/入场缩放、胜负 CONTINUE/REMATCH/MENU 仍正常。回报「通过/哪条不对」。
