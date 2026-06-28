@@ -169,7 +169,9 @@ func _connect_flow() -> void:
 	_status = "登录中…"
 	if not await _session.ensure(_http):
 		_status = "登录失败，请检查网络/服务器"
+		print("[net] 登录失败，无法进入 PVP 匹配")
 		return
+	print("[net] 登录成功，ws=%s，进入 PVP 匹配" % _session.ws_url)
 	_matchmaking = true
 	_status = "匹配中…"
 	_show_cancel_button()
@@ -179,6 +181,7 @@ func _connect_flow() -> void:
 	_client.result.connect(_on_result)
 	_client.reconnecting.connect(_on_reconnecting)
 	_client.disconnected.connect(_on_disconnected)
+	_client.deploy_applied.connect(_on_deploy_applied)
 	_client.start(_session.ws_url, _session.token(), 1)   # 卡组槽 1
 
 
@@ -194,12 +197,14 @@ func _show_cancel_button() -> void:
 
 
 func _on_cancel_pressed() -> void:
+	print("[net] 用户取消匹配，返回主菜单")
 	if _client != null:
 		_client.cancel_match()
 	get_tree().change_scene_to_file(MainMenuScene)
 
 
 func _on_matched(_your_side: int, opponent_name: String) -> void:
+	print("[net] UI 收到匹配成功，对手=%s，等待进房建局" % opponent_name)
 	if opponent_name != "":
 		_status = "已匹配：%s，准备开战…" % opponent_name
 	else:
@@ -207,6 +212,7 @@ func _on_matched(_your_side: int, opponent_name: String) -> void:
 
 
 func _on_joined(your_side: int, opponent_name: String) -> void:
+	print("[net] UI 进房完成，我方 side=%d，视角翻转=%s，对手=%s，开始渲染战斗" % [your_side, str(your_side == 2), opponent_name])
 	_flip = your_side == 2
 	_matchmaking = false
 	_status = "对手：%s" % opponent_name if opponent_name != "" else ""
@@ -220,6 +226,7 @@ func _on_joined(your_side: int, opponent_name: String) -> void:
 
 
 func _on_result(winner: int, _reason: int) -> void:
+	print("[net] UI 收到对局结算，winner=%d（1=我方/2=对方/0=平）" % winner)
 	_end_winner = winner
 	_start_ending()
 	# 刷新档案，回主菜单时杯数已更新。
@@ -228,11 +235,13 @@ func _on_result(winner: int, _reason: int) -> void:
 
 
 func _on_disconnected() -> void:
+	print("[net] UI 连接彻底断开（重连窗口耗尽或匹配前断开）")
 	if not _ending:
 		_status = "连接断开"
 
 
 func _on_reconnecting() -> void:
+	print("[net] UI 连接中断，重连中…")
 	if not _ending:
 		_status = "连接中断，重连中…"
 
@@ -1019,12 +1028,18 @@ func _on_card_up(i: int) -> void:
 		AudioManager.play_sfx("ui_card_drop_invalid")
 		return
 	# 联机：发 deploy 指令（不当场落子，等服务端广播回来两端同 tick 落子）。
+	# 落地 FX/法术音效不在这里播——改由 _on_deploy_applied 在指令真正落子时触发，
+	# 这样对手也能看到/听到本方的法术，且 FX 与落子 tick 对齐（lockstep 表现层对齐）。
 	_client.send_deploy(cid, drop)
-	AudioManager.play_sfx("ui_card_drop_valid")
-	var kind: String = FX_KIND.get(cid, "spawn")
-	var info: Dictionary = _card_info(cid)
-	_fx.append({"pos": drop, "t0": _elapsed, "dur": _fx_dur(kind), "kind": kind, "radius": float(info["radius"])})
-	_play_card_audio(cid, info)
+	AudioManager.play_sfx("ui_card_drop_valid")   # 仅本地即时反馈：卡已松手投出
+
+# 某条出兵指令在两端同 tick 落子（含本方自己的，服务端回广播）→ 落地 FX + 法术/出兵音效。
+# 写在这里而非 _on_card_up：保证对手出的法术/兵在本端也看得到/听得到（lockstep 表现层对齐）。
+func _on_deploy_applied(_side: int, card_id: String, pos: Vector2) -> void:
+	var kind: String = FX_KIND.get(card_id, "spawn")
+	var info: Dictionary = _card_info(card_id)
+	_fx.append({"pos": pos, "t0": _elapsed, "dur": _fx_dur(kind), "kind": kind, "radius": float(info["radius"])})
+	_play_card_audio(card_id, info)
 
 func _sync_cards() -> void:
 	var lp = _local_player()

@@ -2,6 +2,7 @@ package battle
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -53,11 +54,14 @@ func (l *Lobby) Serve(ctx context.Context, ws *websocket.Conn, accountID int64, 
 	case pbcommon.MsgId_FIND_MATCH_REQ:
 		var req pbmatch.FindMatchReq
 		if proto.Unmarshal(payload, &req) != nil {
+			log.Printf("mm: acc=%d find_match decode failed", accountID)
 			stop()
 			return
 		}
+		log.Printf("mm: acc=%d find_match req slot=%d", accountID, req.DeckSlot)
 		w, err := l.EnterQueue(ctx, accountID, summary, send, req.DeckSlot)
 		if err != nil {
+			log.Printf("mm: acc=%d enter queue failed: %v", accountID, err)
 			stop()
 			return
 		}
@@ -70,11 +74,13 @@ func (l *Lobby) Serve(ctx context.Context, ws *websocket.Conn, accountID int64, 
 				matched = true
 			case m, more := <-inbox:
 				if !more { // disconnected while queued
+					log.Printf("mm: acc=%d disconnected while queued", accountID)
 					l.LeaveQueue(ctx, accountID)
 					stop()
 					return
 				}
 				if m.msgID == pbcommon.MsgId_CANCEL_MATCH_REQ {
+					log.Printf("mm: acc=%d cancel match (left queue)", accountID)
 					l.LeaveQueue(ctx, accountID)
 					send <- encodeFrame(pbcommon.MsgId_CANCEL_MATCH_RESP, &pbmatch.CancelMatchResp{Ok: true})
 					stop()
@@ -87,18 +93,22 @@ func (l *Lobby) Serve(ctx context.Context, ws *websocket.Conn, accountID int64, 
 				return
 			}
 		}
+		log.Printf("mm: acc=%d matched -> entering room side=%d", accountID, side)
 
 	case pbcommon.MsgId_JOIN_ROOM_REQ:
 		// Reconnect path: rejoin the account's live room.
 		p := &player{accountID: accountID, summary: summary, send: send}
 		room = l.Reconnect(p)
 		if room == nil {
+			log.Printf("ws: acc=%d reconnect failed (no live room to rejoin)", accountID)
 			stop()
 			return
 		}
 		side = p.side
+		log.Printf("ws: acc=%d reconnected to room side=%d", accountID, side)
 
 	default:
+		log.Printf("ws: acc=%d unexpected opening frame id=%d (expect FindMatch/JoinRoom)", accountID, msgID)
 		stop()
 		return
 	}
