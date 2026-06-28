@@ -85,21 +85,30 @@ godot --path . -e                                                               
 
 ## 分支 / 提交 / 推送约定
 - **稳定线 = `master`**（原 `main`，已于 2026-06-28 重命名合并；旧的 `develop` 分支已并入 `master`，不再单独维护）。远端 `origin` = https://github.com/jchensh/godot-clash-pusher 。
-- **开发用 worktree + 临时 feature 分支**：每个任务从 `master` 切一个临时 feature 分支，**在独立 worktree 里开发**（不在 `master` 工作树直接改），开发完 + 验证（单测过 / 真人验收过）后**直接合回 `master`**，再删掉临时分支与 worktree。这样 `master` 工作树始终干净，多任务可并行不互扰。
+- **直接在 master 改（允许）**：文档/注释、配置小调、单行 bug fix 等改动小、风险低的内容，可直接在 `master` 工作树 commit，无需切 worktree。
+- **切 worktree（推荐用于）**：功能开发、重构、多步改动、需要跑测试验证的任务——在独立 worktree 里开发，避免污染 master 且支持并行。
   ```bash
   # 起新任务（在主仓库目录里执行）
   git worktree add ../master-<feature> -b feat/<feature>   # 建 worktree + 临时分支
   cd ../master-<feature>                                     # 进 worktree 开发
   # ... 开发 + 提交 + 测试 ...
+  # 合回前先 rebase，把改动接到最新 master 末尾，冲突在自己这边解决
+  git fetch origin && git rebase master                      # ⚠️ 必做，不可跳过
   # 验证通过后合回 master（回主目录执行）
   cd <master 目录>
   git merge --no-ff feat/<feature>                          # 合入稳定线
   git worktree remove ../master-<feature>                   # 清理 worktree
   git branch -d feat/<feature>                              # 删临时分支
   ```
+- **Claude Code 自动建的 worktree 分支**（`claude/<random-name>`）：Claude Code 每次新建 session 时自动从 master 创建，与 `feat/<feature>` 同等对待——开发完合回 master 后删除，不长期保留。
 - **`release` 分支**：用户用 Antigravity（Google IDE）创建，用于打安卓包；跟随 `master` 推进，**agent 默认不在此分支提交、不主动同步**，需同步由用户主动指示。
 - **仅当用户说"提交"时**才 `git commit`；提交后**顺带 `git push`**。feature 分支首次推送用 `git push -u origin feat/<feature>` 建立跟踪（worktree 内推送同理）。
 - 仍遵守"一步一确认"：每步做完先停下报告，待用户说提交再 commit+push。
+- **Git 禁止事项**（违反时立即纠正）：
+  - ❌ 禁止 `git push --force` 到 `master`——不可逆，必须警告用户确认
+  - ❌ 禁止 `git commit --no-verify`——hook 失败要查根因修复，不绕过
+  - ❌ 禁止 `git commit --amend` 已推送的 commit——用新 commit 修正
+  - ❌ 禁止在 `master` 工作树目录直接开发功能——切 worktree
 
 ## PM 工作流 / Jira 看板（Atlas MCP，**Claude Code + Codex 都适用**）
 
