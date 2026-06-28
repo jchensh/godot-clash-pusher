@@ -438,7 +438,7 @@ func _draw_units(a) -> void:
 				st = "attack"
 		# 精灵朝向：owner_id 0 朝上(row_up)、1 朝下(row)。side2 视角下本方(owner1)贴图朝向会反，
 		# 故对非翻转方传 owner 原值、翻转方传镜像 owner，让贴图朝向跟随屏幕视角。
-		var spr_owner := u.owner_id
+		var spr_owner: int = u.owner_id
 		if _flip:
 			spr_owner = 0 if u.owner_id == 1 else 1
 		var spr: Dictionary = SpriteDB.frame(u.unit_id, st, spr_owner, _elapsed)
@@ -1164,8 +1164,8 @@ func _draw_end_screen() -> void:
 		_draw_crown(Vector2(sx + float(i) * cw, _vh * 0.46 - 60.0 * (1.0 - yb)), 40.0, COL_CROWN, true)
 	# 比分滚动（本方:敌方塔血）
 	var cu: float = clampf((_end_t - 0.3) / 0.7, 0.0, 1.0)
-	var pscore := _client.match_obj.battle.total_tower_hp(_my_towers())
-	var oscore := _client.match_obj.battle.total_tower_hp(_foe_towers())
+	var pscore: float = _client.match_obj.battle.total_tower_hp(_my_towers())
+	var oscore: float = _client.match_obj.battle.total_tower_hp(_foe_towers())
 	var sc := Color(1, 1, 1, clampf(_end_t * 2.0, 0.0, 1.0))
 	draw_string(_font, Vector2(0, _vh * 0.56), tr("result_score") % [int(round(pscore * cu)), int(round(oscore * cu))],
 			HORIZONTAL_ALIGNMENT_CENTER, _vw, 22, sc)
