@@ -739,3 +739,5 @@
 - Firebase 上的客户端已被重新构建发布。
 
 - **CORS CORS_FIX (2026-06-29)**: Fixed CORS Preflight block by adding Access-Control headers to Nginx.
+
+- **PVP WebSocket 路由与基地经济 URL 注入修复 (2026-06-29)**: Fixed route stitching in session.gd and injected GAME_API_URL support to game_state.gd to prevent localhost call failures in web mode.

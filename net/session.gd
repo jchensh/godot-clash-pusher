@@ -62,6 +62,12 @@ func _load_network() -> Dictionary:
 		if js_api != null and str(js_api) != "":
 			d["api_url"] = str(js_api)
 		if js_ws != null and str(js_ws) != "":
-			d["ws_url"] = str(js_ws)
+			var ws_str = str(js_ws)
+			if not ws_str.contains("/v4/"):
+				if ws_str.ends_with("/"):
+					ws_str = ws_str + "v4/battle/ws"
+				else:
+					ws_str = ws_str + "/v4/battle/ws"
+			d["ws_url"] = ws_str
 			
 	return d

@@ -50,8 +50,16 @@ static func economy():                  # EconomyStateCache（服务器经济/�
 	return _economy
 
 static func _net_api_url() -> String:
+	var api_url = "http://localhost:8080"
 	var f := FileAccess.open("res://config/network.json", FileAccess.READ)
-	if f == null:
-		return "http://localhost:8080"
-	var d = JSON.parse_string(f.get_as_text())
-	return String((d as Dictionary).get("api_url", "http://localhost:8080")) if d is Dictionary else "http://localhost:8080"
+	if f != null:
+		var d = JSON.parse_string(f.get_as_text())
+		if d is Dictionary:
+			api_url = String(d.get("api_url", api_url))
+	
+	if OS.has_feature("web"):
+		var js_api = JavaScriptBridge.eval("window.GAME_API_URL")
+		if js_api != null and str(js_api) != "":
+			api_url = str(js_api)
+			
+	return api_url
