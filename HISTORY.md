@@ -737,3 +737,5 @@
 - 数据库初始化迁移成功完成（应用了 6 个 migrations 脚本）。
 - 本地使用 device_id 登录 API 校验成功，返回了正常的 Protobuf 错误（表明网络 TLS 与 API 路由全线畅通）。
 - Firebase 上的客户端已被重新构建发布。
+
+- **CORS CORS_FIX (2026-06-29)**: Fixed CORS Preflight block by adding Access-Control headers to Nginx.
