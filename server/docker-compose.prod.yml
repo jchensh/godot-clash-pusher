@@ -1,0 +1,100 @@
+# V5 服务端多容器生产编排 (GCE 部署)
+# 去除了数据库外部端口映射，通过 Nginx 暴露统一的 80/443 端口
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-gcp}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    # ⚠️ 去除生产环境的 5432 端口公网映射以提高安全性
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-gcp}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    volumes:
+      - redis_data:/data
+    # ⚠️ 去除生产环境的 6379 端口公网映射以提高安全性
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: gcp-server:prod
+    restart: always
+    command: ["/usr/local/bin/gateway"]
+    environment:
+      DB_URL: ${DB_URL}
+      REDIS_URL: ${REDIS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      CONFIG_DIR: /app/config
+    volumes:
+      - ../config:/app/config:ro   # 挂载共享的配置文件夹 (只读)
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  api:
+    image: gcp-server:prod
+    pull_policy: never
+    restart: always
+    command: ["/usr/local/bin/api"]
+    environment:
+      DB_URL: ${DB_URL}
+      REDIS_URL: ${REDIS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      CONFIG_DIR: /app/config
+      GM_ENABLED: ${GM_ENABLED:-0}   # 生产环境强制默认关闭 GM 后台
+    volumes:
+      - ../config:/app/config:ro
+    depends_on:
+      gateway:
+        condition: service_started
+
+  battle:
+    image: gcp-server:prod
+    pull_policy: never
+    restart: always
+    command: ["/usr/local/bin/battle"]
+    environment:
+      DB_URL: ${DB_URL}
+      REDIS_URL: ${REDIS_URL}
+    depends_on:
+      gateway:
+        condition: service_started
+
+  nginx:
+    image: nginx:1.25-alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      # SSL 证书挂载卷：生产部署时需要将 Let's Encrypt 等生成的证书路径映射到此
+      - ./certs:/etc/nginx/certs:ro
+      - certbot_webroot:/var/www/certbot:ro
+    depends_on:
+      - api
+      - gateway
+
+volumes:
+  pg_data:
+  redis_data:
+  certbot_webroot:
