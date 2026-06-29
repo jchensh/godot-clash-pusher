@@ -741,3 +741,10 @@
 - **CORS CORS_FIX (2026-06-29)**: Fixed CORS Preflight block by adding Access-Control headers to Nginx.
 
 - **PVP WebSocket 路由与基地经济 URL 注入修复 (2026-06-29)**: Fixed route stitching in session.gd and injected GAME_API_URL support to game_state.gd to prevent localhost call failures in web mode.
+
+- **GM 404 与 PVP 无痕窗口单排幽灵队列排障 (2026-06-29)**:
+  - 修改 `docker-compose.prod.yml` 为生产环境强制开启 `GM_ENABLED: 1` 解决 `v5/gm/apply` 报 404 无法使用作弊端点的问题。
+  - 查明了 PVP 队列永远卡匹配的原因：如果在同一浏览器使用多个无痕窗口并发测试，它们共享 LocalStorage 会分配到同一 `device_id`，被服务器认定为同一玩家，从而覆盖各自排队请求并陷入死锁。切换两个完全不同的物理浏览器后秒排成功。
+  - **遗留风险提示**：当前 `gcloud compute ssh` 部署由于谷歌开发者控制台的 `compute.googleapis.com` API 权限受限，导致部署脚本无法直接连到云服务器，后续如果需要再重启容器，必须请拥有相关管理员权限的用户亲自执行部署脚本。
+  - **文档沉淀**：今天所有查出的坑和解决方案，已经详细记录并保存于 `docs/DEPLOY_WEB_GOTCHAS.md`，后续开发者部署如果遇到网络不通或界面白屏，请务必先查阅该文档。
+

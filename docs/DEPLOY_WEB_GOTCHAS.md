@@ -97,3 +97,50 @@ Docker Compose 生产容器拉起后，`nginx` 容器频繁崩溃重启，报：
    ```
 2. **清理旧卷重置密码**：如果是开发部署初期遇到密码不一致，直接运行 `docker compose down -v` 清除旧的 `pg_data` 卷，然后重新启动容器，让 Postgres 用 `.env` 中的新密码重新进行系统初始化。同时，确认 `.env` 中定义的 `POSTGRES_USER`、`POSTGRES_DB` 与 `DB_URL` 声明完全一致（例如均为 `app` 和 `gcp`）。
 
+---
+
+## 6. WebSocket 路径注入不全与 URL 拼接越界
+
+### 🚨 故障现象
+客户端能够加载基地界面，但在进入 PVP 排队时，浏览器 Console 抛出 `404 Not Found` 或是 `CORS Policy: No Access-Control-Allow-Origin header is present`。抓包发现客户端在连接时只访问了 `wss://domain.com/` 而丢失了 `/v4/battle/ws` 路径，或者把 HTTP 和 WSS 请求错发成了 `https://towerpushserver.jeffgame.tech/v4/auth/login` 等未定义路径。
+
+### 🔍 根本原因
+在 Godot 中，由于导出的环境变量通常只有裸的域名（如 `wss://towerpushserver.jeffgame.tech`），如果直接使用 `.path_join()`，它会自动将协议头中的 `//` 折叠为一个 `/` 变成 `wss:/towerpush...` 导致域名解析失败。同时，在部分客户端脚本（如 `session.gd` 和 `game_state.gd`）中，读取 `window.WS_URL` 时没有主动拼接后端的具体路由，导致握手失败或者触发 Nginx 的默认路由从而抛出 CORS 跨域拦截。
+
+### 💡 解决方案
+必须在底层脚本获取到环境变量后，统一并且安全地通过字符串格式化（而不是 `path_join`）来拼接路径，并且补齐对应的路由。例如：
+```gdscript
+# 在游戏状态初始化时安全拼接
+var base_ws = JavaScriptBridge.eval("window.WS_URL")
+if base_ws:
+    _session.ws_url = base_ws + "/v4/battle/ws"
+```
+
+---
+
+## 7. 生产环境安全拦截导致 GM 工具 404
+
+### 🚨 故障现象
+客户端页面上点击 GM 按钮并且发送指令（例如添加金币、升阶卡牌），但是控制台返回 `POST https://.../v5/gm/apply 404 (Not Found)`。
+
+### 🔍 根本原因
+服务端为避免生产环境被玩家滥用，在 `cmd/api/main.go` 中加入了一层安全开关 `if os.Getenv("GM_ENABLED") == "1"` 才会挂载 GM 的路由端点。而在 `docker-compose.prod.yml` 等默认部署模板中，该环境变量默认不传入或被设为 `0`，导致线上容器压根没有注册该路由。
+
+### 💡 解决方案
+在封闭测试或是本地联调期间，需要在 `docker-compose.prod.yml` 的 `api` 容器环境配置中显式加上 `GM_ENABLED: 1` 开启后台端点，或者在发布完毕后修改对应的服务端代码，关闭安全锁再重新构建拉起容器。
+
+---
+
+## 8. 无痕窗口并发测试导致 PVP 队列“死锁”（幽灵排队）
+
+### 🚨 故障现象
+客户端 Console 明确打印了 `[net] 已连上 gateway，发送 FindMatch`，且途中没有任何报错，WebSocket 也没有掉线，但游戏永远卡在“匹配中”的状态。就算玩家在**两个不同标签页**同时点击排队，也无法撮合成对局。
+
+### 🔍 根本原因
+在测试“匿名账号登录”时，如果使用浏览器的“无痕模式（Incognito）”并开启多个标签页，**所有同一窗口衍生的无痕标签页其实共享同一个 LocalStorage 缓存隔离区**。
+这导致两边标签页生成并且向后端发送了**完全一致的设备 ID (`device_id`)**，于是服务器将它们认定为**同一个账号**。
+在后端的 Redis 队列和 `lobby.go` 的 ELO 匹配算法中，玩家自己的队列记录会相互覆盖（永远只有 1 个人在队列里），且撮合算法 `FindPairs` 强制规定自己不能和自己配对。因此它们永远都在傻等。
+
+### 💡 解决方案
+进行 PVP 本地或联机匹配测试时，**严禁在同一个浏览器的同一种模式下开启多个标签页互打**。
+必须使用**两个完全独立的物理浏览器**（如 Chrome + Edge），或一台电脑 + 一台手机，或 Chrome 的“普通窗口”与“无痕窗口”各自一个。这样它们才能生成彼此独立的设备 ID，被系统判定为两个真实玩家并瞬间秒排。
