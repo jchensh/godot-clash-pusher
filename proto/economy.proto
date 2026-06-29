@@ -1,0 +1,56 @@
+// economy.proto — V5-N3/N4/N5/N6（决策 48）：服务器权威经济状态 + 结算动作。
+//
+// HTTP（api:8080，Bearer 会话令牌）：
+//   GET  /v5/economy/state          → EconomyState
+//   POST /v5/economy/upgrade        EconomyActionReq{card_id} → EconomyState（升级）
+//   POST /v5/economy/rank-up        EconomyActionReq{card_id} → EconomyState（升阶）
+//   POST /v5/economy/unlock         EconomyActionReq{card_id} → EconomyState（解锁）
+//   POST /v5/economy/stage-clear    StageClearReq{stage_id,stars} → EconomyState（N5 通关发奖）
+//   POST /v5/economy/collect-idle   CollectIdleReq{} → EconomyState（N6 挂机领取，now 全服务器定）
+// 成本/上限/解锁门槛/进度连续/星数上限/挂机时钟全在服务器用服务器侧配置 + 服务器时间算（改本地无效）。
+
+syntax = "proto3";
+
+package game.v4;
+
+option go_package = "github.com/jchensh/godot-clash-pusher/server/internal/pb/economy";
+
+message CardState {
+  string card_id = 1;
+  int32 level = 2;
+  int32 rank = 3;
+  int32 shards = 4;
+  bool unlocked = 5;
+}
+
+message StageState {
+  string stage_id = 1;
+  int32 stars = 2;
+  bool cleared = 3;
+}
+
+message EconomyState {
+  int64 gold = 1;
+  int64 gems = 2;
+  int64 idle_last_collect_ts = 3;
+  string highest_cleared = 4;
+  repeated CardState cards = 5;
+  repeated StageState stages = 6;
+}
+
+// upgrade / rank_up / unlock 共用（按 HTTP 路径区分动作）。
+message EconomyActionReq {
+  string card_id = 1;
+}
+
+// N5 通关上报：客户端把 (stage_id, stars) 报上来，服务器 sanity 校验（关卡存在/
+// stars≥1/stars≤配置上限/进度连续防跳关）+ 发首通/重复奖励 + 记进度，回新 EconomyState。
+message StageClearReq {
+  string stage_id = 1;
+  int32 stars = 2;   // 0=未取胜（拒）；≥1=通关星数（不能超该关 stars 配置条数）
+}
+
+// N6 挂机领取：无参（now 全服务器定，改本地时钟无效）。服务器按 (now − last_collect)
+// 算累计金币（rate × min(elapsed/cap_hours)，章节驱动）→ 发到 gold + last_collect=now。
+message CollectIdleReq {
+}

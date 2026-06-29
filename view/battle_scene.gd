@@ -18,6 +18,8 @@ const GameStateScript = preload("res://view/game_state.gd")
 const RunModifiersScript = preload("res://logic/run_modifiers.gd")
 const SpriteDB = preload("res://view/sprite_db.gd")
 const RunSceneScene := "res://view/run_scene.tscn"
+const StageProgressScript = preload("res://logic/stage_progress.gd")   # V5-S7c 闯关判星
+const STAGE_MAP_SCENE := "res://view/stage_map.tscn"
 
 const TOPBAR_H := 54.0
 const HUD_BOTTOM_H := 176.0
@@ -117,6 +119,7 @@ var _result_layer: Control
 var _dragging := false
 var _drag_screen := Vector2.ZERO
 var _elapsed := 0.0
+var _battle_elapsed := 0.0    # V5-S7c：累计 sim 战斗时长（不含顿帧/结束后），供星级 time_under 判定
 var _fx: Array = []           # 落地涟漪：[{pos:Vector2(tile), t0:float, dur:float}]
 var _seen: Dictionary = {}    # 单位 instance_id → 首见 _elapsed（入场缩放）
 var _card_base_pos: Array = []
@@ -156,6 +159,7 @@ func _ready() -> void:
 		# 战役模式：当前关 level_id + 关卡默认教学卡组（不受组卡影响）。
 		if campaign.current_focus() == "boss":
 			battle_music_id = "music_battle_boss"
+		print("[V5][battle] 模式=战役 关=%s" % campaign.current_level_id())
 		match_obj.setup(campaign.current_level_id(), [])
 	elif run != null and not run.is_over():
 		# Roguelite 模式：当前节点 level_id + run 卡组 + relic/节点难度修正器。
@@ -167,8 +171,15 @@ func _ready() -> void:
 		var nm: Dictionary = RunModifiersScript.node_mod(loader.get_run("default"), node_type)
 		if not nm.is_empty():
 			mods.append(nm)
+		print("[V5][battle] 模式=肉鸽 关=%s" % String(node.get("level_id")))
 		match_obj.setup(String(node.get("level_id")), run.deck, mods)
+	elif GameStateScript.stage_id != "":
+		# V5-S7c 闯关模式：setup_stage 注入 coef/遭遇/ai + 服务器拉来的养成档（for_battle，权威 level/rank）。
+		var pdata = GameStateScript.economy().for_battle(loader.cards.keys())
+		print("[V5][battle] 模式=闯关 stage=%s deck=%s" % [GameStateScript.stage_id, str(GameStateScript.player_deck)])
+		match_obj.setup_stage(GameStateScript.stage_id, GameStateScript.player_deck, pdata)
 	else:
+		print("[V5][battle] 模式=自由 关=%s" % GameStateScript.level_id)
 		match_obj.setup(GameStateScript.level_id, GameStateScript.player_deck)
 	AudioManager.play_music(battle_music_id)
 	AudioManager.play_ambience("amb_battle_wind")
@@ -186,6 +197,7 @@ func _process(delta: float) -> void:
 		_hitstop_t -= delta            # 顿帧：冻结 sim、画面继续
 	elif not match_obj.is_over():
 		match_obj.update(delta)
+		_battle_elapsed += delta       # V5-S7c：仅活跃战斗时长计入（判 time_under 星）
 	_detect_events()                   # 逐帧 diff hp → 伤害数字/闪白/火花/顿帧/震屏（路线 A）
 	_detect_attacks()                  # 远程兵开火上升沿 → 投射物（路线 A）
 	_update_disp(delta)                # 10Hz→60fps 位置插值
@@ -999,6 +1011,8 @@ func _add_result_buttons() -> void:
 		_result_btn(tr("btn_continue"), _vh * 0.62, _on_campaign_continue)   # 战役：回中枢推进/重打
 	elif GameStateScript.run != null:
 		_result_btn(tr("btn_continue"), _vh * 0.62, _on_run_continue)   # Roguelite：回 run 中枢推进/给奖励/结算
+	elif GameStateScript.stage_id != "":
+		_result_btn(tr("btn_back"), _vh * 0.62, _on_stage_return)   # V5-S7c：回闯关地图（地图侧上报+开箱）
 	else:
 		_result_btn(tr("btn_rematch"), _vh * 0.62, _on_rematch)
 		_result_btn(tr("btn_menu"), _vh * 0.62 + 70.0, _on_menu)
@@ -1068,6 +1082,29 @@ func _on_rematch() -> void:
 func _on_menu() -> void:
 	AudioManager.play_sfx("ui_button_back")
 	get_tree().change_scene_to_file("res://view/main_menu.tscn")
+
+# V5-S7c 闯关战后：判星 + 存结果（stage_map 负责上报服务器 + 领奖开箱）+ 回闯关地图。
+func _on_stage_return() -> void:
+	AudioManager.play_sfx("ui_button_press")
+	var sid: String = GameStateScript.stage_id
+	var outcome := {
+		"won": _end_result == BattleScript.RESULT_PLAYER_WIN,
+		"king_hp_pct": _player_king_hp_pct(),
+		"duration_sec": _battle_elapsed,
+	}
+	var goals = loader.get_stage(sid).get("stars", [])
+	var stars: int = StageProgressScript.judge_stars(goals if goals is Array else [], outcome)
+	print("[V5][battle] 闯关战后 stage=%s won=%s king_hp=%.2f dur=%.1fs → stars=%d" % [sid, str(outcome.won), outcome.king_hp_pct, outcome.duration_sec, stars])
+	GameStateScript.stage_last_result = {"stage_id": sid, "stars": stars}
+	GameStateScript.stage_id = ""
+	GameStateScript.deck_mode = ""
+	get_tree().change_scene_to_file(STAGE_MAP_SCENE)
+
+func _player_king_hp_pct() -> float:
+	for t in match_obj.battle.player_towers:
+		if t.is_king():
+			return clampf(t.hp / t.max_hp, 0.0, 1.0)
+	return 0.0
 
 # —— V3-5b 新手引导：加载 / 推进 / 覆盖层绘制（数据驱动 tutorial.json，决策 45）——
 func _init_tutorial() -> void:

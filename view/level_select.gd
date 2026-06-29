@@ -68,6 +68,8 @@ func _level_title(level: Dictionary) -> String:
 
 func _choose(level_id: String) -> void:
 	GameStateScript.level_id = level_id
+	GameStateScript.deck_mode = "level"   # 自由对战上下文（清 stage_id，避免 stale 闯关态串味）
+	GameStateScript.stage_id = ""
 	get_tree().change_scene_to_file(DECK_BUILDER_SCENE)
 
 func _on_back() -> void:

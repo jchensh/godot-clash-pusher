@@ -20,3 +20,7 @@
 *.log
 Thumbs.db
 .DS_Store
+
+# AI agent 本地状态目录(各 agent 自己的会话/缓存,不进仓)
+.claude/
+.codex/

@@ -19,6 +19,10 @@ var relics: Dictionary = {}     # V3-4c：relic 修正器池（relics.json），
 var campaign: Dictionary = {}   # V3-5：短战役关卡序列（campaign.json），结构性、不进 Excel 镜像
 var tutorial: Dictionary = {}   # V3-5b：新手引导脚本（tutorial.json），结构性、不进 Excel 镜像
 var audio_assets: Dictionary = {} # V3-8：音频资源表（AudioConfig.xlsx -> audio_assets.json）
+var stages: Dictionary = {}          # V5-S0：闯关关卡表（stages.json），结构性、不进 Excel 镜像
+var encounters: Dictionary = {}      # V5-S0：遭遇模板池（encounters.json），结构性、不进 Excel 镜像
+var economy: Dictionary = {}         # V5-S0：经济数值（economy.json）
+var card_progression: Dictionary = {} # V5-S0：卡牌养成元数据（card_progression.json）
 var errors: Array[String] = []
 
 # 读入配置；全部成功且校验无误返回 true，否则 false（详情见 errors）。
@@ -33,6 +37,10 @@ func load_all(config_dir: String = DEFAULT_CONFIG_DIR) -> bool:
 	campaign = _load_json_dict(config_dir.path_join("campaign.json"))
 	tutorial = _load_json_dict(config_dir.path_join("tutorial.json"))
 	audio_assets = _load_json_dict(config_dir.path_join("audio_assets.json"))
+	stages = _load_json_dict(config_dir.path_join("stages.json"))
+	encounters = _load_json_dict(config_dir.path_join("encounters.json"))
+	economy = _load_json_dict(config_dir.path_join("economy.json"))
+	card_progression = _load_json_dict(config_dir.path_join("card_progression.json"))
 	_validate()
 	return errors.is_empty()
 
@@ -209,6 +217,88 @@ func _validate() -> void:
 				if not cards.has(cid):
 					errors.append("level '%s' 的 %s 引用了不存在的 card '%s'" % [lid, deck_key, str(cid)])
 
+	# —— V5（KAN-50）新表校验 ——
+	# card_progression.json：每卡为对象 + rarity 合法 + base_power 数字；id 须在 cards 中；
+	# 且 cards 每张卡都应有 progression 条目（双向覆盖，防漏配）。忽略 _ 开头元字段。
+	var _rarities := ["common", "rare", "epic", "legendary"]
+	for cpid in card_progression:
+		if String(cpid).begins_with("_"):
+			continue
+		var cp = card_progression[cpid]
+		if typeof(cp) != TYPE_DICTIONARY:
+			errors.append("card_progression '%s' 应为对象" % str(cpid))
+			continue
+		if not _rarities.has(str(cp.get("rarity", ""))):
+			errors.append("card_progression '%s' 的 rarity 非法" % str(cpid))
+		if not _is_number(cp.get("base_power")):
+			errors.append("card_progression '%s' 缺少数字 base_power" % str(cpid))
+		if not cards.has(str(cpid)):
+			errors.append("card_progression '%s' 不在 cards 中" % str(cpid))
+	for cid in cards:
+		if not card_progression.has(cid):
+			errors.append("card '%s' 缺少 card_progression 条目" % str(cid))
+
+	# encounters.json（V5-S8a 加固）：每模板 deck 正好 8 张【且互不重复】、卡须在 cards 中；
+	# archetype 须为已知原型枚举（铺量多样性 + 防笔误）。
+	var _archetypes := ["balanced", "tank", "swarm", "undead", "control", "air", "ranged", "siege", "boss"]
+	for eid in encounters:
+		if String(eid).begins_with("_"):
+			continue
+		var enc = encounters[eid]
+		if typeof(enc) != TYPE_DICTIONARY:
+			errors.append("encounter '%s' 应为对象" % str(eid))
+			continue
+		if not _archetypes.has(str(enc.get("archetype", ""))):
+			errors.append("encounter '%s' 的 archetype 非法('%s')" % [str(eid), str(enc.get("archetype", ""))])
+		var edeck = enc.get("deck", [])
+		if typeof(edeck) != TYPE_ARRAY or (edeck as Array).size() != 8:
+			errors.append("encounter '%s' 的 deck 应为 8 张卡数组" % str(eid))
+		else:
+			var _seen := {}
+			for cid in edeck:
+				if not cards.has(cid):
+					errors.append("encounter '%s' 的 deck 引用了不存在的 card '%s'" % [str(eid), str(cid)])
+				if _seen.has(str(cid)):
+					errors.append("encounter '%s' 的 deck 含重复卡 '%s'" % [str(eid), str(cid)])
+				_seen[str(cid)] = true
+
+	# stages.json：含 chapter/index/encounter/difficulty_coef/ai_difficulty；encounter 须在
+	# encounters 中；ai_difficulty 合法；difficulty_coef ≥1.0；奖励/掉落 card 须在 cards 中。
+	var _diffs := ["rookie", "easy", "normal", "hard", "extreme"]
+	for sid in stages:
+		if String(sid).begins_with("_"):
+			continue
+		var st = stages[sid]
+		if typeof(st) != TYPE_DICTIONARY:
+			errors.append("stage '%s' 应为对象" % str(sid))
+			continue
+		for sf in ["chapter", "index", "encounter", "difficulty_coef", "ai_difficulty"]:
+			if not st.has(sf):
+				errors.append("stage '%s' 缺少 %s" % [str(sid), sf])
+		if st.has("encounter") and not encounters.has(str(st.get("encounter"))):
+			errors.append("stage '%s' 引用了不存在的 encounter '%s'" % [str(sid), str(st.get("encounter"))])
+		if st.has("ai_difficulty") and not _diffs.has(str(st.get("ai_difficulty"))):
+			errors.append("stage '%s' 的 ai_difficulty 非法" % str(sid))
+		if st.has("difficulty_coef") and (not _is_number(st.get("difficulty_coef")) or float(st.get("difficulty_coef")) < 1.0):
+			errors.append("stage '%s' 的 difficulty_coef 应为 ≥1.0 的数字" % str(sid))
+		if st.has("base_level") and not levels.has(str(st.get("base_level"))):
+			errors.append("stage '%s' 的 base_level 引用了不存在的 level '%s'" % [str(sid), str(st.get("base_level"))])
+		var fc = st.get("first_clear", {})
+		if typeof(fc) == TYPE_DICTIONARY and typeof(fc.get("shards")) == TYPE_DICTIONARY:
+			for cid in (fc["shards"] as Dictionary):
+				if not cards.has(cid):
+					errors.append("stage '%s' first_clear.shards 引用了不存在的 card '%s'" % [str(sid), str(cid)])
+		var sd = st.get("shard_drop", {})
+		if typeof(sd) == TYPE_DICTIONARY:
+			for cid in (sd as Dictionary):
+				if not cards.has(cid):
+					errors.append("stage '%s' shard_drop 引用了不存在的 card '%s'" % [str(sid), str(cid)])
+
+	# economy.json：含关键顶层键。
+	for ef in ["upgrade_cost_base", "rank_up", "unlock_shards", "idle", "rewards"]:
+		if not economy.has(ef):
+			errors.append("economy.json 缺少 %s" % ef)
+
 # —— 便捷访问 ——
 func get_card(id: String) -> Dictionary:
 	return cards.get(id, {})
@@ -248,6 +338,25 @@ func has_level(id: String) -> bool:
 
 func has_audio_asset(id: String) -> bool:
 	return audio_assets.has(id)
+
+# —— V5 新表访问 ——
+func get_stage(id: String) -> Dictionary:
+	return stages.get(id, {})
+
+func get_encounter(id: String) -> Dictionary:
+	return encounters.get(id, {})
+
+func get_economy() -> Dictionary:
+	return economy
+
+func get_card_progression(id: String) -> Dictionary:
+	return card_progression.get(id, {})
+
+func has_stage(id: String) -> bool:
+	return stages.has(id)
+
+func has_encounter(id: String) -> bool:
+	return encounters.has(id)
 
 func _is_number(value) -> bool:
 	var t := typeof(value)

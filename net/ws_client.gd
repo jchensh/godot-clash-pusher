@@ -22,6 +22,8 @@ var _was_open := false
 
 func connect_to(url: String) -> int:
 	_was_open = false
+	# 默认入站缓冲 64KB 装不下配置下发包（V5-N2 全量配置可达几十~上百 KB）→ 调大。
+	_ws.inbound_buffer_size = 1 << 21   # 2MB
 	return _ws.connect_to_url(url)
 
 

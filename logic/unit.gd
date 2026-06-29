@@ -71,6 +71,16 @@ func setup(
 	current_target = null
 	_attack_cooldown = 0.0
 
+# V5-S1：出兵数值乘区——按养成（我方卡 level/rank）/ 难度系数（敌方）缩放 hp 与 damage，
+# 不动 attack_speed/move_speed/attack_range/aggro/body（保手感与确定性）。出生即满血故 hp 同步到新 max_hp。
+# mult==1.0 为 no-op → 保证乘区未启用时与现状逐位一致（零回归）。
+func apply_stat_mult(mult: float) -> void:
+	if mult == 1.0:
+		return
+	max_hp = max_hp * mult
+	hp = max_hp
+	damage = damage * mult
+
 func is_enemy(other: Unit) -> bool:
 	return other != null and owner_id != other.owner_id
 

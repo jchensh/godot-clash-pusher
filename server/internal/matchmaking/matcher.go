@@ -2,6 +2,7 @@ package matchmaking
 
 import (
 	"context"
+	"log"
 	"sort"
 	"time"
 )
@@ -97,7 +98,32 @@ func (m *Matcher) FindPairs(ctx context.Context) ([]Pair, error) {
 			_ = m.queue.Remove(ctx, best.AccountID)
 		}
 	}
+	// Diagnostic (no per-lone-waiter spam): only when a pairing was at least
+	// possible (≥2 waiting). Explains "why didn't I match" via gap vs window.
+	if len(pairs) > 0 {
+		log.Printf("mm: tick waiting=%d, paired %d this tick", len(entries), len(pairs))
+	} else if len(entries) >= 2 {
+		log.Printf("mm: tick waiting=%d, no pair (closest MMR gap=%d, max window=±%d)", len(entries), closestGap(entries), maxWindow)
+	}
 	return pairs, nil
+}
+
+// closestGap returns the smallest pairwise MMR distance among waiting entries
+// (diagnostic only). Returns 0 for <2 entries.
+func closestGap(entries []Entry) int {
+	best := -1
+	for i := range entries {
+		for j := i + 1; j < len(entries); j++ {
+			d := absInt(entries[i].MMR - entries[j].MMR)
+			if best < 0 || d < best {
+				best = d
+			}
+		}
+	}
+	if best < 0 {
+		return 0
+	}
+	return best
 }
 
 func absInt(x int) int {

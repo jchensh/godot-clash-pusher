@@ -366,6 +366,7 @@ func (r *Room) step() {
 // Run drives the room: a 10Hz ticker plus inbound / disconnect / reconnect
 // channels. Single goroutine → room state needs no locking.
 func (r *Room) Run(ctx context.Context) {
+	log.Printf("battle %s: room started, sent JoinResp to both sides, lockstep begins", r.id)
 	r.sendJoinResp()
 	ticker := time.NewTicker(TickInterval)
 	defer ticker.Stop()

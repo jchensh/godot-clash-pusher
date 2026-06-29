@@ -1,7 +1,7 @@
-# HISTORY.md — 开发历史与进度记录
+﻿# HISTORY.md — 开发历史与进度记录
 
 > **本文件用途**：给任何接手的人/agent（新开对话也一样）一个**准确、自足**的项目进度与历史。
-> 阅读顺序：[PLAN_GRAND.md](PLAN_GRAND.md)（roadmap）→ [PLAN_V4.md](PLAN_V4.md)（**当前阶段权威规划**）+ [docs/PLAN_V3.md](docs/PLAN_V3.md)（V3 收尾参考）→ [CLAUDE.md](CLAUDE.md)（操作手册）→ 本文件（进度总览 + 决策日志 + 当前阶段逐步）。
+> 阅读顺序：[PLAN_GRAND.md](PLAN_GRAND.md)（roadmap）→ [PLAN_V5.md](PLAN_V5.md)（**当前阶段权威规划**）+ [PLAN_V4.md](PLAN_V4.md)（V4 联网线参考）→ [CLAUDE.md](CLAUDE.md)（操作手册）→ 本文件（进度总览 + 决策日志 + 当前阶段逐步）。
 > **完成阶段的详细逐步历史已归档**：V1/V2 → [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)；V3 → [docs/HISTORY_V3_DETAILED.md](docs/HISTORY_V3_DETAILED.md)。本文件只保留**进度总览 + 决策日志 + 当前阶段**。已完成阶段的 PLAN（V1/V2/V3）也已归档到 `docs/`。
 > **维护约定**：每完成一步（或重要决策/踩坑）在此追加（V4 阶段直接写本文件；V3 及更早的详细段只追加到对应 docs/ 归档），随该步 commit。
 
@@ -9,7 +9,7 @@
 
 ## 快速上手（新 agent 必看）
 
-- **本机是 Windows**（路径 `F:\godotProject`，shell 用 Git Bash）。**文档历史里的 macOS 命令是早期 Mac 用户留下的**（V1/V2 时期），含义照搬即可：把 `HOME=/private/tmp/godot-home godot ...` 翻成本机的 Godot 完整 exe 路径（`~\bin\godot.cmd` 或 winget 安装的 console exe）。
+- **本机是 Windows**（工程根 `F:\godotTowerPush\master`，旧址 `F:\godotProject` 已于 2026-06-28 迁移;shell 用 Git Bash）。**文档历史里的 macOS 命令是早期 Mac 用户留下的**（V1/V2 时期），含义照搬即可：把 `HOME=/private/tmp/godot-home godot ...` 翻成本机的 Godot 完整 exe 路径（`~\bin\godot.cmd` 或 winget 安装的 console exe）。
 - 跑全部单元测试（逻辑层验收主手段，带 `HOME` 隔离避免污染真实 home）。文档里的标准命令：
   ```bash
   HOME=/private/tmp/godot-home godot --headless --path . --script res://tests/test_runner.gd
@@ -79,10 +79,32 @@
 | V4-S2 | 玩家档案云存档（a decks 表 migration + b profile repo·乐观锁 CAS·卡组校验 + c HTTP /v4/profile/{get,deck-update}·Bearer 鉴权 middleware·httpx 共享包 + d 客户端 net/profile.gd 离线缓存·冲突重取 + e 端到端真链路验收）；顺带根治 godobuf `Deck`↔V3 全局 `class_name Deck` 撞名（proto 改名 `DeckMsg`，wire 不变） | ✅ 完成（单测 204/204；Go unit + integration auth4+profile6（`-p 1` 串行）全过；smoke PG 实查 decks 落库；Jira KAN-38） | `923733a` |
 | V4-S3 | lockstep 实时对战网络层★（a 确定性地基 advance_tick+state_hash + b 协议扩展+ladder 配置+matches 表 + c Go gateway WS+battle room·房间中继·哈希对帐·结算落库 + d 客户端 ws_client+battle_client + e 联机对战场景+LADDER 入口+端到端真链路 + f 心跳+断线重连重放+超时认输 + **g 两台 Windows 真机对战验收**） | ✅ **整阶段收官**（单测 217/217；Go battle 14 unit + integration 全过；端到端真 WS 856 比对 0 分叉 + PG 战绩落库 + 断线重连重放恢复；**两台真机完整对局+实时同步+胜负入库验收通过**；Jira KAN-39 Done） | a~e `7401b6c` / f `99c8d05` / 收尾 `6ea58d5` |
 | V4-S4 | 匹配（Redis ZSET + ELO）（a profiles+rating·ELO 结算 + b 匹配器·Redis 队列·窗口放宽 + c Lobby 替代 Hub·FindMatch→配对→建房 + d 客户端匹配流程·会话·主菜单杯数 + e 日志打点+真匹配 smoke + **真机匹配验收**） | ✅ **整阶段收官**（客户端 221/221；Go unit + integration 全过含 Redis 首接入；端到端真匹配 smoke 235 比对 0 分叉 + ELO/杯数入库；**两台 Windows 真机 ELO 配对+完整对局+MMR/杯数入库验收通过**（room-2: 94 vs 97 → 1216/1184）；Jira KAN-40 Done） | a~e `81a1f89` / 收尾 `本提交` |
+| **V5-S0** | 配置表骨架（stages/encounters/economy/card_progression 四表 + 样例）+ ConfigLoader 接表校验 + PlayerData 存档草案 + PLAN_V5 定稿 | ✅ 完成（单测 **228/228**；ladder_01 Excel 镜像 drift 为 V4 既有、另行处理；Jira KAN-51 Done） | `61aee91` |
+| **V5-S1** | 出兵数值乘区管线（Unit.apply_stat_mult + SkillSystem 透传 + Match 注入双方 + Player 透传）；只缩 hp/damage，speed/range/tick 不动 | ✅ 完成（单测 **234/234**，228 旧测逐位零回归；Jira KAN-52 Done） | `bb9a3b0` |
+| **V5-S2** | 玩家存档系统（PlayerData 钱包/卡牌养成/关卡/挂机 + SaveSystem user:// + ensure_cards）+ 战力计算（card_stat_mult/card_power/team_power）+ 解锁解算 | ✅ 完成（单测 **240/240**；Jira KAN-53） | `71b6e3d` |
+| **V5-S3** | 闯关骨架 StageProgress（线性推进/解锁/星级判定）+ Match.setup_stage 接 stage（coef→敌方乘区·encounter→敌方卡组·ai_difficulty）+ stages base_level | ✅ 完成（单测 **246/246**，含 headless 跑通一关；Jira KAN-54） | `71b6e3d` |
+| **V5-S4** | 卡牌升级（金币·数值曲线·等级上限受阶）+ 养成接进战斗（我方 per-card 乘区） | ✅ 完成（单测 **252/252**；Jira KAN-55） | `e73b348` |
+| **V5-S5** | 卡牌升阶（碎片+金币）+ 技能积木解锁机制（CardProgression ops：count/num/unit_field）+ golem 示范 | ✅ 完成（单测 **261/261**，V3 亡语零回归；Jira KAN-56） | `e73b348` |
+| **V5-S6** | 经济产出（首通/重复/通用奖励 + seeded shard_drop + 解锁新卡 + 挂机离线金币累计/封顶/领取） | ✅ 完成（单测 **270/270**；Jira KAN-57） | `e73b348` |
+| **V5-N1+N2** | 在线地基（决策 48）：持久 WS 会话（登录门/心跳/驱逐/重连）+ 配置服务器化（gameconfig 版本包 + 登录下发 + 客户端薄缓存） | ✅ 完成（客户端 274/274 + Go gameconfig/session 全绿；真 docker 端到端自验：82KB 配置下发+解析+up_to_date 重连；Jira KAN-60/61） | `ada841e` |
+| **V5-N3+N4** | 服务器权威经济（决策 48）：状态 + DB（钱包/卡牌养成/关卡进度，懒播种）+ 结算动作（升级/升阶/解锁，服务器算成本+校验+扣+落库） | ✅ 完成（客户端 278/278 + Go economy 单测/集成全绿；真 docker 端到端：服务器播种/拒绝刷/扣费升级；Jira KAN-62/63） | `df4b86a` |
+| **V5-N5** | 通关发奖 + sanity（决策 48）：客户端报 (stage_id,stars)，服务器校验（关存在/stars≥1/stars≤starCap/线性解锁防跳关）+ 发首通/重复奖励 + shard_drop 概率掉落 + 记进度（stars max/highest 刷新）；镜像 player_data.grant_stage_reward + stage_progress | ✅ 完成（客户端 279/279 + Go economy +3 集成测全绿；真 docker 端到端 6 场景全过：首通/重复/0星拒/超上限拒/跳关拒(503)/首通碎片；Jira KAN-64） | `84a8071` |
+| **V5-N6** | 挂机服务器时钟结算（决策 48）：服务器存 last_collect、按**服务器时间**算挂机产出落库（章节驱动产率 + 封顶）；now 全服务器定，改本地时钟无效；新号播种即计时 | ✅ 完成（客户端 280/280 + Go economy idle 纯函数 3 + CollectIdle 集成 2 全绿；真 docker 端到端 5 场景全过：注册即计时/未通关产0/累计/封顶8h/立即再领0；Jira KAN-65） | `824f3b0` |
+| **V5-N7** | 瘦客户端化（决策 48）：`EconomyStateCache`（服务器权威养成状态的非权威本地缓存）+ `PlayerData.apply_server_state` 从服务器快照重建 + `SaveSystem` 本地档降为缓存镜像；开战 `for_battle()` 注入服务器拉来的 level/rank → 客户端算战斗数值 | ✅ 完成（客户端 285/285 +5 测；单测覆盖「改本地档不影响开战」；真 docker get_state 链路验过；真机验收留 S7；Jira KAN-66） | `本提交` |
+| **V5-S7（设计）** | UI 整合设计稿 [docs/DESIGN_V5_S7_UI.md](docs/DESIGN_V5_S7_UI.md)：基地 Hub（替换 START 入口）+ 闯关竖向列表 + 养成 collection/detail + 钱包/挂机/战力 + deck builder 接已解锁卡。导航图 + 逐屏像素布局 + 共享组件表 + view→logic 绑定速查 + N7 后接 API 薄层说明 + i18n 串表 + S7a~S7e 子步。**仅设计稿、未写代码**（与 N6 并行不冲突；代码待 N7 后） | 🎨 设计稿完成；Jira KAN-58 正在进行；派生 KAN-67 | `42d9f62` |
+| **V5-S7a+b** | UI 整合施工（接 N7 服务器权威）：**S7a** 共享 HUD 组件 `view/ui/hud_widgets.gd`（工厂 + 纯助手 format_int/power_tier/affordable/star_fill）+ `hud_widget.gd`（纯 `_draw` 节点：钱包条/星级/cost药丸/阶pip/数值条/锁罩，**0 贴图资源**，复刻 gen_ui_assets.slab 立体描边搬到运行时）；**S7b** 基地 Base Camp（替换主菜单 START 入口）+ app shell（登录→`EconomyStateCache.refresh` 拉服务器状态→展示钱包/队伍战力(本地算·按推荐着色)/挂机产出+领取）+ `GameState.config()/economy()` 静态持有（不引 autoload）+ `EconomyStateCache.collect_idle` 动作门面。读=服务器快照缓存，执行=API，展示算=本地 ConfigLoader | ✅ 完成（客户端 **290/290**，含 `test_hud_widgets` 纯助手单测；base_camp headless 净启无错；**真 docker 在线截图验收**：钱包/战力920绿/下一关推荐800/闯关·第1章/挂机封顶8h）；Jira KAN-58 正在进行 | `123866c` |
+| **V5-S7c+d+e** | UI 整合收官：**S7c** 闯关地图 `stage_map`（竖向三态列表/章节星）+ 领奖开箱 `reward_chest` + `battle_scene` 接闯关模式（`setup_stage`→战后判星→`report_stage_clear` 上报）；**S7d** 养成 `card_collection`（全卡池/锁卡碎片进度/可养成红点）+ `card_detail`（升级/升阶/解锁走 `EconomyStateCache` 门面）；**S7e** `deck_builder` 已解锁池 + 实时战力达标着色 + mode-aware 路由。**★修复必现流程 bug**：stale `GameState.run/campaign`（玩过肉鸽后残留静态态）致闯关战误判肉鸽模式（战后弹肉鸽、不发奖不推进）→ `deck_builder` 开战前清 run/campaign + `level_select` 清 stage_id。**客户端日志**：全流程 `[V5]` 打点（场景/经济/战斗模式/动作）。**服务端日志**：api 请求中间件（`METHOD path→status`）+ economy handler 业务日志（acct/动作/结果），rebuild 后生效 | ✅ 完成（客户端 **290/290**；**真人全流程验收通过**：闯关 1-1 胜 3 星→首通 +300金+5宝石→进度推进 + 1-2 解锁→挂机产出→升级 giant；stale-run repro 验证修复=模式闯关；server rebuild 验请求日志）；真人验收过 → Jira KAN-58 **Done** | `6e9c53d` |
+| **V5-S7+** (KAN-67) | 养成卡格多维排序：逻辑层纯函数 `logic/card_sort.gd`（键 rarity/cost/level/actionable + 稳定排序，5 单测）+ `card_collection` 顶部分段控件（4 键 + 升降序，切键套自然默认方向）+ 即时重排（用缓存重建网格、不重拉服务器）+ 记忆上次选择（`user://settings.cfg`）；`_actionable` 去重并入 CardSort 唯一定义 | ✅ 完成（客户端 **295/295**，+5 `test_card_sort`；真机：稀有度↔费切换即时重排观感正确）；Jira KAN-67 Done | `f38f5eb` |
+| **V5-S8a** (KAN-59) | 内容铺量①遭遇模板池 3→**15**（按原型补 12 deck：亡灵海/快攻/双坦/法术压制/空军/远程风筝/综合/费用倾泻/boss 等，逐章排布见 PLAN §7）+ ConfigLoader 校验加固（archetype 9 枚举 + deck 8 张**互不重复**）。服务器经济配置驱动 → 两端自动吃到、无需改 Go | ✅ 代码完成（客户端 **300/300**，+5 `test_v5_encounters`；config check ok）；KAN-59 正在进行 | `844fb33` |
+| **V5-S8b** (KAN-59) | 内容铺量②平衡 probe harness：**AIController 可选边**改造（构造第 4 参 `controlled_owner`；决策逻辑留「进攻规范帧」、仅读敌方坐标/出落点两处做河中线 y 镜像；opponent 默认边恒等→零回归）+ `tools/balance_probe.gd`（headless AI-vs-AI 确定性跑一局/扫战力门槛）+ `tools/run_balance_probe.gd`（章曲线预览跑批报告）。**实测发现**：双 normal AI 均防守→多数局超时、胜负由微小塔血差+卡组克制主导（对称 1.0× 近平局）→ S8d 宜用激进我方档 + 看 king_hp_pct 细分 | ✅ 代码完成（客户端 **305/305**，+5 `test_v5_probe` 含确定性/dominance/双边落点；`test_ai_controller` 7/7 零回归；对称诊断证镜像无偏置）；KAN-59 正在进行 | `844fb33` |
+| **V5-S8c** (KAN-59) | 内容铺量③stages 铺到 **100 关**（生成器）：`config/stages_spec.json`（10 章紧凑 spec + 曲线参数）+ `tools/build_stages.py`（生成器 + `--check` 校验）→ `config/stages.json`（100 关：coef 1.0→2.842、rec 800→2275、boss ×1.1 saw-tooth、奖励随章放大、章 shard_card 解锁铺垫）。服务器经济/客户端 ConfigLoader 配置驱动两端自动吃到（gameconfig sha256 版本自动 bump；服务器需重启容器读新配置）。**钉了 2 样例的测试改配置驱动**：客户端 `test_v5_economy`/`test_v5_stage`、Go `repo_integration_test`（金币精确 + 碎片 `>=` 容差，因 StageClear 对首通/重复都 roll shard_drop） | ✅ 代码完成（客户端 **311/311**，+6 `test_v5_stages_content`，改 2 测配置驱动；Go vet clean + economy 单测过 + **集成测对真 docker PG 全过**（含改过的 `TestRepo_StageClear` + ShardDrop）；`--check` 一致）；KAN-59 正在进行 | `d7730dd` |
+| **V5-S8d** (KAN-59) | 平衡 pass：①难度机制做实——**敌塔 HP 随 coef 放大**（`Match.scale_opponent_towers`，我方塔不缩放；probe `enemy_tower_mult` 镜像）+ 2 单测；②真关卡 probe 报告器 `tools/run_stage_balance.gd`（我方=hard 技术基准 + 养成乘区=rec/920 + 敌塔随 coef，量 @rec/-15%/-30% 胜负 + 王塔剩血）；③平衡报告 [docs/BALANCE_V5_S8.md]。**核心发现**：AI-vs-AI **不是可靠绝对裁判**（规则 AI 不主动推塔→早期关王塔满血却超时输；确认两次）；但**曲线形状被验证**（王塔剩血 100%(ch1~3)→0%(ch4+)，难度咬人在 ch4≈coef1.5，符合"早苟中养成"梯度）。曲线保持公式默认、不拟合 AI 假象；**手感绝对校准 → S8e 真人** | ✅ 代码完成（客户端 **313/313**，+2 敌塔缩放测；probe 报告产出）；KAN-59 正在进行 | `d7730dd` |
+| **GM 工具** (KAN-68) | 开发作弊工具（决策48 服务器权威→**真改服务器 DB**）：服务器 `economy/gm.go`（`GMApply` 事务改 economy_* 表 + `POST /v5/gm/apply` JSON 请求/proto 响应）+ `cmd/api/main.go` env `GM_ENABLED` 门控（prod 必关）+ compose dev 默认开；客户端 `economy_client/economy_state_cache.gm_apply` + `settings.gd` GM 面板（8 按钮：金币/宝石/全卡碎片/解锁全部/满养成/通关全部/推进1章/重置）。走会话鉴权只能改自己账号 | ✅ 完成（Go `GMApply` 真 PG 集成测全过；客户端 **313/313** + settings headless；**真人点按钮验收通过**）；Jira KAN-68 Done | `d7730dd` |
+| **V5-KAN49** | **联机视觉对齐**：把单机 `battle_scene` 的完整视觉（精灵/地形/juice/FX/HUD/演出/音频）搬进矢量白膜的 `net_battle_scene`，逻辑层零改动（lockstep 跑同一 `logic/match.gd`、接口同构）。联机特有 3 适配：①`match_obj.player→_client.local_player()`（side2 本方是 opponent）②owner/side 翻转（颜色/王冠/胜负/落点 owner/己方半场高亮 按 `_flip`）③sim 由 `battle_client.poll` 驱动、view 不调 `update()`，顿帧改**纯视觉**（冻结 `_elapsed` 增量、不影响 lockstep）。3 技术坑：side2 精灵朝向（翻转是平移不旋转像素→`spr_owner` 镜像）/result 是 side 语义（`mine = _flip?2:1`）/演出由 `_on_result` 服务端信号触发非本地判 | 🚧 代码完成（客户端 **313/313** 零回归；headless 编辑器导入无错；**真人两机配对验收待跑** `docs/ACCEPTANCE_V5_KAN49.md`）；KAN-49 正在进行 | 本提交 |
 
-> **当前阶段 = V4 联网升级 + 实时对战**（账号/匹配/PvP/赛季/排行榜；长期 F2P 但前期玩法验证不实现支付）。权威规划见 [PLAN_V4.md](PLAN_V4.md)；方向锁定见决策日志 46。**V1/V2/V3 全部完成**——V1 机制白膜 → V2 3-lane + 程序化换皮 + AI 难度 + 内容平衡 → V3 2D 战斗 reboot + 空军 + 新积木 + Roguelite 主轴 + 交互手感 + 精灵美术 + 音频骨架 + 难度 5 档 + 像素 UI 设计系统 + 新手战役 + 引导。V1/V2 详细见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)，V3 详细见 [docs/HISTORY_V3_DETAILED.md](docs/HISTORY_V3_DETAILED.md)。**V3-9 平衡剩余子项**（数值/节奏调优 + 设置/导出/上架打磨）与 V4 早期阶段（S0~S2 账号/档案）可并行。**V4-S0/S1 整体收官**：S0（7 commits / 6 子步 a~f）打底 + S1（1 commit / 5 子步 a~e）匿名 device_id 登录端到端通（客户端 UUID4 → protobuf → docker api → PG accounts/profiles → JWT/refresh → user://auth.cfg 落盘）。Jira KAN-36/KAN-37 同步 Done。**V4-S2 收官**：玩家档案云存档端到端通（客户端 `net/profile.gd` ↔ `/v4/profile/{get,deck-update}` ↔ PG decks/profiles；Bearer 令牌鉴权 + 乐观锁版本冲突 409 + 离线缓存兜底；顺带根治 godobuf `Deck` 与 V3 全局 `class_name Deck` 撞名隐患 → proto 改 `DeckMsg`，wire 不变）。Jira KAN-38 Done。**V4-S3 整阶段收官**：lockstep 实时对战网络层★（a 确定性地基 `Match.advance_tick`+`state_hash` → b 协议扩展+ladder 配置+matches 表 → c Go gateway WS+battle room → d 客户端 `net/ws_client`+`net/battle_client` → e 联机对战场景+LADDER 入口 → f 心跳+断线重连重放+超时认输 → **g 两台 Windows 真机对战验收通过**）。**端到端真 WebSocket 856 比对 0 分叉 + PG 战绩落库 + 断线重连重放恢复 + 真机完整对局实时同步胜负入库 → lockstep 整条路线（不重写 Go 战斗逻辑、两端各跑 logic+哈希对帐）验证成立**。Jira KAN-39 Done。**V4-S4 整阶段收官**：匹配（隐藏 MMR/ELO @1200 + Redis ZSET 队列 + 窗口放宽）——profiles 加 rating + ELO 结算 → Redis 匹配器 → Lobby 替代 Hub（FindMatch→配对→建房）→ 客户端匹配流程+会话+主菜单杯数 → 日志打点+真匹配 smoke → **两台 Windows 真机匹配验收通过**（room-2: acc 94 vs 97 ELO 配对+完整对局+MMR 1216/1184·杯数 ±30 入库）。Jira KAN-40 Done。**下一站**：V4-S5（赛季 + 排行榜，复用 Redis ZSET 做全球杯数榜）。联机对战仍矢量白膜（KAN-49）。
+> **当前阶段 = V5 实时在线 F2P 闯关养成（决策 48，服务器权威）**。权威规划见 [PLAN_V5.md](PLAN_V5.md)；V4 联网地基（账号/lockstep/匹配）S0~S4 完成、决策 48 起转为 V5 主干（推翻决策 47「单机本地」）。以下 V4 段为历史记录。**V1/V2/V3 全部完成**——V1 机制白膜 → V2 3-lane + 程序化换皮 + AI 难度 + 内容平衡 → V3 2D 战斗 reboot + 空军 + 新积木 + Roguelite 主轴 + 交互手感 + 精灵美术 + 音频骨架 + 难度 5 档 + 像素 UI 设计系统 + 新手战役 + 引导。V1/V2 详细见 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)，V3 详细见 [docs/HISTORY_V3_DETAILED.md](docs/HISTORY_V3_DETAILED.md)。**V3-9 平衡剩余子项**（数值/节奏调优 + 设置/导出/上架打磨）与 V4 早期阶段（S0~S2 账号/档案）可并行。**V4-S0/S1 整体收官**：S0（7 commits / 6 子步 a~f）打底 + S1（1 commit / 5 子步 a~e）匿名 device_id 登录端到端通（客户端 UUID4 → protobuf → docker api → PG accounts/profiles → JWT/refresh → user://auth.cfg 落盘）。Jira KAN-36/KAN-37 同步 Done。**V4-S2 收官**：玩家档案云存档端到端通（客户端 `net/profile.gd` ↔ `/v4/profile/{get,deck-update}` ↔ PG decks/profiles；Bearer 令牌鉴权 + 乐观锁版本冲突 409 + 离线缓存兜底；顺带根治 godobuf `Deck` 与 V3 全局 `class_name Deck` 撞名隐患 → proto 改 `DeckMsg`，wire 不变）。Jira KAN-38 Done。**V4-S3 整阶段收官**：lockstep 实时对战网络层★（a 确定性地基 `Match.advance_tick`+`state_hash` → b 协议扩展+ladder 配置+matches 表 → c Go gateway WS+battle room → d 客户端 `net/ws_client`+`net/battle_client` → e 联机对战场景+LADDER 入口 → f 心跳+断线重连重放+超时认输 → **g 两台 Windows 真机对战验收通过**）。**端到端真 WebSocket 856 比对 0 分叉 + PG 战绩落库 + 断线重连重放恢复 + 真机完整对局实时同步胜负入库 → lockstep 整条路线（不重写 Go 战斗逻辑、两端各跑 logic+哈希对帐）验证成立**。Jira KAN-39 Done。**V4-S4 整阶段收官**：匹配（隐藏 MMR/ELO @1200 + Redis ZSET 队列 + 窗口放宽）——profiles 加 rating + ELO 结算 → Redis 匹配器 → Lobby 替代 Hub（FindMatch→配对→建房）→ 客户端匹配流程+会话+主菜单杯数 → 日志打点+真匹配 smoke → **两台 Windows 真机匹配验收通过**（room-2: acc 94 vs 97 ELO 配对+完整对局+MMR 1216/1184·杯数 ±30 入库）。Jira KAN-40 Done。**V5 进度（决策 48）**：本地原型 S0~S6 完成（养成/经济/闯关逻辑）→ 在线化 **N1~N7 完成**（持久会话 + 配置服务器化下发 + 服务器权威经济状态/结算/通关发奖+sanity/挂机服务器时钟/**瘦客户端化**，真 docker 端到端验过）→ **在线化整线收官**，下一站 **S7 UI（接服务器）/ S8 内容平衡**。**S7 UI 设计稿先行完成**（[docs/DESIGN_V5_S7_UI.md](docs/DESIGN_V5_S7_UI.md)，KAN-58 正在进行；派生 KAN-67 养成卡格多维排序 To Do），代码接 N7 落地的 EconomyStateCache。**S7 UI 整合全部完成（a~e，KAN-58 Done）**：共享 HUD 组件 + 基地 + 闯关地图/领奖开箱 + 养成 collection/detail + deck builder 已解锁池；修复 stale-run 闯关误判肉鸽的流程 bug；补全客户端 `[V5]` 全流程日志 + 服务端 api 请求/economy 业务日志。**真人验收用例 [docs/ACCEPTANCE_V5_S7.md](docs/ACCEPTANCE_V5_S7.md)（7 例：基地/闯关地图/全流程开箱/排序/养成详情/deck/stale-run 回归）全过**（纪律：表现层/交互新内容必须给真人写可执行验收用例，MCP 截图只算自检）。**S7+KAN-67 全部 Done**。**S8 内容铺量 + 平衡进行中（KAN-59）**：S8a 遭遇模板池铺到 15 + S8b 平衡 probe harness（`ai/ai_controller.gd` 可选边 + `tools/balance_probe.gd` headless AI-vs-AI + runner）+ S8c stages 生成器铺 **100 关**（`config/stages_spec.json` + `tools/build_stages.py` → `config/stages.json`；coef 1.0→2.842、rec 800→2275、boss saw-tooth；钉 2 样例的客户端/Go 测试改配置驱动）+ S8d 平衡 pass（**敌塔 HP 随 coef** 做实 + 真关卡 probe 报告 + [docs/BALANCE_V5_S8.md]；**发现 AI-vs-AI 不可作绝对裁判**、曲线形状被验证、手感校准留 S8e）代码完成、**客户端 313/313**、Go 集成测真 PG 全过；另做 **GM 开发作弊工具（KAN-68 Done）**（设置内面板 + `/v5/gm/apply` 真改服务器 DB，env 门控 prod 必关，真人验收过）。**S8e 真人验收难度曲线挂起欠着**（用户暂无精力跑 100 关；用例已写 `docs/ACCEPTANCE_V5_S8.md`；故 KAN-59 仍「正在进行」，待 S8e 验完手感+调旋钮再 Done）。V4-S5 赛季/榜暂缓（KAN-41）。**联机视觉对齐（KAN-49）代码完成、真人两机验收待跑**（把单机精灵/FX/手感搬进 `net_battle_scene`，替换原矢量白膜）。
 
-**测试**：客户端 221/221（`HOME` 隔离）；服务端 Go unit（battle 房间 14 + rating 6 + matchmaking 5）+ integration（auth/profile/battle 持久化·lobby/matchmaking·Redis 队列，跨包 `-p 1` 串行，需 PG+Redis）全过；V4-S4 端到端真匹配 smoke 235 比对 0 分叉 + ELO/杯数入库。**分支/远端**：开发在 `develop`、`main` 稳定线、`release` 为 Antigravity（Google IDE）创建的安卓打包分支（跟随 develop，agent 默认不动）、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`；音频单独走 `config/AudioConfig.xlsx` → `config/audio_assets.json`，用 `tools/build_audio_config.py --check` 校验。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
+**测试**：客户端 **313/313**（`HOME` 隔离）；服务端 Go unit（economy/session/gameconfig/battle/rating/matchmaking…）+ integration（auth/profile/battle/economy 持久化，跨包 `-p 1` 串行，需 PG+Redis）全过。**Docker**：5 容器（pg:5432/redis:6379/gateway:8081/api:8080/battle），gateway+api 挂 `../config`（决策 48 配置服务器化）。**分支/远端**：稳定线 `master`（主干开发——每任务从 master 切临时 feature 分支/worktree、验证过再合回；旧 `develop` 已于 2026-06-28 并入 master 删除）、`release` 为 Antigravity（Google IDE）创建的安卓打包分支（跟随 master，agent 默认不动）、`origin`=github.com/jchensh/godot-clash-pusher ；用户说「提交」才 commit + push（走代理）。**配置工作流**：改 `config/*.json` → `uv run --with openpyxl python tools/build_config.py --from-json` 同步 `GameConfig.xlsx` → `--check`；音频单独走 `config/AudioConfig.xlsx` → `config/audio_assets.json`，用 `tools/build_audio_config.py --check` 校验。**godot-ai MCP**：表现层辅助（仅编辑器开着时可用），默认不主动用——细节见 [CLAUDE.md](CLAUDE.md) / [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
 ---
 
@@ -203,6 +225,16 @@
 > 46 为 **V4 联网升级 + 实时对战方向锁定**，用户 2026-06-23 确认。
 
 46. **V4 = 联网升级 + 实时对战（玩法验证导向）**：用户判断 V3 单机已收尾，要为 PvP/匹配/赛季/排行榜搭服务端基础。锁定：①**战斗权威 = lockstep + 状态哈希校验**（沿用现有 `logic/` 10Hz 确定性 tick，不重写 Go 战斗逻辑）；②**服务端语言 = Go**（高并发 WS、tick 循环、protobuf 一流）；③**网络协议 = WebSocket + protobuf**（移动友好、二进制紧凑；不用 UDP）；④**数据库 = PostgreSQL + Redis**（PG 主存账号/档案/战绩；Redis ZSET 匹配队列+榜单+对局缓存+限流）；⑤**认证 = JWT + refresh token**，前期**匿名 device_id 登录**（无 SMS/邮箱/三方）；⑥**商业模式长期 F2P + 内购解锁/养成**（schema 预留 `purchases`/`unlocks`/`currency` 字段，但**前期完全不实现支付/IAP/养成**）；⑦**部署 = 本地 docker compose**，不上云、不做合规、不做监控告警；⑧**V3 Roguelite + 短战役保留为单人训练营**，不动；PvP 走全新主轴入口；⑨**仓库结构 = 单仓 `/server` 子目录（Go）+ `/proto` 共享 schema**；⑩**客户端平台 = Android + Windows**（iOS/Mac/Linux 不做）。**反作弊深度**：基础 JWT + 状态哈希 + 速率限制；异常检测/封禁推后到 S7。**新增 DO-NOT**：客户端禁止权威化战斗状态——所有指令走服务端转发、状态以双方+服务端三方 hash 对帐为准。**阶段划分**：S0~S5 玩法验证（脚手架/匿名登录/档案云存/lockstep 对战/匹配/赛季+榜）；S6~S12 产品化（战绩回放/反作弊深化/部署/版本/IAP/正式登录/合规/聊天好友）推后。**与 V3-9 关系**：V3-9 平衡剩余子项（数值/节奏调优）与 V4-S0~S2 可并行。施工图见 [PLAN_V4.md](PLAN_V4.md)。
+
+> 47 为 **V5 单机闯关养成方向锁定 + V4 服务端线暂缓**，用户 2026-06-26 确认。
+
+47. **V5 = 单机 F2P 闯关养成（暂停 V4 服务端线）**：用户判断当前首要是丰富单机玩法与留存，暂停 V4-S5+（赛季/排行榜/部署，KAN-41 退回 To Do），转向把单机做成养成驱动的闯关 RPG。锁定（详见 [PLAN_V5.md](PLAN_V5.md)，Epic KAN-50）：①**核心范式 = 战力为底·操作为顶**（养成给有上限的数值；难度 = 系数 + AI 档 + 脏卡组；中等战力差可操作弥补、巨大战力差不能）；②**关卡 = 模板池 × 难度系数曲线**（~15 遭遇模板 + 系数递增 + boss 特化，100+ 关）；③**养成 = 10 级 × 3 阶浅养成**（单卡满 ≈ ×3.0；升级花金币提数值、升阶花碎片 + 解锁技能积木）；④**难度系数线性 1.0→~2.6 + boss 小跳**；⑤**初始 8 张 + 推关攒碎片解锁其余 8 张**；⑥**货币 = 金币（升级）+ 碎片（每卡，解锁 + 升阶）+ 宝石（占位，只产不充）**；⑦**节奏 = 挂机离线金币 + 无体力**；⑧**全程单机本地存档（user://）、不依赖服务端**（V4-S0~S4 成果保留不动）。施工 S0~S8（KAN-51~59）。复用现有 CampaignState/SaveSystem/RunModifiers/SkillSystem/ConfigLoader。**唯一较重新管线 = 出兵数值乘区**（我方按卡 level/rank、敌方按关卡 coef，注入 SkillSystem 生成路径，V5-S1）。
+
+> ⚠️ **决策 47 已被决策 48 取代**（2026-06-26 当日转向）：V5 不再是"单机本地"，改为实时在线 F2P、服务器权威。
+
+> 48 为 **项目转向实时在线 F2P 手游 + 服务器权威（推翻决策 47「单机本地」）**，用户 2026-06-26 确认。
+
+48. **项目定位 = 实时在线 F2P 商业手游（服务器权威）**：用户拍板把项目从"买断/单机本地"彻底转为**按多人在线网游标准开发**。**推翻决策 47「全程单机本地、不依赖服务端」**，并更新决策 36「买断制单机」/ 46「V4 玩法验证·前期不实现支付」的定位（方向就是商业化 F2P；支付/合规按上线节奏推进，不再是"范围外"）。锁定：①**进游戏强制登录 + 持久连接**（启动登录 → 建持久 WS 会话 → **断线即不可玩**，网络抖动自动重连、长断回登录）；②**服务器唯一权威**——账号/钱包/货币/卡养成(等级/阶/解锁/碎片)/关卡进度/挂机 全在服务器 + PG DB；所有产出/扣费/解锁/升级/升阶/挂机结算走服务器（**服务器时钟**，改本地时钟/改存档均无效）；③**配置服务器化**——服务器持权威配置，登录后下发带版本配置包，客户端只内存持有 + 薄版本缓存（**非零配置**：lockstep 战斗需 units/cards/skills/arena 在客户端算，但源在服务器）；④**客户端 = 瘦表现层**——UI + 战斗 sim（lockstep 仍客户端跑保确定性）+ 非权威本地缓存（秒启动/只读展示，永远以服务器覆盖）；⑤**战斗仍客户端 lockstep**（决策 46 不变）——PvE 开战服务器下发权威输入(卡组 + 我方 level/rank)，胜负先**信任客户端 + 服务器 sanity 限制**（服务器复算/反作弊并入后续）；⑥**复用 V4 地基**（Go + PG + 账号 S1 + WS + lockstep），V4 服务端线从"暂缓"转为**主干**。施工：在线地基 N1~N2（持久会话+登录门 / 配置下发）→ 服务器经济 N3~N6（状态/结算/发奖/挂机服务器时钟）→ 瘦客户端 N7 → 原 S7 UI（接服务器）/ S8 内容平衡顺延其后。本地原型 S0~S6 算法镜像进 Go 做权威结算，客户端那份保留做 UI 预览 + 战斗内计算。施工图见 [PLAN_V5.md](PLAN_V5.md)。
 
 ---
 
@@ -437,7 +469,7 @@
 
 **Jira / PM**：KAN-40 In Progress（a~e 完成、真机验收待用户跑 → 过则 Done）。
 
-> **V4-S4 整阶段收官**：a schema+ELO → b 匹配器+Redis 队列 → c Lobby 替代 Hub → d 客户端匹配流程+会话+杯数 → e 日志+真匹配 smoke → **真机匹配验收**。客户端 **221/221**；Go unit（rating 6 + matchmaking 5 + battle 14）+ integration（含 Redis 首接入、Lobby 真匹配）全过；**端到端真匹配 smoke：真 WS 按 ELO 配对 → lockstep 235 比对 0 分叉 → ELO（1200→1216/1184）+ 杯数（±30）入库**；**两台 Windows 真机验收通过（用户 2026-06-25，room-2: 94 vs 97 ELO 配对+完整对局+MMR/杯数入库）**。复用 S3 lockstep 房间不重写。Jira KAN-40 Done。**下一站 V4-S5（赛季 + 排行榜）**：season cycle（月）+ Redis ZSET 全球杯数榜（复用 S4 接好的 Redis）+ 段位软重置 + 段位奖励占位。
+> **V4-S4 整阶段收官**：a schema+ELO → b 匹配器+Redis 队列 → c Lobby 替代 Hub → d 客户端匹配流程+会话+杯数 → e 日志+真匹配 smoke → **真机匹配验收**。客户端 **221/221**；Go unit（rating 6 + matchmaking 5 + battle 14）+ integration（含 Redis 首接入、Lobby 真匹配）全过；**端到端真匹配 smoke：真 WS 按 ELO 配对 → lockstep 235 比对 0 分叉 → ELO（1200→1216/1184）+ 杯数（±30）入库**；**两台 Windows 真机验收通过（用户 2026-06-25，room-2: 94 vs 97 ELO 配对+完整对局+MMR/杯数入库）**。复用 S3 lockstep 房间不重写。Jira KAN-40 Done。**V4-S5（赛季+排行榜）暂缓**（KAN-41 退回 To Do）——**当前转向 V5 单机闯关养成**（决策 47）。
 
 ---
 
@@ -512,3 +544,178 @@
 - 补音频素材后重导出。
 - 桌面浏览器竖屏（720×1280）画面偏窄，如需可加 canvas 适配（非导出阻塞项）。
 
+
+## V5 — 单机闯关养成（进行中）
+
+> 方向见决策 47，权威规划见 [PLAN_V5.md](PLAN_V5.md)，Epic KAN-50。把单机升级为养成驱动的闯关 RPG：100+ 关闯关推关（难度系数）+ 货币经济（金币/碎片/宝石）+ 卡牌养成（升级提数值 / 升阶解锁技能积木）+ 挂机产出，**战力为底·操作为顶**，全程单机本地存档、不依赖服务端（V4-S0~S4 成果保留不动）。施工 S0~S8 = KAN-51~59。每步追加在本段。
+
+### V5-S0 — 配置表骨架 + 存档 schema（已完成）
+**前置决策**：见决策 47 + PLAN_V5.md。S0 = 骨架步（配置表 schema + 样例 + 存档草案 + ConfigLoader 接表），全 headless 单测覆盖。
+- **4 张新配置表**（`config/`，结构性、JSON-first、不进 Excel 镜像）：
+  - `stages.json`：闯关关卡（chapter/index/encounter/difficulty_coef/ai_difficulty/recommended_power/stars/first_clear/repeat/shard_drop）；S0 含 2 样例关（stage_1_1/1_2）。
+  - `encounters.json`：遭遇模板（deck 8 张 + archetype）；S0 含 3 模板（starter_easy/tank_push_a/swarm_rush_a）。
+  - `economy.json`：升级/升阶/解锁成本 + 数值曲线（level_stat_per_level 0.10 / rank_stat_mult 1.25 / level_cap_per_rank {1:4,2:7,3:10}）+ 挂机 + 奖励基数。〔示意·待平衡，V5-S8 probe 定〕。
+  - `card_progression.json`：全 16 卡稀有度（普通6/稀有5/史诗4/传说1）+ starter（初始 8 张 = level_01 默认卡组）+ base_power + 各阶解锁 rank_unlocks（type=stat/skill，S5 实现）。
+- **`logic/config_loader.gd`**：接 4 新表（load + 校验 + accessor get_stage/get_encounter/get_economy/get_card_progression/has_*）。校验：card_progression 双向覆盖 cards（每卡须有条目、rarity 合法、base_power 数字）；encounters deck 正好 8 张且卡存在；stages 的 encounter/ai_difficulty/coef(≥1.0) 合法 + 奖励/掉落 card 引用存在。`_` 前缀键（如 `_comment`）跳过。
+- **`logic/player_data.gd`（草案）**：存档数据结构（wallet{gold,gems}/cards{level,rank,shards,unlocked}/stages{stars,cleared}/highest_cleared/idle）+ `init_new`（默认新档：全卡建条目、starter 8 张解锁）+ `to_dict`/`load_dict`（实例方法、不引用自身 class_name，遵 V3-4d 踩坑）。SaveSystem 接线 + 战力计算 + 解锁解算留 V5-S2。
+- **单测**：`tests/test_v5_config.gd`（4：加载 4 表 / 覆盖全卡 / stage 引用合法 / 注入坏引用被校验抓出 + `_` 键跳过）+ `tests/test_player_data.gd`（3：默认档解锁 8 张 / 往返 / 缺字段默认）。**228/228**（221 + 7，零回归）。
+- **踩坑**：①ConfigLoader 类成员 `var` 在 class 顶层（**无缩进**），首版 Edit 误带 tab 缩进 → 未匹配，去 tab 修正。②`build_config.py --check` 红——但是 **HEAD 既有 drift**：`levels.json` 的 `ladder_01`（V4-S3 加）未回灌 `GameConfig.xlsx`（经核 Excel 无 JSON 缺失项 → 无 clobber 风险）；但 `--from-json` 会整表重建 Excel（**可能丢 Balance_View/_Enums 等不导出 sheet**），未验证前不擅自跑 → 留作独立 housekeeping（待用户定夺：同步进 Excel / 让 check 跳过 ladder）。S0 新增 4 表本就不进 Excel 镜像，**未引入新 drift**。
+- **Jira/PM**：Epic KAN-50 + S0~S8 = KAN-51~59 建好、全 To Do；KAN-51 In Progress；KAN-41（V4-S5）退回 To Do 暂缓。
+
+### V5-S1 — 出兵数值乘区管线（已完成）
+**前置**：S1 是养成/难度的命门地基（先于一切养成/关卡）。给出兵生成路径加一个 hp/damage 乘区，speed/range/attack_speed/tick 一律不动（保手感+确定性）。
+- `logic/unit.gd`：+`apply_stat_mult(mult)`——只缩 max_hp/hp/damage；`mult==1.0` 提前 return（保证乘区未启用时逐位一致、零回归）。
+- `logic/skill_system.gd`：`play_card` / `_execute_block` / `_spawn_unit` 多收 `stat_mult` 透传到生成单位；仅 spawn_unit 用（伤害/治疗积木本步不缩放）。
+- `logic/player.gd`：+`unit_stat_mult` 字段（默认 1.0），`try_play_card` 出牌时带给 `skill_system.play_card`。
+- `logic/match.gd`：+`set_stat_mults(player_mult, opponent_mult)` 一处注入双方乘区（来源后续接：敌方 coef = V5-S3 / 我方 = V5-S4/5）。
+- **单测** `tests/test_v5_stat_mult.gd`（6：apply 只缩 hp/dmg·其余不动 / mult=1 逐位一致 / play_card 缩放 / 默认不变 / Match 注入 / Player 透传——敌方 3× knight 600→1800）。**234/234**（228 + 6，**228 旧测逐位零回归**）。
+- **边界（故意，标在代码注释）**：①法术伤害（火球/闪电）不走通用乘区，养成对法术走升阶积木（V5-S5）；②亡语召唤的单位暂用基础数值（V5-S5 再议）。
+- **顺带**（前置 housekeeping，commit `3699ad6`）：`build_config.py --check` 跳过结构性关卡 `ladder_*`（比照 arena.json 不进 Excel 镜像；check / --from-json / 反生成三向一致），修掉 V4-S3 遗留的 --check 红。
+
+### V5-S2 — 玩家存档系统 + 战力计算（已完成）
+- `logic/player_data.gd`：+`card_stat_mult`（= 等级乘 `1+(lvl-1)·0.10` × 阶乘 `1.25^(rank-1)`，读 economy 曲线）/ `card_power`（base_power × 乘区）/ `team_power`（卡组求和取整）/ `can_unlock`（碎片 ≥ 稀有度门槛）/ `ensure_cards`（卡池新增时补齐缺失卡、不丢档）。
+- `logic/save_system.gd`：+`save_player`/`load_player`/`has_player_save`/`clear_player_save`（`user://player_save.json`）；无档 → `init_new`（初始 8 张解锁），有档 → `load_dict` + `ensure_cards`。
+- **单测** `tests/test_v5_progression.gd`（6：落盘往返 / 无档建新档 / ensure_cards 补齐不覆盖 / 乘区曲线（满养成 ×2.969）/ 战力（knight L5=140·初始队伍=960）/ 解锁门控（golem 120 碎片））。**240/240**（234 + 6，零回归）。
+- **设计点**：S2 只算"数值/战力/解锁"，**不接战斗**——我方乘区来源 `card_stat_mult` 由 V5-S4 出牌时注入、敌方 coef 由 V5-S3 注入。S2 是数据 + 计算层。
+
+### V5-S3 — 闯关骨架 + 星级判定（已完成）
+- `logic/stage_progress.gd`（新）：关卡按 (chapter,index) 排线性序列；`is_unlocked`（首关恒解锁 / 前关通关才解锁）、`next_stage`、`is_all_cleared`、`chapter_stars`、`apply_result`（≥1 星=通关，星数取 max 不回退，刷 `highest_cleared`）；进度持久在 `PlayerData.stages`（复用 CampaignState 二元推进范式）。
+- **星级判定** `StageProgress.judge_stars(stars_cfg, outcome)`（静态纯函数）：未胜=0 星；胜=命中目标数（`win` 必中 → ≥1 星），支持 `king_hp_pct`（保塔血）/ `time_under`（限时）。`outcome={won,king_hp_pct,duration_sec}` 由 view/battle 结束时算（接 UI 留 S7）。
+- `logic/match.gd`：+`setup_stage(stage_id, player_deck_override, player_stat_mult)`——读 stage：`difficulty_coef`→`set_stat_mults(_, coef)` 敌方出兵乘区、`encounter`→敌方卡组、`ai_difficulty`→AI 档；对局参数走 `base_level`（默认 ladder_01）。**S1 的敌方乘区在此真正用上**。
+- `config/stages.json` +`base_level` 字段；`logic/config_loader.gd` 校验 base_level 引用存在。
+- **单测** `tests/test_v5_stage.gd`（6：排序/解锁、推进+解锁下一关+章节星、星数取 max 不回退、未胜 no-op、三星判定 4 档、`setup_stage` 接 coef/deck/AI + **headless 跑通一关**：敌方 giant 2000×1.05=2100）。**246/246**（240 + 6，零回归）。
+- **设计决策**：①**敌塔 HP 暂用 base_level 值、不随 coef**（coef 只放大敌方单位 hp/damage；塔血缩放留 V5-S8 平衡）；②base_level 统一 `ladder_01`（标准对局参数：圣水 1.0/10、180s、塔 2500/1450）。
+
+### V5-S4 — 卡牌升级（金币·数值曲线）（已完成）
+- `logic/player_data.gd`：+`level_cap(rank)`（economy.level_cap_per_rank：rank1→4/2→7/3→10）/ `upgrade_cost`（`base[rarity]·(1+(lvl-1)·growth)`，随等级线性涨）/ `upgrade_card`（花金币·level+1·受阶上限钳制）。
+- **养成接进战斗**：`logic/player.gd` +`player_data` 字段 + `_resolve_stat_mult(card_id)`（有 player_data → 按本卡 `card_stat_mult` per-card 乘区；否则 flat）；`logic/match.gd` `setup_stage(..., player_data)` 注入我方养成。**升级一张卡，战斗里它真变肉变疼**（养成首次在战斗生效）。
+- `config/economy.json`：`upgrade_total_gold` → `upgrade_cost_base`(80/160/320/600) + `upgrade_cost_growth`(0.5)；`config_loader` 校验 key 同步。
+- **单测** `tests/test_v5_card_upgrade.gd`（6：扣金币+升级 / 成本随等级涨 / 阶等级上限拦 / 金币不足拒 / 锁定卡拒 / 战斗内我方 knight L6R2 ×1.875=1125 变肉）。**252/252**。
+
+### V5-S5 — 卡牌升阶 + 技能积木解锁（已完成）
+- `logic/player_data.gd`：+`rank_up_card`（花碎片+金币·rank+1·抬等级上限）/ `rank_up_cost`（economy.rank_up[rarity][rank-1]）/ `_max_rank`。
+- **技能积木解锁机制** `logic/card_progression.gd`（新）：`effective_skills(base, rank_unlocks, rank)` 把 rank 2..当前的 `ops` 顺序叠加到 skills 深拷贝。op：`count_add`（spawn count+）/ `num_add`·`num_mult`（块 field 改，如 radius/damage）/ `unit_field`（spawn 块挂 `_unit_override` 改单位配置如 death_spawn）。
+- `logic/skill_system.gd`：`play_card` +`skills_override`（用 effective skills）；`_spawn_unit` 合并 `_unit_override` 进 unit 配置。`logic/player.gd` +`_resolve_skills(card_id)`（rank≥2 → effective skills）。
+- `config/card_progression.json`：给 11 张卡授 ops；**新机制类解锁**（on-hit 溅射 / 亡语溅击 / 对塔加伤 / 穿透 / 溅射 / 连锁 / 灼烧 / 护盾）engine 未支持 → **仅 note 占位、留 V5-S8**。
+- **golem 示范偏差（有意，记踩坑）**：PLAN 原想"death_spawn 从 0 在 2 阶解锁"，但 `test_arena` 的 V3-3 亡语测试依赖 golem 基础亡语（2 哥布林）——移走会破 2 个测 + 触发 Excel 重建。改为**保留基础亡语、用 `unit_field` op 把 death_spawn_count 升阶放大（2→3→4）**，同样端到端验证 unit_field 机制、零 V3 回归、不动 Excel。
+- **单测** `tests/test_v5_card_rank.gd`（9：effective_skills count/rank1/num_add/golem unit_field、升阶扣碎片+金币、升阶抬等级上限、最高阶+碎片不足拒、战斗内 goblins rank2 出 4 只、`_unit_override` 生成 golem 死兵 3）。**261/261**（V3 arena/skill_system 亡语测试零回归）。
+
+### V5-S6 — 经济产出（首通/重复/挂机/解锁）（已完成）
+- `logic/player_data.gd`：+`grant_reward`（通用：金币/宝石/碎片，任务/成就/章节宝箱占位复用）/ `grant_stage_reward`（首通 first_clear 大额 / 重复 repeat 小额 + 可选 seeded rng 概率 shard_drop）/ `unlock_card`（碎片够 → 扣 + 解锁）/ 挂机离线 `idle_rate_per_hour`（按最高通关章节）·`idle_pending`（累计封顶 cap_hours）·`collect_idle`（领取清零，`now_ts` 由 caller 注入、逻辑层不取系统时间）。
+- **单测** `tests/test_v5_economy.gd`（9：首通/重复奖励、通用奖励、seeded shard_drop 可复现、解锁扣碎片/不足拒、挂机累计+封顶(8h)、领取刷基准、无进度 0 产出）。**270/270**。
+- **占位说明**：日常任务/成就的"定义 + 每日重置"留后续；S6 提供其发奖机制（`grant_reward`）。
+
+> **转向（决策 48）**：S6 后用户拍板把项目改为**实时在线 F2P、服务器权威**（推翻决策 47）。S7 UI 顺延到在线地基 + 服务器经济（N1~N7）之后。详见决策 48 + PLAN_V5 §11.1。
+
+### V5-N1+N2 — 持久会话连接 + 配置服务器化（已完成）
+**前置**：决策 48。在线地基头两步，复用 V4 的 gateway/auth/WS。一起做、自验（纯代码/数据逻辑，无表现层，免真机）。
+- **proto**：`session.proto`（`ConfigPush{version, up_to_date, bundle}`）+ `common.proto` MsgId `CONFIG_PUSH=60`（60-69 = V5 会话/经济段）。双端重生成（Go protoc + godobuf）。
+- **N1 服务端**：`internal/session`（`Manager` 一账号一连接、新登录挤掉旧；`Serve` = 注册 + 配置推送 + 心跳 PING→PONG + 掉线清理；`quit` 通道驱逐/关服）。gateway `/v5/session/ws?token=&cfgver=`（JWT 鉴权 → 升级 → Serve）。
+- **N2 服务端**：`internal/gameconfig`（`Load(dir)` 读 `config/*.json` → 版本化 bundle，文件名升序确定性 sha256 版本）。连接时下发 `ConfigPush`：`cfgver` 命中 → `up_to_date`（不带 bundle）；否则全量。compose 把 `../config` 只读挂进 gateway（`CONFIG_DIR=/app/config`，双份同源）。
+- **客户端**：`net/session_conn.gd`（token → 连 WS → 收 ConfigPush 入内存 + `user://config_cache.json` 薄缓存 → 5s 心跳 → 断线自动重连/窗口）。复用 `net/ws_client.gd`（顺带把入站缓冲调到 2MB——配置包 82KB 超默认 64KB）。
+- **测试**：Go `gameconfig`（5）+ `session`（Manager 驱逐/注册 + buildConfigPush + WS 集成：配置推送/心跳/驱逐 httptest）；客户端 `tests/test_net_session.gd`（4）。**客户端 274/274**；Go 全绿。
+- **端到端自验**（临时 harness `tools/_session_smoke.gd`，验后即删）：真 docker——登录 → 持久会话 WS → 收 82KB 配置（ver `2d6c03b…`，15 文件，cards 16 张 knight cost 3）→ 连接稳定 → 重连用缓存 cfgver → 服务器回 **up_to_date 不重发**。全通过。
+- **踩坑**：①客户端方法名 `is_connected()` 撞 Object 原生（签名不符警告升错）→ 改 `is_online()`。②配置包 82KB > WebSocketPeer 默认入站缓冲 64KB → 收不到大帧 → 调 2MB。③Bash cwd 跨命令保留（`cd server` 后 godot `--path .` 找不到 test_runner）。
+
+### V5-N3+N4 — 服务器权威经济状态 + 结算动作（已完成）
+**前置**：决策 48。把本地原型 S0~S6 的养成/经济搬上服务器做权威（Go + PG，复用 V4 库 + auth + httpx）。一起做、自验。
+- **proto**：`economy.proto`（`EconomyState`{wallet+卡牌+关卡} / `CardState` / `StageState` / `EconomyActionReq`）+ `common.proto` MsgId `ECONOMY_*=61~65` + ErrorCode `ERR_ECONOMY_INSUFFICIENT/AT_CAP/LOCKED=500~502`。双端重生成。
+- **N3 DB + 状态**：`migrations/0006_economy`（`economy_state` 钱包/货币/挂机/highest + `economy_cards` 每卡 level/rank/shards/unlocked + `economy_stages` 每关 stars/cleared，FK accounts CASCADE）。`internal/economy/repo.go`：`Get` 懒播种（首次访问 → 全卡 level1/rank1，starter 解锁，镜像 PlayerData.init_new）+ 读取。`GET /v5/economy/state`（Bearer，account 取自令牌）。
+- **N4 结算**：`internal/economy/config.go`（`ParseConfig` 从 bundle 的 economy.json + card_progression.json 解析曲线，镜像 player_data 的 cost/level_cap/rank_up/unlock）。`repo.go` `Upgrade`/`RankUp`/`Unlock`：单 tx `FOR UPDATE` 锁卡+state 行 → **服务器算成本 + 校验（解锁/上限/金币碎片够）+ 扣 + 落库**，拒绝映射 409 + 业务码。`POST /v5/economy/{upgrade,rank-up,unlock}`。
+- **客户端**：`net/economy_client.gd`（HTTP + protobuf + Bearer：`get_state`/`upgrade`/`rank_up`/`unlock`，返回服务器状态快照或业务错误码）。
+- **api 接线**：`cmd/api` 加载 gameconfig + ParseConfig + 挂经济路由；compose 把 `../config` 也挂进 api（双份同源，服务器用它算成本）。
+- **测试**：Go `economy` config（成本/上限/真实 16 卡）+ repo 集成（PG：播种 16 卡 8 解锁 / 升级扣金币 / 升阶扣碎片抬上限 / 解锁 / 上限拒·不足拒·未知卡拒）；客户端 `tests/test_net_economy.gd`（4）。**客户端 278/278**；Go 全绿。
+- **端到端自验**（临时 harness，验后即删）：真 docker——登录 → 拉状态（服务器播种 16 卡 / 8 starter 解锁 / gold 0）→ 升级 knight **被服务器拒绝**（gold 0，ERR_ECONOMY_INSUFFICIENT，证明客户端刷不了）→ 服务器侧授金币 → 再升级 **服务器扣 gold 10000→9920、knight level→2**。全通过。
+- **踩坑**：①`docker compose build api` 是 no-op（只有 gateway 有 `build:`，api 共享镜像）→ 改 build gateway 重建 `gcp-server:dev`。②login 的 `account_id` 在 V4-S1 服务端恒 0（smoke 授金币改用 device_id join accounts）。
+
+### V5-N5 — 通关发奖 + sanity 校验（已完成）
+**前置**：决策 48。客户端上报 (stage_id, stars)，服务器 sanity 校验 + 发首通/重复奖励（含概率掉落）+ 记进度，全服务器权威（镜像 player_data.grant_stage_reward + stage_progress）。
+- **拍板（用户 2026-06-27）**：①shard_drop 概率掉落 N5 就做（服务端 `math/rand`，非 lockstep 无需确定性，概率走配置表可控）；②0 星/超上限/未知关 → 复用 `ERR_INVALID_ARG`；③**stars 超上限 = 拒绝**（不钳制），detail 要告诉客户端原因；④进度连续 = 线性解锁（第一关恒可，否则前一关 cleared）；⑤范围只做通关发奖+sanity+记进度。
+- **config.go 扩展**：`ParseConfig` 增量解析 `stages.json`（`Stage`{chapter/index/coef/FirstClear/Repeat/ShardDrop/starCap} + 按 (chapter,index) 升序的有序序列），跳过 `_` 元字段；缺 stars → starCap 默认 3。新增查询：`Stage/OrderedStageIDs/PrevStage/StarCap`（线性解锁/防跳关用）。
+- **proto**：`economy.proto` 加 `StageClearReq{stage_id, stars}`（注释 0=拒/≥1=通关，不超 stars 配置条数）；`common.proto` MsgId `ECONOMY_STAGE_CLEAR_REQ=66` + ErrorCode `ERR_ECONOMY_STAGE_LOCKED=503`（跳关专用）。双端重生成（Go protoc + GDScript godobuf）。
+- **repo.go StageClear**：sanity 三道——关存在(`ErrUnknownStage`) / stars≥1(`ErrInvalidStars`) / stars≤starCap(`ErrTooManyStars`)；线性解锁——有前驱且前一关未 cleared → `ErrStageLocked`。单 tx `FOR UPDATE` 锁 stage+state 行 → 发奖：首通(未 cleared)=`first_clear`、重复=`repeat`，固定碎片(reward.Shards)+shard_drop 概率(`rng().Float64()<chance`) → 写 `economy_stages`（stars 取 max、cleared=true）→ 刷 `highest_cleared`（有序序列里最后一个 cleared）→ 回新 `EconomyState`。
+- **handler.go**：`POST /v5/economy/stage-clear`（单独 handler，带 stars 非 card_id）；`mapErr` 扩 503/跳关 → `ERR_ECONOMY_STAGE_LOCKED` 409，0星/超上限/未知关 → `ERR_INVALID_ARG` 400（detail 带 err.Error() 说明原因）。
+- **客户端**：`net/economy_client.gd` `report_stage_clear(http, token, stage_id, stars)`（`StageClearReq` 打 `/v5/economy/stage-clear`）。
+- **测试**：Go `economy` config +3（stages 解析：有序序列/前驱/reward/drop/starCap；真实 config 含 stages）；repo 集成 +3（首通发奖+stars max+highest、重复、跳关拒、0星拒、超上限拒、shard_drop 概率 200 次掉落验证）；客户端 `test_net_economy.gd` +1（StageClearReq roundtrip）。**客户端 279/279**；Go economy 全绿（含 N3/N4 旧测零回归）。
+- **端到端自验**（临时 `cmd/e2e_n5`，验后即删）：真 docker 6 场景全 ✓——①首通 1_1(2★) +300g/+5gem/highest=1_1；②重复 1_1(3★) +30g→330；③0★ 拒 400 `ERR_INVALID_ARG` "stars must be >= 1"；④4★>cap 拒 400 `ERR_INVALID_ARG` "stars exceed stage star cap"；⑤跳关 1_2(1_1 未通) 拒 **409 `ERR_ECONOMY_STAGE_LOCKED`(503)** "stage not unlocked: previous stage not cleared"；⑥首通 1_2(1_1 已通) +320g/+skeletons:3/highest=1_2。
+- **踩坑**：①首版 StageClear 漏发 first_clear/repeat 的**固定碎片**（只处理了 shard_drop）→ 测试 stage_1_2 首通 skeletons=0 抓出，补 `reward.Shards` 发放分支修复。②Go 全量 `-p 1` 偶现 economy flake（跨包共享 DB 残留 + 时序），`-count=1` 重跑稳定通过（非真 bug）。
+
+> **下一步 V5-N6（挂机服务器时钟结算）**：服务器存 last_collect，按**服务器时间**算挂机产出落库（改本地时钟无效）。修复决策 48 头号刷资源漏洞（本地改时间刷挂机金币）。
+
+### V5-N6 — 挂机服务器时钟结算（已完成）
+**前置**：决策 48。挂机离线金币从「客户端本地时钟」（本地改时间可刷）改为「**服务器时钟**结算 + 落库」，修复头号刷资源漏洞。镜像 player_data.collect_idle，now 全服务器定。
+- **拍板（用户 2026-06-27）**：①新号 `ensureSeeded` 时把 `idle_last_collect_ts` 设为当前服务器时间（注册即计时，更符合「挂机」直觉，非严格镜像 player_data 的 0 初值）；②章节驱动产率（rate=gold_per_hour_per_chapter×chapter），数值走 economy.json 配置（`idle: {gold_per_hour_per_chapter:50, cap_hours:8}`），代码不写死；③CollectIdle 纯触发无参（now 全服务器定）。
+- **config.go 扩展**：`ParseConfig` 解析 economy.json `idle` 段（`Idle`{GoldPerHourPerChapter, CapHours}）；新增 `IdleRatePerHour(chapter)`（=GoldPerHourPerChapter×chapter）、`IdleCapHours()`、`HighestChapter(highestCleared)`（从 stage_id 查章节，未知/空→0）。
+- **proto**：`economy.proto` 加 `CollectIdleReq{}`（空消息，纯触发）；`common.proto` MsgId `ECONOMY_COLLECT_IDLE_REQ=67`。双端重生成。
+- **repo.go CollectIdle**：`now = time.Now().Unix()`（**服务器时钟**）→ 单 tx `FOR UPDATE` 锁 state 行 → 读 gold/last_collect/highest_cleared → `idlePending(now, lastCollect, highest, cfg)` 算累计（rate=IdleRatePerHour(HighestChapter)，elapsed=(now−last_collect) 钳≥0，hours=min(elapsed/3600, CapHours)，pending=floor(rate×hours)）→ 发金币 + last_collect=now → 回新 `EconomyState`。`ensureSeeded` 播种时 `idle_last_collect_ts=time.Now().Unix()`。
+- **handler.go**：`POST /v5/economy/collect-idle`（无业务入参，读 body 验 proto 合法性即可）。
+- **客户端**：`net/economy_client.gd` `collect_idle(http, token)`（`CollectIdleReq` 打 `/v5/economy/collect-idle`）。
+- **测试**：Go `economy` idle 纯函数 `idle_test.go` 3（累计/封顶/边界 lastCollect≤0·未通关·时钟倒退·未知 stage）；config idle 解析 2（cfg + 真实 economy.json 50/8）；repo 集成 `TestRepo_CollectIdle`（新号播种 last_collect>0 / 未通关产0 / 倒拨 2h 累计 / 封顶 8h / 立即再领0 / 基准刷新）+ `TestRepo_CollectIdle_ServerAuthoritative`（服务器时间权威）；客户端 `test_net_economy.gd` +1（CollectIdleReq roundtrip）。**客户端 280/280**；Go economy 全绿（15 测，N3/N4/N5 旧测零回归）。
+- **端到端自验**（临时 `cmd/e2e_n6`，验后即删）：真 docker 5 场景全 ✓——①新号 collect（注册即计时 last_collect>0，未通关产 0）；②通关到 chapter1 后立即领（elapsed≈0，金币=通关奖励）；③倒拨 last_collect 2h（chapter1 rate 50/h，gained ~99~100，时间戳毫秒精度致 floor 偶差 1）；④倒拨 100h（封顶 cap 8h → 50×8=400）；⑤立即再领（基准已刷新 → +0，无重复领）。**服务器时钟权威验证成立——客户端改本地时钟无效**。
+- **踩坑**：①首版纯函数测试用 `lastCollect = 10000 - 3600*100` 算出负数（-350000）→ 命中 `lastCollect<=0→0` 误判封顶失败，改用大基准时间戳 `base=1e9` 修复（非逻辑 bug，测试数据问题）。②e2e 倒拨 2h 期望精确 +100 实得 +99（floor + 时间戳毫秒精度），改用容差 [95,100] 判断——这是 floor 的真实行为（挂机不满整点按比例给），非 bug。③e2e 集成测代码编辑时误删了相邻的 `TestRepo_StageClear_ShardDrop` 函数签名（Edit 范围误伤），已补回。
+
+> **下一步 V5-N7（瘦客户端化）**：`PlayerData` 降为服务器状态缓存；养成/领奖改调 API；开战从服务器拉权威 level/rank → 客户端确定性算战斗数值。真机验收：改存档/改时钟均无效（N6 已堵时钟，N7 堵存档）。
+
+### V5-N7 — 瘦客户端化（已完成）
+**前置**：决策 48。客户端养成数据从「本地存档权威」改为「**服务器权威 + 本地非权威缓存**」，堵住「改本地存档文件影响开战数值」。N6 已堵时钟、N7 堵存档，在线化整线收官。
+- **现状发现（关键）**：开工前读到——客户端养成（PlayerData）此前是「纯逻辑层 + 单测」状态：`match.setup_stage(stage_id, deck, player_data)` + `player.gd` 的 `player_data` 注入口子（出兵按卡 level/rank 算乘区）**早已写好**，但 `battle_scene` 实际开战用的是老的 `match.setup(...)`、view 层零养成 UI（grep upgrade/economy_client 全空）。即养成还没接进实际游戏（那是 S7 的活）。故 N7 聚焦「为 S7 备好权威数据来源机制」，不碰 UI、不给 battle_scene 加无入口的死代码。
+- **拍板（用户 2026-06-27）**：路径 A（纯逻辑+代码，不动 UI）/ 本地档 A1（保留但降为非权威缓存镜像）/ 真机验收留 S7（N7 单测覆盖）。
+- **`PlayerData.apply_server_state(server_state, all_card_ids)`**：从服务器权威快照重建自身（shape = `economy_client._state_to_dict` 输出：顶层 gold/gems/idle_last_collect_ts/highest_cleared；cards/stages 嵌套）。与 `load_dict` 区别：后者读本地存档 schema（wallet/idle 嵌套），本方法读服务器 schema；ensure 缺失卡补默认条目。
+- **`net/economy_state_cache.gd`（EconomyStateCache）**：持有最近一次服务器状态快照（PlayerData 形状）。`refresh(http, token, all_card_ids)` 调 `economy_client.get_state` → `apply_server_state` 重建 + `is_loaded=true`；**`for_battle(all_card_ids)` 返回适合注入 `Match.setup_stage` 的 PlayerData**（已加载→缓存即服务器养成；未加载→默认新档保战斗能跑）；`seed_from_local(pd)` 离线兜底（秒启动展示，不改 is_loaded）；`get_cache()` UI 只读。
+- **`SaveSystem` 降级**：`save_player/load_player` 注释改为「**非权威本地缓存镜像**」——存读的 `player_save.json` 是 EconomyStateCache 的落盘镜像（秒启动/离线只读），不是权威档；开战/校验用 `EconomyStateCache.for_battle()`（服务器拉来），改本文件不影响开战；登录后被服务器覆盖。
+- **不动的部分（明确边界）**：没改 `battle_scene`（S7 做闯关入口时调 `cache.for_battle()` 注入 `setup_stage`）；没碰 view/ UI；没改服务端 Go（N7 纯客户端）。
+- **测试**：`test_player_data.gd` +1（apply_server_state 重建 + ensure 缺卡）；`test_economy_state_cache.gd` 新建 4（for_battle 未加载返默认 / for_battle 用服务器养成≈3.0 / **改本地档不影响开战（决策48核心）** / 缓存反映最新服务器态）。**客户端 285/285**；Go 全绿（N7 未动服务端，零回归）。
+- **端到端自验**（临时 `cmd/e2e_n7`，验后即删）：真 docker get_state 返回完整养成快照（16 卡 8 解锁 + idle_last_collect_ts>0 + knight baseline），客户端 apply_server_state 后即可开战——服务器侧链路验通（客户端 apply/for_battle 已被 GDScript 单测覆盖）。
+- **踩坑**：①首版用 `//` C 风格注释（GDScript 用 `#`）→ 改。②测试用 `before_each` 钩子，实际 runner 调的是 `setup()` → 改方法名。③`for_battle` 依赖 `is_loaded`，测试模拟 refresh 成功要直接设 `cache.cache`+`is_loaded=true`（seed_from_local 不改 is_loaded，语义上离线兜底不算权威确认）。
+
+> **在线化整线收官（N1~N7 全完成）**。后续转入 S7 UI 整合 → S8 内容铺量 + 平衡（详见下文 + 顶部总览表；完整口径见 [PLAN_V5.md](PLAN_V5.md) §11）。
+
+### V5-S7 — UI 整合（已完成，KAN-58 Done）
+**前置**：N1~N7 在线地基就绪（服务器权威经济 + `EconomyStateCache`）。把养成/经济/闯关从 headless 逻辑接上界面：**读 = 服务器权威快照缓存，执行 = API，展示算 = 本地 ConfigLoader**。设计稿 [docs/DESIGN_V5_S7_UI.md](docs/DESIGN_V5_S7_UI.md)。
+- **S7a 共享 HUD 组件**：`view/ui/hud_widgets.gd`（工厂 + 纯助手）+ `hud_widget.gd`（纯 `_draw`：钱包条/星级/cost 药丸/阶 pip/数值条/锁罩，**0 贴图资源**）。
+- **S7b 基地 Base Camp**：替换主菜单 START 入口；app shell 登录→`EconomyStateCache.refresh` 拉服务器状态→展示钱包/队伍战力（本地算·按推荐着色）/挂机产出+领取。
+- **S7c~e 闯关+养成+组卡**：闯关地图 `stage_map` + 领奖开箱 `reward_chest` + `battle_scene` 接闯关模式（`setup_stage`→战后判星→`report_stage_clear`）；养成 `card_collection`/`card_detail`（升级/升阶/解锁走 `EconomyStateCache` 门面）；`deck_builder` 已解锁池 + 战力达标着色 + mode-aware 路由。
+- **★修复必现 bug**：stale `GameState.run/campaign`（玩过肉鸽残留静态态）致闯关战误判肉鸽模式 → `deck_builder` 开战前清 run/campaign + `level_select` 清 stage_id。
+- **日志**：客户端全流程 `[V5]` 打点；服务端 api 请求中间件 + economy handler 业务日志。
+- **验收**：客户端单测 **290/290**；**真人全流程验收通过**（闯关 1-1 胜 3 星→首通 +300 金 +5 宝石→进度推进 + 1-2 解锁→挂机产出→升级 giant）。Jira KAN-58 **Done**。提交 `123866c`/`6e9c53d`（验收用例 [docs/ACCEPTANCE_V5_S7.md](docs/ACCEPTANCE_V5_S7.md)，7 例全过）。
+
+### V5-S7+ — 养成卡多维排序（已完成，KAN-67 Done）
+- 逻辑层纯函数 `logic/card_sort.gd`（键 rarity/cost/level/actionable + 稳定排序，5 单测）+ `card_collection` 顶部分段控件（4 键 + 升降序）+ 即时重排（缓存重建网格、不重拉服务器）+ 记忆上次选择（`user://settings.cfg`）。客户端 **295/295**；真机即时重排观感正确。提交 `f38f5eb`。
+
+### V5-S8 — 内容铺量 + 平衡（🚧 进行中，KAN-59；S8a~d 代码完成、S8e 真人验收待）
+**口径（用户 2026-06-27 拍板）见 [PLAN_V5.md](PLAN_V5.md) §11.3**：生成器铺量、10 章×10 关、coef 曲线、`rec=920×coef×T`、敌塔 HP 随 coef。服务器经济**完全配置驱动** → 铺量是纯配置、客户端+服务器两端自动吃到、无需改业务逻辑。
+- **S8a 遭遇模板池 3→15**（按原型补 12 deck）+ ConfigLoader 校验加固（archetype 枚举 + deck 8 张互不重复）。客户端 **300/300**。提交 `844fb33`。
+- **S8b 平衡 probe harness**：`tools/balance_probe.gd`（headless AI-vs-AI 确定性扫战力门槛）+ **AIController 可选边改造**（构造第 4 参 `controlled_owner`，opponent 默认边恒等→零回归）。客户端 **305/305**。提交 `844fb33`。
+- **S8c stages 铺到 100 关**（生成器）：`config/stages_spec.json` + `tools/build_stages.py`（+`--check`）→ `config/stages.json`（coef 1.0→2.842、rec 800→2275、boss ×1.1、奖励随章放大）。gameconfig sha256 自动 bump，服务器需重启读新配置。客户端 **311/311** + Go 集成测对真 docker PG 全过。提交 `d7730dd`。
+- **S8d 平衡 pass**：敌塔 HP 随 coef 放大（`Match.scale_opponent_towers`，我方塔不缩放）+ 真关卡 probe 报告器 `tools/run_stage_balance.gd` + 平衡报告 [docs/BALANCE_V5_S8.md]。**核心发现**：AI-vs-AI 非可靠绝对裁判（规则 AI 不主动推塔→早期关王塔满血却超时输），但曲线形状被验证（王塔剩血 100%(ch1~3)→0%(ch4+)，难度咬人在 ch4≈coef1.5，符合"早苟中养成"）；曲线保持公式默认、不拟合 AI 假象，手感绝对校准交 S8e 真人。客户端 **313/313**。提交 `d7730dd`。
+- **GM 作弊工具（KAN-68 Done）**：随 S8 提交，服务器权威改 `economy_*` 表（加货币/碎片/解锁/满养成/通关到第 N 章/重置）+ 设置内 GM 面板；env `GM_ENABLED` 门控、**prod 必关**，走会话鉴权只能改自己账号。真 PG 集成测全过 + 真人验收过。提交 `d7730dd`。
+
+> **下一步 = V5-S8e 真人验收**：从第 1 章推进体验难度曲线（用例 [docs/ACCEPTANCE_V5_S8.md](docs/ACCEPTANCE_V5_S8.md)），验收过 + 用户同意后 KAN-59 → Done。之后：联机对战美术对齐（KAN-49，把单机精灵/FX/手感搬进 `net_battle_scene`）/ 上线化（IAP·合规·赛季榜，V6+）。
+
+### 工程迁移 + 多 agent 共享工作树踩坑（2026-06-28）
+**迁移**：`Move-Item F:\godotProject F:\godotTowerPush\master`（同盘瞬时重命名、零拷贝）→ git 仓库/对象/远端全部无损、`.git/config` 无旧路径泄漏；工程 `res://` 相对路径天然不受影响、`.godot/` 缓存 gitignore 重建即可。仅**文档线滞后**于代码（CLAUDE 进度停在 N5、README 290 单测、多处旧绝对路径 + 旧 `develop` 分支约定）→ 本轮统一对齐到现实（主干流 / S8 进行中 / 313 单测 / 旧路径清理），提交 `cfa15d7`。
+**踩坑（两个 agent 抢同一个工作树）**：文档作业期间，另一个 agent（ZCode）在**同一个工作树**里 `git checkout` 把分支从 `master` 切到新建临时分支 `zaiDev`，我那批**未提交**的文档改动被一起带了过去（切分支时未提交改动会跟随 HEAD）。
+- **诊断**：`git reflog` 还原序列（`commit 247c15f` → `checkout: moving from master to zaiDev`）；`git stash` 空、无提交吞掉改动；关键发现——`zaiDev` 从 `master` 尖端刚拉出、**两者指向同一 commit `247c15f`**。
+- **无损还原**：因两分支零差异，`git checkout master` 时 Git 不改任何工作区文件、未提交改动原样留下、HEAD 重指 master → 改动安全归位（不可能冲突或丢失）。随后用**显式文件名** `git add`（避免在共享树里卷入异己改动）+ 提交 `cfa15d7`，工作树转干净、解开两 agent 纠缠。
+- **教训**：① **多个 agent 绝不共享一个工作树**——每任务用 `git worktree add ../master-<feat> <branch>` 开独立树作业（正是 CLAUDE.md / AGENTS.md「分支约定」要求的纪律，这次正是没遵守才撞）；② 提交前先 `git rev-parse --abbrev-ref HEAD` 验分支、`git add` 用显式文件名不用 `-A`；③ 已关停乱切的 ZCode；`zaiDev` 待其任务合回 master 或废弃后 `git branch -d zaiDev` 清理。
+
+### V5-KAN49 — 联机视觉对齐（🚧 代码完成、真人两机验收待跑）
+**前置**：V4-S3 联机对战场景 `net_battle_scene` 当初为聚焦网络正确性做成**矢量白膜**（圆=单位/方块=塔/文字卡面），记 KAN-49 待办。本次把单机 `battle_scene` 的完整视觉搬进去。**逻辑层零改动**——lockstep 跑同一 `logic/match.gd`，单机/联机的 Match/Battle/Arena/Unit/Tower/Player/Deck/Elixir 实例就是同一个类的实例，juice/FX/插值/投射物（基于 `get_instance_id()`+hp/cooldown diff）**owner/side 无关、零适配直接搬**。纯 view 层搬运 + 联机特有的 3 处适配 + 3 个技术坑。
+
+**联机特有 3 处适配（必改）**：
+1. **`match_obj.player → _client.local_player()`**：单机 ~8 处 `match_obj.player.{deck,elixir,can_play,card_cost}` 直读（单机本方恒 player）；联机 side2 玩家本方是 opponent（owner 不随 side 翻转：恒 player=0/opponent=1）→ 圣水条/卡面/下一张/拖拽判 mine 全部走 `local_player()`。
+2. **owner/side 翻转**：①队伍色 `_is_mine(owner)`=`(o==0 and not _flip) or (o==1 and _flip)`；②王冠计数 `_my_towers()/_foe_towers()` 按 `_flip` 选 player/opponent_towers；③落点 `can_deploy(owner)` 的 owner=`your_side-1`（side1→0/side2→1）；④己方半场高亮 `_deploy_y_min`=`deploy_player_y_min if not _flip else grid_h-deploy_player_y_min`（本方半场恒在屏幕下方）；⑤胜负语义 result 是 **side 语义**（winner 1=side1/2=side2），`mine = _flip?2:1`。
+3. **结算演出触发源**：单机靠 `match_obj.is_over()` 本地判 → 联机改 `_on_result` 服务端信号驱动 `_start_ending`。
+
+**联机特有 3 个技术坑**：
+1. **sim 驱动差异（命门）**：联机 sim 由 `battle_client.poll`→tick bundle→`advance_tick` 驱动，**view 不能调 `match_obj.update()`**（单机那样做会双驱 sim、破坏 lockstep）。`_detect_events`/`_detect_attacks`/`_update_disp`（只读 diff）照搬。**顿帧改写**：单机冻结 sim 无意义（sim 非本地驱动）→ 改「纯视觉顿帧」——冻结 FX 时钟 `_elapsed` 增量让画面定格，**不影响 lockstep 推进**（`_process` 里 `if _hitstop_t>0: _hitstop_t-=delta else: _elapsed+=delta`）。
+2. **精灵朝向翻转**：side2 坐标 `_t2s` 翻转是平移不旋转像素 → owner 1（本方）兵贴图朝向会反。解法：`SpriteDB.frame` 的 owner 参数在 `_flip` 时镜像传值（`spr_owner = u.owner_id; if _flip: spr_owner = 0 if u.owner_id==1 else 1`），让贴图朝向跟随屏幕视角而非逻辑 owner。
+3. **资源/音频齐备**：`battle_scene`+`sprite_db` 所有 preload 路径 + `.import` 全部存在直接复用；AudioManager 是全局 autoload、缺失资源静默 no-op（当前音频文件未入库，调用都是空操作，与单机一致）。
+
+**一次性搬运的 7 大模块**（`view/net_battle_scene.gd` 366→~960 行整体重写）：①资源 preload（塔/FX/投射物/地形 + SpriteDB）；②地形 `_draw_terrain`（地面/水动画/桥 + 己方半场高亮按 flip）；③单位 `_draw_units`（SpriteDB+状态派生 walk/attack+闪白+入场缩放+空军影子/上浮+side2 朝向翻转）；④塔 `_draw_towers`（贴图保持长宽比贴地+队伍色+血条+王冠+废墟）；⑤战斗 juice（`_detect_events`/`_on_hit`/`_on_tower_destroyed`/`_update_disp`/`_update_shake`/`_pop_scale`+顿帧改纯视觉）；⑥FX+投射物（`_detect_attacks`/`_tower_target`/`_draw_projectiles`/`_draw_fx`+落地涟漪+出牌音效）；⑦HUD+演出+音频（分段圣水+满槽脉动+自绘卡面+下一张+王冠倒计时；胜负演出调暗/标题 sting/王冠落入/比分滚动+按钮淡入，触发源改 `_on_result`；`_on_joined` 接 `AudioManager.play_music/play_ambience`）。
+
+**验证**：客户端单测 **313/313 零回归**（`test_net_battle_client` 7 测不动）；headless `--editor --quit` 导入无脚本错误。net_battle_scene 是纯 view（`_draw` 驱动），无新逻辑层单测；**画面/手感交真人两机验收**。
+
+**真人验收**：用例 [docs/ACCEPTANCE_V5_KAN49.md](docs/ACCEPTANCE_V5_KAN49.md)（8 例：地形/精灵/塔/HUD/涟漪投射物FX/juice/胜负语义/**side2 视角全面**——side2 是联机特有最大风险点，须单独验精灵朝向不反、落点合法、本方数据正确）。**验收过 + 用户拍板 → KAN-49 Done**。
+
+**分支/worktree**：本次在 `master-zaiDev` worktree（feat/zaiDev 分支原址）新建 `feat/kan49-net-visual` 开发（基于 master 尖端 ce699df；zaiDev 分支保留不动、待用户清理）。Jira KAN-49 To Do → **正在进行**。

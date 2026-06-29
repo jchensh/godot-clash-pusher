@@ -132,6 +132,8 @@ func (l *Lobby) createMatch(ctx context.Context, pair matchmaking.Pair) {
 		// One left (cancel/disconnect) between FindPairs and here. Re-queue the
 		// survivor so it gets matched next tick; drop the missing one.
 		l.mu.Unlock()
+		log.Printf("mm: pair %d/%d dropped before room (one left queue), requeue survivor (a=%v b=%v)",
+			pair.A.AccountID, pair.B.AccountID, wa != nil, wb != nil)
 		if wa != nil {
 			_ = l.queue.Add(ctx, pair.A)
 		}
@@ -149,6 +151,8 @@ func (l *Lobby) createMatch(ctx context.Context, pair matchmaking.Pair) {
 	p1 := &player{accountID: wa.accountID, side: 1, deck: l.lookupDeck(ctx, wa.accountID, wa.deckSlot), summary: wa.summary, send: wa.send}
 	p2 := &player{accountID: wb.accountID, side: 2, deck: l.lookupDeck(ctx, wb.accountID, wb.deckSlot), summary: wb.summary, send: wb.send}
 	room := NewRoom(roomID, l.levelID, 0, p1, p2, l.persist, l.now)
+	log.Printf("mm: room %s ready: side1 acc=%d deck=%dcards | side2 acc=%d deck=%dcards",
+		roomID, p1.accountID, len(p1.deck), p2.accountID, len(p2.deck))
 
 	l.mu.Lock()
 	l.active[wa.accountID] = room
@@ -206,10 +210,12 @@ func (l *Lobby) lookupDeck(ctx context.Context, accountID int64, slot int32) []s
 	var raw []byte
 	if err := l.db.Pool.QueryRow(ctx,
 		`SELECT card_ids FROM decks WHERE account_id = $1 AND slot = $2`, accountID, slot).Scan(&raw); err != nil {
+		log.Printf("mm: acc=%d slot=%d no saved deck -> ladder default", accountID, slot)
 		return ladderDefaultDeck
 	}
 	var cards []string
 	if json.Unmarshal(raw, &cards) != nil || len(cards) == 0 {
+		log.Printf("mm: acc=%d slot=%d deck unreadable -> ladder default", accountID, slot)
 		return ladderDefaultDeck
 	}
 	return cards

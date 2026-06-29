@@ -12,7 +12,7 @@ package game.v4;
 option go_package = "github.com/jchensh/godot-clash-pusher/server/internal/pb/common";
 
 // 消息 ID 枚举，分段：0-9 = 心跳/错误，10-19 = auth，20-29 = profile，
-// 30-39 = match (lobby)，40-49 = battle，50-59 = leaderboard。
+// 30-39 = match (lobby)，40-49 = battle，50-59 = leaderboard，60-69 = V5 会话/经济（决策 48）。
 // 新增消息按段尾追加，**不复用**已用过的 id。
 enum MsgId {
   MSG_UNKNOWN = 0;
@@ -48,6 +48,16 @@ enum MsgId {
 
   LEADERBOARD_TOP_REQ = 50;
   LEADERBOARD_TOP_RESP = 51;
+
+  // 60-69 = V5 会话/经济（决策 48）
+  CONFIG_PUSH = 60;         // server->client：登录后配置下发（V5-N2）
+  ECONOMY_STATE_REQ = 61;   // V5-N3 client->server：拉经济状态
+  ECONOMY_STATE_RESP = 62;  // V5-N3 server->client：经济状态
+  ECONOMY_UPGRADE_REQ = 63; // V5-N4：升级
+  ECONOMY_RANK_UP_REQ = 64; // V5-N4：升阶
+  ECONOMY_UNLOCK_REQ = 65;  // V5-N4：解锁
+  ECONOMY_STAGE_CLEAR_REQ = 66; // V5-N5：通关上报（stage_id, stars）
+  ECONOMY_COLLECT_IDLE_REQ = 67; // V5-N6：挂机领取（now 全服务器定）
 }
 
 // 通用错误码。前 1000 为框架级（鉴权/限流），1000+ 为业务级（按模块分段）。
@@ -72,6 +82,11 @@ enum ErrorCode {
   ERR_BATTLE_ROOM_NOT_FOUND = 400;
   ERR_BATTLE_INVALID_DEPLOY = 401;
   ERR_BATTLE_HASH_MISMATCH = 402;
+
+  ERR_ECONOMY_INSUFFICIENT = 500;  // V5-N4：金币/碎片不足
+  ERR_ECONOMY_AT_CAP = 501;        // V5-N4：已达等级/阶上限
+  ERR_ECONOMY_LOCKED = 502;        // V5-N4：卡未解锁 / 不满足解锁条件
+  ERR_ECONOMY_STAGE_LOCKED = 503;  // V5-N5：关卡未解锁（进度不连续/前一关未通关）
 }
 
 // 通用错误响应；当 server 处理 *_REQ 失败时回此，msg_id=ERROR_RESP。

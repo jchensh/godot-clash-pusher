@@ -28,6 +28,7 @@ signal joined(your_side: int, opponent_name: String)   # 进房建好 Match（Jo
 signal result(winner: int, reason: int)
 signal reconnecting            # 断线、正在重连中（UI 提示）
 signal disconnected            # 重连窗口耗尽、彻底掉线
+signal deploy_applied(side: int, card_id: String, pos: Vector2)  # 某条出兵指令两端同 tick 落子 → view 触发 FX/音效
 
 var ws                     # WSClient 或 fake
 var config                 # ConfigLoader
@@ -95,12 +96,14 @@ func poll(delta: float = 0.0) -> void:
 func _on_opened() -> void:
 	if _room_id == "":
 		# 首次连上 → 发 FindMatch 入队匹配。
+		print("[net] 已连上 gateway，发送 FindMatch（卡组槽=%d，arena=1）" % _deck_slot)
 		var req = _MatchPb.FindMatchReq.new()
 		req.set_deck_slot(_deck_slot)
 		req.set_arena(1)
 		ws.send_frame(_CommonPb.MsgId.FIND_MATCH_REQ, req.to_bytes())
 	else:
 		# 已匹配后断线重连 → 用 room_id 回到原房。
+		print("[net] 重连已连上，发送 JoinRoom（房=%s）回原局" % _room_id)
 		var jr = _BattlePb.JoinRoomReq.new()
 		jr.set_room_id(_room_id)
 		ws.send_frame(_CommonPb.MsgId.JOIN_ROOM_REQ, jr.to_bytes())
@@ -110,6 +113,7 @@ func _on_closed() -> void:
 	if _ended:
 		return
 	if not _started:
+		print("[net] 连接关闭（尚未进房，多为匹配前连不上服务器/被拒）→ 掉线")
 		disconnected.emit()   # 还没 join 成功就断 → 直接报掉线
 		return
 	if not _reconnecting:
@@ -142,6 +146,7 @@ func _on_frame(msg_id: int, payload: PackedByteArray) -> void:
 func _handle_match_found(payload: PackedByteArray) -> void:
 	var mf = _MatchPb.MatchFoundPush.new()
 	if mf.from_bytes(payload) != _MatchPb.PB_ERR.NO_ERRORS:
+		print("[net] ⚠ MatchFoundPush 解析失败，丢弃")
 		return
 	_room_id = mf.get_room_id()   # 非空后,断线重连走 JoinRoom(room_id)
 	var opp_name := ""
@@ -154,6 +159,7 @@ func _handle_match_found(payload: PackedByteArray) -> void:
 
 ## 匹配中取消(退队)。服务端按账号出队,不需要 queue_id。
 func cancel_match() -> void:
+	print("[net] 发送取消匹配（退队）")
 	ws.send_frame(_CommonPb.MsgId.CANCEL_MATCH_REQ, _MatchPb.CancelMatchReq.new().to_bytes())
 
 
@@ -162,6 +168,7 @@ func cancel_match() -> void:
 func _handle_join_resp(payload: PackedByteArray) -> void:
 	var resp = _BattlePb.JoinRoomResp.new()
 	if resp.from_bytes(payload) != _BattlePb.PB_ERR.NO_ERRORS:
+		print("[net] ⚠ JoinRoomResp 解析失败，丢弃")
 		return
 	your_side = resp.get_your_side()
 	# side1→player(OWNER_PLAYER)，side2→opponent(OWNER_OPPONENT)，两端一致建同一初始态。
@@ -197,6 +204,10 @@ func _handle_tick_bundle(payload: PackedByteArray) -> void:
 			"pos": Vector2(d.get_x_milli() / 1000.0, d.get_y_milli() / 1000.0),
 		})
 	match_obj.advance_tick(deploys)
+	# 两端收到同一份 TickBundle → 同 tick 广播落子事件，让 view 双端对齐触发 FX/音效
+	# （含本方自己的指令，服务端会回广播；纯表现层，不影响 sim/hash）。
+	for dp in deploys:
+		deploy_applied.emit(dp["side"], dp["card_id"], dp["pos"])
 	if match_obj.net_tick % HASH_EVERY == 0:
 		_send_hash()
 	if match_obj.is_over() and not _end_reported:

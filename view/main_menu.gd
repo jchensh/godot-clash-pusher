@@ -9,6 +9,7 @@ const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const BG_TEX := preload("res://assets/ui/menu_bg.png")
 
 const LEVEL_SELECT_SCENE := "res://view/level_select.tscn"
+const BASE_CAMP_SCENE := "res://view/base_camp.tscn"   # V5-S7：单人闯关养成中枢（替换 START 入口）
 const RUN_SCENE := "res://view/run_scene.tscn"
 const SETTINGS_SCENE := "res://view/settings.tscn"
 const CAMPAIGN_SCENE := "res://view/campaign_scene.tscn"
@@ -66,7 +67,8 @@ func _on_campaign_pressed() -> void:
 	get_tree().change_scene_to_file(CAMPAIGN_SCENE)
 
 func _on_start_pressed() -> void:
-	get_tree().change_scene_to_file(LEVEL_SELECT_SCENE)
+	# V5-S7（决策48）：START → 基地 Base Camp（单人闯关养成中枢），不再直达自由选关。
+	get_tree().change_scene_to_file(BASE_CAMP_SCENE)
 
 func _on_run_pressed() -> void:
 	get_tree().change_scene_to_file(RUN_SCENE)

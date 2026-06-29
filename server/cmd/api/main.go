@@ -21,6 +21,8 @@ import (
 	"time"
 
 	"github.com/jchensh/godot-clash-pusher/server/internal/auth"
+	"github.com/jchensh/godot-clash-pusher/server/internal/economy"
+	"github.com/jchensh/godot-clash-pusher/server/internal/gameconfig"
 	"github.com/jchensh/godot-clash-pusher/server/internal/profile"
 	"github.com/jchensh/godot-clash-pusher/server/internal/store"
 	"github.com/jchensh/godot-clash-pusher/server/internal/version"
@@ -60,9 +62,34 @@ func main() {
 	authMW := auth.NewMiddleware(issuer)
 	profileH := profile.NewHandler(profile.NewRepo(db.Pool))
 
+	// V5-N3/N4 (决策 48)：服务器权威经济。从同一 config/ 读配置算成本（双份同源）。
+	cfgDir := os.Getenv("CONFIG_DIR")
+	if cfgDir == "" {
+		cfgDir = "/app/config"
+	}
+	bundle, err := gameconfig.Load(cfgDir)
+	if err != nil {
+		log.Fatalf("api: load config (%s): %v", cfgDir, err)
+	}
+	econCfg, err := economy.ParseConfig(bundle)
+	if err != nil {
+		log.Fatalf("api: parse economy config: %v", err)
+	}
+	econRepo := economy.NewRepo(db)
+	economyH := economy.NewHandler(econRepo, econCfg)
+	log.Printf("api: economy config loaded (%d cards, cfg ver=%s)", len(econCfg.Cards), bundle.Version)
+
 	mux := http.NewServeMux()
 	authH.Mount(mux)
 	profileH.Mount(mux, authMW)
+	economyH.Mount(mux, authMW)
+
+	// GM / 开发作弊工具（V5）：仅当 GM_ENABLED=1 时挂 /v5/gm/*（直接改本账号经济 DB）。
+	// ⚠️ 仅开发用——prod 部署必须不设此环境变量。仍走会话鉴权（只能改自己账号）。
+	if os.Getenv("GM_ENABLED") == "1" {
+		economy.NewGMHandler(econRepo, econCfg).Mount(mux, authMW)
+		log.Printf("api: ⚠️ GM endpoints ENABLED (/v5/gm/*) — DEV ONLY, must be OFF in prod")
+	}
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		if err := db.Ping(r.Context()); err != nil {
 			http.Error(w, "db down", http.StatusServiceUnavailable)
@@ -74,7 +101,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:              ":" + port,
-		Handler:           mux,
+		Handler:           withRequestLog(mux),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
@@ -92,4 +119,26 @@ func main() {
 	shutdownCtx, shutdownCancel := context.WithTimeout(rootCtx, 10*time.Second)
 	defer shutdownCancel()
 	_ = srv.Shutdown(shutdownCtx)
+}
+
+// statusRecorder 记录响应状态码，供请求日志中间件读取。
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (r *statusRecorder) WriteHeader(code int) {
+	r.status = code
+	r.ResponseWriter.WriteHeader(code)
+}
+
+// withRequestLog 给每个 HTTP 请求打一行访问日志：方法 路径 -> 状态码 (耗时)。
+// 配合 economy handler 的业务日志，F5/docker logs 能看清整条经济流。
+func withRequestLog(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
+		next.ServeHTTP(rec, r)
+		log.Printf("%s %s -> %d (%s)", r.Method, r.URL.Path, rec.status, time.Since(start).Round(time.Millisecond))
+	})
 }

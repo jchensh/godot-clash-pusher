@@ -1,0 +1,3803 @@
+{
+  "_comment": "由 tools/build_stages.py 从 config/stages_spec.json 生成，勿手改。改 spec 跑生成器；提交前 --check。 difficulty_coef=敌方乘区；recommended_power=队伍推荐战力(UI 着色)；stars=3 星目标；first_clear/repeat=金币/宝石/碎片；shard_drop=概率掉碎片。数值〔示意·待 S8d probe 校准〕。",
+  "stage_1_1": {
+    "chapter": 1,
+    "index": 1,
+    "encounter": "starter_easy",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.0,
+    "ai_difficulty": "rookie",
+    "recommended_power": 800,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 300,
+      "gems": 5,
+      "shards": {
+        "skeletons": 4
+      }
+    },
+    "repeat": {
+      "gold": 30
+    },
+    "shard_drop": {
+      "skeletons": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_1_2": {
+    "chapter": 1,
+    "index": 2,
+    "encounter": "swarm_rush_a",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.016,
+    "ai_difficulty": "rookie",
+    "recommended_power": 813,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 300,
+      "gems": 5,
+      "shards": {
+        "skeletons": 4
+      }
+    },
+    "repeat": {
+      "gold": 30
+    },
+    "shard_drop": {
+      "skeletons": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_1_3": {
+    "chapter": 1,
+    "index": 3,
+    "encounter": "starter_easy",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.032,
+    "ai_difficulty": "rookie",
+    "recommended_power": 826,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 300,
+      "gems": 5,
+      "shards": {
+        "skeletons": 4
+      }
+    },
+    "repeat": {
+      "gold": 30
+    },
+    "shard_drop": {
+      "skeletons": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_1_4": {
+    "chapter": 1,
+    "index": 4,
+    "encounter": "swarm_rush_a",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.048,
+    "ai_difficulty": "rookie",
+    "recommended_power": 839,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 300,
+      "gems": 5,
+      "shards": {
+        "skeletons": 4
+      }
+    },
+    "repeat": {
+      "gold": 30
+    },
+    "shard_drop": {
+      "skeletons": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_1_5": {
+    "chapter": 1,
+    "index": 5,
+    "encounter": "starter_easy",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.064,
+    "ai_difficulty": "rookie",
+    "recommended_power": 852,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 300,
+      "gems": 5,
+      "shards": {
+        "skeletons": 4
+      }
+    },
+    "repeat": {
+      "gold": 30
+    },
+    "shard_drop": {
+      "skeletons": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_1_6": {
+    "chapter": 1,
+    "index": 6,
+    "encounter": "swarm_rush_a",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.08,
+    "ai_difficulty": "rookie",
+    "recommended_power": 864,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 300,
+      "gems": 5,
+      "shards": {
+        "skeletons": 4
+      }
+    },
+    "repeat": {
+      "gold": 30
+    },
+    "shard_drop": {
+      "skeletons": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_1_7": {
+    "chapter": 1,
+    "index": 7,
+    "encounter": "starter_easy",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.096,
+    "ai_difficulty": "rookie",
+    "recommended_power": 877,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 300,
+      "gems": 5,
+      "shards": {
+        "skeletons": 4
+      }
+    },
+    "repeat": {
+      "gold": 30
+    },
+    "shard_drop": {
+      "skeletons": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_1_8": {
+    "chapter": 1,
+    "index": 8,
+    "encounter": "swarm_rush_a",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.112,
+    "ai_difficulty": "rookie",
+    "recommended_power": 890,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 300,
+      "gems": 5,
+      "shards": {
+        "skeletons": 4
+      }
+    },
+    "repeat": {
+      "gold": 30
+    },
+    "shard_drop": {
+      "skeletons": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_1_9": {
+    "chapter": 1,
+    "index": 9,
+    "encounter": "starter_easy",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.128,
+    "ai_difficulty": "rookie",
+    "recommended_power": 903,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 300,
+      "gems": 5,
+      "shards": {
+        "skeletons": 4
+      }
+    },
+    "repeat": {
+      "gold": 30
+    },
+    "shard_drop": {
+      "skeletons": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_1_10": {
+    "chapter": 1,
+    "index": 10,
+    "encounter": "tank_push_a",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.258,
+    "ai_difficulty": "easy",
+    "recommended_power": 1007,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 450,
+      "gems": 25,
+      "shards": {
+        "skeletons": 8
+      }
+    },
+    "repeat": {
+      "gold": 45
+    },
+    "shard_drop": {
+      "skeletons": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_2_1": {
+    "chapter": 2,
+    "index": 1,
+    "encounter": "undead_horde",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.16,
+    "ai_difficulty": "easy",
+    "recommended_power": 928,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 570,
+      "gems": 5,
+      "shards": {
+        "log": 4
+      }
+    },
+    "repeat": {
+      "gold": 57
+    },
+    "shard_drop": {
+      "log": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_2_2": {
+    "chapter": 2,
+    "index": 2,
+    "encounter": "graveyard_control",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.176,
+    "ai_difficulty": "easy",
+    "recommended_power": 941,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 570,
+      "gems": 5,
+      "shards": {
+        "log": 4
+      }
+    },
+    "repeat": {
+      "gold": 57
+    },
+    "shard_drop": {
+      "log": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_2_3": {
+    "chapter": 2,
+    "index": 3,
+    "encounter": "undead_horde",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.192,
+    "ai_difficulty": "easy",
+    "recommended_power": 954,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 570,
+      "gems": 5,
+      "shards": {
+        "log": 4
+      }
+    },
+    "repeat": {
+      "gold": 57
+    },
+    "shard_drop": {
+      "log": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_2_4": {
+    "chapter": 2,
+    "index": 4,
+    "encounter": "graveyard_control",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.208,
+    "ai_difficulty": "easy",
+    "recommended_power": 967,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 570,
+      "gems": 5,
+      "shards": {
+        "log": 4
+      }
+    },
+    "repeat": {
+      "gold": 57
+    },
+    "shard_drop": {
+      "log": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_2_5": {
+    "chapter": 2,
+    "index": 5,
+    "encounter": "undead_horde",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.224,
+    "ai_difficulty": "easy",
+    "recommended_power": 980,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 570,
+      "gems": 5,
+      "shards": {
+        "log": 4
+      }
+    },
+    "repeat": {
+      "gold": 57
+    },
+    "shard_drop": {
+      "log": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_2_6": {
+    "chapter": 2,
+    "index": 6,
+    "encounter": "graveyard_control",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.24,
+    "ai_difficulty": "easy",
+    "recommended_power": 992,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 570,
+      "gems": 5,
+      "shards": {
+        "log": 4
+      }
+    },
+    "repeat": {
+      "gold": 57
+    },
+    "shard_drop": {
+      "log": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_2_7": {
+    "chapter": 2,
+    "index": 7,
+    "encounter": "undead_horde",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.256,
+    "ai_difficulty": "easy",
+    "recommended_power": 1005,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 570,
+      "gems": 5,
+      "shards": {
+        "log": 4
+      }
+    },
+    "repeat": {
+      "gold": 57
+    },
+    "shard_drop": {
+      "log": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_2_8": {
+    "chapter": 2,
+    "index": 8,
+    "encounter": "graveyard_control",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.272,
+    "ai_difficulty": "easy",
+    "recommended_power": 1018,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 570,
+      "gems": 5,
+      "shards": {
+        "log": 4
+      }
+    },
+    "repeat": {
+      "gold": 57
+    },
+    "shard_drop": {
+      "log": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_2_9": {
+    "chapter": 2,
+    "index": 9,
+    "encounter": "undead_horde",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.288,
+    "ai_difficulty": "easy",
+    "recommended_power": 1031,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 570,
+      "gems": 5,
+      "shards": {
+        "log": 4
+      }
+    },
+    "repeat": {
+      "gold": 57
+    },
+    "shard_drop": {
+      "log": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_2_10": {
+    "chapter": 2,
+    "index": 10,
+    "encounter": "graveyard_control",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.434,
+    "ai_difficulty": "normal",
+    "recommended_power": 1148,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 855,
+      "gems": 25,
+      "shards": {
+        "log": 8
+      }
+    },
+    "repeat": {
+      "gold": 86
+    },
+    "shard_drop": {
+      "log": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_3_1": {
+    "chapter": 3,
+    "index": 1,
+    "encounter": "orc_blitz",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.32,
+    "ai_difficulty": "easy",
+    "recommended_power": 1057,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 840,
+      "gems": 5,
+      "shards": {
+        "mini_pekka": 4
+      }
+    },
+    "repeat": {
+      "gold": 84
+    },
+    "shard_drop": {
+      "mini_pekka": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_3_2": {
+    "chapter": 3,
+    "index": 2,
+    "encounter": "swarm_rush_a",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.336,
+    "ai_difficulty": "easy",
+    "recommended_power": 1069,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 840,
+      "gems": 5,
+      "shards": {
+        "mini_pekka": 4
+      }
+    },
+    "repeat": {
+      "gold": 84
+    },
+    "shard_drop": {
+      "mini_pekka": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_3_3": {
+    "chapter": 3,
+    "index": 3,
+    "encounter": "orc_blitz",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.352,
+    "ai_difficulty": "easy",
+    "recommended_power": 1082,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 840,
+      "gems": 5,
+      "shards": {
+        "mini_pekka": 4
+      }
+    },
+    "repeat": {
+      "gold": 84
+    },
+    "shard_drop": {
+      "mini_pekka": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_3_4": {
+    "chapter": 3,
+    "index": 4,
+    "encounter": "swarm_rush_a",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.368,
+    "ai_difficulty": "easy",
+    "recommended_power": 1095,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 840,
+      "gems": 5,
+      "shards": {
+        "mini_pekka": 4
+      }
+    },
+    "repeat": {
+      "gold": 84
+    },
+    "shard_drop": {
+      "mini_pekka": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_3_5": {
+    "chapter": 3,
+    "index": 5,
+    "encounter": "orc_blitz",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.384,
+    "ai_difficulty": "easy",
+    "recommended_power": 1108,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 840,
+      "gems": 5,
+      "shards": {
+        "mini_pekka": 4
+      }
+    },
+    "repeat": {
+      "gold": 84
+    },
+    "shard_drop": {
+      "mini_pekka": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_3_6": {
+    "chapter": 3,
+    "index": 6,
+    "encounter": "swarm_rush_a",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.4,
+    "ai_difficulty": "easy",
+    "recommended_power": 1121,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 840,
+      "gems": 5,
+      "shards": {
+        "mini_pekka": 4
+      }
+    },
+    "repeat": {
+      "gold": 84
+    },
+    "shard_drop": {
+      "mini_pekka": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_3_7": {
+    "chapter": 3,
+    "index": 7,
+    "encounter": "orc_blitz",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.416,
+    "ai_difficulty": "easy",
+    "recommended_power": 1133,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 840,
+      "gems": 5,
+      "shards": {
+        "mini_pekka": 4
+      }
+    },
+    "repeat": {
+      "gold": 84
+    },
+    "shard_drop": {
+      "mini_pekka": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_3_8": {
+    "chapter": 3,
+    "index": 8,
+    "encounter": "swarm_rush_a",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.432,
+    "ai_difficulty": "easy",
+    "recommended_power": 1146,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 840,
+      "gems": 5,
+      "shards": {
+        "mini_pekka": 4
+      }
+    },
+    "repeat": {
+      "gold": 84
+    },
+    "shard_drop": {
+      "mini_pekka": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_3_9": {
+    "chapter": 3,
+    "index": 9,
+    "encounter": "orc_blitz",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.448,
+    "ai_difficulty": "easy",
+    "recommended_power": 1159,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 840,
+      "gems": 5,
+      "shards": {
+        "mini_pekka": 4
+      }
+    },
+    "repeat": {
+      "gold": 84
+    },
+    "shard_drop": {
+      "mini_pekka": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_3_10": {
+    "chapter": 3,
+    "index": 10,
+    "encounter": "orc_blitz",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.61,
+    "ai_difficulty": "normal",
+    "recommended_power": 1289,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1260,
+      "gems": 25,
+      "shards": {
+        "mini_pekka": 8
+      }
+    },
+    "repeat": {
+      "gold": 126
+    },
+    "shard_drop": {
+      "mini_pekka": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_4_1": {
+    "chapter": 4,
+    "index": 1,
+    "encounter": "tank_push_a",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.48,
+    "ai_difficulty": "normal",
+    "recommended_power": 1185,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1110,
+      "gems": 5,
+      "shards": {
+        "musketeer": 4
+      }
+    },
+    "repeat": {
+      "gold": 111
+    },
+    "shard_drop": {
+      "musketeer": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_4_2": {
+    "chapter": 4,
+    "index": 2,
+    "encounter": "double_tank",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.496,
+    "ai_difficulty": "normal",
+    "recommended_power": 1197,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1110,
+      "gems": 5,
+      "shards": {
+        "musketeer": 4
+      }
+    },
+    "repeat": {
+      "gold": 111
+    },
+    "shard_drop": {
+      "musketeer": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_4_3": {
+    "chapter": 4,
+    "index": 3,
+    "encounter": "tank_push_a",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.512,
+    "ai_difficulty": "normal",
+    "recommended_power": 1210,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1110,
+      "gems": 5,
+      "shards": {
+        "musketeer": 4
+      }
+    },
+    "repeat": {
+      "gold": 111
+    },
+    "shard_drop": {
+      "musketeer": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_4_4": {
+    "chapter": 4,
+    "index": 4,
+    "encounter": "double_tank",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.528,
+    "ai_difficulty": "normal",
+    "recommended_power": 1223,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1110,
+      "gems": 5,
+      "shards": {
+        "musketeer": 4
+      }
+    },
+    "repeat": {
+      "gold": 111
+    },
+    "shard_drop": {
+      "musketeer": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_4_5": {
+    "chapter": 4,
+    "index": 5,
+    "encounter": "tank_push_a",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.544,
+    "ai_difficulty": "normal",
+    "recommended_power": 1236,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1110,
+      "gems": 5,
+      "shards": {
+        "musketeer": 4
+      }
+    },
+    "repeat": {
+      "gold": 111
+    },
+    "shard_drop": {
+      "musketeer": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_4_6": {
+    "chapter": 4,
+    "index": 6,
+    "encounter": "double_tank",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.56,
+    "ai_difficulty": "normal",
+    "recommended_power": 1249,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1110,
+      "gems": 5,
+      "shards": {
+        "musketeer": 4
+      }
+    },
+    "repeat": {
+      "gold": 111
+    },
+    "shard_drop": {
+      "musketeer": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_4_7": {
+    "chapter": 4,
+    "index": 7,
+    "encounter": "tank_push_a",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.576,
+    "ai_difficulty": "normal",
+    "recommended_power": 1261,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1110,
+      "gems": 5,
+      "shards": {
+        "musketeer": 4
+      }
+    },
+    "repeat": {
+      "gold": 111
+    },
+    "shard_drop": {
+      "musketeer": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_4_8": {
+    "chapter": 4,
+    "index": 8,
+    "encounter": "double_tank",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.592,
+    "ai_difficulty": "normal",
+    "recommended_power": 1274,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1110,
+      "gems": 5,
+      "shards": {
+        "musketeer": 4
+      }
+    },
+    "repeat": {
+      "gold": 111
+    },
+    "shard_drop": {
+      "musketeer": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_4_9": {
+    "chapter": 4,
+    "index": 9,
+    "encounter": "tank_push_a",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.608,
+    "ai_difficulty": "normal",
+    "recommended_power": 1287,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1110,
+      "gems": 5,
+      "shards": {
+        "musketeer": 4
+      }
+    },
+    "repeat": {
+      "gold": 111
+    },
+    "shard_drop": {
+      "musketeer": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_4_10": {
+    "chapter": 4,
+    "index": 10,
+    "encounter": "double_tank",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.786,
+    "ai_difficulty": "hard",
+    "recommended_power": 1430,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1665,
+      "gems": 25,
+      "shards": {
+        "musketeer": 8
+      }
+    },
+    "repeat": {
+      "gold": 166
+    },
+    "shard_drop": {
+      "musketeer": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_5_1": {
+    "chapter": 5,
+    "index": 1,
+    "encounter": "spell_siege",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.64,
+    "ai_difficulty": "normal",
+    "recommended_power": 1313,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1380,
+      "gems": 5,
+      "shards": {
+        "baby_dragon": 4
+      }
+    },
+    "repeat": {
+      "gold": 138
+    },
+    "shard_drop": {
+      "baby_dragon": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_5_2": {
+    "chapter": 5,
+    "index": 2,
+    "encounter": "lich_control",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.656,
+    "ai_difficulty": "normal",
+    "recommended_power": 1325,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1380,
+      "gems": 5,
+      "shards": {
+        "baby_dragon": 4
+      }
+    },
+    "repeat": {
+      "gold": 138
+    },
+    "shard_drop": {
+      "baby_dragon": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_5_3": {
+    "chapter": 5,
+    "index": 3,
+    "encounter": "spell_siege",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.672,
+    "ai_difficulty": "normal",
+    "recommended_power": 1338,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1380,
+      "gems": 5,
+      "shards": {
+        "baby_dragon": 4
+      }
+    },
+    "repeat": {
+      "gold": 138
+    },
+    "shard_drop": {
+      "baby_dragon": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_5_4": {
+    "chapter": 5,
+    "index": 4,
+    "encounter": "lich_control",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.688,
+    "ai_difficulty": "normal",
+    "recommended_power": 1351,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1380,
+      "gems": 5,
+      "shards": {
+        "baby_dragon": 4
+      }
+    },
+    "repeat": {
+      "gold": 138
+    },
+    "shard_drop": {
+      "baby_dragon": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_5_5": {
+    "chapter": 5,
+    "index": 5,
+    "encounter": "spell_siege",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.704,
+    "ai_difficulty": "normal",
+    "recommended_power": 1364,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1380,
+      "gems": 5,
+      "shards": {
+        "baby_dragon": 4
+      }
+    },
+    "repeat": {
+      "gold": 138
+    },
+    "shard_drop": {
+      "baby_dragon": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_5_6": {
+    "chapter": 5,
+    "index": 6,
+    "encounter": "lich_control",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.72,
+    "ai_difficulty": "normal",
+    "recommended_power": 1377,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1380,
+      "gems": 5,
+      "shards": {
+        "baby_dragon": 4
+      }
+    },
+    "repeat": {
+      "gold": 138
+    },
+    "shard_drop": {
+      "baby_dragon": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_5_7": {
+    "chapter": 5,
+    "index": 7,
+    "encounter": "spell_siege",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.736,
+    "ai_difficulty": "normal",
+    "recommended_power": 1389,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1380,
+      "gems": 5,
+      "shards": {
+        "baby_dragon": 4
+      }
+    },
+    "repeat": {
+      "gold": 138
+    },
+    "shard_drop": {
+      "baby_dragon": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_5_8": {
+    "chapter": 5,
+    "index": 8,
+    "encounter": "lich_control",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.752,
+    "ai_difficulty": "normal",
+    "recommended_power": 1402,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1380,
+      "gems": 5,
+      "shards": {
+        "baby_dragon": 4
+      }
+    },
+    "repeat": {
+      "gold": 138
+    },
+    "shard_drop": {
+      "baby_dragon": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_5_9": {
+    "chapter": 5,
+    "index": 9,
+    "encounter": "spell_siege",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.768,
+    "ai_difficulty": "normal",
+    "recommended_power": 1415,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1380,
+      "gems": 5,
+      "shards": {
+        "baby_dragon": 4
+      }
+    },
+    "repeat": {
+      "gold": 138
+    },
+    "shard_drop": {
+      "baby_dragon": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_5_10": {
+    "chapter": 5,
+    "index": 10,
+    "encounter": "lich_control",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.962,
+    "ai_difficulty": "hard",
+    "recommended_power": 1570,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2070,
+      "gems": 25,
+      "shards": {
+        "baby_dragon": 8
+      }
+    },
+    "repeat": {
+      "gold": 207
+    },
+    "shard_drop": {
+      "baby_dragon": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_6_1": {
+    "chapter": 6,
+    "index": 1,
+    "encounter": "vampire_balanced",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.8,
+    "ai_difficulty": "normal",
+    "recommended_power": 1441,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1650,
+      "gems": 5,
+      "shards": {
+        "lightning": 4
+      }
+    },
+    "repeat": {
+      "gold": 165
+    },
+    "shard_drop": {
+      "lightning": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_6_2": {
+    "chapter": 6,
+    "index": 2,
+    "encounter": "graveyard_control",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.816,
+    "ai_difficulty": "normal",
+    "recommended_power": 1454,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1650,
+      "gems": 5,
+      "shards": {
+        "lightning": 4
+      }
+    },
+    "repeat": {
+      "gold": 165
+    },
+    "shard_drop": {
+      "lightning": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_6_3": {
+    "chapter": 6,
+    "index": 3,
+    "encounter": "vampire_balanced",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.832,
+    "ai_difficulty": "normal",
+    "recommended_power": 1466,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1650,
+      "gems": 5,
+      "shards": {
+        "lightning": 4
+      }
+    },
+    "repeat": {
+      "gold": 165
+    },
+    "shard_drop": {
+      "lightning": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_6_4": {
+    "chapter": 6,
+    "index": 4,
+    "encounter": "graveyard_control",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.848,
+    "ai_difficulty": "normal",
+    "recommended_power": 1479,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1650,
+      "gems": 5,
+      "shards": {
+        "lightning": 4
+      }
+    },
+    "repeat": {
+      "gold": 165
+    },
+    "shard_drop": {
+      "lightning": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_6_5": {
+    "chapter": 6,
+    "index": 5,
+    "encounter": "vampire_balanced",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.864,
+    "ai_difficulty": "normal",
+    "recommended_power": 1492,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1650,
+      "gems": 5,
+      "shards": {
+        "lightning": 4
+      }
+    },
+    "repeat": {
+      "gold": 165
+    },
+    "shard_drop": {
+      "lightning": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_6_6": {
+    "chapter": 6,
+    "index": 6,
+    "encounter": "graveyard_control",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.88,
+    "ai_difficulty": "normal",
+    "recommended_power": 1505,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1650,
+      "gems": 5,
+      "shards": {
+        "lightning": 4
+      }
+    },
+    "repeat": {
+      "gold": 165
+    },
+    "shard_drop": {
+      "lightning": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_6_7": {
+    "chapter": 6,
+    "index": 7,
+    "encounter": "vampire_balanced",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.896,
+    "ai_difficulty": "normal",
+    "recommended_power": 1518,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1650,
+      "gems": 5,
+      "shards": {
+        "lightning": 4
+      }
+    },
+    "repeat": {
+      "gold": 165
+    },
+    "shard_drop": {
+      "lightning": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_6_8": {
+    "chapter": 6,
+    "index": 8,
+    "encounter": "graveyard_control",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.912,
+    "ai_difficulty": "normal",
+    "recommended_power": 1530,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1650,
+      "gems": 5,
+      "shards": {
+        "lightning": 4
+      }
+    },
+    "repeat": {
+      "gold": 165
+    },
+    "shard_drop": {
+      "lightning": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_6_9": {
+    "chapter": 6,
+    "index": 9,
+    "encounter": "vampire_balanced",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.928,
+    "ai_difficulty": "normal",
+    "recommended_power": 1543,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1650,
+      "gems": 5,
+      "shards": {
+        "lightning": 4
+      }
+    },
+    "repeat": {
+      "gold": 165
+    },
+    "shard_drop": {
+      "lightning": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_6_10": {
+    "chapter": 6,
+    "index": 10,
+    "encounter": "vampire_balanced",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.138,
+    "ai_difficulty": "hard",
+    "recommended_power": 1711,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2475,
+      "gems": 25,
+      "shards": {
+        "lightning": 8
+      }
+    },
+    "repeat": {
+      "gold": 248
+    },
+    "shard_drop": {
+      "lightning": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_7_1": {
+    "chapter": 7,
+    "index": 1,
+    "encounter": "air_raid",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.96,
+    "ai_difficulty": "hard",
+    "recommended_power": 1569,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1920,
+      "gems": 5,
+      "shards": {
+        "heal": 4
+      }
+    },
+    "repeat": {
+      "gold": 192
+    },
+    "shard_drop": {
+      "heal": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_7_2": {
+    "chapter": 7,
+    "index": 2,
+    "encounter": "ranged_kite",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.976,
+    "ai_difficulty": "hard",
+    "recommended_power": 1582,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1920,
+      "gems": 5,
+      "shards": {
+        "heal": 4
+      }
+    },
+    "repeat": {
+      "gold": 192
+    },
+    "shard_drop": {
+      "heal": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_7_3": {
+    "chapter": 7,
+    "index": 3,
+    "encounter": "air_raid",
+    "base_level": "ladder_01",
+    "difficulty_coef": 1.992,
+    "ai_difficulty": "hard",
+    "recommended_power": 1594,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1920,
+      "gems": 5,
+      "shards": {
+        "heal": 4
+      }
+    },
+    "repeat": {
+      "gold": 192
+    },
+    "shard_drop": {
+      "heal": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_7_4": {
+    "chapter": 7,
+    "index": 4,
+    "encounter": "ranged_kite",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.008,
+    "ai_difficulty": "hard",
+    "recommended_power": 1607,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1920,
+      "gems": 5,
+      "shards": {
+        "heal": 4
+      }
+    },
+    "repeat": {
+      "gold": 192
+    },
+    "shard_drop": {
+      "heal": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_7_5": {
+    "chapter": 7,
+    "index": 5,
+    "encounter": "air_raid",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.024,
+    "ai_difficulty": "hard",
+    "recommended_power": 1620,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1920,
+      "gems": 5,
+      "shards": {
+        "heal": 4
+      }
+    },
+    "repeat": {
+      "gold": 192
+    },
+    "shard_drop": {
+      "heal": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_7_6": {
+    "chapter": 7,
+    "index": 6,
+    "encounter": "ranged_kite",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.04,
+    "ai_difficulty": "hard",
+    "recommended_power": 1633,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1920,
+      "gems": 5,
+      "shards": {
+        "heal": 4
+      }
+    },
+    "repeat": {
+      "gold": 192
+    },
+    "shard_drop": {
+      "heal": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_7_7": {
+    "chapter": 7,
+    "index": 7,
+    "encounter": "air_raid",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.056,
+    "ai_difficulty": "hard",
+    "recommended_power": 1646,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1920,
+      "gems": 5,
+      "shards": {
+        "heal": 4
+      }
+    },
+    "repeat": {
+      "gold": 192
+    },
+    "shard_drop": {
+      "heal": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_7_8": {
+    "chapter": 7,
+    "index": 8,
+    "encounter": "ranged_kite",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.072,
+    "ai_difficulty": "hard",
+    "recommended_power": 1658,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1920,
+      "gems": 5,
+      "shards": {
+        "heal": 4
+      }
+    },
+    "repeat": {
+      "gold": 192
+    },
+    "shard_drop": {
+      "heal": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_7_9": {
+    "chapter": 7,
+    "index": 9,
+    "encounter": "air_raid",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.088,
+    "ai_difficulty": "hard",
+    "recommended_power": 1671,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 1920,
+      "gems": 5,
+      "shards": {
+        "heal": 4
+      }
+    },
+    "repeat": {
+      "gold": 192
+    },
+    "shard_drop": {
+      "heal": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_7_10": {
+    "chapter": 7,
+    "index": 10,
+    "encounter": "air_raid",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.314,
+    "ai_difficulty": "hard",
+    "recommended_power": 1852,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2880,
+      "gems": 25,
+      "shards": {
+        "heal": 8
+      }
+    },
+    "repeat": {
+      "gold": 288
+    },
+    "shard_drop": {
+      "heal": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_8_1": {
+    "chapter": 8,
+    "index": 1,
+    "encounter": "throne_combined",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.12,
+    "ai_difficulty": "hard",
+    "recommended_power": 1697,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2190,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 219
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_8_2": {
+    "chapter": 8,
+    "index": 2,
+    "encounter": "ranged_kite",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.136,
+    "ai_difficulty": "hard",
+    "recommended_power": 1710,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2190,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 219
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_8_3": {
+    "chapter": 8,
+    "index": 3,
+    "encounter": "throne_combined",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.152,
+    "ai_difficulty": "hard",
+    "recommended_power": 1722,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2190,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 219
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_8_4": {
+    "chapter": 8,
+    "index": 4,
+    "encounter": "ranged_kite",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.168,
+    "ai_difficulty": "hard",
+    "recommended_power": 1735,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2190,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 219
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_8_5": {
+    "chapter": 8,
+    "index": 5,
+    "encounter": "throne_combined",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.184,
+    "ai_difficulty": "hard",
+    "recommended_power": 1748,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2190,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 219
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_8_6": {
+    "chapter": 8,
+    "index": 6,
+    "encounter": "ranged_kite",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.2,
+    "ai_difficulty": "hard",
+    "recommended_power": 1761,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2190,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 219
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_8_7": {
+    "chapter": 8,
+    "index": 7,
+    "encounter": "throne_combined",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.216,
+    "ai_difficulty": "hard",
+    "recommended_power": 1774,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2190,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 219
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_8_8": {
+    "chapter": 8,
+    "index": 8,
+    "encounter": "ranged_kite",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.232,
+    "ai_difficulty": "hard",
+    "recommended_power": 1786,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2190,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 219
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_8_9": {
+    "chapter": 8,
+    "index": 9,
+    "encounter": "throne_combined",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.248,
+    "ai_difficulty": "hard",
+    "recommended_power": 1799,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2190,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 219
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_8_10": {
+    "chapter": 8,
+    "index": 10,
+    "encounter": "throne_combined",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.49,
+    "ai_difficulty": "extreme",
+    "recommended_power": 1993,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 3285,
+      "gems": 25,
+      "shards": {
+        "golem": 8
+      }
+    },
+    "repeat": {
+      "gold": 328
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_9_1": {
+    "chapter": 9,
+    "index": 1,
+    "encounter": "abyss_overload",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.28,
+    "ai_difficulty": "hard",
+    "recommended_power": 1825,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2460,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 246
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_9_2": {
+    "chapter": 9,
+    "index": 2,
+    "encounter": "throne_combined",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.296,
+    "ai_difficulty": "hard",
+    "recommended_power": 1838,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2460,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 246
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_9_3": {
+    "chapter": 9,
+    "index": 3,
+    "encounter": "abyss_overload",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.312,
+    "ai_difficulty": "hard",
+    "recommended_power": 1851,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2460,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 246
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_9_4": {
+    "chapter": 9,
+    "index": 4,
+    "encounter": "throne_combined",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.328,
+    "ai_difficulty": "hard",
+    "recommended_power": 1863,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2460,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 246
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_9_5": {
+    "chapter": 9,
+    "index": 5,
+    "encounter": "abyss_overload",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.344,
+    "ai_difficulty": "hard",
+    "recommended_power": 1876,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2460,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 246
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_9_6": {
+    "chapter": 9,
+    "index": 6,
+    "encounter": "throne_combined",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.36,
+    "ai_difficulty": "hard",
+    "recommended_power": 1889,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2460,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 246
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_9_7": {
+    "chapter": 9,
+    "index": 7,
+    "encounter": "abyss_overload",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.376,
+    "ai_difficulty": "hard",
+    "recommended_power": 1902,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2460,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 246
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_9_8": {
+    "chapter": 9,
+    "index": 8,
+    "encounter": "throne_combined",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.392,
+    "ai_difficulty": "hard",
+    "recommended_power": 1915,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2460,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 246
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_9_9": {
+    "chapter": 9,
+    "index": 9,
+    "encounter": "abyss_overload",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.408,
+    "ai_difficulty": "hard",
+    "recommended_power": 1927,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2460,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 246
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_9_10": {
+    "chapter": 9,
+    "index": 10,
+    "encounter": "abyss_overload",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.666,
+    "ai_difficulty": "extreme",
+    "recommended_power": 2134,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 3690,
+      "gems": 25,
+      "shards": {
+        "golem": 8
+      }
+    },
+    "repeat": {
+      "gold": 369
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_10_1": {
+    "chapter": 10,
+    "index": 1,
+    "encounter": "throne_combined",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.44,
+    "ai_difficulty": "extreme",
+    "recommended_power": 1953,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2730,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 273
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_10_2": {
+    "chapter": 10,
+    "index": 2,
+    "encounter": "abyss_overload",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.456,
+    "ai_difficulty": "extreme",
+    "recommended_power": 1966,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2730,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 273
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_10_3": {
+    "chapter": 10,
+    "index": 3,
+    "encounter": "throne_combined",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.472,
+    "ai_difficulty": "extreme",
+    "recommended_power": 1979,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2730,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 273
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_10_4": {
+    "chapter": 10,
+    "index": 4,
+    "encounter": "abyss_overload",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.488,
+    "ai_difficulty": "extreme",
+    "recommended_power": 1991,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2730,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 273
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_10_5": {
+    "chapter": 10,
+    "index": 5,
+    "encounter": "throne_combined",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.504,
+    "ai_difficulty": "extreme",
+    "recommended_power": 2004,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2730,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 273
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_10_6": {
+    "chapter": 10,
+    "index": 6,
+    "encounter": "abyss_overload",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.52,
+    "ai_difficulty": "extreme",
+    "recommended_power": 2017,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2730,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 273
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_10_7": {
+    "chapter": 10,
+    "index": 7,
+    "encounter": "throne_combined",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.536,
+    "ai_difficulty": "extreme",
+    "recommended_power": 2030,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2730,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 273
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_10_8": {
+    "chapter": 10,
+    "index": 8,
+    "encounter": "abyss_overload",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.552,
+    "ai_difficulty": "extreme",
+    "recommended_power": 2043,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2730,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 273
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_10_9": {
+    "chapter": 10,
+    "index": 9,
+    "encounter": "throne_combined",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.568,
+    "ai_difficulty": "extreme",
+    "recommended_power": 2055,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 2730,
+      "gems": 5,
+      "shards": {
+        "golem": 4
+      }
+    },
+    "repeat": {
+      "gold": 273
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  },
+  "stage_10_10": {
+    "chapter": 10,
+    "index": 10,
+    "encounter": "final_boss",
+    "base_level": "ladder_01",
+    "difficulty_coef": 2.842,
+    "ai_difficulty": "extreme",
+    "recommended_power": 2275,
+    "stars": [
+      {
+        "goal": "win"
+      },
+      {
+        "goal": "king_hp_pct",
+        "min": 0.5
+      },
+      {
+        "goal": "time_under",
+        "sec": 120
+      }
+    ],
+    "first_clear": {
+      "gold": 4095,
+      "gems": 25,
+      "shards": {
+        "golem": 8
+      }
+    },
+    "repeat": {
+      "gold": 410
+    },
+    "shard_drop": {
+      "golem": {
+        "chance": 0.34,
+        "amount": 1
+      }
+    }
+  }
+}
