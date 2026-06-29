@@ -64,8 +64,12 @@ jobs:
           ls -la export/
 
       # --- 上传产物给 Pages action ---
+      # enablement: true —— 若仓库 Pages 站点未启用，自动经 API 创建（source=Actions），
+      # 避免 Pages 被关后此步 404 失败；需 permissions.pages: write（上方已声明）。
       - name: Setup Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
