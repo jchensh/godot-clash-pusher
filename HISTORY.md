@@ -719,3 +719,21 @@
 **真人验收**：用例 [docs/ACCEPTANCE_V5_KAN49.md](docs/ACCEPTANCE_V5_KAN49.md)（8 例：地形/精灵/塔/HUD/涟漪投射物FX/juice/胜负语义/**side2 视角全面**——side2 是联机特有最大风险点，须单独验精灵朝向不反、落点合法、本方数据正确）。**验收过 + 用户拍板 → KAN-49 Done**。
 
 **分支/worktree**：本次在 `master-zaiDev` worktree（feat/zaiDev 分支原址）新建 `feat/kan49-net-visual` 开发（基于 master 尖端 ce699df；zaiDev 分支保留不动、待用户清理）。Jira KAN-49 To Do → **正在进行**。
+
+
+### V5-N7/S7 — 数据库卷密码重置、Nginx 跨挂载证书软链修复、API 线上联调测试成功 (2026-06-29)
+**前置**：公网域名 `towerpushserver.jeffgame.tech` 与 GCE 主机 `34.80.200.211` 建立绑定。本地构建脚本注入域名打出 Web 客户端发布至 Firebase。
+
+**踩坑与重大修复**：
+1. **Postgres 密码与旧数据卷冲突**：虚拟机在重置后残留了以前测试的 `pg_data` 数据卷，Postgres 启动时沿用了旧磁盘的旧密码，导致与最新生成的 `.env` 新密码冲突（报错 `SASL auth: FATAL: password authentication failed for user "app"`）。
+   - **解决**：对 VM 彻底执行 `docker compose down -v` 清空旧持久卷，并应用正确的数据库配置，重新 up 拉起，执行数据库 schema 结构迁移。
+2. **Nginx 证书软链接失效**：在 VM 宿主机上建立的 `certs/fullchain.pem` 是指向 `/etc/letsencrypt/` 目录的软链接。但由于 Nginx 容器没有挂载 `/etc/letsencrypt` 文件夹，内部无法解析该软链接，导致容器不断重启报错。
+   - **解决**：在 `./certs` 下直接使用 `cp` 复制真实的证书文件，避开跨挂载边界软链接解析问题。
+3. **Nginx 配置文件 server_name 汉字指令解析错乱**：在自动化 sed 替换时，由于中文全角逗号 `，` 之前没有有效断开，致使分号之外的文字被 Nginx 认作是非注释配置，发生紧急退出崩溃。
+   - **解决**：使用 clean sed 将 server_name 清理为了干净的 `server_name towerpushserver.jeffgame.tech;`。
+
+**结果**：
+- 重新拉起后，所有容器（api, gateway, battle, nginx, postgres, redis）均稳定运行于 `Up` 正常工作状态。
+- 数据库初始化迁移成功完成（应用了 6 个 migrations 脚本）。
+- 本地使用 device_id 登录 API 校验成功，返回了正常的 Protobuf 错误（表明网络 TLS 与 API 路由全线畅通）。
+- Firebase 上的客户端已被重新构建发布。

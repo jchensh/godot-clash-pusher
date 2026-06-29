@@ -73,4 +73,27 @@ if ei:
 1. **Mixed Content（混合内容拦截）**：
    Firebase Hosting 默认强制使用 **HTTPS**。网页端只能请求 **HTTPS** API 和 **WSS (WebSocket Secure)** 协议。如果云端 GCE 的 Go 后端只配置了 `http://` / `ws://` 或者是未带安全证书的裸 IP，浏览器会在第一时间阻断所有网络请求。因此，部署时**必须在服务端配置 SSL 证书**。
 2. **CDN 与代理强缓存**：
-   在频繁进行 Firebase 部署测试时，本地代理软件（如 Clash）或者是浏览器的 Memory/Disk 缓存可能会持续返回带 bug 的旧响应。**测试时必须在开发者工具的 Network 选项卡勾选 `Disable cache`（停用缓存），并且带上随机查询参数（例如 `https://towerpush.web.app/?v=123`）强刷**。
+   In 频繁进行 Firebase 部署测试时，本地代理软件（如 Clash）或者是浏览器的 Memory/Disk 缓存可能会持续返回带 bug 的旧响应。**测试时必须在开发者工具的 Network 选项卡勾选 `Disable cache`（停用缓存），并且带上随机查询参数（例如 `https://towerpush.web.app/?v=123`）强刷**。
+
+---
+
+## 5. Docker 挂载软链接证书失效与 Postgres 密码不一致故障
+
+### 🚨 故障现象
+Docker Compose 生产容器拉起后，`nginx` 容器频繁崩溃重启，报：
+`[emerg] 1#1: cannot load certificate "/etc/nginx/certs/fullchain.pem": BIO_new_file() failed (SSL: error:80000002:system library::No such file or directory)`
+同时，`api` 和 `gateway` 容器发生崩溃重启，报：
+`failed SASL auth: FATAL: password authentication failed for user "app"`
+
+### 🔍 根本原因
+1. **软链接跨越挂载边界失效**：在宿主机上，我们使用 Let's Encrypt standalone 模式申请证书后，为了方便将证书路径指向 `./certs`，在脚本中使用了 `ln -sf /etc/letsencrypt/live/$DOMAIN/fullchain.pem ./certs/fullchain.pem` 创建软链接。但在 Docker Compose 中，我们只挂载了 `./certs:/etc/nginx/certs:ro`。由于容器内并没有挂载 `/etc/letsencrypt` 目录，当 Nginx 在容器内部尝试解析该软链接时，它无法访问宿主机的 `/etc/letsencrypt` 导致报错找不到证书文件。
+2. **Postgres 密码与旧数据卷冲突**：虚拟机在重置后如果残留了旧的 `pg_data` 数据卷，Postgres 在第一次启动时就已经基于旧密码初始化了用户权限。当部署脚本生成新密码并更新 `.env` 时，`api` 和 `gateway` 容器尝试用新密码连接 Postgres，但 Postgres 依然使用的是旧数据卷上初始化的旧密码，因而发生 SASL 验证失败。此外，如果 `.env` 中的 `POSTGRES_USER`（例如 `gcp_prod_user`）跟 API 中数据库连接串默认的 `app` 不匹配，也会导致该错误。
+
+### 💡 解决方案
+1. **真实文件复制**：停止使用软链接，改用 `cp` 复制物理文件将证书直接拷贝到 `./certs` 映射目录，保证 Nginx 在容器内部挂载只读卷后能直接获取物理数据：
+   ```bash
+   sudo cp /etc/letsencrypt/live/$DOMAIN/fullchain.pem ./certs/
+   sudo cp /etc/letsencrypt/live/$DOMAIN/privkey.pem ./certs/
+   ```
+2. **清理旧卷重置密码**：如果是开发部署初期遇到密码不一致，直接运行 `docker compose down -v` 清除旧的 `pg_data` 卷，然后重新启动容器，让 Postgres 用 `.env` 中的新密码重新进行系统初始化。同时，确认 `.env` 中定义的 `POSTGRES_USER`、`POSTGRES_DB` 与 `DB_URL` 声明完全一致（例如均为 `app` 和 `gcp`）。
+
