@@ -1,5 +1,5 @@
 # tools/build_web.ps1
-# Godot 4.6.3 Web (HTML5) 一键打包与 URL 动态注入脚本
+# Godot 4.6.3 Web build and URL dynamic injection script
 
 param (
     [string]$ApiUrl = "",
@@ -8,21 +8,21 @@ param (
 
 $ErrorActionPreference = "Stop"
 
-# 1. 确保输出目录存在
+# 1. Ensure build directory exists
 $BuildDir = Join-Path $PSScriptRoot "../build/web"
 if (-not (Test-Path $BuildDir)) {
     New-Item -ItemType Directory -Path $BuildDir | Out-Null
     Write-Host "Created build directory: $BuildDir" -ForegroundColor Green
 }
 
-# 2. 调用 Godot 引擎进行 Web 编译导出
+# 2. Call Godot to export Web release
 Write-Host "Starting Godot Web export..." -ForegroundColor Cyan
 & godot --headless --path . --export-release "Web" "$BuildDir/index.html"
 Write-Host "Godot export finished successfully." -ForegroundColor Green
 
-# 3. 动态注入生产环境 API/WS URL 到 index.html 中
+# 3. Dynamic injection of API/WS URL
 $HtmlFile = "$BuildDir/index.html"
-if (Test-Path $HtmlFile) {
+if ($HtmlFile -and (Test-Path $HtmlFile)) {
     Write-Host "Injecting environment variables into index.html..." -ForegroundColor Cyan
     
     $InjectScript = @"
@@ -35,7 +35,6 @@ if (Test-Path $HtmlFile) {
 "@
     
     $Content = Get-Content -Raw -Path $HtmlFile
-    # 查找 <head> 标签并在其后插入注入的 script
     if ($Content -match "<head>") {
         $Content = $Content -replace "<head>", "<head>`n$InjectScript"
         Set-Content -Path $HtmlFile -Value $Content -NoNewline
