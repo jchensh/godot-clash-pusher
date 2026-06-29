@@ -58,6 +58,18 @@ func _build_static() -> void:
 	_power_main = _center_label("—", 184, 76, PixelUI.COL_GOLD)
 	_power_sub = _center_label("", 290, 22, PixelUI.COL_MUTED)
 
+	# 加一个跳转到 Settings / GM 的小齿轮按钮
+	var btn_set := Button.new()
+	btn_set.position = Vector2(24, 28)
+	btn_set.size = Vector2(80, 80)
+	btn_set.text = "⚙" # 齿轮/设置图标
+	btn_set.focus_mode = Control.FOCUS_NONE
+	PixelUI.style_button(btn_set, "stone", 40)
+	btn_set.pressed.connect(func():
+		get_tree().change_scene_to_file("res://view/settings.tscn")
+	)
+	add_child(btn_set)
+
 	_build_idle_card(348)
 
 	_cta_btn = _menu_button("闯关", 520, _on_stage_pressed, "gold", 40, 440, 112)

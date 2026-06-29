@@ -171,7 +171,7 @@ func _connect_flow() -> void:
 		_status = "登录失败，请检查网络/服务器"
 		print("[net] 登录失败，无法进入 PVP 匹配")
 		return
-	print("[net] 登录成功，ws=%s，进入 PVP 匹配" % _session.ws_url)
+	print("[net] 登录成功，ws_url=%s (token length=%d)，进入 PVP 匹配" % [_session.ws_url, _session.token().length()])
 	_matchmaking = true
 	_status = "匹配中…"
 	_show_cancel_button()
