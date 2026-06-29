@@ -430,7 +430,9 @@ func _current_scene_root() -> Node:
 		return null
 	var scene_root := tree.current_scene
 	if scene_root == null and Engine.is_editor_hint():
-		scene_root = EditorInterface.get_edited_scene_root()
+		var ei = Engine.get_singleton("EditorInterface")
+		if ei:
+			scene_root = ei.get_edited_scene_root()
 	return scene_root
 
 
