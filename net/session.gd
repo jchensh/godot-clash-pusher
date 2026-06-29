@@ -49,7 +49,19 @@ func token() -> String:
 
 func _load_network() -> Dictionary:
 	var f := FileAccess.open("res://config/network.json", FileAccess.READ)
-	if f == null:
-		return {}
-	var d = JSON.parse_string(f.get_as_text())
-	return d if d is Dictionary else {}
+	var d = {}
+	if f != null:
+		var parsed = JSON.parse_string(f.get_as_text())
+		if parsed is Dictionary:
+			d = parsed
+	
+	# Web 平台动态 URL 注入支持 (环境无关性)
+	if OS.has_feature("web"):
+		var js_api = JavaScriptBridge.eval("window.GAME_API_URL")
+		var js_ws = JavaScriptBridge.eval("window.GAME_WS_URL")
+		if js_api != null and str(js_api) != "":
+			d["api_url"] = str(js_api)
+		if js_ws != null and str(js_ws) != "":
+			d["ws_url"] = str(js_ws)
+			
+	return d
