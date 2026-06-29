@@ -33,14 +33,13 @@ if ($HtmlFile -and (Test-Path $HtmlFile)) {
       window.GAME_WS_URL = "$WsUrl";
     </script>
 "@
-    
-    $Content = Get-Content -Raw -Path $HtmlFile
-    if ($Content -match "<head>") {
-        $Content = $Content -replace "<head>", "<head>`n$InjectScript"
-        Set-Content -Path $HtmlFile -Value $Content -NoNewline
+    $Content = Get-Content -Raw -Path $HtmlFile -Encoding utf8
+    if ($Content -match "</head>") {
+        $Content = $Content -replace "</head>", "$InjectScript`n</head>"
+        Set-Content -Path $HtmlFile -Value $Content -NoNewline -Encoding utf8
         Write-Host "Successfully injected: API_URL='$ApiUrl', WS_URL='$WsUrl'" -ForegroundColor Green
     } else {
-        Write-Warning "Could not find <head> tag in index.html to inject configuration."
+        Write-Warning "Could not find </head> tag in index.html to inject configuration."
     }
 } else {
     Write-Error "Export failed. index.html was not found in $BuildDir"
