@@ -20,6 +20,7 @@ const GameStateScript := preload("res://view/game_state.gd")
 const BattleClientScript := preload("res://net/battle_client.gd")
 const BattleScript := preload("res://logic/battle.gd")
 const SpriteDB := preload("res://view/sprite_db.gd")
+const HudWidgets := preload("res://view/ui/hud_widgets.gd")   # V5-S9 双方名片
 const MainMenuScene := "res://view/main_menu.tscn"
 
 const TOPBAR_H := 54.0
@@ -203,7 +204,7 @@ func _on_cancel_pressed() -> void:
 	get_tree().change_scene_to_file(MainMenuScene)
 
 
-func _on_matched(_your_side: int, opponent_name: String) -> void:
+func _on_matched(_your_side: int, opponent_name: String, _opponent_avatar: String) -> void:
 	print("[net] UI 收到匹配成功，对手=%s，等待进房建局" % opponent_name)
 	if opponent_name != "":
 		_status = "已匹配：%s，准备开战…" % opponent_name
@@ -211,7 +212,7 @@ func _on_matched(_your_side: int, opponent_name: String) -> void:
 		_status = "已匹配，准备开战…"
 
 
-func _on_joined(your_side: int, opponent_name: String) -> void:
+func _on_joined(your_side: int, opponent_name: String, opponent_avatar: String) -> void:
 	print("[net] UI 进房完成，我方 side=%d，视角翻转=%s，对手=%s，开始渲染战斗" % [your_side, str(your_side == 2), opponent_name])
 	_flip = your_side == 2
 	_matchmaking = false
@@ -220,9 +221,30 @@ func _on_joined(your_side: int, opponent_name: String) -> void:
 		_cancel_btn.queue_free()
 		_cancel_btn = null
 	_build_cards()
+	_build_nameplates(opponent_name, opponent_avatar)
 	# 联机对战音乐 + 战场环境音（AudioManager 全局 autoload，缺资源静默 no-op，与单机一致）。
 	AudioManager.play_music("music_battle_normal")
 	AudioManager.play_ambience("amb_battle_wind")
+
+
+# V5-S9：双方名片（己方左下、对手右上；头像走怪物卡 SpriteDB 立绘）。重连重入会清旧再建。
+func _build_nameplates(opp_name: String, opp_avatar: String) -> void:
+	for n in ["np_mine", "np_foe"]:
+		var ex := get_node_or_null(NodePath(n))
+		if ex != null:
+			ex.queue_free()
+	var session = GameStateScript.session()
+	var vp := get_viewport_rect().size
+	var mine := HudWidgets.nameplate(session.nickname(), session.avatar_card_id(), _loader, -1, true)
+	mine.name = "np_mine"
+	mine.position = Vector2(16, vp.y - HUD_BOTTOM_H - 78.0)
+	mine.z_index = 50
+	add_child(mine)
+	var foe := HudWidgets.nameplate(opp_name, opp_avatar, _loader, -1, false)
+	foe.name = "np_foe"
+	foe.position = Vector2(vp.x - foe.size.x - 16.0, TOPBAR_H + 10.0)
+	foe.z_index = 50
+	add_child(foe)
 
 
 func _on_result(winner: int, _reason: int) -> void:

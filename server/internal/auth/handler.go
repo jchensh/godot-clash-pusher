@@ -73,6 +73,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteProto(w, http.StatusOK, &pbauth.LoginResp{
 		Token:        access,
 		RefreshToken: refresh,
+		IsNew:        acc.Created, // V5-S9：首次建号 → 客户端进创号流程
 		// Profile is populated by V4-S2's profile endpoints; login stays lean.
 	})
 }

@@ -47,6 +47,56 @@ func token() -> String:
 	return auth.access_token if auth != null else ""
 
 
+# —— V5-S9 账号身份（昵称/头像/引导）——
+
+func is_new() -> bool:
+	return auth != null and auth.is_new
+
+
+func nickname() -> String:
+	return profile.nickname if profile != null else ""
+
+
+func avatar_card_id() -> String:
+	return profile.avatar_card_id if profile != null else ""
+
+
+func tutorial_done() -> bool:
+	return profile != null and profile.tutorial_done
+
+
+## 是否还没创号（服务器权威：头像为空 = 没走过创号流程，扛"创号中途退出"）。
+func needs_account_setup() -> bool:
+	return profile != null and profile.avatar_card_id == ""
+
+
+## 推昵称+头像到服务器（创号/改身份）。返回是否成功。http 须在 SceneTree。
+func update_identity(http: HTTPRequest, p_nickname: String, p_avatar_card_id: String) -> bool:
+	if auth == null or profile == null:
+		return false
+	var res = await profile.update_identity(http, auth.access_token, p_nickname, p_avatar_card_id)
+	return res.ok
+
+
+## 标记新手引导已完成（服务器权威）。返回是否成功。
+func mark_tutorial_done(http: HTTPRequest) -> bool:
+	if auth == null or profile == null:
+		return false
+	var res = await profile.mark_tutorial_done(http, auth.access_token)
+	return res.ok
+
+
+## V5-S9 天梯：把选好的卡组存到指定槽（服务器权威，set_active）。返回是否成功。
+## 服务端匹配时按槽取卡组建房（lobby.lookupDeck），故必须先存槽再入队。
+func save_deck(http: HTTPRequest, slot: int, cards: Array) -> bool:
+	if auth == null or profile == null:
+		return false
+	var res = await profile.update_deck(http, auth.access_token, slot, cards, true, profile.version)
+	if res.conflict:   # 版本冲突已自动重取最新档 → 用新版本重试一次
+		res = await profile.update_deck(http, auth.access_token, slot, cards, true, profile.version)
+	return res.ok
+
+
 func _load_network() -> Dictionary:
 	var f := FileAccess.open("res://config/network.json", FileAccess.READ)
 	if f == null:

@@ -13,6 +13,7 @@ static var stage_id := ""              # 非空 = 闯关模式（battle 走 setu
 static var stage_last_result := {}     # 战后回传 {stage_id, stars, outcome}；stage_map 读后上报服务器+开箱+清空
 static var deck_mode := ""             # 组卡上下文：""/"level"=自由对战 / "stage"=闯关挑战 / "edit"=基地编辑
 static var detail_card := ""           # 养成详情 card_detail 要展示的 card_id（card_collection 写）
+static var tutorial := false           # V5-S9：新手引导模式（battle_scene 单局引导战，战后 mark_tutorial_done→主菜单）
 
 # —— V3-4 Roguelite run 模式 ——
 # run 非空时 battle_scene 进入「run 模式」：用 run 当前节点的 level_id + run 卡组 + relic/节点修正，

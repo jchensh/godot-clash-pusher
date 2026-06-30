@@ -13,6 +13,8 @@ const BATTLE_SCENE := "res://view/battle_scene.tscn"
 const LEVEL_SELECT_SCENE := "res://view/level_select.tscn"
 const STAGE_MAP_SCENE := "res://view/stage_map.tscn"
 const BASE_CAMP_SCENE := "res://view/base_camp.tscn"
+const NET_BATTLE_SCENE := "res://view/net_battle_scene.tscn"   # V5-S9 天梯
+const MAIN_MENU_SCENE := "res://view/main_menu.tscn"
 const DECK_SIZE := 8
 
 const TROOP_BG := Color(0.20, 0.30, 0.42)
@@ -88,6 +90,8 @@ func _build() -> void:
 		subtitle = "关卡 %d-%d" % [int(s.get("chapter", 0)), int(s.get("index", 0))]
 	elif _mode == "edit":
 		subtitle = "编辑卡组"
+	elif _mode == "ladder":
+		subtitle = "天梯征途 · 选出战卡组"
 	else:
 		subtitle = tr("deck_stage") % GameStateScript.level_id.to_upper()
 	_center_label(subtitle, 108, 22, PixelUI.COL_MUTED)
@@ -136,7 +140,7 @@ func _build() -> void:
 
 	# 底部按钮
 	_action_button(tr("btn_back"), 70, 988, 240, "dark", _on_back)
-	var confirm_label: String = "保存" if _mode == "edit" else tr("btn_battle")
+	var confirm_label: String = "保存" if _mode == "edit" else ("出征" if _mode == "ladder" else tr("btn_battle"))
 	_battle_btn = _action_button(confirm_label, 410, 988, 240, "gold", _on_battle)
 	_battle_btn.add_theme_stylebox_override("disabled", PixelUI.sbpixel(Color(0.18, 0.18, 0.20), 3, Color(0.30, 0.30, 0.33)))
 	_battle_btn.add_theme_color_override("font_disabled_color", Color(0.5, 0.5, 0.55))
@@ -217,6 +221,10 @@ func _on_battle() -> void:
 	if _selected.size() != DECK_SIZE:
 		return
 	GameStateScript.player_deck = _selected.duplicate()
+	# V5-S9 天梯：存到服务器卡组槽1（匹配按槽取卡组建房）→ 进 PVP 匹配。
+	if _mode == "ladder":
+		await _go_ladder()
+		return
 	# edit 模式（基地编辑）= 只存卡组回基地；其余 = 进战斗（battle 读 stage_id 选闯关/自由）。
 	if _mode == "edit":
 		print("[V5][deck] 保存卡组回基地 deck=%s" % str(_selected))
@@ -233,7 +241,50 @@ func _on_back() -> void:
 	match _mode:
 		"stage": get_tree().change_scene_to_file(STAGE_MAP_SCENE)
 		"edit": get_tree().change_scene_to_file(BASE_CAMP_SCENE)
+		"ladder": get_tree().change_scene_to_file(MAIN_MENU_SCENE)
 		_: get_tree().change_scene_to_file(LEVEL_SELECT_SCENE)
+
+# V5-S9 天梯：把选好的卡组存到服务器槽1（lobby 按槽取卡组建房）→ 进 PVP 匹配。
+func _go_ladder() -> void:
+	if _battle_btn != null:
+		_battle_btn.disabled = true
+		_battle_btn.text = "保存中…"
+	var http := HTTPRequest.new()
+	add_child(http)
+	var session = GameStateScript.session()
+	if not await session.ensure(http):
+		_ladder_toast("登录失败，请检查网络")
+		_reset_ladder_btn()
+		http.queue_free()
+		return
+	var ok: bool = await session.save_deck(http, 1, _selected.duplicate())
+	http.queue_free()
+	if ok:
+		print("[V5][deck] 天梯卡组已存槽1 → 进匹配 deck=%s" % str(_selected))
+		get_tree().change_scene_to_file(NET_BATTLE_SCENE)
+	else:
+		_ladder_toast("卡组保存失败，请重试")
+		_reset_ladder_btn()
+
+func _reset_ladder_btn() -> void:
+	if _battle_btn != null:
+		_battle_btn.disabled = false
+		_battle_btn.text = "出征"
+
+func _ladder_toast(msg: String) -> void:
+	var l := Label.new()
+	l.text = msg
+	l.position = Vector2(0, 920)
+	l.size = Vector2(720, 36)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.add_theme_font_size_override("font_size", 22)
+	l.add_theme_color_override("font_color", GOLD)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(l)
+	var tw := create_tween()
+	tw.tween_interval(1.4)
+	tw.tween_property(l, "modulate:a", 0.0, 0.5)
+	tw.tween_callback(l.queue_free)
 
 # ---------- 小工具 ----------
 func _rect(color: Color, pos: Vector2, size: Vector2) -> ColorRect:

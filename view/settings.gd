@@ -82,7 +82,7 @@ func _center_label(text: String, y: float, font_size: int, color: Color) -> Labe
 	add_child(l)
 	return l
 
-# —— GM 工具（开发作弊；仅服务器 GM_ENABLED 时生效，直接改服务器 DB）——
+# —— GM 工具（开发作弊；始终开放，直接改服务器 DB）——
 
 func _build_gm() -> void:
 	_center_label("GM 工具（开发）", 630, 30, PixelUI.COL_GOLD)

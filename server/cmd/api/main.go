@@ -84,12 +84,11 @@ func main() {
 	profileH.Mount(mux, authMW)
 	economyH.Mount(mux, authMW)
 
-	// GM / 开发作弊工具（V5）：仅当 GM_ENABLED=1 时挂 /v5/gm/*（直接改本账号经济 DB）。
-	// ⚠️ 仅开发用——prod 部署必须不设此环境变量。仍走会话鉴权（只能改自己账号）。
-	if os.Getenv("GM_ENABLED") == "1" {
-		economy.NewGMHandler(econRepo, econCfg).Mount(mux, authMW)
-		log.Printf("api: ⚠️ GM endpoints ENABLED (/v5/gm/*) — DEV ONLY, must be OFF in prod")
-	}
+	// GM / 开发作弊工具（V5-S9 改动3，用户决策）：始终挂 /v5/gm/*（直接改本账号经济 DB）。
+	// 取消了原 GM_ENABLED 环境门控——所有部署（含 prod）都开放 GM。仍走会话鉴权（只能改自己账号）。
+	// ⚠️ 取舍：线上任意玩家可自助刷资源、经济不防作弊（用户明确要求，当前阶段定位）。
+	economy.NewGMHandler(econRepo, econCfg).Mount(mux, authMW)
+	log.Printf("api: GM endpoints mounted (/v5/gm/*) — always on (GM_ENABLED gate removed, V5-S9)")
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		if err := db.Ping(r.Context()); err != nil {
 			http.Error(w, "db down", http.StatusServiceUnavailable)

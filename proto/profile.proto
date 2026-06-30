@@ -20,6 +20,8 @@ message Profile {
   int32 current_season_id = 7;
   int32 version = 8;            // 乐观锁版本
   int64 updated_at = 9;         // unix seconds
+  string avatar_card_id = 10;   // V5-S9：头像=怪物卡 id（存 card_id）
+  bool tutorial_done = 11;      // V5-S9：新手引导已完成（服务器权威，门控强制引导）
 }
 
 // 注意类名 DeckMsg（非 Deck）：godobuf 把每个 message 生成同名 GDScript 内部类，
@@ -55,3 +57,16 @@ message DeckUpdateResp {
   int32 new_version = 2;        // 写后版本（客户端更新本地缓存）
   Profile profile = 3;          // 顺带回 profile（节省一次 GET）
 }
+
+// V5-S9：创号/改身份（昵称 + 头像怪物卡）。account 取令牌、不信 body。
+message ProfileUpdateReq {
+  string nickname = 1;
+  string avatar_card_id = 2;
+}
+
+message ProfileUpdateResp {
+  Profile profile = 1;
+}
+
+// V5-S9：标记新手引导已完成（无入参；置 tutorial_done=true，回最新档）。
+message TutorialDoneReq {}

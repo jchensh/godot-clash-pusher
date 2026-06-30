@@ -152,6 +152,7 @@ func _match_found_bytes(side: int, opp_name: String, room: String) -> PackedByte
 	var opp = mf.new_opponent()
 	opp.set_account_id(99)
 	opp.set_nickname(opp_name)
+	opp.set_avatar_card_id("giant")   # V5-S9：对手头像（怪物卡）
 	return mf.to_bytes()
 
 func test_on_opened_sends_find_match() -> void:
@@ -167,12 +168,13 @@ func test_on_opened_sends_find_match() -> void:
 func test_match_found_sets_room_and_emits() -> void:
 	var pair = _new_client()
 	var bc = pair[0]
-	var got := {"side": -1, "opp": ""}
-	bc.matched.connect(func(s, o): got["side"] = s; got["opp"] = o)
+	var got := {"side": -1, "opp": "", "avatar": ""}
+	bc.matched.connect(func(s, o, a): got["side"] = s; got["opp"] = o; got["avatar"] = a)
 	bc._on_frame(CommonPb.MsgId.MATCH_FOUND_PUSH, _match_found_bytes(2, "Rival", "room-7"))
 	assert_eq(bc._room_id, "room-7")
 	assert_eq(int(got["side"]), 2)
 	assert_eq(got["opp"], "Rival")
+	assert_eq(got["avatar"], "giant", "V5-S9：对手头像随 matched 信号带出")
 
 func test_reconnect_after_match_sends_join_room() -> void:
 	var pair = _new_client()

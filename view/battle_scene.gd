@@ -17,6 +17,7 @@ const AIControllerScript = preload("res://ai/ai_controller.gd")
 const GameStateScript = preload("res://view/game_state.gd")
 const RunModifiersScript = preload("res://logic/run_modifiers.gd")
 const SpriteDB = preload("res://view/sprite_db.gd")
+const HudWidgets = preload("res://view/ui/hud_widgets.gd")   # V5-S9 玩家名片
 const RunSceneScene := "res://view/run_scene.tscn"
 const StageProgressScript = preload("res://logic/stage_progress.gd")   # V5-S7c 闯关判星
 const STAGE_MAP_SCENE := "res://view/stage_map.tscn"
@@ -187,6 +188,7 @@ func _ready() -> void:
 	_build_cards()
 	_build_result_panel()
 	_init_tutorial()
+	_build_player_nameplate()
 	set_process(true)
 
 func _process(delta: float) -> void:
@@ -1007,7 +1009,9 @@ func _start_ending() -> void:
 
 func _add_result_buttons() -> void:
 	_end_buttons_added = true
-	if GameStateScript.campaign != null:
+	if GameStateScript.tutorial:
+		_result_btn("完成", _vh * 0.62, _on_tutorial_done)   # V5-S9：新手引导单局，完成→标记+回菜单
+	elif GameStateScript.campaign != null:
 		_result_btn(tr("btn_continue"), _vh * 0.62, _on_campaign_continue)   # 战役：回中枢推进/重打
 	elif GameStateScript.run != null:
 		_result_btn(tr("btn_continue"), _vh * 0.62, _on_run_continue)   # Roguelite：回 run 中枢推进/给奖励/结算
@@ -1083,6 +1087,19 @@ func _on_menu() -> void:
 	AudioManager.play_sfx("ui_button_back")
 	get_tree().change_scene_to_file("res://view/main_menu.tscn")
 
+# V5-S9 新手引导战结束（胜负不论）：标记引导完成（服务器权威）+ 清状态 → 回主菜单。
+func _on_tutorial_done() -> void:
+	AudioManager.play_sfx("ui_button_press")
+	GameStateScript.tutorial = false
+	GameStateScript.campaign = null
+	GameStateScript.campaign_last_result = 0
+	var http := HTTPRequest.new()
+	add_child(http)
+	var session = GameStateScript.session()
+	await session.mark_tutorial_done(http)
+	http.queue_free()
+	get_tree().change_scene_to_file("res://view/main_menu.tscn")
+
 # V5-S7c 闯关战后：判星 + 存结果（stage_map 负责上报服务器 + 领奖开箱）+ 回闯关地图。
 func _on_stage_return() -> void:
 	AudioManager.play_sfx("ui_button_press")
@@ -1105,6 +1122,15 @@ func _player_king_hp_pct() -> float:
 		if t.is_king():
 			return clampf(t.hp / t.max_hp, 0.0, 1.0)
 	return 0.0
+
+# V5-S9：己方名片（昵称+怪物头像），左下角、在手牌上方（不挡战场/拇指区）。
+func _build_player_nameplate() -> void:
+	var session = GameStateScript.session()
+	var np := HudWidgets.nameplate(session.nickname(), session.avatar_card_id(), loader, -1, true)
+	var vp := get_viewport_rect().size
+	np.position = Vector2(16, vp.y - HUD_BOTTOM_H - 78.0)
+	np.z_index = 50
+	add_child(np)
 
 # —— V3-5b 新手引导：加载 / 推进 / 覆盖层绘制（数据驱动 tutorial.json，决策 45）——
 func _init_tutorial() -> void:

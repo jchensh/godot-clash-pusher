@@ -93,6 +93,7 @@ type LoginResp struct {
 	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`                                   // JWT (HS256)，TTL 30d
 	RefreshToken  string                 `protobuf:"bytes,2,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"` // refresh token，TTL 90d
 	Profile       *common.ProfileSummary `protobuf:"bytes,3,opt,name=profile,proto3" json:"profile,omitempty"`                               // 登录即带回基本档（少一次 round-trip）
+	IsNew         bool                   `protobuf:"varint,4,opt,name=is_new,json=isNew,proto3" json:"is_new,omitempty"`                     // V5-S9：首次建号=true（客户端据此进创号流程）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -146,6 +147,13 @@ func (x *LoginResp) GetProfile() *common.ProfileSummary {
 		return x.Profile
 	}
 	return nil
+}
+
+func (x *LoginResp) GetIsNew() bool {
+	if x != nil {
+		return x.IsNew
+	}
+	return false
 }
 
 type RefreshReq struct {
@@ -253,11 +261,12 @@ const file_auth_proto_rawDesc = "" +
 	"\bLoginReq\x12\x1b\n" +
 	"\tdevice_id\x18\x01 \x01(\tR\bdeviceId\x12%\n" +
 	"\x0eclient_version\x18\x02 \x01(\tR\rclientVersion\x12\x1a\n" +
-	"\bplatform\x18\x03 \x01(\tR\bplatform\"y\n" +
+	"\bplatform\x18\x03 \x01(\tR\bplatform\"\x90\x01\n" +
 	"\tLoginResp\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12#\n" +
 	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\x121\n" +
-	"\aprofile\x18\x03 \x01(\v2\x17.game.v4.ProfileSummaryR\aprofile\"1\n" +
+	"\aprofile\x18\x03 \x01(\v2\x17.game.v4.ProfileSummaryR\aprofile\x12\x15\n" +
+	"\x06is_new\x18\x04 \x01(\bR\x05isNew\"1\n" +
 	"\n" +
 	"RefreshReq\x12#\n" +
 	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"H\n" +

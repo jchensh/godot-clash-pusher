@@ -162,7 +162,7 @@ func main() {
 func fetchSummary(ctx context.Context, db *store.DB, accountID int64) *pbcommon.ProfileSummary {
 	s := &pbcommon.ProfileSummary{AccountId: accountID}
 	_ = db.Pool.QueryRow(ctx, `
-		SELECT nickname, avatar_id, level, trophies FROM profiles WHERE account_id = $1
-	`, accountID).Scan(&s.Nickname, &s.AvatarId, &s.Level, &s.Trophies)
+		SELECT nickname, avatar_id, level, trophies, avatar_card_id FROM profiles WHERE account_id = $1
+	`, accountID).Scan(&s.Nickname, &s.AvatarId, &s.Level, &s.Trophies, &s.AvatarCardId)
 	return s
 }

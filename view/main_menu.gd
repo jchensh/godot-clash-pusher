@@ -1,83 +1,123 @@
-# MainMenu —— 主菜单（V3 UI/UX 像素设计系统标杆）。
+# MainMenu —— 主菜单（V3 像素设计系统；V5-S9 重构）。
 #
-# 背景 = 夜色战场 9 图（assets/ui/menu_bg.png）；标题 = 像素金字 + 描边；
-# 按钮 = PixelUI 统一 9-slice 石碑（gold CTA / stone / dark 三类 + 按下 scale juice + 音效）。
-# 入口 START→选关 / ROGUELITE→run / SETTINGS→设置 / QUIT。文本走 i18n（tr）。
+# 进来先登录（持久会话）→ 路由：未创号→创号页 / 未完成新手引导→强制引导战 / 否则建菜单。
+# 菜单（决策48 在线主轴）：天梯征途(PVP·选卡组→匹配) / 闯关(PVE 基地) / 养成 / 卡组 / 探险 / 设置。
+# 顶部玩家名片（昵称+怪物头像+杯数）。去掉「退出」「新手战役」入口（引导改创号后自动一次）。
 extends Control
 
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
+const HudWidgets := preload("res://view/ui/hud_widgets.gd")
 const BG_TEX := preload("res://assets/ui/menu_bg.png")
-
-const LEVEL_SELECT_SCENE := "res://view/level_select.tscn"
-const BASE_CAMP_SCENE := "res://view/base_camp.tscn"   # V5-S7：单人闯关养成中枢（替换 START 入口）
-const RUN_SCENE := "res://view/run_scene.tscn"
-const SETTINGS_SCENE := "res://view/settings.tscn"
-const CAMPAIGN_SCENE := "res://view/campaign_scene.tscn"
-const NET_BATTLE_SCENE := "res://view/net_battle_scene.tscn"   # V4-S3 天梯对战
 const GameStateScript := preload("res://view/game_state.gd")
+const CampaignStateScript := preload("res://logic/campaign_state.gd")
 
-var _trophy_label: Label
+const ACCOUNT_CREATE_SCENE := "res://view/account_create.tscn"
+const BASE_CAMP_SCENE := "res://view/base_camp.tscn"          # 闯关 PVE 中枢
+const CARD_COLLECTION_SCENE := "res://view/card_collection.tscn"  # 养成
+const DECK_BUILDER_SCENE := "res://view/deck_builder.tscn"
+const RUN_SCENE := "res://view/run_scene.tscn"                # 探险 Roguelite
+const SETTINGS_SCENE := "res://view/settings.tscn"
+const BATTLE_SCENE := "res://view/battle_scene.tscn"          # 新手引导战
+
+var _status: Label
 
 func _ready() -> void:
 	AudioManager.play_music("music_main_menu")
 	AudioManager.stop_ambience()
-	_build()
-	_bootstrap_session()
+	_build_bg()
+	_status = _center_label("登录中…", 620, 26, PixelUI.COL_MUTED)
+	_bootstrap()
 
-func _build() -> void:
+func _build_bg() -> void:
 	var bg := TextureRect.new()
 	bg.texture = BG_TEX
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
+	_title("CLASH\nPUSHER", 96, 72)
+	_center_label(tr("app_subtitle"), 312, 26, PixelUI.COL_MUTED)
 
-	# 标题（拉丁名做 logo 式两行 + 描边）+ 副标题
-	_title("CLASH\nPUSHER", 108, 76)
-	_center_label(tr("app_subtitle"), 322, 28, PixelUI.COL_MUTED)
-	_trophy_label = _center_label("杯数 …", 392, 22, PixelUI.COL_GOLD)
-
-	# 主按钮：天梯对战=金 CTA（V4 主轴），其余石板，退出弱化
-	_menu_button("天梯对战", 440, _on_ladder_pressed, "gold", 40)
-	_menu_button(tr("menu_campaign"), 556, _on_campaign_pressed, "stone", 34)
-	_menu_button(tr("menu_roguelite"), 664, _on_run_pressed, "stone", 34)
-	_menu_button(tr("menu_start"), 772, _on_start_pressed, "stone", 34)
-	_menu_button(tr("btn_settings"), 880, _on_settings_pressed, "stone", 34)
-	_menu_button(tr("menu_quit"), 988, _on_quit_pressed, "dark", 34)
-
-	_center_label(tr("app_footer"), 1208, 22, PixelUI.COL_HINT)
-
-# ---------- handlers ----------
-# V4-S4：进菜单自动匿名登录 + 拉档案，显示杯数（对局后回菜单会刷新）。
-func _bootstrap_session() -> void:
+# —— 登录 + 路由（V5-S9）——
+func _bootstrap() -> void:
 	var http := HTTPRequest.new()
 	add_child(http)
 	var session = GameStateScript.session()
-	if await session.ensure(http):
-		if is_instance_valid(_trophy_label):
-			_trophy_label.text = "杯数 %d" % session.trophies()
-	elif is_instance_valid(_trophy_label):
-		_trophy_label.text = "（离线）"
+	var ok: bool = await session.ensure(http)
+	if not ok:
+		print("[V5][menu] 登录失败 → 离线降级菜单")
+		if _status != null:
+			_status.text = "（离线）未连接服务器"
+		_build_menu(false)
+		http.queue_free()
+		return
+	# 未创号（服务器 avatar_card_id 为空）→ 创号页。
+	if session.needs_account_setup():
+		print("[V5][menu] 新账号未创号 → account_create")
+		http.queue_free()
+		get_tree().change_scene_to_file(ACCOUNT_CREATE_SCENE)
+		return
+	# 未完成新手引导 → 强制引导战（打完一局回菜单）。
+	if not session.tutorial_done():
+		print("[V5][menu] 新手引导未完成 → 强制引导战")
+		http.queue_free()
+		_start_tutorial()
+		return
 	http.queue_free()
+	_build_menu(true)
 
-func _on_ladder_pressed() -> void:
-	get_tree().change_scene_to_file(NET_BATTLE_SCENE)
+func _start_tutorial() -> void:
+	var config = GameStateScript.config()
+	var levels: Array = config.get_campaign("default").get("levels", [])
+	GameStateScript.run = null
+	GameStateScript.campaign = CampaignStateScript.new([levels[0]] if not levels.is_empty() else [])
+	GameStateScript.campaign_last_result = 0
+	GameStateScript.tutorial = true
+	GameStateScript.stage_id = ""
+	get_tree().change_scene_to_file(BATTLE_SCENE)
 
-func _on_campaign_pressed() -> void:
-	get_tree().change_scene_to_file(CAMPAIGN_SCENE)
+# —— 菜单（路由放行后才建）——
+func _build_menu(online: bool) -> void:
+	if _status != null:
+		_status.queue_free()
+		_status = null
+	if online:
+		var session = GameStateScript.session()
+		var np := HudWidgets.nameplate(session.nickname(), session.avatar_card_id(), GameStateScript.config(), session.trophies(), true)
+		np.position = Vector2(40, 36)
+		add_child(np)
+	_menu_button("天梯征途", 440, _on_ladder, "gold", 40)
+	_menu_button("闯关", 556, _on_stage, "stone", 34)
+	_menu_button("养成", 664, _on_progression, "stone", 34)
+	_menu_button("卡组", 772, _on_deck, "stone", 34)
+	_menu_button("探险", 880, _on_run, "stone", 34)
+	_menu_button(tr("btn_settings"), 988, _on_settings, "stone", 34)
+	_center_label(tr("app_footer"), 1208, 22, PixelUI.COL_HINT)
 
-func _on_start_pressed() -> void:
-	# V5-S7（决策48）：START → 基地 Base Camp（单人闯关养成中枢），不再直达自由选关。
+# ---------- handlers ----------
+func _on_ladder() -> void:
+	# V5-S9 改动5：天梯先选卡组（存槽1）再进匹配。
+	GameStateScript.deck_mode = "ladder"
+	GameStateScript.stage_id = ""
+	get_tree().change_scene_to_file(DECK_BUILDER_SCENE)
+
+func _on_stage() -> void:
 	get_tree().change_scene_to_file(BASE_CAMP_SCENE)
 
-func _on_run_pressed() -> void:
+func _on_progression() -> void:
+	if ResourceLoader.exists(CARD_COLLECTION_SCENE):
+		get_tree().change_scene_to_file(CARD_COLLECTION_SCENE)
+
+func _on_deck() -> void:
+	GameStateScript.deck_mode = "edit"
+	GameStateScript.stage_id = ""
+	get_tree().change_scene_to_file(DECK_BUILDER_SCENE)
+
+func _on_run() -> void:
 	get_tree().change_scene_to_file(RUN_SCENE)
 
-func _on_settings_pressed() -> void:
+func _on_settings() -> void:
 	get_tree().change_scene_to_file(SETTINGS_SCENE)
-
-func _on_quit_pressed() -> void:
-	get_tree().quit()
 
 # ---------- ui builders ----------
 func _title(text: String, y: float, font_size: int) -> void:

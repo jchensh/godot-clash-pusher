@@ -8,6 +8,7 @@ extends RefCounted
 
 const HudWidget := preload("res://view/ui/hud_widget.gd")
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
+const SpriteDB := preload("res://view/sprite_db.gd")
 
 # 战力达标档（deck builder / 养成战力提示用）
 const POWER_OK := 0      # ≥ 推荐
@@ -81,3 +82,62 @@ static func locked_overlay(hint: String, w_px: float, h_px: float) -> Control:
 	var w := HudWidget.new()
 	w.setup("locked", {"hint": hint}, Vector2(w_px, h_px))
 	return w
+
+# —— V5-S9 玩家名片（怪物头像 9-slice 框 + 昵称 + 可选杯数）——
+# avatar_card_id = 怪物卡 id（走 SpriteDB 立绘）；loader = ConfigLoader；trophies<0 隐藏杯数。
+# align_left=true 头像在左、文字左对齐；false（PVP 对手）头像在右、文字右对齐。
+static func nameplate(nickname: String, avatar_card_id: String, loader, trophies: int = -1, align_left: bool = true) -> Control:
+	var av := 64.0
+	var pad := 12.0
+	var name_w := 232.0
+	var total_w: float = av + pad + name_w
+	var root := Control.new()
+	root.custom_minimum_size = Vector2(total_w, av)
+	root.size = Vector2(total_w, av)
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var fx: float = 0.0 if align_left else (total_w - av)
+	var tx: float = (av + pad) if align_left else 0.0
+	var halign := HORIZONTAL_ALIGNMENT_LEFT if align_left else HORIZONTAL_ALIGNMENT_RIGHT
+	# 头像框
+	var frame := Panel.new()
+	frame.position = Vector2(fx, 0)
+	frame.size = Vector2(av, av)
+	frame.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("1c1626"), 2, PixelUI.COL_GOLD))
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(frame)
+	var tex := SpriteDB.card_portrait_tex(avatar_card_id, loader)
+	if tex != null:
+		var pic := TextureRect.new()
+		pic.texture = tex
+		pic.position = Vector2(fx + 7, 7)
+		pic.size = Vector2(av - 14, av - 14)
+		pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		pic.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		pic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		root.add_child(pic)
+	# 昵称
+	var nl := Label.new()
+	nl.text = nickname if nickname.strip_edges() != "" else "勇者"
+	nl.position = Vector2(tx, 2)
+	nl.size = Vector2(name_w, 36)
+	nl.horizontal_alignment = halign
+	nl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	nl.add_theme_font_size_override("font_size", 26)
+	nl.add_theme_color_override("font_color", PixelUI.COL_GOLD)
+	nl.add_theme_color_override("font_outline_color", PixelUI.COL_OUTLINE)
+	nl.add_theme_constant_override("outline_size", 4)
+	nl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(nl)
+	# 杯数（可选）
+	if trophies >= 0:
+		var tl := Label.new()
+		tl.text = "杯 %s" % format_int(trophies)
+		tl.position = Vector2(tx, 38)
+		tl.size = Vector2(name_w, 24)
+		tl.horizontal_alignment = halign
+		tl.add_theme_font_size_override("font_size", 18)
+		tl.add_theme_color_override("font_color", PixelUI.COL_MUTED)
+		tl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		root.add_child(tl)
+	return root

@@ -733,6 +733,16 @@ class Profile:
 		service.field = __updated_at
 		data[__updated_at.tag] = service
 		
+		__avatar_card_id = PBField.new("avatar_card_id", PB_DATA_TYPE.STRING, PB_RULE.OPTIONAL, 10, true, DEFAULT_VALUES_3[PB_DATA_TYPE.STRING])
+		service = PBServiceField.new()
+		service.field = __avatar_card_id
+		data[__avatar_card_id.tag] = service
+		
+		__tutorial_done = PBField.new("tutorial_done", PB_DATA_TYPE.BOOL, PB_RULE.OPTIONAL, 11, true, DEFAULT_VALUES_3[PB_DATA_TYPE.BOOL])
+		service = PBServiceField.new()
+		service.field = __tutorial_done
+		data[__tutorial_done.tag] = service
+		
 	var data = {}
 	
 	var __account_id: PBField
@@ -851,6 +861,32 @@ class Profile:
 		__updated_at.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT64]
 	func set_updated_at(value : int) -> void:
 		__updated_at.value = value
+	
+	var __avatar_card_id: PBField
+	func has_avatar_card_id() -> bool:
+		if __avatar_card_id.value != null:
+			return true
+		return false
+	func get_avatar_card_id() -> String:
+		return __avatar_card_id.value
+	func clear_avatar_card_id() -> void:
+		data[10].state = PB_SERVICE_STATE.UNFILLED
+		__avatar_card_id.value = DEFAULT_VALUES_3[PB_DATA_TYPE.STRING]
+	func set_avatar_card_id(value : String) -> void:
+		__avatar_card_id.value = value
+	
+	var __tutorial_done: PBField
+	func has_tutorial_done() -> bool:
+		if __tutorial_done.value != null:
+			return true
+		return false
+	func get_tutorial_done() -> bool:
+		return __tutorial_done.value
+	func clear_tutorial_done() -> void:
+		data[11].state = PB_SERVICE_STATE.UNFILLED
+		__tutorial_done.value = DEFAULT_VALUES_3[PB_DATA_TYPE.BOOL]
+	func set_tutorial_done(value : bool) -> void:
+		__tutorial_done.value = value
 	
 	func _to_string() -> String:
 		return PBPacker.message_to_string(data)
@@ -1238,6 +1274,146 @@ class DeckUpdateResp:
 	func new_profile() -> Profile:
 		__profile.value = Profile.new()
 		return __profile.value
+	
+	func _to_string() -> String:
+		return PBPacker.message_to_string(data)
+		
+	func to_bytes() -> PackedByteArray:
+		return PBPacker.pack_message(data)
+		
+	func from_bytes(bytes : PackedByteArray, offset : int = 0, limit : int = -1) -> int:
+		var cur_limit = bytes.size()
+		if limit != -1:
+			cur_limit = limit
+		var result = PBPacker.unpack_message(data, bytes, offset, cur_limit)
+		if result == cur_limit:
+			if PBPacker.check_required(data):
+				if limit == -1:
+					return PB_ERR.NO_ERRORS
+			else:
+				return PB_ERR.REQUIRED_FIELDS
+		elif limit == -1 && result > 0:
+			return PB_ERR.PARSE_INCOMPLETE
+		return result
+	
+class ProfileUpdateReq:
+	extends RefCounted
+	func _init():
+		var service
+		
+		__nickname = PBField.new("nickname", PB_DATA_TYPE.STRING, PB_RULE.OPTIONAL, 1, true, DEFAULT_VALUES_3[PB_DATA_TYPE.STRING])
+		service = PBServiceField.new()
+		service.field = __nickname
+		data[__nickname.tag] = service
+		
+		__avatar_card_id = PBField.new("avatar_card_id", PB_DATA_TYPE.STRING, PB_RULE.OPTIONAL, 2, true, DEFAULT_VALUES_3[PB_DATA_TYPE.STRING])
+		service = PBServiceField.new()
+		service.field = __avatar_card_id
+		data[__avatar_card_id.tag] = service
+		
+	var data = {}
+	
+	var __nickname: PBField
+	func has_nickname() -> bool:
+		if __nickname.value != null:
+			return true
+		return false
+	func get_nickname() -> String:
+		return __nickname.value
+	func clear_nickname() -> void:
+		data[1].state = PB_SERVICE_STATE.UNFILLED
+		__nickname.value = DEFAULT_VALUES_3[PB_DATA_TYPE.STRING]
+	func set_nickname(value : String) -> void:
+		__nickname.value = value
+	
+	var __avatar_card_id: PBField
+	func has_avatar_card_id() -> bool:
+		if __avatar_card_id.value != null:
+			return true
+		return false
+	func get_avatar_card_id() -> String:
+		return __avatar_card_id.value
+	func clear_avatar_card_id() -> void:
+		data[2].state = PB_SERVICE_STATE.UNFILLED
+		__avatar_card_id.value = DEFAULT_VALUES_3[PB_DATA_TYPE.STRING]
+	func set_avatar_card_id(value : String) -> void:
+		__avatar_card_id.value = value
+	
+	func _to_string() -> String:
+		return PBPacker.message_to_string(data)
+		
+	func to_bytes() -> PackedByteArray:
+		return PBPacker.pack_message(data)
+		
+	func from_bytes(bytes : PackedByteArray, offset : int = 0, limit : int = -1) -> int:
+		var cur_limit = bytes.size()
+		if limit != -1:
+			cur_limit = limit
+		var result = PBPacker.unpack_message(data, bytes, offset, cur_limit)
+		if result == cur_limit:
+			if PBPacker.check_required(data):
+				if limit == -1:
+					return PB_ERR.NO_ERRORS
+			else:
+				return PB_ERR.REQUIRED_FIELDS
+		elif limit == -1 && result > 0:
+			return PB_ERR.PARSE_INCOMPLETE
+		return result
+	
+class ProfileUpdateResp:
+	extends RefCounted
+	func _init():
+		var service
+		
+		__profile = PBField.new("profile", PB_DATA_TYPE.MESSAGE, PB_RULE.OPTIONAL, 1, true, DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE])
+		service = PBServiceField.new()
+		service.field = __profile
+		service.func_ref = Callable(self, "new_profile")
+		data[__profile.tag] = service
+		
+	var data = {}
+	
+	var __profile: PBField
+	func has_profile() -> bool:
+		if __profile.value != null:
+			return true
+		return false
+	func get_profile() -> Profile:
+		return __profile.value
+	func clear_profile() -> void:
+		data[1].state = PB_SERVICE_STATE.UNFILLED
+		__profile.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+	func new_profile() -> Profile:
+		__profile.value = Profile.new()
+		return __profile.value
+	
+	func _to_string() -> String:
+		return PBPacker.message_to_string(data)
+		
+	func to_bytes() -> PackedByteArray:
+		return PBPacker.pack_message(data)
+		
+	func from_bytes(bytes : PackedByteArray, offset : int = 0, limit : int = -1) -> int:
+		var cur_limit = bytes.size()
+		if limit != -1:
+			cur_limit = limit
+		var result = PBPacker.unpack_message(data, bytes, offset, cur_limit)
+		if result == cur_limit:
+			if PBPacker.check_required(data):
+				if limit == -1:
+					return PB_ERR.NO_ERRORS
+			else:
+				return PB_ERR.REQUIRED_FIELDS
+		elif limit == -1 && result > 0:
+			return PB_ERR.PARSE_INCOMPLETE
+		return result
+	
+class TutorialDoneReq:
+	extends RefCounted
+	func _init():
+		var service
+		
+	var data = {}
 	
 	func _to_string() -> String:
 		return PBPacker.message_to_string(data)

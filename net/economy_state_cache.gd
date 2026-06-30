@@ -96,7 +96,7 @@ func report_stage_clear(http, token: String, stage_id: String, stars: int, all_c
 	return res
 
 
-## V5 GM 工具门面（仅服务器 GM_ENABLED 时有效）：发 GM 操作改服务器 DB → 回新状态刷新缓存。
+## V5 GM 工具门面（始终开放）：发 GM 操作改服务器 DB → 回新状态刷新缓存。
 ## ops 见 EconomyClient.gm_apply。成功 → {ok:true}（缓存已刷新）；失败 → {ok:false,...}。
 func gm_apply(http, token: String, ops: Dictionary, all_card_ids: Array) -> Dictionary:
 	var res: Dictionary = await _client.gm_apply(http, token, ops)
