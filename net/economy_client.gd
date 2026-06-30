@@ -45,7 +45,7 @@ func collect_idle(http: HTTPRequest, token: String) -> Dictionary:
 	return await _request(http, "POST", "/v5/economy/collect-idle", token, req.to_bytes())
 
 
-## V5 GM 工具（仅服务器 GM_ENABLED 时存在）：发 JSON 操作到 /v5/gm/apply，服务器改 DB 后回新
+## V5 GM 工具（始终开放）：发 JSON 操作到 /v5/gm/apply，服务器改 DB 后回新
 ## EconomyState（proto，复用解码）。ops = {add_gold,add_gems,add_shards_all,unlock_all,max_all_cards,
 ## clear_through_chapter,reset,add_shards:{card:n}}。请求是 JSON、响应是 proto，故不走 _request。
 func gm_apply(http: HTTPRequest, token: String, ops: Dictionary) -> Dictionary:

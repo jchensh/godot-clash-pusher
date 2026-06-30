@@ -22,6 +22,7 @@ message LoginResp {
   string token = 1;                              // JWT (HS256)，TTL 30d
   string refresh_token = 2;                      // refresh token，TTL 90d
   ProfileSummary profile = 3;     // 登录即带回基本档（少一次 round-trip）
+  bool is_new = 4;                // V5-S9：首次建号=true（客户端据此进创号流程）
 }
 
 message RefreshReq {

@@ -28,6 +28,8 @@ func NewHandler(repo *Repo) *Handler {
 func (h *Handler) Mount(mux *http.ServeMux, mw *auth.Middleware) {
 	mux.HandleFunc("POST /v4/profile/get", mw.Require(h.handleGet))
 	mux.HandleFunc("POST /v4/profile/deck-update", mw.Require(h.handleDeckUpdate))
+	mux.HandleFunc("POST /v4/profile/update", mw.Require(h.handleUpdate))               // V5-S9 改昵称/头像
+	mux.HandleFunc("POST /v4/profile/tutorial-done", mw.Require(h.handleTutorialDone)) // V5-S9 标记引导完成
 }
 
 func (h *Handler) handleGet(w http.ResponseWriter, r *http.Request) {
@@ -98,6 +100,56 @@ func (h *Handler) handleDeckUpdate(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// handleUpdate sets nickname + avatar (V5-S9 创号/改身份). account from token, not body.
+func (h *Handler) handleUpdate(w http.ResponseWriter, r *http.Request) {
+	accountID, ok := auth.AccountIDFromContext(r.Context())
+	if !ok {
+		httpx.WriteError(w, http.StatusUnauthorized, pbcommon.ErrorCode_ERR_UNAUTHORIZED, "no account in context", pbcommon.MsgId_PROFILE_UPDATE_REQ)
+		return
+	}
+	var req pbprofile.ProfileUpdateReq
+	if err := httpx.ReadProto(r, &req); err != nil {
+		httpx.WriteError(w, http.StatusBadRequest, pbcommon.ErrorCode_ERR_INVALID_ARG, err.Error(), pbcommon.MsgId_PROFILE_UPDATE_REQ)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	p, err := h.Repo.UpdateIdentity(ctx, accountID, req.Nickname, req.AvatarCardId)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrNicknameInvalid):
+			httpx.WriteError(w, http.StatusBadRequest, pbcommon.ErrorCode_ERR_INVALID_ARG, err.Error(), pbcommon.MsgId_PROFILE_UPDATE_REQ)
+		case errors.Is(err, ErrProfileNotFound):
+			httpx.WriteError(w, http.StatusNotFound, pbcommon.ErrorCode_ERR_NOT_FOUND, "profile not found", pbcommon.MsgId_PROFILE_UPDATE_REQ)
+		default:
+			httpx.WriteError(w, http.StatusInternalServerError, pbcommon.ErrorCode_ERR_INTERNAL, err.Error(), pbcommon.MsgId_PROFILE_UPDATE_REQ)
+		}
+		return
+	}
+	httpx.WriteProto(w, http.StatusOK, &pbprofile.ProfileUpdateResp{Profile: toPbProfile(p)})
+}
+
+// handleTutorialDone marks the new-player tutorial complete (V5-S9). Empty req body.
+func (h *Handler) handleTutorialDone(w http.ResponseWriter, r *http.Request) {
+	accountID, ok := auth.AccountIDFromContext(r.Context())
+	if !ok {
+		httpx.WriteError(w, http.StatusUnauthorized, pbcommon.ErrorCode_ERR_UNAUTHORIZED, "no account in context", pbcommon.MsgId_PROFILE_TUTORIAL_DONE_REQ)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	p, err := h.Repo.SetTutorialDone(ctx, accountID)
+	if err != nil {
+		if errors.Is(err, ErrProfileNotFound) {
+			httpx.WriteError(w, http.StatusNotFound, pbcommon.ErrorCode_ERR_NOT_FOUND, "profile not found", pbcommon.MsgId_PROFILE_TUTORIAL_DONE_REQ)
+			return
+		}
+		httpx.WriteError(w, http.StatusInternalServerError, pbcommon.ErrorCode_ERR_INTERNAL, err.Error(), pbcommon.MsgId_PROFILE_TUTORIAL_DONE_REQ)
+		return
+	}
+	httpx.WriteProto(w, http.StatusOK, &pbprofile.ProfileUpdateResp{Profile: toPbProfile(p)})
+}
+
 func toPbProfile(p *Profile) *pbprofile.Profile {
 	return &pbprofile.Profile{
 		AccountId:       p.AccountID,
@@ -109,6 +161,8 @@ func toPbProfile(p *Profile) *pbprofile.Profile {
 		CurrentSeasonId: p.CurrentSeasonID,
 		Version:         p.Version,
 		UpdatedAt:       p.UpdatedAt,
+		AvatarCardId:    p.AvatarCardID,
+		TutorialDone:    p.TutorialDone,
 	}
 }
 

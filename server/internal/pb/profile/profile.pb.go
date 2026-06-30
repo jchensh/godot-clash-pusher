@@ -36,8 +36,10 @@ type Profile struct {
 	Exp             int32                  `protobuf:"varint,5,opt,name=exp,proto3" json:"exp,omitempty"`
 	Trophies        int32                  `protobuf:"varint,6,opt,name=trophies,proto3" json:"trophies,omitempty"`
 	CurrentSeasonId int32                  `protobuf:"varint,7,opt,name=current_season_id,json=currentSeasonId,proto3" json:"current_season_id,omitempty"`
-	Version         int32                  `protobuf:"varint,8,opt,name=version,proto3" json:"version,omitempty"`                      // 乐观锁版本
-	UpdatedAt       int64                  `protobuf:"varint,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"` // unix seconds
+	Version         int32                  `protobuf:"varint,8,opt,name=version,proto3" json:"version,omitempty"`                                 // 乐观锁版本
+	UpdatedAt       int64                  `protobuf:"varint,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`            // unix seconds
+	AvatarCardId    string                 `protobuf:"bytes,10,opt,name=avatar_card_id,json=avatarCardId,proto3" json:"avatar_card_id,omitempty"` // V5-S9：头像=怪物卡 id（存 card_id）
+	TutorialDone    bool                   `protobuf:"varint,11,opt,name=tutorial_done,json=tutorialDone,proto3" json:"tutorial_done,omitempty"`  // V5-S9：新手引导已完成（服务器权威，门控强制引导）
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -133,6 +135,20 @@ func (x *Profile) GetUpdatedAt() int64 {
 		return x.UpdatedAt
 	}
 	return 0
+}
+
+func (x *Profile) GetAvatarCardId() string {
+	if x != nil {
+		return x.AvatarCardId
+	}
+	return ""
+}
+
+func (x *Profile) GetTutorialDone() bool {
+	if x != nil {
+		return x.TutorialDone
+	}
+	return false
 }
 
 // 注意类名 DeckMsg（非 Deck）：godobuf 把每个 message 生成同名 GDScript 内部类，
@@ -433,11 +449,145 @@ func (x *DeckUpdateResp) GetProfile() *Profile {
 	return nil
 }
 
+// V5-S9：创号/改身份（昵称 + 头像怪物卡）。account 取令牌、不信 body。
+type ProfileUpdateReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Nickname      string                 `protobuf:"bytes,1,opt,name=nickname,proto3" json:"nickname,omitempty"`
+	AvatarCardId  string                 `protobuf:"bytes,2,opt,name=avatar_card_id,json=avatarCardId,proto3" json:"avatar_card_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProfileUpdateReq) Reset() {
+	*x = ProfileUpdateReq{}
+	mi := &file_profile_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProfileUpdateReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProfileUpdateReq) ProtoMessage() {}
+
+func (x *ProfileUpdateReq) ProtoReflect() protoreflect.Message {
+	mi := &file_profile_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProfileUpdateReq.ProtoReflect.Descriptor instead.
+func (*ProfileUpdateReq) Descriptor() ([]byte, []int) {
+	return file_profile_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ProfileUpdateReq) GetNickname() string {
+	if x != nil {
+		return x.Nickname
+	}
+	return ""
+}
+
+func (x *ProfileUpdateReq) GetAvatarCardId() string {
+	if x != nil {
+		return x.AvatarCardId
+	}
+	return ""
+}
+
+type ProfileUpdateResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Profile       *Profile               `protobuf:"bytes,1,opt,name=profile,proto3" json:"profile,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProfileUpdateResp) Reset() {
+	*x = ProfileUpdateResp{}
+	mi := &file_profile_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProfileUpdateResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProfileUpdateResp) ProtoMessage() {}
+
+func (x *ProfileUpdateResp) ProtoReflect() protoreflect.Message {
+	mi := &file_profile_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProfileUpdateResp.ProtoReflect.Descriptor instead.
+func (*ProfileUpdateResp) Descriptor() ([]byte, []int) {
+	return file_profile_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ProfileUpdateResp) GetProfile() *Profile {
+	if x != nil {
+		return x.Profile
+	}
+	return nil
+}
+
+// V5-S9：标记新手引导已完成（无入参；置 tutorial_done=true，回最新档）。
+type TutorialDoneReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TutorialDoneReq) Reset() {
+	*x = TutorialDoneReq{}
+	mi := &file_profile_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TutorialDoneReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TutorialDoneReq) ProtoMessage() {}
+
+func (x *TutorialDoneReq) ProtoReflect() protoreflect.Message {
+	mi := &file_profile_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TutorialDoneReq.ProtoReflect.Descriptor instead.
+func (*TutorialDoneReq) Descriptor() ([]byte, []int) {
+	return file_profile_proto_rawDescGZIP(), []int{8}
+}
+
 var File_profile_proto protoreflect.FileDescriptor
 
 const file_profile_proto_rawDesc = "" +
 	"\n" +
-	"\rprofile.proto\x12\agame.v4\"\x8a\x02\n" +
+	"\rprofile.proto\x12\agame.v4\"\xd5\x02\n" +
 	"\aProfile\x12\x1d\n" +
 	"\n" +
 	"account_id\x18\x01 \x01(\x03R\taccountId\x12\x1a\n" +
@@ -449,7 +599,10 @@ const file_profile_proto_rawDesc = "" +
 	"\x11current_season_id\x18\a \x01(\x05R\x0fcurrentSeasonId\x12\x18\n" +
 	"\aversion\x18\b \x01(\x05R\aversion\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\t \x01(\x03R\tupdatedAt\"e\n" +
+	"updated_at\x18\t \x01(\x03R\tupdatedAt\x12$\n" +
+	"\x0eavatar_card_id\x18\n" +
+	" \x01(\tR\favatarCardId\x12#\n" +
+	"\rtutorial_done\x18\v \x01(\bR\ftutorialDone\"e\n" +
 	"\aDeckMsg\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
 	"\x04slot\x18\x02 \x01(\x05R\x04slot\x12\x19\n" +
@@ -470,7 +623,13 @@ const file_profile_proto_rawDesc = "" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x1f\n" +
 	"\vnew_version\x18\x02 \x01(\x05R\n" +
 	"newVersion\x12*\n" +
-	"\aprofile\x18\x03 \x01(\v2\x10.game.v4.ProfileR\aprofileBBZ@github.com/jchensh/godot-clash-pusher/server/internal/pb/profileb\x06proto3"
+	"\aprofile\x18\x03 \x01(\v2\x10.game.v4.ProfileR\aprofile\"T\n" +
+	"\x10ProfileUpdateReq\x12\x1a\n" +
+	"\bnickname\x18\x01 \x01(\tR\bnickname\x12$\n" +
+	"\x0eavatar_card_id\x18\x02 \x01(\tR\favatarCardId\"?\n" +
+	"\x11ProfileUpdateResp\x12*\n" +
+	"\aprofile\x18\x01 \x01(\v2\x10.game.v4.ProfileR\aprofile\"\x11\n" +
+	"\x0fTutorialDoneReqBBZ@github.com/jchensh/godot-clash-pusher/server/internal/pb/profileb\x06proto3"
 
 var (
 	file_profile_proto_rawDescOnce sync.Once
@@ -484,24 +643,28 @@ func file_profile_proto_rawDescGZIP() []byte {
 	return file_profile_proto_rawDescData
 }
 
-var file_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_profile_proto_goTypes = []any{
-	(*Profile)(nil),        // 0: game.v4.Profile
-	(*DeckMsg)(nil),        // 1: game.v4.DeckMsg
-	(*ProfileGetReq)(nil),  // 2: game.v4.ProfileGetReq
-	(*ProfileGetResp)(nil), // 3: game.v4.ProfileGetResp
-	(*DeckUpdateReq)(nil),  // 4: game.v4.DeckUpdateReq
-	(*DeckUpdateResp)(nil), // 5: game.v4.DeckUpdateResp
+	(*Profile)(nil),           // 0: game.v4.Profile
+	(*DeckMsg)(nil),           // 1: game.v4.DeckMsg
+	(*ProfileGetReq)(nil),     // 2: game.v4.ProfileGetReq
+	(*ProfileGetResp)(nil),    // 3: game.v4.ProfileGetResp
+	(*DeckUpdateReq)(nil),     // 4: game.v4.DeckUpdateReq
+	(*DeckUpdateResp)(nil),    // 5: game.v4.DeckUpdateResp
+	(*ProfileUpdateReq)(nil),  // 6: game.v4.ProfileUpdateReq
+	(*ProfileUpdateResp)(nil), // 7: game.v4.ProfileUpdateResp
+	(*TutorialDoneReq)(nil),   // 8: game.v4.TutorialDoneReq
 }
 var file_profile_proto_depIdxs = []int32{
 	0, // 0: game.v4.ProfileGetResp.profile:type_name -> game.v4.Profile
 	1, // 1: game.v4.ProfileGetResp.decks:type_name -> game.v4.DeckMsg
 	0, // 2: game.v4.DeckUpdateResp.profile:type_name -> game.v4.Profile
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	0, // 3: game.v4.ProfileUpdateResp.profile:type_name -> game.v4.Profile
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_profile_proto_init() }
@@ -515,7 +678,7 @@ func file_profile_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_profile_proto_rawDesc), len(file_profile_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

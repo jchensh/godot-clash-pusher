@@ -23,8 +23,8 @@ const HEARTBEAT_INTERVAL := 5.0  # 每 5s 发一次心跳（服务端 30s 无活
 const RECONNECT_RETRY := 2.0     # 断线后每 2s 重试一次连接
 const RECONNECT_MAX := 60.0      # 重连窗口（对齐服务端 room TTL）；超过则放弃
 
-signal matched(your_side: int, opponent_name: String)  # 匹配到对手（MatchFound）
-signal joined(your_side: int, opponent_name: String)   # 进房建好 Match（JoinRoomResp）
+signal matched(your_side: int, opponent_name: String, opponent_avatar: String)  # 匹配到对手（MatchFound）
+signal joined(your_side: int, opponent_name: String, opponent_avatar: String)   # 进房建好 Match（JoinRoomResp）
 signal result(winner: int, reason: int)
 signal reconnecting            # 断线、正在重连中（UI 提示）
 signal disconnected            # 重连窗口耗尽、彻底掉线
@@ -150,11 +150,13 @@ func _handle_match_found(payload: PackedByteArray) -> void:
 		return
 	_room_id = mf.get_room_id()   # 非空后,断线重连走 JoinRoom(room_id)
 	var opp_name := ""
+	var opp_avatar := ""
 	var opp = mf.get_opponent()
 	if opp != null:
 		opp_name = opp.get_nickname()
+		opp_avatar = opp.get_avatar_card_id()
 	print("[net] 已匹配: 对手=%s 我方=%d 房间=%s" % [opp_name, mf.get_your_side(), _room_id])
-	matched.emit(mf.get_your_side(), opp_name)
+	matched.emit(mf.get_your_side(), opp_name, opp_avatar)
 
 
 ## 匹配中取消(退队)。服务端按账号出队,不需要 queue_id。
@@ -180,11 +182,13 @@ func _handle_join_resp(payload: PackedByteArray) -> void:
 	_reconnecting = false
 	_hb_accum = 0.0
 	var opp_name := ""
+	var opp_avatar := ""
 	var opp = resp.get_opponent()
 	if opp != null:
 		opp_name = opp.get_nickname()
+		opp_avatar = opp.get_avatar_card_id()
 	print("[net] 进房, 我方=%d, 开打" % your_side)
-	joined.emit(your_side, opp_name)
+	joined.emit(your_side, opp_name, opp_avatar)
 
 
 func _handle_tick_bundle(payload: PackedByteArray) -> void:

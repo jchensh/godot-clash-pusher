@@ -29,6 +29,9 @@ enum MsgId {
   PROFILE_GET_RESP = 21;
   DECK_UPDATE_REQ = 22;
   DECK_UPDATE_RESP = 23;
+  PROFILE_UPDATE_REQ = 24;          // V5-S9：改昵称/头像
+  PROFILE_UPDATE_RESP = 25;
+  PROFILE_TUTORIAL_DONE_REQ = 26;   // V5-S9：标记新手引导已完成
 
   FIND_MATCH_REQ = 30;
   FIND_MATCH_RESP = 31;
@@ -104,4 +107,5 @@ message ProfileSummary {
   int32 avatar_id = 3;
   int32 level = 4;
   int32 trophies = 5;
+  string avatar_card_id = 6;   // V5-S9：头像=怪物卡 id（PVP 对手名片用）
 }

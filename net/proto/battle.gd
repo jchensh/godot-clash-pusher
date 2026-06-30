@@ -1580,6 +1580,9 @@ enum MsgId {
 	PROFILE_GET_RESP = 21,
 	DECK_UPDATE_REQ = 22,
 	DECK_UPDATE_RESP = 23,
+	PROFILE_UPDATE_REQ = 24,
+	PROFILE_UPDATE_RESP = 25,
+	PROFILE_TUTORIAL_DONE_REQ = 26,
 	FIND_MATCH_REQ = 30,
 	FIND_MATCH_RESP = 31,
 	CANCEL_MATCH_REQ = 32,
@@ -1601,7 +1604,9 @@ enum MsgId {
 	ECONOMY_STATE_RESP = 62,
 	ECONOMY_UPGRADE_REQ = 63,
 	ECONOMY_RANK_UP_REQ = 64,
-	ECONOMY_UNLOCK_REQ = 65
+	ECONOMY_UNLOCK_REQ = 65,
+	ECONOMY_STAGE_CLEAR_REQ = 66,
+	ECONOMY_COLLECT_IDLE_REQ = 67
 }
 
 enum ErrorCode {
@@ -1623,7 +1628,8 @@ enum ErrorCode {
 	ERR_BATTLE_HASH_MISMATCH = 402,
 	ERR_ECONOMY_INSUFFICIENT = 500,
 	ERR_ECONOMY_AT_CAP = 501,
-	ERR_ECONOMY_LOCKED = 502
+	ERR_ECONOMY_LOCKED = 502,
+	ERR_ECONOMY_STAGE_LOCKED = 503
 }
 
 class ErrorResp:
@@ -1738,6 +1744,11 @@ class ProfileSummary:
 		service.field = __trophies
 		data[__trophies.tag] = service
 		
+		__avatar_card_id = PBField.new("avatar_card_id", PB_DATA_TYPE.STRING, PB_RULE.OPTIONAL, 6, true, DEFAULT_VALUES_3[PB_DATA_TYPE.STRING])
+		service = PBServiceField.new()
+		service.field = __avatar_card_id
+		data[__avatar_card_id.tag] = service
+		
 	var data = {}
 	
 	var __account_id: PBField
@@ -1804,6 +1815,19 @@ class ProfileSummary:
 		__trophies.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
 	func set_trophies(value : int) -> void:
 		__trophies.value = value
+	
+	var __avatar_card_id: PBField
+	func has_avatar_card_id() -> bool:
+		if __avatar_card_id.value != null:
+			return true
+		return false
+	func get_avatar_card_id() -> String:
+		return __avatar_card_id.value
+	func clear_avatar_card_id() -> void:
+		data[6].state = PB_SERVICE_STATE.UNFILLED
+		__avatar_card_id.value = DEFAULT_VALUES_3[PB_DATA_TYPE.STRING]
+	func set_avatar_card_id(value : String) -> void:
+		__avatar_card_id.value = value
 	
 	func _to_string() -> String:
 		return PBPacker.message_to_string(data)

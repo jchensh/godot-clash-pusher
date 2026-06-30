@@ -24,6 +24,7 @@ var server_url: String = "http://localhost:8080"
 var device_id: String = ""
 var access_token: String = ""
 var refresh_token: String = ""
+var is_new: bool = false   # V5-S9：本次 login 是否首次建号（服务端 LoginResp.is_new）
 
 ## Result of login() / refresh(). 不嵌 message 字段, 避免外部代码碰 godobuf 类型.
 class Result extends RefCounted:
@@ -135,6 +136,7 @@ func login(http_req: HTTPRequest) -> Result:
 
 	access_token = lr.get_token()
 	refresh_token = lr.get_refresh_token()
+	is_new = lr.get_is_new()   # V5-S9：首次建号 → 客户端进创号流程
 	_save_tokens()
 
 	var result := Result.new()

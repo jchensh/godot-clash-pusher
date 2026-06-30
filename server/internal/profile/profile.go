@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -24,6 +25,7 @@ var (
 	ErrProfileNotFound = errors.New("profile not found")
 	ErrVersionMismatch = errors.New("profile version mismatch") // optimistic lock lost
 	ErrDeckInvalid     = errors.New("deck invalid")             // failed validateDeck
+	ErrNicknameInvalid = errors.New("nickname invalid")         // V5-S9 failed validateNickname
 )
 
 // Profile mirrors a row of the profiles table (UpdatedAt as unix seconds).
@@ -37,6 +39,8 @@ type Profile struct {
 	CurrentSeasonID int32
 	Version         int32
 	UpdatedAt       int64
+	AvatarCardID    string // V5-S9：头像=怪物卡 id
+	TutorialDone    bool   // V5-S9：新手引导已完成
 }
 
 // Deck mirrors a row of the decks table.
@@ -60,11 +64,13 @@ func NewRepo(pool *pgxpool.Pool) *Repo {
 const selectProfileCols = `
 	account_id, nickname, avatar_id, level, exp, trophies,
 	COALESCE(current_season_id, 0), version,
-	EXTRACT(EPOCH FROM updated_at)::bigint`
+	EXTRACT(EPOCH FROM updated_at)::bigint,
+	avatar_card_id, tutorial_done`
 
 func scanProfile(row pgx.Row, p *Profile) error {
 	return row.Scan(&p.AccountID, &p.Nickname, &p.AvatarID, &p.Level,
-		&p.Exp, &p.Trophies, &p.CurrentSeasonID, &p.Version, &p.UpdatedAt)
+		&p.Exp, &p.Trophies, &p.CurrentSeasonID, &p.Version, &p.UpdatedAt,
+		&p.AvatarCardID, &p.TutorialDone)
 }
 
 // Get returns the profile plus all decks (slot-ordered) for an account.
@@ -162,6 +168,76 @@ func (r *Repo) UpdateDeck(ctx context.Context, accountID int64, slot int32, card
 		return nil, fmt.Errorf("commit: %w", err)
 	}
 	return &p, nil
+}
+
+// UpdateIdentity sets the player's nickname + avatar card (V5-S9 创号/改身份),
+// bumping the optimistic-lock version. Name validation is server-authoritative.
+func (r *Repo) UpdateIdentity(ctx context.Context, accountID int64, nickname, avatarCardID string) (*Profile, error) {
+	clean, err := validateNickname(nickname)
+	if err != nil {
+		return nil, err
+	}
+	avatarCardID = strings.TrimSpace(avatarCardID)
+	if avatarCardID == "" {
+		return nil, fmt.Errorf("%w: avatar required", ErrNicknameInvalid)
+	}
+	if len(avatarCardID) > 64 {
+		return nil, fmt.Errorf("%w: avatar id too long", ErrNicknameInvalid)
+	}
+	var p Profile
+	err = scanProfile(r.pool.QueryRow(ctx, `
+		UPDATE profiles SET nickname = $2, avatar_card_id = $3, version = version + 1, updated_at = NOW()
+		WHERE account_id = $1
+		RETURNING `+selectProfileCols, accountID, clean, avatarCardID), &p)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrProfileNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("update identity: %w", err)
+	}
+	return &p, nil
+}
+
+// SetTutorialDone marks the new-player tutorial complete (idempotent), returning
+// the latest profile. V5-S9: server-authoritative gate for forcing the tutorial.
+func (r *Repo) SetTutorialDone(ctx context.Context, accountID int64) (*Profile, error) {
+	var p Profile
+	err := scanProfile(r.pool.QueryRow(ctx, `
+		UPDATE profiles SET tutorial_done = TRUE, updated_at = NOW()
+		WHERE account_id = $1
+		RETURNING `+selectProfileCols, accountID), &p)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrProfileNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("set tutorial done: %w", err)
+	}
+	return &p, nil
+}
+
+// validateNickname trims and enforces a display-width budget (V5-S9): wide
+// (CJK/kana/hangul/fullwidth/emoji) runes cost 1 unit, narrow (ASCII/Latin) 0.5
+// — limit 10 units (counted as 20 half-units). Rejects empty + control chars.
+func validateNickname(raw string) (string, error) {
+	n := strings.TrimSpace(raw)
+	if n == "" {
+		return "", fmt.Errorf("%w: empty", ErrNicknameInvalid)
+	}
+	half := 0
+	for _, r := range n {
+		if r < 0x20 || r == 0x7f {
+			return "", fmt.Errorf("%w: control char", ErrNicknameInvalid)
+		}
+		if r <= 0xFF {
+			half += 1 // narrow = 0.5 unit
+		} else {
+			half += 2 // wide = 1 unit
+		}
+	}
+	if half > 20 {
+		return "", fmt.Errorf("%w: too long (max 10 full-width)", ErrNicknameInvalid)
+	}
+	return n, nil
 }
 
 // validateDeck enforces the structural rules a deck must satisfy. Per V4-S2

@@ -14,9 +14,6 @@ const BG_TEX := preload("res://assets/ui/menu_bg.png")
 
 const MENU_SCENE := "res://view/main_menu.tscn"
 const STAGE_MAP_SCENE := "res://view/stage_map.tscn"          # S7c（未建则提示）
-const CARD_COLLECTION_SCENE := "res://view/card_collection.tscn"  # S7d（未建则提示）
-const DECK_BUILDER_SCENE := "res://view/deck_builder.tscn"
-const NET_BATTLE_SCENE := "res://view/net_battle_scene.tscn"
 
 var _http: HTTPRequest
 var _wallet_holder: Control
@@ -72,13 +69,8 @@ func _build_static() -> void:
 
 	_build_idle_card(348)
 
-	_cta_btn = _menu_button("闯关", 520, _on_stage_pressed, "gold", 40, 440, 112)
-	var b_prog := _menu_button("养成", 664, _on_progression_pressed, "stone", 32, 172, 92)
-	b_prog.position.x = 80
-	var b_deck := _menu_button("卡组", 664, _on_deck_pressed, "stone", 32, 172, 92)
-	b_deck.position.x = 274
-	var b_ladder := _menu_button("天梯", 664, _on_ladder_pressed, "stone", 32, 172, 92)
-	b_ladder.position.x = 468
+	# V5-S9：基地瘦身=PVE 中枢，只留闯关 + 钱包/挂机/战力（养成/卡组/天梯已上提到主菜单）。
+	_cta_btn = _menu_button("闯关", 560, _on_stage_pressed, "gold", 44, 440, 120)
 
 	_menu_button(tr("btn_back"), 1170, _on_back_pressed, "dark", 28, 240, 72)
 
@@ -187,17 +179,6 @@ func _on_collect_pressed() -> void:
 
 func _on_stage_pressed() -> void:
 	_go(STAGE_MAP_SCENE, "闯关地图（S7c）即将上线")
-
-func _on_progression_pressed() -> void:
-	_go(CARD_COLLECTION_SCENE, "养成界面（S7d）即将上线")
-
-func _on_deck_pressed() -> void:
-	GameStateScript.deck_mode = "edit"   # 基地编辑：deck_builder 存卡组后回基地（不进战斗）
-	GameStateScript.stage_id = ""
-	get_tree().change_scene_to_file(DECK_BUILDER_SCENE)
-
-func _on_ladder_pressed() -> void:
-	get_tree().change_scene_to_file(NET_BATTLE_SCENE)
 
 func _on_back_pressed() -> void:
 	get_tree().change_scene_to_file(MENU_SCENE)

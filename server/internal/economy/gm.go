@@ -1,7 +1,7 @@
 package economy
 
 // GM / 开发作弊工具（V5）：直接改本账号的服务器经济数据库（加货币/碎片、解锁、满养成、
-// 推进关卡进度、重置）。**仅开发用**——服务器侧由 GM_ENABLED 环境变量门控（默认关，prod 不开）；
+// 推进关卡进度、重置）。V5-S9 改动3 起**取消 GM_ENABLED 门控**，所有部署（含 prod）始终开放；
 // 仍走会话鉴权（mw.Require），只能改"自己账号"，无法影响他人。请求 JSON、响应复用 EconomyState proto。
 
 import (
@@ -131,7 +131,7 @@ func (r *Repo) GMApply(ctx context.Context, accountID int64, ops GMOps, cfg *Con
 	return st, nil
 }
 
-// GMHandler 暴露 /v5/gm/*（仅 GM_ENABLED 时由 api main 挂载）。
+// GMHandler 暴露 /v5/gm/*（V5-S9 起由 api main 始终挂载，无 GM_ENABLED 门控）。
 type GMHandler struct {
 	repo *Repo
 	cfg  *Config

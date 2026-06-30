@@ -34,34 +34,37 @@ const (
 type MsgId int32
 
 const (
-	MsgId_MSG_UNKNOWN          MsgId = 0
-	MsgId_PING                 MsgId = 1
-	MsgId_PONG                 MsgId = 2
-	MsgId_ERROR_RESP           MsgId = 3
-	MsgId_LOGIN_REQ            MsgId = 10
-	MsgId_LOGIN_RESP           MsgId = 11
-	MsgId_REFRESH_REQ          MsgId = 12
-	MsgId_REFRESH_RESP         MsgId = 13
-	MsgId_PROFILE_GET_REQ      MsgId = 20
-	MsgId_PROFILE_GET_RESP     MsgId = 21
-	MsgId_DECK_UPDATE_REQ      MsgId = 22
-	MsgId_DECK_UPDATE_RESP     MsgId = 23
-	MsgId_FIND_MATCH_REQ       MsgId = 30
-	MsgId_FIND_MATCH_RESP      MsgId = 31
-	MsgId_CANCEL_MATCH_REQ     MsgId = 32
-	MsgId_CANCEL_MATCH_RESP    MsgId = 33
-	MsgId_MATCH_FOUND_PUSH     MsgId = 34
-	MsgId_JOIN_ROOM_REQ        MsgId = 40
-	MsgId_JOIN_ROOM_RESP       MsgId = 41
-	MsgId_DEPLOY_CMD           MsgId = 42
-	MsgId_TICK_BUNDLE          MsgId = 43
-	MsgId_STATE_HASH_UP        MsgId = 44
-	MsgId_BATTLE_RESULT_PUSH   MsgId = 45
-	MsgId_HEARTBEAT_PING       MsgId = 46
-	MsgId_HEARTBEAT_PONG       MsgId = 47
-	MsgId_BATTLE_END_REPORT    MsgId = 48 // 客户端 -> 服务端：本地 sim 判定对局结束（lockstep 服务端无 sim，靠两端上报）
-	MsgId_LEADERBOARD_TOP_REQ  MsgId = 50
-	MsgId_LEADERBOARD_TOP_RESP MsgId = 51
+	MsgId_MSG_UNKNOWN               MsgId = 0
+	MsgId_PING                      MsgId = 1
+	MsgId_PONG                      MsgId = 2
+	MsgId_ERROR_RESP                MsgId = 3
+	MsgId_LOGIN_REQ                 MsgId = 10
+	MsgId_LOGIN_RESP                MsgId = 11
+	MsgId_REFRESH_REQ               MsgId = 12
+	MsgId_REFRESH_RESP              MsgId = 13
+	MsgId_PROFILE_GET_REQ           MsgId = 20
+	MsgId_PROFILE_GET_RESP          MsgId = 21
+	MsgId_DECK_UPDATE_REQ           MsgId = 22
+	MsgId_DECK_UPDATE_RESP          MsgId = 23
+	MsgId_PROFILE_UPDATE_REQ        MsgId = 24 // V5-S9：改昵称/头像
+	MsgId_PROFILE_UPDATE_RESP       MsgId = 25
+	MsgId_PROFILE_TUTORIAL_DONE_REQ MsgId = 26 // V5-S9：标记新手引导已完成
+	MsgId_FIND_MATCH_REQ            MsgId = 30
+	MsgId_FIND_MATCH_RESP           MsgId = 31
+	MsgId_CANCEL_MATCH_REQ          MsgId = 32
+	MsgId_CANCEL_MATCH_RESP         MsgId = 33
+	MsgId_MATCH_FOUND_PUSH          MsgId = 34
+	MsgId_JOIN_ROOM_REQ             MsgId = 40
+	MsgId_JOIN_ROOM_RESP            MsgId = 41
+	MsgId_DEPLOY_CMD                MsgId = 42
+	MsgId_TICK_BUNDLE               MsgId = 43
+	MsgId_STATE_HASH_UP             MsgId = 44
+	MsgId_BATTLE_RESULT_PUSH        MsgId = 45
+	MsgId_HEARTBEAT_PING            MsgId = 46
+	MsgId_HEARTBEAT_PONG            MsgId = 47
+	MsgId_BATTLE_END_REPORT         MsgId = 48 // 客户端 -> 服务端：本地 sim 判定对局结束（lockstep 服务端无 sim，靠两端上报）
+	MsgId_LEADERBOARD_TOP_REQ       MsgId = 50
+	MsgId_LEADERBOARD_TOP_RESP      MsgId = 51
 	// 60-69 = V5 会话/经济（决策 48）
 	MsgId_CONFIG_PUSH              MsgId = 60 // server->client：登录后配置下发（V5-N2）
 	MsgId_ECONOMY_STATE_REQ        MsgId = 61 // V5-N3 client->server：拉经济状态
@@ -88,6 +91,9 @@ var (
 		21: "PROFILE_GET_RESP",
 		22: "DECK_UPDATE_REQ",
 		23: "DECK_UPDATE_RESP",
+		24: "PROFILE_UPDATE_REQ",
+		25: "PROFILE_UPDATE_RESP",
+		26: "PROFILE_TUTORIAL_DONE_REQ",
 		30: "FIND_MATCH_REQ",
 		31: "FIND_MATCH_RESP",
 		32: "CANCEL_MATCH_REQ",
@@ -114,42 +120,45 @@ var (
 		67: "ECONOMY_COLLECT_IDLE_REQ",
 	}
 	MsgId_value = map[string]int32{
-		"MSG_UNKNOWN":              0,
-		"PING":                     1,
-		"PONG":                     2,
-		"ERROR_RESP":               3,
-		"LOGIN_REQ":                10,
-		"LOGIN_RESP":               11,
-		"REFRESH_REQ":              12,
-		"REFRESH_RESP":             13,
-		"PROFILE_GET_REQ":          20,
-		"PROFILE_GET_RESP":         21,
-		"DECK_UPDATE_REQ":          22,
-		"DECK_UPDATE_RESP":         23,
-		"FIND_MATCH_REQ":           30,
-		"FIND_MATCH_RESP":          31,
-		"CANCEL_MATCH_REQ":         32,
-		"CANCEL_MATCH_RESP":        33,
-		"MATCH_FOUND_PUSH":         34,
-		"JOIN_ROOM_REQ":            40,
-		"JOIN_ROOM_RESP":           41,
-		"DEPLOY_CMD":               42,
-		"TICK_BUNDLE":              43,
-		"STATE_HASH_UP":            44,
-		"BATTLE_RESULT_PUSH":       45,
-		"HEARTBEAT_PING":           46,
-		"HEARTBEAT_PONG":           47,
-		"BATTLE_END_REPORT":        48,
-		"LEADERBOARD_TOP_REQ":      50,
-		"LEADERBOARD_TOP_RESP":     51,
-		"CONFIG_PUSH":              60,
-		"ECONOMY_STATE_REQ":        61,
-		"ECONOMY_STATE_RESP":       62,
-		"ECONOMY_UPGRADE_REQ":      63,
-		"ECONOMY_RANK_UP_REQ":      64,
-		"ECONOMY_UNLOCK_REQ":       65,
-		"ECONOMY_STAGE_CLEAR_REQ":  66,
-		"ECONOMY_COLLECT_IDLE_REQ": 67,
+		"MSG_UNKNOWN":               0,
+		"PING":                      1,
+		"PONG":                      2,
+		"ERROR_RESP":                3,
+		"LOGIN_REQ":                 10,
+		"LOGIN_RESP":                11,
+		"REFRESH_REQ":               12,
+		"REFRESH_RESP":              13,
+		"PROFILE_GET_REQ":           20,
+		"PROFILE_GET_RESP":          21,
+		"DECK_UPDATE_REQ":           22,
+		"DECK_UPDATE_RESP":          23,
+		"PROFILE_UPDATE_REQ":        24,
+		"PROFILE_UPDATE_RESP":       25,
+		"PROFILE_TUTORIAL_DONE_REQ": 26,
+		"FIND_MATCH_REQ":            30,
+		"FIND_MATCH_RESP":           31,
+		"CANCEL_MATCH_REQ":          32,
+		"CANCEL_MATCH_RESP":         33,
+		"MATCH_FOUND_PUSH":          34,
+		"JOIN_ROOM_REQ":             40,
+		"JOIN_ROOM_RESP":            41,
+		"DEPLOY_CMD":                42,
+		"TICK_BUNDLE":               43,
+		"STATE_HASH_UP":             44,
+		"BATTLE_RESULT_PUSH":        45,
+		"HEARTBEAT_PING":            46,
+		"HEARTBEAT_PONG":            47,
+		"BATTLE_END_REPORT":         48,
+		"LEADERBOARD_TOP_REQ":       50,
+		"LEADERBOARD_TOP_RESP":      51,
+		"CONFIG_PUSH":               60,
+		"ECONOMY_STATE_REQ":         61,
+		"ECONOMY_STATE_RESP":        62,
+		"ECONOMY_UPGRADE_REQ":       63,
+		"ECONOMY_RANK_UP_REQ":       64,
+		"ECONOMY_UNLOCK_REQ":        65,
+		"ECONOMY_STAGE_CLEAR_REQ":   66,
+		"ECONOMY_COLLECT_IDLE_REQ":  67,
 	}
 )
 
@@ -351,6 +360,7 @@ type ProfileSummary struct {
 	AvatarId      int32                  `protobuf:"varint,3,opt,name=avatar_id,json=avatarId,proto3" json:"avatar_id,omitempty"`
 	Level         int32                  `protobuf:"varint,4,opt,name=level,proto3" json:"level,omitempty"`
 	Trophies      int32                  `protobuf:"varint,5,opt,name=trophies,proto3" json:"trophies,omitempty"`
+	AvatarCardId  string                 `protobuf:"bytes,6,opt,name=avatar_card_id,json=avatarCardId,proto3" json:"avatar_card_id,omitempty"` // V5-S9：头像=怪物卡 id（PVP 对手名片用）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -420,6 +430,13 @@ func (x *ProfileSummary) GetTrophies() int32 {
 	return 0
 }
 
+func (x *ProfileSummary) GetAvatarCardId() string {
+	if x != nil {
+		return x.AvatarCardId
+	}
+	return ""
+}
+
 var File_common_proto protoreflect.FileDescriptor
 
 const file_common_proto_rawDesc = "" +
@@ -428,14 +445,15 @@ const file_common_proto_rawDesc = "" +
 	"\tErrorResp\x12&\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x12.game.v4.ErrorCodeR\x04code\x12\x16\n" +
 	"\x06detail\x18\x02 \x01(\tR\x06detail\x12.\n" +
-	"\vin_reply_to\x18\x03 \x01(\x0e2\x0e.game.v4.MsgIdR\tinReplyTo\"\x9a\x01\n" +
+	"\vin_reply_to\x18\x03 \x01(\x0e2\x0e.game.v4.MsgIdR\tinReplyTo\"\xc0\x01\n" +
 	"\x0eProfileSummary\x12\x1d\n" +
 	"\n" +
 	"account_id\x18\x01 \x01(\x03R\taccountId\x12\x1a\n" +
 	"\bnickname\x18\x02 \x01(\tR\bnickname\x12\x1b\n" +
 	"\tavatar_id\x18\x03 \x01(\x05R\bavatarId\x12\x14\n" +
 	"\x05level\x18\x04 \x01(\x05R\x05level\x12\x1a\n" +
-	"\btrophies\x18\x05 \x01(\x05R\btrophies*\xea\x05\n" +
+	"\btrophies\x18\x05 \x01(\x05R\btrophies\x12$\n" +
+	"\x0eavatar_card_id\x18\x06 \x01(\tR\favatarCardId*\xba\x06\n" +
 	"\x05MsgId\x12\x0f\n" +
 	"\vMSG_UNKNOWN\x10\x00\x12\b\n" +
 	"\x04PING\x10\x01\x12\b\n" +
@@ -451,7 +469,10 @@ const file_common_proto_rawDesc = "" +
 	"\x0fPROFILE_GET_REQ\x10\x14\x12\x14\n" +
 	"\x10PROFILE_GET_RESP\x10\x15\x12\x13\n" +
 	"\x0fDECK_UPDATE_REQ\x10\x16\x12\x14\n" +
-	"\x10DECK_UPDATE_RESP\x10\x17\x12\x12\n" +
+	"\x10DECK_UPDATE_RESP\x10\x17\x12\x16\n" +
+	"\x12PROFILE_UPDATE_REQ\x10\x18\x12\x17\n" +
+	"\x13PROFILE_UPDATE_RESP\x10\x19\x12\x1d\n" +
+	"\x19PROFILE_TUTORIAL_DONE_REQ\x10\x1a\x12\x12\n" +
 	"\x0eFIND_MATCH_REQ\x10\x1e\x12\x13\n" +
 	"\x0fFIND_MATCH_RESP\x10\x1f\x12\x14\n" +
 	"\x10CANCEL_MATCH_REQ\x10 \x12\x15\n" +
