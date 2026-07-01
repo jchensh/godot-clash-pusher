@@ -110,7 +110,12 @@ func card_stat_mult(card_id: String, config) -> float:
 	var level := int(st.get("level", 1))
 	var rank := int(st.get("rank", 1))
 	var lvl_factor := 1.0 + float(maxi(level - 1, 0)) * per_level
-	return lvl_factor * pow(rank_mult, float(maxi(rank - 1, 0)))
+	# 阶乘用循环乘法而非 pow()：本乘区进 PVP lockstep 确定性路径（KAN-76/77），
+	# pow 是数学库函数、跨平台末位 bit 可能不一致；纯乘法 IEEE 强制正确舍入、逐 bit 确定。
+	var rank_factor := 1.0
+	for i in maxi(rank - 1, 0):
+		rank_factor *= rank_mult
+	return lvl_factor * rank_factor
 
 # 本卡战力 = base_power（card_progression）× 数值乘区。
 func card_power(card_id: String, config) -> float:

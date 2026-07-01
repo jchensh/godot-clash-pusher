@@ -744,6 +744,88 @@ class JoinRoomReq:
 			return PB_ERR.PARSE_INCOMPLETE
 		return result
 	
+class CardProgress:
+	extends RefCounted
+	func _init():
+		var service
+		
+		__card_id = PBField.new("card_id", PB_DATA_TYPE.STRING, PB_RULE.OPTIONAL, 1, true, DEFAULT_VALUES_3[PB_DATA_TYPE.STRING])
+		service = PBServiceField.new()
+		service.field = __card_id
+		data[__card_id.tag] = service
+		
+		__level = PBField.new("level", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 2, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
+		service = PBServiceField.new()
+		service.field = __level
+		data[__level.tag] = service
+		
+		__rank = PBField.new("rank", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 3, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
+		service = PBServiceField.new()
+		service.field = __rank
+		data[__rank.tag] = service
+		
+	var data = {}
+	
+	var __card_id: PBField
+	func has_card_id() -> bool:
+		if __card_id.value != null:
+			return true
+		return false
+	func get_card_id() -> String:
+		return __card_id.value
+	func clear_card_id() -> void:
+		data[1].state = PB_SERVICE_STATE.UNFILLED
+		__card_id.value = DEFAULT_VALUES_3[PB_DATA_TYPE.STRING]
+	func set_card_id(value : String) -> void:
+		__card_id.value = value
+	
+	var __level: PBField
+	func has_level() -> bool:
+		if __level.value != null:
+			return true
+		return false
+	func get_level() -> int:
+		return __level.value
+	func clear_level() -> void:
+		data[2].state = PB_SERVICE_STATE.UNFILLED
+		__level.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
+	func set_level(value : int) -> void:
+		__level.value = value
+	
+	var __rank: PBField
+	func has_rank() -> bool:
+		if __rank.value != null:
+			return true
+		return false
+	func get_rank() -> int:
+		return __rank.value
+	func clear_rank() -> void:
+		data[3].state = PB_SERVICE_STATE.UNFILLED
+		__rank.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
+	func set_rank(value : int) -> void:
+		__rank.value = value
+	
+	func _to_string() -> String:
+		return PBPacker.message_to_string(data)
+		
+	func to_bytes() -> PackedByteArray:
+		return PBPacker.pack_message(data)
+		
+	func from_bytes(bytes : PackedByteArray, offset : int = 0, limit : int = -1) -> int:
+		var cur_limit = bytes.size()
+		if limit != -1:
+			cur_limit = limit
+		var result = PBPacker.unpack_message(data, bytes, offset, cur_limit)
+		if result == cur_limit:
+			if PBPacker.check_required(data):
+				if limit == -1:
+					return PB_ERR.NO_ERRORS
+			else:
+				return PB_ERR.REQUIRED_FIELDS
+		elif limit == -1 && result > 0:
+			return PB_ERR.PARSE_INCOMPLETE
+		return result
+	
 class JoinRoomResp:
 	extends RefCounted
 	func _init():
@@ -791,6 +873,20 @@ class JoinRoomResp:
 		service = PBServiceField.new()
 		service.field = __level_id
 		data[__level_id.tag] = service
+		
+		var __side1_progress_default: Array[CardProgress] = []
+		__side1_progress = PBField.new("side1_progress", PB_DATA_TYPE.MESSAGE, PB_RULE.REPEATED, 9, true, __side1_progress_default)
+		service = PBServiceField.new()
+		service.field = __side1_progress
+		service.func_ref = Callable(self, "add_side1_progress")
+		data[__side1_progress.tag] = service
+		
+		var __side2_progress_default: Array[CardProgress] = []
+		__side2_progress = PBField.new("side2_progress", PB_DATA_TYPE.MESSAGE, PB_RULE.REPEATED, 10, true, __side2_progress_default)
+		service = PBServiceField.new()
+		service.field = __side2_progress
+		service.func_ref = Callable(self, "add_side2_progress")
+		data[__side2_progress.tag] = service
 		
 	var data = {}
 	
@@ -890,6 +986,28 @@ class JoinRoomResp:
 		__level_id.value = DEFAULT_VALUES_3[PB_DATA_TYPE.STRING]
 	func set_level_id(value : String) -> void:
 		__level_id.value = value
+	
+	var __side1_progress: PBField
+	func get_side1_progress() -> Array[CardProgress]:
+		return __side1_progress.value
+	func clear_side1_progress() -> void:
+		data[9].state = PB_SERVICE_STATE.UNFILLED
+		__side1_progress.value.clear()
+	func add_side1_progress() -> CardProgress:
+		var element = CardProgress.new()
+		__side1_progress.value.append(element)
+		return element
+	
+	var __side2_progress: PBField
+	func get_side2_progress() -> Array[CardProgress]:
+		return __side2_progress.value
+	func clear_side2_progress() -> void:
+		data[10].state = PB_SERVICE_STATE.UNFILLED
+		__side2_progress.value.clear()
+	func add_side2_progress() -> CardProgress:
+		var element = CardProgress.new()
+		__side2_progress.value.append(element)
+		return element
 	
 	func _to_string() -> String:
 		return PBPacker.message_to_string(data)

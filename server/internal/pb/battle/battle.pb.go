@@ -80,7 +80,7 @@ func (x BattleResultPush_Winner) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BattleResultPush_Winner.Descriptor instead.
 func (BattleResultPush_Winner) EnumDescriptor() ([]byte, []int) {
-	return file_battle_proto_rawDescGZIP(), []int{6, 0}
+	return file_battle_proto_rawDescGZIP(), []int{7, 0}
 }
 
 type BattleResultPush_Reason int32
@@ -138,7 +138,7 @@ func (x BattleResultPush_Reason) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BattleResultPush_Reason.Descriptor instead.
 func (BattleResultPush_Reason) EnumDescriptor() ([]byte, []int) {
-	return file_battle_proto_rawDescGZIP(), []int{6, 1}
+	return file_battle_proto_rawDescGZIP(), []int{7, 1}
 }
 
 type JoinRoomReq struct {
@@ -193,23 +193,91 @@ func (x *JoinRoomReq) GetDeck() []string {
 	return nil
 }
 
-type JoinRoomResp struct {
+// 一张卡在本局的养成态（KAN-76：服务器建房时从 economy_cards 读出、权威下发）。
+// 只发 level/rank 原始值、不发算好的乘区：两端用同版本配置的 PlayerData/CardProgression
+// 各自换算（等价、确定性），且 rank 顺带驱动升阶技能积木解锁。
+// 本 message 仅在 battle.proto 内使用（无跨文件引用，避 godobuf 跨文件内联坑）。
+type CardProgress struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
-	Opponent      *common.ProfileSummary `protobuf:"bytes,2,opt,name=opponent,proto3" json:"opponent,omitempty"`
-	YourSide      int32                  `protobuf:"varint,3,opt,name=your_side,json=yourSide,proto3" json:"your_side,omitempty"`    // 与 MatchFoundPush 一致：1 或 2
-	StartTick     int32                  `protobuf:"varint,4,opt,name=start_tick,json=startTick,proto3" json:"start_tick,omitempty"` // 双方都 join 后服务端拍板开局 tick（含倒数缓冲）
-	Seed          uint64                 `protobuf:"varint,5,opt,name=seed,proto3" json:"seed,omitempty"`
-	Side1Deck     []string               `protobuf:"bytes,6,rep,name=side1_deck,json=side1Deck,proto3" json:"side1_deck,omitempty"` // side 1 的卡组（两端都收，建同一初始态）
-	Side2Deck     []string               `protobuf:"bytes,7,rep,name=side2_deck,json=side2Deck,proto3" json:"side2_deck,omitempty"` // side 2 的卡组
-	LevelId       string                 `protobuf:"bytes,8,opt,name=level_id,json=levelId,proto3" json:"level_id,omitempty"`       // 天梯关卡配置 id（如 ladder_01），两端各自本地加载
+	CardId        string                 `protobuf:"bytes,1,opt,name=card_id,json=cardId,proto3" json:"card_id,omitempty"`
+	Level         int32                  `protobuf:"varint,2,opt,name=level,proto3" json:"level,omitempty"`
+	Rank          int32                  `protobuf:"varint,3,opt,name=rank,proto3" json:"rank,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CardProgress) Reset() {
+	*x = CardProgress{}
+	mi := &file_battle_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CardProgress) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CardProgress) ProtoMessage() {}
+
+func (x *CardProgress) ProtoReflect() protoreflect.Message {
+	mi := &file_battle_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CardProgress.ProtoReflect.Descriptor instead.
+func (*CardProgress) Descriptor() ([]byte, []int) {
+	return file_battle_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *CardProgress) GetCardId() string {
+	if x != nil {
+		return x.CardId
+	}
+	return ""
+}
+
+func (x *CardProgress) GetLevel() int32 {
+	if x != nil {
+		return x.Level
+	}
+	return 0
+}
+
+func (x *CardProgress) GetRank() int32 {
+	if x != nil {
+		return x.Rank
+	}
+	return 0
+}
+
+type JoinRoomResp struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Ok        bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	Opponent  *common.ProfileSummary `protobuf:"bytes,2,opt,name=opponent,proto3" json:"opponent,omitempty"`
+	YourSide  int32                  `protobuf:"varint,3,opt,name=your_side,json=yourSide,proto3" json:"your_side,omitempty"`    // 与 MatchFoundPush 一致：1 或 2
+	StartTick int32                  `protobuf:"varint,4,opt,name=start_tick,json=startTick,proto3" json:"start_tick,omitempty"` // 双方都 join 后服务端拍板开局 tick（含倒数缓冲）
+	Seed      uint64                 `protobuf:"varint,5,opt,name=seed,proto3" json:"seed,omitempty"`
+	Side1Deck []string               `protobuf:"bytes,6,rep,name=side1_deck,json=side1Deck,proto3" json:"side1_deck,omitempty"` // side 1 的卡组（两端都收，建同一初始态）
+	Side2Deck []string               `protobuf:"bytes,7,rep,name=side2_deck,json=side2Deck,proto3" json:"side2_deck,omitempty"` // side 2 的卡组
+	LevelId   string                 `protobuf:"bytes,8,opt,name=level_id,json=levelId,proto3" json:"level_id,omitempty"`       // 天梯关卡配置 id（如 ladder_01），两端各自本地加载
+	// KAN-76：双方卡组每张卡的养成（按 card_id 与 sideN_deck 对应，顺序无关；两端都收，
+	// 对 side1/side2 对称注入 → 同一方在两端算出逐 bit 相同的数值）。空 = 白板局（向后兼容）。
+	Side1Progress []*CardProgress `protobuf:"bytes,9,rep,name=side1_progress,json=side1Progress,proto3" json:"side1_progress,omitempty"`
+	Side2Progress []*CardProgress `protobuf:"bytes,10,rep,name=side2_progress,json=side2Progress,proto3" json:"side2_progress,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *JoinRoomResp) Reset() {
 	*x = JoinRoomResp{}
-	mi := &file_battle_proto_msgTypes[1]
+	mi := &file_battle_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -221,7 +289,7 @@ func (x *JoinRoomResp) String() string {
 func (*JoinRoomResp) ProtoMessage() {}
 
 func (x *JoinRoomResp) ProtoReflect() protoreflect.Message {
-	mi := &file_battle_proto_msgTypes[1]
+	mi := &file_battle_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -234,7 +302,7 @@ func (x *JoinRoomResp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JoinRoomResp.ProtoReflect.Descriptor instead.
 func (*JoinRoomResp) Descriptor() ([]byte, []int) {
-	return file_battle_proto_rawDescGZIP(), []int{1}
+	return file_battle_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *JoinRoomResp) GetOk() bool {
@@ -293,6 +361,20 @@ func (x *JoinRoomResp) GetLevelId() string {
 	return ""
 }
 
+func (x *JoinRoomResp) GetSide1Progress() []*CardProgress {
+	if x != nil {
+		return x.Side1Progress
+	}
+	return nil
+}
+
+func (x *JoinRoomResp) GetSide2Progress() []*CardProgress {
+	if x != nil {
+		return x.Side2Progress
+	}
+	return nil
+}
+
 // 客户端 -> 服务端：单条出兵/法术指令。
 // 坐标用 tile 量纲 × 1000 编码（避开浮点跨设备差异），客户端发前 round。
 // 例：tile (4.5, 17.0) -> x=4500, y=17000。
@@ -308,7 +390,7 @@ type DeployCmd struct {
 
 func (x *DeployCmd) Reset() {
 	*x = DeployCmd{}
-	mi := &file_battle_proto_msgTypes[2]
+	mi := &file_battle_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -320,7 +402,7 @@ func (x *DeployCmd) String() string {
 func (*DeployCmd) ProtoMessage() {}
 
 func (x *DeployCmd) ProtoReflect() protoreflect.Message {
-	mi := &file_battle_proto_msgTypes[2]
+	mi := &file_battle_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -333,7 +415,7 @@ func (x *DeployCmd) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeployCmd.ProtoReflect.Descriptor instead.
 func (*DeployCmd) Descriptor() ([]byte, []int) {
-	return file_battle_proto_rawDescGZIP(), []int{2}
+	return file_battle_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *DeployCmd) GetTick() int32 {
@@ -377,7 +459,7 @@ type TickBundle struct {
 
 func (x *TickBundle) Reset() {
 	*x = TickBundle{}
-	mi := &file_battle_proto_msgTypes[3]
+	mi := &file_battle_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -389,7 +471,7 @@ func (x *TickBundle) String() string {
 func (*TickBundle) ProtoMessage() {}
 
 func (x *TickBundle) ProtoReflect() protoreflect.Message {
-	mi := &file_battle_proto_msgTypes[3]
+	mi := &file_battle_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -402,7 +484,7 @@ func (x *TickBundle) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TickBundle.ProtoReflect.Descriptor instead.
 func (*TickBundle) Descriptor() ([]byte, []int) {
-	return file_battle_proto_rawDescGZIP(), []int{3}
+	return file_battle_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *TickBundle) GetTick() int32 {
@@ -431,7 +513,7 @@ type StateHashUp struct {
 
 func (x *StateHashUp) Reset() {
 	*x = StateHashUp{}
-	mi := &file_battle_proto_msgTypes[4]
+	mi := &file_battle_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -443,7 +525,7 @@ func (x *StateHashUp) String() string {
 func (*StateHashUp) ProtoMessage() {}
 
 func (x *StateHashUp) ProtoReflect() protoreflect.Message {
-	mi := &file_battle_proto_msgTypes[4]
+	mi := &file_battle_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -456,7 +538,7 @@ func (x *StateHashUp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StateHashUp.ProtoReflect.Descriptor instead.
 func (*StateHashUp) Descriptor() ([]byte, []int) {
-	return file_battle_proto_rawDescGZIP(), []int{4}
+	return file_battle_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *StateHashUp) GetTick() int32 {
@@ -488,7 +570,7 @@ type BattleEndReport struct {
 
 func (x *BattleEndReport) Reset() {
 	*x = BattleEndReport{}
-	mi := &file_battle_proto_msgTypes[5]
+	mi := &file_battle_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -500,7 +582,7 @@ func (x *BattleEndReport) String() string {
 func (*BattleEndReport) ProtoMessage() {}
 
 func (x *BattleEndReport) ProtoReflect() protoreflect.Message {
-	mi := &file_battle_proto_msgTypes[5]
+	mi := &file_battle_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -513,7 +595,7 @@ func (x *BattleEndReport) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BattleEndReport.ProtoReflect.Descriptor instead.
 func (*BattleEndReport) Descriptor() ([]byte, []int) {
-	return file_battle_proto_rawDescGZIP(), []int{5}
+	return file_battle_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *BattleEndReport) GetTick() int32 {
@@ -566,7 +648,7 @@ type BattleResultPush struct {
 
 func (x *BattleResultPush) Reset() {
 	*x = BattleResultPush{}
-	mi := &file_battle_proto_msgTypes[6]
+	mi := &file_battle_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -578,7 +660,7 @@ func (x *BattleResultPush) String() string {
 func (*BattleResultPush) ProtoMessage() {}
 
 func (x *BattleResultPush) ProtoReflect() protoreflect.Message {
-	mi := &file_battle_proto_msgTypes[6]
+	mi := &file_battle_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -591,7 +673,7 @@ func (x *BattleResultPush) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BattleResultPush.ProtoReflect.Descriptor instead.
 func (*BattleResultPush) Descriptor() ([]byte, []int) {
-	return file_battle_proto_rawDescGZIP(), []int{6}
+	return file_battle_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *BattleResultPush) GetWinner() BattleResultPush_Winner {
@@ -646,7 +728,7 @@ type HeartbeatPing struct {
 
 func (x *HeartbeatPing) Reset() {
 	*x = HeartbeatPing{}
-	mi := &file_battle_proto_msgTypes[7]
+	mi := &file_battle_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -658,7 +740,7 @@ func (x *HeartbeatPing) String() string {
 func (*HeartbeatPing) ProtoMessage() {}
 
 func (x *HeartbeatPing) ProtoReflect() protoreflect.Message {
-	mi := &file_battle_proto_msgTypes[7]
+	mi := &file_battle_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -671,7 +753,7 @@ func (x *HeartbeatPing) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HeartbeatPing.ProtoReflect.Descriptor instead.
 func (*HeartbeatPing) Descriptor() ([]byte, []int) {
-	return file_battle_proto_rawDescGZIP(), []int{7}
+	return file_battle_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *HeartbeatPing) GetClientTime() int64 {
@@ -690,7 +772,7 @@ type HeartbeatPong struct {
 
 func (x *HeartbeatPong) Reset() {
 	*x = HeartbeatPong{}
-	mi := &file_battle_proto_msgTypes[8]
+	mi := &file_battle_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -702,7 +784,7 @@ func (x *HeartbeatPong) String() string {
 func (*HeartbeatPong) ProtoMessage() {}
 
 func (x *HeartbeatPong) ProtoReflect() protoreflect.Message {
-	mi := &file_battle_proto_msgTypes[8]
+	mi := &file_battle_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -715,7 +797,7 @@ func (x *HeartbeatPong) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HeartbeatPong.ProtoReflect.Descriptor instead.
 func (*HeartbeatPong) Descriptor() ([]byte, []int) {
-	return file_battle_proto_rawDescGZIP(), []int{8}
+	return file_battle_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *HeartbeatPong) GetServerTime() int64 {
@@ -735,7 +817,7 @@ type TickBundle_SideDeploy struct {
 
 func (x *TickBundle_SideDeploy) Reset() {
 	*x = TickBundle_SideDeploy{}
-	mi := &file_battle_proto_msgTypes[9]
+	mi := &file_battle_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -747,7 +829,7 @@ func (x *TickBundle_SideDeploy) String() string {
 func (*TickBundle_SideDeploy) ProtoMessage() {}
 
 func (x *TickBundle_SideDeploy) ProtoReflect() protoreflect.Message {
-	mi := &file_battle_proto_msgTypes[9]
+	mi := &file_battle_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -760,7 +842,7 @@ func (x *TickBundle_SideDeploy) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TickBundle_SideDeploy.ProtoReflect.Descriptor instead.
 func (*TickBundle_SideDeploy) Descriptor() ([]byte, []int) {
-	return file_battle_proto_rawDescGZIP(), []int{3, 0}
+	return file_battle_proto_rawDescGZIP(), []int{4, 0}
 }
 
 func (x *TickBundle_SideDeploy) GetSide() int32 {
@@ -784,7 +866,11 @@ const file_battle_proto_rawDesc = "" +
 	"\fbattle.proto\x12\agame.v4\x1a\fcommon.proto\":\n" +
 	"\vJoinRoomReq\x12\x17\n" +
 	"\aroom_id\x18\x01 \x01(\tR\x06roomId\x12\x12\n" +
-	"\x04deck\x18\x02 \x03(\tR\x04deck\"\xfc\x01\n" +
+	"\x04deck\x18\x02 \x03(\tR\x04deck\"Q\n" +
+	"\fCardProgress\x12\x17\n" +
+	"\acard_id\x18\x01 \x01(\tR\x06cardId\x12\x14\n" +
+	"\x05level\x18\x02 \x01(\x05R\x05level\x12\x12\n" +
+	"\x04rank\x18\x03 \x01(\x05R\x04rank\"\xf8\x02\n" +
 	"\fJoinRoomResp\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x123\n" +
 	"\bopponent\x18\x02 \x01(\v2\x17.game.v4.ProfileSummaryR\bopponent\x12\x1b\n" +
@@ -796,7 +882,10 @@ const file_battle_proto_rawDesc = "" +
 	"side1_deck\x18\x06 \x03(\tR\tside1Deck\x12\x1d\n" +
 	"\n" +
 	"side2_deck\x18\a \x03(\tR\tside2Deck\x12\x19\n" +
-	"\blevel_id\x18\b \x01(\tR\alevelId\"j\n" +
+	"\blevel_id\x18\b \x01(\tR\alevelId\x12<\n" +
+	"\x0eside1_progress\x18\t \x03(\v2\x15.game.v4.CardProgressR\rside1Progress\x12<\n" +
+	"\x0eside2_progress\x18\n" +
+	" \x03(\v2\x15.game.v4.CardProgressR\rside2Progress\"j\n" +
 	"\tDeployCmd\x12\x12\n" +
 	"\x04tick\x18\x01 \x01(\x05R\x04tick\x12\x17\n" +
 	"\acard_id\x18\x02 \x01(\tR\x06cardId\x12\x17\n" +
@@ -864,33 +953,36 @@ func file_battle_proto_rawDescGZIP() []byte {
 }
 
 var file_battle_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_battle_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_battle_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_battle_proto_goTypes = []any{
 	(BattleResultPush_Winner)(0),  // 0: game.v4.BattleResultPush.Winner
 	(BattleResultPush_Reason)(0),  // 1: game.v4.BattleResultPush.Reason
 	(*JoinRoomReq)(nil),           // 2: game.v4.JoinRoomReq
-	(*JoinRoomResp)(nil),          // 3: game.v4.JoinRoomResp
-	(*DeployCmd)(nil),             // 4: game.v4.DeployCmd
-	(*TickBundle)(nil),            // 5: game.v4.TickBundle
-	(*StateHashUp)(nil),           // 6: game.v4.StateHashUp
-	(*BattleEndReport)(nil),       // 7: game.v4.BattleEndReport
-	(*BattleResultPush)(nil),      // 8: game.v4.BattleResultPush
-	(*HeartbeatPing)(nil),         // 9: game.v4.HeartbeatPing
-	(*HeartbeatPong)(nil),         // 10: game.v4.HeartbeatPong
-	(*TickBundle_SideDeploy)(nil), // 11: game.v4.TickBundle.SideDeploy
-	(*common.ProfileSummary)(nil), // 12: game.v4.ProfileSummary
+	(*CardProgress)(nil),          // 3: game.v4.CardProgress
+	(*JoinRoomResp)(nil),          // 4: game.v4.JoinRoomResp
+	(*DeployCmd)(nil),             // 5: game.v4.DeployCmd
+	(*TickBundle)(nil),            // 6: game.v4.TickBundle
+	(*StateHashUp)(nil),           // 7: game.v4.StateHashUp
+	(*BattleEndReport)(nil),       // 8: game.v4.BattleEndReport
+	(*BattleResultPush)(nil),      // 9: game.v4.BattleResultPush
+	(*HeartbeatPing)(nil),         // 10: game.v4.HeartbeatPing
+	(*HeartbeatPong)(nil),         // 11: game.v4.HeartbeatPong
+	(*TickBundle_SideDeploy)(nil), // 12: game.v4.TickBundle.SideDeploy
+	(*common.ProfileSummary)(nil), // 13: game.v4.ProfileSummary
 }
 var file_battle_proto_depIdxs = []int32{
-	12, // 0: game.v4.JoinRoomResp.opponent:type_name -> game.v4.ProfileSummary
-	11, // 1: game.v4.TickBundle.deploys:type_name -> game.v4.TickBundle.SideDeploy
-	0,  // 2: game.v4.BattleResultPush.winner:type_name -> game.v4.BattleResultPush.Winner
-	1,  // 3: game.v4.BattleResultPush.reason:type_name -> game.v4.BattleResultPush.Reason
-	4,  // 4: game.v4.TickBundle.SideDeploy.deploy:type_name -> game.v4.DeployCmd
-	5,  // [5:5] is the sub-list for method output_type
-	5,  // [5:5] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	13, // 0: game.v4.JoinRoomResp.opponent:type_name -> game.v4.ProfileSummary
+	3,  // 1: game.v4.JoinRoomResp.side1_progress:type_name -> game.v4.CardProgress
+	3,  // 2: game.v4.JoinRoomResp.side2_progress:type_name -> game.v4.CardProgress
+	12, // 3: game.v4.TickBundle.deploys:type_name -> game.v4.TickBundle.SideDeploy
+	0,  // 4: game.v4.BattleResultPush.winner:type_name -> game.v4.BattleResultPush.Winner
+	1,  // 5: game.v4.BattleResultPush.reason:type_name -> game.v4.BattleResultPush.Reason
+	5,  // 6: game.v4.TickBundle.SideDeploy.deploy:type_name -> game.v4.DeployCmd
+	7,  // [7:7] is the sub-list for method output_type
+	7,  // [7:7] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_battle_proto_init() }
@@ -904,7 +996,7 @@ func file_battle_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_battle_proto_rawDesc), len(file_battle_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   10,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

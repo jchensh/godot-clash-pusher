@@ -12,6 +12,7 @@ extends RefCounted
 ## ws 可注入（默认 net/ws_client.gd；单测传 fake 记录发送）。
 
 const MatchScript := preload("res://logic/match.gd")
+const PlayerDataScript := preload("res://logic/player_data.gd")
 const WSClientScript := preload("res://net/ws_client.gd")
 const _CommonPb := preload("res://net/proto/common.gd")
 const _BattlePb := preload("res://net/proto/battle.gd")
@@ -176,6 +177,13 @@ func _handle_join_resp(payload: PackedByteArray) -> void:
 	# side1→player(OWNER_PLAYER)，side2→opponent(OWNER_OPPONENT)，两端一致建同一初始态。
 	match_obj = MatchScript.new(config)
 	match_obj.setup(resp.get_level_id(), resp.get_side1_deck(), [], resp.get_side2_deck())
+	# KAN-76 养成注入：双方每张卡的 level/rank 来自服务端 JoinRoomResp（权威、两端同一份），
+	# 对 side1/side2 对称各套各的 → 同一方在两端算出逐 bit 相同的数值乘区 + 升阶技能解锁。
+	# 空 progress（旧服务端）→ 不注入保持白板；本地 EconomyStateCache 不参与（防改缓存作弊）。
+	_inject_progress(match_obj.player, resp.get_side1_progress())
+	_inject_progress(match_obj.opponent, resp.get_side2_progress())
+	print("[net][KAN-76] 养成注入: side1[%s] side2[%s]" % [
+		_progress_summary(resp.get_side1_progress()), _progress_summary(resp.get_side2_progress())])
 	_playing = true
 	_end_reported = false
 	_started = true
@@ -189,6 +197,34 @@ func _handle_join_resp(payload: PackedByteArray) -> void:
 		opp_avatar = opp.get_avatar_card_id()
 	print("[net] 进房, 我方=%d, 开打" % your_side)
 	joined.emit(your_side, opp_name, opp_avatar)
+
+
+# KAN-76：把服务端下发的 CardProgress 数组变成最小 PlayerData（只填 cards 的 level/rank），
+# 挂到该侧 Player——Player._resolve_stat_mult/_resolve_skills 即按本卡养成算乘区 + 技能解锁，
+# 与 PVE 同一条管线。空数组 = 不注入（白板局，向后兼容旧服务端）。
+func _inject_progress(side_player, progress: Array) -> void:
+	if side_player == null or progress.is_empty():
+		return
+	var pd = PlayerDataScript.new()
+	for cp in progress:
+		pd.cards[cp.get_card_id()] = {
+			"level": int(cp.get_level()),
+			"rank": int(cp.get_rank()),
+			"shards": 0,
+			"unlocked": true,
+		}
+	side_player.player_data = pd
+
+
+func _progress_summary(progress: Array) -> String:
+	if progress.is_empty():
+		return "无(白板)"
+	var lv := 0
+	var rk := 0
+	for cp in progress:
+		lv += int(cp.get_level())
+		rk += int(cp.get_rank())
+	return "lvlsum=%d ranksum=%d" % [lv, rk]
 
 
 func _handle_tick_bundle(payload: PackedByteArray) -> void:

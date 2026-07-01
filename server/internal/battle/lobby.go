@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jchensh/godot-clash-pusher/server/internal/matchmaking"
+	pbbattle "github.com/jchensh/godot-clash-pusher/server/internal/pb/battle"
 	pbcommon "github.com/jchensh/godot-clash-pusher/server/internal/pb/common"
 	pbmatch "github.com/jchensh/godot-clash-pusher/server/internal/pb/match"
 	"github.com/jchensh/godot-clash-pusher/server/internal/store"
@@ -148,11 +149,13 @@ func (l *Lobby) createMatch(ctx context.Context, pair matchmaking.Pair) {
 	roomID := fmt.Sprintf("room-%d", l.roomSeq)
 	l.mu.Unlock()
 
-	p1 := &player{accountID: wa.accountID, side: 1, deck: l.lookupDeck(ctx, wa.accountID, wa.deckSlot), summary: wa.summary, send: wa.send}
-	p2 := &player{accountID: wb.accountID, side: 2, deck: l.lookupDeck(ctx, wb.accountID, wb.deckSlot), summary: wb.summary, send: wb.send}
+	deckA := l.lookupDeck(ctx, wa.accountID, wa.deckSlot)
+	deckB := l.lookupDeck(ctx, wb.accountID, wb.deckSlot)
+	p1 := &player{accountID: wa.accountID, side: 1, deck: deckA, progress: l.lookupProgress(ctx, wa.accountID, deckA), summary: wa.summary, send: wa.send}
+	p2 := &player{accountID: wb.accountID, side: 2, deck: deckB, progress: l.lookupProgress(ctx, wb.accountID, deckB), summary: wb.summary, send: wb.send}
 	room := NewRoom(roomID, l.levelID, 0, p1, p2, l.persist, l.now)
-	log.Printf("mm: room %s ready: side1 acc=%d deck=%dcards | side2 acc=%d deck=%dcards",
-		roomID, p1.accountID, len(p1.deck), p2.accountID, len(p2.deck))
+	log.Printf("mm: room %s ready: side1 acc=%d deck=%dcards %s | side2 acc=%d deck=%dcards %s",
+		roomID, p1.accountID, len(p1.deck), progressSummary(p1.progress), p2.accountID, len(p2.deck), progressSummary(p2.progress))
 
 	l.mu.Lock()
 	l.active[wa.accountID] = room
@@ -219,6 +222,51 @@ func (l *Lobby) lookupDeck(ctx context.Context, accountID int64, slot int32) []s
 		return ladderDefaultDeck
 	}
 	return cards
+}
+
+// lookupProgress reads the deck cards' level/rank from economy_cards (KAN-76:
+// authoritative progression, conveyed to both clients via JoinRoomResp). A card
+// with no row (fresh account — economy rows are lazily seeded) falls back to
+// level 1 / rank 1, i.e. baseline stats. Never errors the match — mirrors the
+// lookupDeck fallback philosophy.
+func (l *Lobby) lookupProgress(ctx context.Context, accountID int64, deck []string) []*pbbattle.CardProgress {
+	byCard := map[string][2]int32{}
+	rows, err := l.db.Pool.Query(ctx,
+		`SELECT card_id, level, rank FROM economy_cards WHERE account_id = $1 AND card_id = ANY($2)`,
+		accountID, deck)
+	if err != nil {
+		log.Printf("mm: acc=%d progress query failed (%v) -> all level1/rank1", accountID, err)
+	} else {
+		for rows.Next() {
+			var cid string
+			var lv, rk int32
+			if rows.Scan(&cid, &lv, &rk) == nil {
+				byCard[cid] = [2]int32{lv, rk}
+			}
+		}
+		rows.Close()
+	}
+	out := make([]*pbbattle.CardProgress, 0, len(deck))
+	for _, cid := range deck {
+		lv, rk := int32(1), int32(1)
+		if p, ok := byCard[cid]; ok {
+			lv, rk = p[0], p[1]
+		}
+		out = append(out, &pbbattle.CardProgress{CardId: cid, Level: lv, Rank: rk})
+	}
+	return out
+}
+
+// progressSummary compacts a progress list for the room log. 决策②（2026-07-02）:
+// matchmaking stays MMR-only for now — this log line is the observation hook for
+// deciding later whether progression imbalance warrants a power term in matching.
+func progressSummary(ps []*pbbattle.CardProgress) string {
+	lv, rk := 0, 0
+	for _, p := range ps {
+		lv += int(p.Level)
+		rk += int(p.Rank)
+	}
+	return fmt.Sprintf("prog[lvlsum=%d ranksum=%d]", lv, rk)
 }
 
 func pushMatchFound(p *player, opponent *pbcommon.ProfileSummary, roomID string) {

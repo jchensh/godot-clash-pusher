@@ -74,6 +74,20 @@ func test_card_stat_mult_curve() -> void:
 	p.cards["knight"]["rank"] = 3
 	assert_almost_eq(p.card_stat_mult("knight", config), 2.96875, 0.0001, "满养成 ≈3.0")
 
+func test_rank_mult_deterministic_exact() -> void:
+	# KAN-77：阶乘改循环乘法（pow 跨平台末位 bit 不保证一致，进 PVP lockstep 前消除）。
+	# 1.25 及其小幂均二进制可精确表示 → 用严格相等锁 bit 级数值，证明改动前后曲线不变。
+	var config = _config()
+	var p = PlayerDataScript.new()
+	p.init_new(_all_ids(config))
+	p.cards["knight"]["rank"] = 2
+	assert_eq(p.card_stat_mult("knight", config), 1.25, "rank2 精确 1.25")
+	p.cards["knight"]["rank"] = 3
+	assert_eq(p.card_stat_mult("knight", config), 1.5625, "rank3 精确 1.5625")
+	p.cards["knight"]["level"] = 4
+	p.cards["knight"]["rank"] = 2
+	assert_almost_eq(p.card_stat_mult("knight", config), 1.625, 0.0001, "4级2阶 = 1.3 × 1.25")
+
 func test_card_and_team_power() -> void:
 	var config = _config()
 	var p = PlayerDataScript.new()

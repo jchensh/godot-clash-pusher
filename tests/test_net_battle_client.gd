@@ -34,7 +34,8 @@ class FakeWS extends RefCounted:
 		return n
 
 
-func _join_resp_bytes(your_side: int) -> PackedByteArray:
+func _join_resp_bytes(your_side: int, side1_progress: Dictionary = {}, side2_progress: Dictionary = {}) -> PackedByteArray:
+	# sideN_progress：{card_id: [level, rank]}（KAN-76 服务端下发的养成；空 = 白板局）。
 	var r = BattlePb.JoinRoomResp.new()
 	r.set_ok(true)
 	r.set_your_side(your_side)
@@ -43,6 +44,16 @@ func _join_resp_bytes(your_side: int) -> PackedByteArray:
 		r.add_side1_deck(c)
 	for c in DECK:
 		r.add_side2_deck(c)
+	for cid in side1_progress:
+		var cp1 = r.add_side1_progress()
+		cp1.set_card_id(cid)
+		cp1.set_level(side1_progress[cid][0])
+		cp1.set_rank(side1_progress[cid][1])
+	for cid in side2_progress:
+		var cp2 = r.add_side2_progress()
+		cp2.set_card_id(cid)
+		cp2.set_level(side2_progress[cid][0])
+		cp2.set_rank(side2_progress[cid][1])
 	return r.to_bytes()
 
 func _tick_bytes(t: int) -> PackedByteArray:
@@ -94,6 +105,37 @@ func test_join_resp_builds_match() -> void:
 	# 双方卡组都建好（手牌 4 张）
 	assert_eq(bc.match_obj.player.deck.get_hand().size(), 4)
 	assert_eq(bc.match_obj.opponent.deck.get_hand().size(), 4)
+
+# —— KAN-76：养成注入 ——
+
+func test_join_resp_injects_both_sides_progress() -> void:
+	# 服务端下发双方 level/rank → 两个 Player 各挂各的最小 PlayerData，
+	# 乘区按本卡养成算（与 PVE 同管线）；两端对同一方数据一致 → lockstep 确定性成立。
+	var pair = _new_client()
+	var bc = pair[0]
+	bc._on_frame(CommonPb.MsgId.JOIN_ROOM_RESP, _join_resp_bytes(1,
+		{"knight": [4, 2], "giant": [7, 3]},     # side1 练过
+		{"knight": [1, 1], "archers": [2, 1]}))  # side2 略练
+	var loader = bc.config
+	var pd1 = bc.match_obj.player.player_data
+	var pd2 = bc.match_obj.opponent.player_data
+	assert_ne(pd1, null, "side1 应注入养成")
+	assert_ne(pd2, null, "side2 应注入养成")
+	# 4级2阶 = (1+3×0.1)×1.25 = 1.625；7级3阶 = 1.6×1.5625 = 2.5
+	assert_almost_eq(float(pd1.card_stat_mult("knight", loader)), 1.625, 0.0001, "side1 knight 4级2阶乘区")
+	assert_almost_eq(float(pd1.card_stat_mult("giant", loader)), 2.5, 0.0001, "side1 giant 7级3阶乘区")
+	assert_almost_eq(float(pd2.card_stat_mult("knight", loader)), 1.0, 0.0001, "side2 knight 白板乘区")
+	assert_almost_eq(float(pd2.card_stat_mult("archers", loader)), 1.1, 0.0001, "side2 archers 2级乘区")
+	# progress 未覆盖的卡（服务端漏发/新卡）fallback 乘区 1.0，确定性安全。
+	assert_almost_eq(float(pd1.card_stat_mult("zap", loader)), 1.0, 0.0001, "未下发的卡乘区 1.0")
+
+func test_join_resp_without_progress_stays_flat() -> void:
+	# 空 progress（旧服务端/白板局）→ 不注入，行为与改前完全一致（向后兼容）。
+	var pair = _new_client()
+	var bc = pair[0]
+	bc._on_frame(CommonPb.MsgId.JOIN_ROOM_RESP, _join_resp_bytes(1))
+	assert_eq(bc.match_obj.player.player_data, null, "无 progress 不注入 side1")
+	assert_eq(bc.match_obj.opponent.player_data, null, "无 progress 不注入 side2")
 
 func test_tick_bundle_advances_and_reports_hash() -> void:
 	var pair = _new_client()

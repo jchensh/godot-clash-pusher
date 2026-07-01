@@ -100,6 +100,52 @@ func TestSendJoinResp(t *testing.T) {
 	}
 }
 
+// KAN-76：JoinRoomResp 权威下发双方养成——两端都收到 side1+side2 的 level/rank，
+// 重连重放的 JoinRoomResp 也必须带同一份（断线回来不丢养成、确定性快进成立）。
+func TestJoinRespCarriesProgress(t *testing.T) {
+	r, p1, p2 := newTestRoom(nil)
+	r.p1.progress = []*pbbattle.CardProgress{
+		{CardId: "knight", Level: 4, Rank: 2},
+		{CardId: "giant", Level: 7, Rank: 3},
+	}
+	r.p2.progress = []*pbbattle.CardProgress{
+		{CardId: "knight", Level: 1, Rank: 1},
+	}
+	r.sendJoinResp()
+
+	for _, p := range []*player{p1, p2} {
+		_, pl := recvFrame(t, p)
+		var resp pbbattle.JoinRoomResp
+		_ = proto.Unmarshal(pl, &resp)
+		if len(resp.Side1Progress) != 2 || len(resp.Side2Progress) != 1 {
+			t.Fatalf("side %d: progress not conveyed: %d/%d", p.side, len(resp.Side1Progress), len(resp.Side2Progress))
+		}
+		if resp.Side1Progress[0].CardId != "knight" || resp.Side1Progress[0].Level != 4 || resp.Side1Progress[0].Rank != 2 {
+			t.Errorf("side %d: side1 knight progress wrong: %+v", p.side, resp.Side1Progress[0])
+		}
+		if resp.Side1Progress[1].Level != 7 || resp.Side1Progress[1].Rank != 3 {
+			t.Errorf("side %d: side1 giant progress wrong: %+v", p.side, resp.Side1Progress[1])
+		}
+		if resp.Side2Progress[0].Level != 1 || resp.Side2Progress[0].Rank != 1 {
+			t.Errorf("side %d: side2 progress wrong: %+v", p.side, resp.Side2Progress[0])
+		}
+	}
+
+	// 重连重放：新连接收到的 JoinRoomResp 仍带双方 progress。
+	r.onDisconnect(1)
+	newSend := make(chan []byte, 256)
+	r.onReconnect(reconnReq{side: 1, send: newSend})
+	mid, pl := recvFrameCh(t, newSend)
+	if mid != pbcommon.MsgId_JOIN_ROOM_RESP {
+		t.Fatalf("replay should start with JoinRoomResp, got %v", mid)
+	}
+	var resp pbbattle.JoinRoomResp
+	_ = proto.Unmarshal(pl, &resp)
+	if len(resp.Side1Progress) != 2 || resp.Side1Progress[1].Rank != 3 {
+		t.Errorf("reconnect JoinRoomResp lost progress: %+v", resp.Side1Progress)
+	}
+}
+
 func TestDeployBundling(t *testing.T) {
 	r, p1, _ := newTestRoom(nil)
 	r.onDeploy(1, &pbbattle.DeployCmd{Tick: 3, CardId: "knight", XMilli: 4500, YMilli: 17000})
