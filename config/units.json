@@ -486,5 +486,31 @@
     "body_radius": 0.5,
     "target_type": "air",
     "attack_targets": "both"
+  },
+  "golemite_body": {
+    "name": "石心魔像",
+    "hp": 400,
+    "damage": 40,
+    "attack_speed": 1.5,
+    "move_speed": 1.0,
+    "attack_range": 1.2,
+    "aggro_radius": 5.0,
+    "body_radius": 0.5,
+    "target_type": "ground",
+    "attack_targets": "ground",
+    "target_priority": "buildings"
+  },
+  "fire_pup_body": {
+    "name": "喷火火犬",
+    "hp": 110,
+    "damage": 40,
+    "attack_speed": 1.2,
+    "move_speed": 2.2,
+    "attack_range": 2.5,
+    "aggro_radius": 5.0,
+    "body_radius": 0.35,
+    "target_type": "air",
+    "attack_targets": "both",
+    "splash_radius": 1.2
   }
 }

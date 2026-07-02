@@ -728,3 +728,15 @@
 - **服务端 ensureSeeded 改增量补种**(`repo.go`)：`INSERT … ON CONFLICT (account_id,card_id) DO NOTHING` —— 新卡上线后**已有账号下次访问自动补进缺失卡**（不动已有养成；新卡 starter=false 播为未解锁）。修 `config_test`/`repo_integration_test` 的 16→48 断言。Go 的 `cfg.Cards` 只从 card_progression 读 rarity/starter/base_power（忽略 rank_unlocks、不碰 cards.json skills），故 status 字段不影响服务端。
 - **验证**：客户端 **345/345** + 临时 smoke（32 卡出兵数/三件套字段/lava_hound 裂6火犬/法术 status/电法师多积木，验后删）全过；Go economy 集成测（真 PG）全过（48 卡解析 + 播种 48）；`docker compose build gateway` 编译通过 → 重建 api+gateway + 重启 verifier，**api 日志 `economy config loaded (48 cards, cfg ver=96e05036)`**、DB 账号卡数=48。
 - **⚠️ 用户须知**：新卡播为**未解锁** → 用 GM unlock-all（或攒碎片）才进卡组/PvE；api+verifier 已重启加载新配置。**下一步 KAN-86：为 epic+legendary(16 张)填 signature 觉醒到 rank_unlocks**。
+
+### V5 卡池扩充 · KAN-86 觉醒填 rank_unlocks（✅ 完成，2026-07-03，独占 master 自主开发）
+- **16 张 epic+legendary 填 signature 觉醒**（rank3 marquee + rank2 轻量）：**12 张真觉醒**用现有 ops+三件套表达——
+  unit_field 挂 on_hit_status/splash：musketeer 破法弹 · baby_dragon 烈焰吐息(splash 1.5→2.5+减速) · wizard 烈焰风暴 · executioner 行刑领域(splash→3.5) · ice_wizard 凛冬将至(强减速) · princess 烈焰箭雨；
+  unit_field death_spawn：golem 崩解(死裂→石心魔像) · lava_hound 熔火降临(火犬→喷火小龙) · phoenix 烈焰重生(重生满配)；
+  法术：lightning 雷暴(**set_field 加 stun**) · freeze 绝对零度(num_add damage+200) · skeleton_army 亡骨潮(count_add 14→18)。
+  **4 张留 KAN-88**（rank3 stat 占位+note）：heal 战意(需 haste 正向状态) · balloon 临空爆弹(T6 death_aoe) · electro_wizard 连锁闪电(chain) · inferno_dragon 熔核过载(T7 ramp)。
+- **`logic/card_progression.gd` +`set_field` op**：直接设某块 field=value（任意类型含嵌套 dict，如给法术块加 status:{kind,dur,mag}）——法术觉醒用。unit_field 已能挂 on_hit_status/splash_radius/death_spawn_unit(dict/值任意)。
+- **2 觉醒专用单位**(units.json)：`golemite_body`(石心魔像·只拆塔小坦)、`fire_pup_body`(喷火火犬·空中溅射)。`--from-json`+`--check` 往返一致。
+- **验证**：客户端 **353/353**（+8 `test_v5_awakening`：effective_skills 的 unit_field/set_field/num_add 正确 + 运行时余烬火颅溅射变大+减速、雷暴命中眩晕、golem 崩解裂石心魔像、留 KAN-88 占位不改积木）；临时觉醒重放 smoke（rank3 觉醒局 record→PveReplay **逐 hash 全等 pass**，验后删）。
+- **服务端无改**：Go `cfg.Cards` 只读 rarity/starter/base_power、忽略 rank_unlocks → 经济/播种不变，**api/gateway 无需重启**；仅 **verifier 已重启**（觉醒经 card_progression.gd 应用，重放需新配置/逻辑）。
+- **下一步 KAN-87 probe 平衡**（48 卡+觉醒数值定稿）/ KAN-88 延后件（T6 death_aoe / T7 ramp / chain / haste）。

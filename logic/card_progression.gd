@@ -6,7 +6,8 @@
 #   num_add    —— 某块 field（radius/damage…）+= value
 #   num_mult   —— 某块 field *= value
 #   unit_field —— 在 spawn 块挂 _unit_override[field]=value（SkillSystem 生成单位前合并进 unit 配置，
-#                 如 death_spawn_count；见 skill_system._spawn_unit）
+#                 如 death_spawn_count / splash_radius / on_hit_status / death_spawn_unit；见 skill_system._spawn_unit）
+#   set_field  —— 直接设某块 field=value（任意类型，含嵌套 dict；如给法术块加 status:{kind,dur,mag}）
 # type=stat 的解锁不需 ops（数值跳已由 PlayerData.card_stat_mult 的阶乘吸收）。
 # 纯静态、可单测。block 缺省 = 0（当前卡均单积木）。
 extends RefCounted
@@ -48,3 +49,5 @@ static func _apply_op(skills: Array, op: Dictionary) -> void:
 				ov = {}
 			ov[String(op.get("field", ""))] = op.get("value")
 			block["_unit_override"] = ov
+		"set_field":
+			block[String(op.get("field", ""))] = op.get("value")

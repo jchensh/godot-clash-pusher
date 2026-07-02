@@ -226,7 +226,18 @@
       },
       "3": {
         "type": "skill",
-        "note": "射程+/穿透，engine 未支持·留 S8"
+        "note": "破法弹：命中附带减速",
+        "ops": [
+          {
+            "op": "unit_field",
+            "field": "on_hit_status",
+            "value": {
+              "kind": "slow",
+              "dur": 1.0,
+              "mag": 0.2
+            }
+          }
+        ]
       }
     }
   },
@@ -241,7 +252,23 @@
       },
       "3": {
         "type": "skill",
-        "note": "溅射半径+，engine 未支持·留 S8"
+        "note": "烈焰吐息：溅射变大+命中减速",
+        "ops": [
+          {
+            "op": "unit_field",
+            "field": "splash_radius",
+            "value": 2.5
+          },
+          {
+            "op": "unit_field",
+            "field": "on_hit_status",
+            "value": {
+              "kind": "slow",
+              "dur": 1.2,
+              "mag": 0.25
+            }
+          }
+        ]
       }
     }
   },
@@ -263,7 +290,17 @@
       },
       "3": {
         "type": "skill",
-        "note": "连锁第二目标，engine 未支持·留 S8"
+        "note": "雷暴：命中附带眩晕",
+        "ops": [
+          {
+            "op": "set_field",
+            "field": "status",
+            "value": {
+              "kind": "stun",
+              "dur": 0.5
+            }
+          }
+        ]
       }
     }
   },
@@ -303,7 +340,7 @@
     "rank_unlocks": {
       "2": {
         "type": "skill",
-        "note": "强化亡语召唤(裂 3 哥布林)",
+        "note": "裂 3 哥布林",
         "ops": [
           {
             "op": "unit_field",
@@ -314,12 +351,12 @@
       },
       "3": {
         "type": "skill",
-        "note": "强化亡语召唤(裂 4 哥布林)",
+        "note": "崩解：裂物变石心魔像(只拆塔)",
         "ops": [
           {
             "op": "unit_field",
-            "field": "death_spawn_count",
-            "value": 4
+            "field": "death_spawn_unit",
+            "value": "golemite_body"
           }
         ]
       }
@@ -342,15 +379,8 @@
         ]
       },
       "3": {
-        "type": "skill",
-        "note": "半径+0.5（护盾 engine 未支持·留 S8）",
-        "ops": [
-          {
-            "op": "num_add",
-            "field": "radius",
-            "value": 0.5
-          }
-        ]
+        "type": "stat",
+        "note": "战意(友军加速)——需 haste 正向状态，留 KAN-88"
       }
     }
   },
@@ -743,8 +773,19 @@
         "note": "数值跳"
       },
       "3": {
-        "type": "stat",
-        "note": "数值跳"
+        "type": "skill",
+        "note": "烈焰风暴：溅射区减速",
+        "ops": [
+          {
+            "op": "unit_field",
+            "field": "on_hit_status",
+            "value": {
+              "kind": "slow",
+              "dur": 1.0,
+              "mag": 0.25
+            }
+          }
+        ]
       }
     }
   },
@@ -758,8 +799,24 @@
         "note": "数值跳"
       },
       "3": {
-        "type": "stat",
-        "note": "数值跳"
+        "type": "skill",
+        "note": "行刑领域：大溅射+全体减速",
+        "ops": [
+          {
+            "op": "unit_field",
+            "field": "splash_radius",
+            "value": 3.5
+          },
+          {
+            "op": "unit_field",
+            "field": "on_hit_status",
+            "value": {
+              "kind": "slow",
+              "dur": 1.2,
+              "mag": 0.3
+            }
+          }
+        ]
       }
     }
   },
@@ -774,7 +831,7 @@
       },
       "3": {
         "type": "stat",
-        "note": "数值跳"
+        "note": "临空爆弹(死亡范围爆炸)——需 T6 death_aoe，留 KAN-88"
       }
     }
   },
@@ -785,7 +842,7 @@
     "rank_unlocks": {
       "2": {
         "type": "skill",
-        "note": "+2 数量",
+        "note": "+2 骷髅(14→16)",
         "ops": [
           {
             "op": "count_add",
@@ -794,8 +851,14 @@
         ]
       },
       "3": {
-        "type": "stat",
-        "note": "数值跳"
+        "type": "skill",
+        "note": "亡骨潮：再+2 骷髅(16→18)",
+        "ops": [
+          {
+            "op": "count_add",
+            "value": 2
+          }
+        ]
       }
     }
   },
@@ -809,8 +872,15 @@
         "note": "数值跳"
       },
       "3": {
-        "type": "stat",
-        "note": "数值跳"
+        "type": "skill",
+        "note": "烈焰重生：重生体化满配凤凰",
+        "ops": [
+          {
+            "op": "unit_field",
+            "field": "death_spawn_unit",
+            "value": "phoenix_body"
+          }
+        ]
       }
     }
   },
@@ -821,7 +891,7 @@
     "rank_unlocks": {
       "2": {
         "type": "skill",
-        "note": "radius+0.5",
+        "note": "半径+0.5",
         "ops": [
           {
             "op": "num_add",
@@ -831,8 +901,15 @@
         ]
       },
       "3": {
-        "type": "stat",
-        "note": "数值跳"
+        "type": "skill",
+        "note": "绝对零度：冻结附带伤害",
+        "ops": [
+          {
+            "op": "num_add",
+            "field": "damage",
+            "value": 200
+          }
+        ]
       }
     }
   },
@@ -846,8 +923,15 @@
         "note": "数值跳"
       },
       "3": {
-        "type": "stat",
-        "note": "数值跳"
+        "type": "skill",
+        "note": "熔火降临：火犬升级喷火小龙",
+        "ops": [
+          {
+            "op": "unit_field",
+            "field": "death_spawn_unit",
+            "value": "fire_pup_body"
+          }
+        ]
       }
     }
   },
@@ -861,8 +945,19 @@
         "note": "数值跳"
       },
       "3": {
-        "type": "stat",
-        "note": "数值跳"
+        "type": "skill",
+        "note": "凛冬将至：减速大幅加强",
+        "ops": [
+          {
+            "op": "unit_field",
+            "field": "on_hit_status",
+            "value": {
+              "kind": "slow",
+              "dur": 2.5,
+              "mag": 0.55
+            }
+          }
+        ]
       }
     }
   },
@@ -877,7 +972,7 @@
       },
       "3": {
         "type": "stat",
-        "note": "数值跳"
+        "note": "连锁闪电(连锁2目标)——需 chain 扩展，留 KAN-88"
       }
     }
   },
@@ -891,8 +986,19 @@
         "note": "数值跳"
       },
       "3": {
-        "type": "stat",
-        "note": "数值跳"
+        "type": "skill",
+        "note": "烈焰箭雨：命中附带减速",
+        "ops": [
+          {
+            "op": "unit_field",
+            "field": "on_hit_status",
+            "value": {
+              "kind": "slow",
+              "dur": 1.5,
+              "mag": 0.3
+            }
+          }
+        ]
       }
     }
   },
@@ -907,7 +1013,7 @@
       },
       "3": {
         "type": "stat",
-        "note": "数值跳"
+        "note": "熔核过载(持续命中DPS递增)——需 T7 ramp，留 KAN-88"
       }
     }
   }
