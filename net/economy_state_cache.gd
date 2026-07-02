@@ -85,15 +85,31 @@ func _action(http, op: String, token: String, card_id: String, all_card_ids: Arr
 	return res
 
 ## V5-S7c 闯关上报门面：报 (stage_id, stars)，服务器 sanity + 发奖 + 记进度 → 回新状态更新缓存。
-func report_stage_clear(http, token: String, stage_id: String, stars: int, all_card_ids: Array) -> Dictionary:
-	var res: Dictionary = await _client.report_stage_clear(http, token, stage_id, stars)
+## KAN-78：带 battle_id + summary（PVE 防作弊会话），服务器限速/摘要交叉校验后才发奖。
+func report_stage_clear(http, token: String, stage_id: String, stars: int, all_card_ids: Array, battle_id: int = 0, summary: Dictionary = {}) -> Dictionary:
+	var res: Dictionary = await _client.report_stage_clear(http, token, stage_id, stars, battle_id, summary)
 	if bool(res.get("ok", false)):
 		_apply(res["state"], all_card_ids)
-		print("[V5][econ] 上报通关 %s stars=%d ok → gold=%d highest=%s" % [stage_id, stars, cache.gold, cache.highest_cleared])
+		print("[V5][econ] 上报通关 %s stars=%d battle=%d ok → gold=%d highest=%s" % [stage_id, stars, battle_id, cache.gold, cache.highest_cleared])
 	else:
 		last_error = res
-		print("[V5][econ] 上报通关 %s stars=%d 失败 status=%d code=%d" % [stage_id, stars, int(res.get("status_code", 0)), int(res.get("error_code", 0))])
+		print("[V5][econ] 上报通关 %s stars=%d battle=%d 失败 status=%d code=%d" % [stage_id, stars, battle_id, int(res.get("status_code", 0)), int(res.get("error_code", 0))])
 	return res
+
+
+## KAN-78：PVE 开战报到门面。成功 {ok, battle_id}；失败 {ok:false,...}（战斗不该开）。
+func pve_start(http, token: String, stage_id: String, deck: Array) -> Dictionary:
+	var res: Dictionary = await _client.pve_start(http, token, stage_id, deck)
+	if bool(res.get("ok", false)):
+		print("[V5][pve] 开战报到 ok stage=%s battle_id=%d" % [stage_id, int(res.get("battle_id", 0))])
+	else:
+		print("[V5][pve] 开战报到失败 stage=%s status=%d code=%d" % [stage_id, int(res.get("status_code", 0)), int(res.get("error_code", 0))])
+	return res
+
+
+## KAN-79：PVE 指令流批量上报门面（PveRecorder.flush 调）。
+func pve_report(http, token: String, battle_id: int, cmds: Array, hashes: Array) -> Dictionary:
+	return await _client.pve_report(http, token, battle_id, cmds, hashes)
 
 
 ## V5 GM 工具门面（始终开放）：发 GM 操作改服务器 DB → 回新状态刷新缓存。

@@ -26,7 +26,7 @@ func setupRepo(t *testing.T) (*Repo, *Config, int64) {
 	}
 	t.Cleanup(func() { db.Close() })
 
-	for _, tbl := range []string{"economy_stages", "economy_cards", "economy_state"} {
+	for _, tbl := range []string{"pve_battles", "economy_stages", "economy_cards", "economy_state"} {
 		if _, err := db.Pool.Exec(ctx, "DELETE FROM "+tbl); err != nil {
 			t.Fatalf("clean %s: %v", tbl, err)
 		}
@@ -47,6 +47,35 @@ func setupRepo(t *testing.T) (*Repo, *Config, int64) {
 		t.Fatal(err)
 	}
 	return NewRepo(db), cfg, accountID
+}
+
+var starterDeck = []string{"knight", "archers", "giant", "goblins", "minions", "fireball", "arrows", "zap"}
+
+// pveBattleFor 建一个能过层1校验的 PVE 会话（KAN-78）：PveStart → 倒拨 started_at 绕过
+// 限速（测试不真等墙钟）→ 喂一条玩家出兵。返回 (battle_id, 满足任意星目标的摘要)。
+func pveBattleFor(t *testing.T, repo *Repo, ctx context.Context, acc int64, stageID string, cfg *Config) (int64, PveSummary) {
+	t.Helper()
+	bid, err := repo.PveStart(ctx, acc, stageID, starterDeck, cfg)
+	if err != nil {
+		t.Fatalf("pve start %s: %v", stageID, err)
+	}
+	if _, err := repo.db.Pool.Exec(ctx,
+		`UPDATE pve_battles SET started_at = NOW() - INTERVAL '5 minutes' WHERE id=$1`, bid); err != nil {
+		t.Fatalf("backdate battle: %v", err)
+	}
+	if err := repo.PveReport(ctx, acc, bid,
+		[]PveCmd{{Tick: 30, Phase: 0, Side: 1, Card: "knight", X: 4500, Y: 17000}}, nil, cfg); err != nil {
+		t.Fatalf("pve report: %v", err)
+	}
+	// 60s 战斗 + 王塔满血：满足任何 king_hp_pct / time_under 星目标。
+	return bid, PveSummary{DurationTicks: 600, DeployCount: 1, KingHpPermille: 1000}
+}
+
+// mustClear = pveBattleFor + StageClear（老测试的"直接报通关"语义，加上合法会话）。
+func mustClear(t *testing.T, repo *Repo, ctx context.Context, acc int64, stageID string, stars int, cfg *Config) (State, error) {
+	t.Helper()
+	bid, sum := pveBattleFor(t, repo, ctx, acc, stageID, cfg)
+	return repo.StageClear(ctx, acc, stageID, stars, bid, sum, cfg)
 }
 
 func cardOf(st State, id string) (CardRow, bool) {
@@ -173,7 +202,7 @@ func TestRepo_StageClear(t *testing.T) {
 	fc2Gold := int64(s12.FirstClear.Gold)
 
 	// —— 首通 stage_1_1（2 星）：发首通奖励 + 记进度。
-	st, err := repo.StageClear(ctx, acc, "stage_1_1", 2, cfg)
+	st, err := mustClear(t, repo, ctx, acc, "stage_1_1", 2, cfg)
 	if err != nil {
 		t.Fatalf("first clear 1_1: %v", err)
 	}
@@ -189,7 +218,7 @@ func TestRepo_StageClear(t *testing.T) {
 	}
 
 	// —— 重复 stage_1_1（3 星）：发重复奖励；stars 取 max(2,3)=3；金币 = 首通 + 重复。
-	st, err = repo.StageClear(ctx, acc, "stage_1_1", 3, cfg)
+	st, err = mustClear(t, repo, ctx, acc, "stage_1_1", 3, cfg)
 	if err != nil {
 		t.Fatalf("repeat 1_1: %v", err)
 	}
@@ -202,24 +231,20 @@ func TestRepo_StageClear(t *testing.T) {
 	}
 
 	// —— stars 不回退：再以 1 星重复 → stars 仍 3。
-	st, _ = repo.StageClear(ctx, acc, "stage_1_1", 1, cfg)
+	st, _ = mustClear(t, repo, ctx, acc, "stage_1_1", 1, cfg)
 	s, _ = stageOf(st, "stage_1_1")
 	if s.Stars != 3 {
 		t.Fatalf("stars regressed to %d (want 3)", s.Stars)
 	}
 
-	// —— 0 星 → 拒绝（ERR_INVALID_ARG / ErrInvalidStars）。
-	if _, err := repo.StageClear(ctx, acc, "stage_1_1", 0, cfg); !errors.Is(err, ErrInvalidStars) {
+	// —— 0/超上限/未知关：在 battle 会话校验之前就拒 → 传 0 会话即可测。
+	if _, err := repo.StageClear(ctx, acc, "stage_1_1", 0, 0, PveSummary{}, cfg); !errors.Is(err, ErrInvalidStars) {
 		t.Fatalf("0 stars want ErrInvalidStars, got %v", err)
 	}
-
-	// —— 超上限（4 星 > starCap 3）→ 拒绝（ErrTooManyStars）。
-	if _, err := repo.StageClear(ctx, acc, "stage_1_1", 4, cfg); !errors.Is(err, ErrTooManyStars) {
+	if _, err := repo.StageClear(ctx, acc, "stage_1_1", 4, 0, PveSummary{}, cfg); !errors.Is(err, ErrTooManyStars) {
 		t.Fatalf("4 stars want ErrTooManyStars, got %v", err)
 	}
-
-	// —— 未知关 → 拒绝（ErrUnknownStage）。
-	if _, err := repo.StageClear(ctx, acc, "nope_stage", 1, cfg); !errors.Is(err, ErrUnknownStage) {
+	if _, err := repo.StageClear(ctx, acc, "nope_stage", 1, 0, PveSummary{}, cfg); !errors.Is(err, ErrUnknownStage) {
 		t.Fatalf("unknown stage want ErrUnknownStage, got %v", err)
 	}
 
@@ -229,7 +254,7 @@ func TestRepo_StageClear(t *testing.T) {
 	if c, ok := cardOf(st, "skeletons"); ok {
 		skelBefore = int64(c.Shards)
 	}
-	st, err = repo.StageClear(ctx, acc, "stage_1_2", 1, cfg)
+	st, err = mustClear(t, repo, ctx, acc, "stage_1_2", 1, cfg)
 	if err != nil {
 		t.Fatalf("first clear 1_2: %v", err)
 	}
@@ -245,14 +270,19 @@ func TestRepo_StageClear(t *testing.T) {
 	}
 }
 
-// 进度连续防跳关：1_1 未通就报 1_2 → 拒绝（ErrStageLocked）。新号独立验证。
+// 进度连续防跳关：1_1 未通就打 1_2 → 拒绝（ErrStageLocked）。KAN-78 起开战报到
+// （PveStart）与结算（StageClear）双闸口同口径。新号独立验证。
 func TestRepo_StageClear_RejectsSkip(t *testing.T) {
 	repo, cfg, acc := setupRepo(t)
 	ctx := context.Background()
 	repo.Get(ctx, acc, cfg)
 
-	// 直接报 1_2（1_1 没通）→ 拒。
-	if _, err := repo.StageClear(ctx, acc, "stage_1_2", 1, cfg); !errors.Is(err, ErrStageLocked) {
+	// 跳关在开战报到就被拒 → 拿不到 battle_id。
+	if _, err := repo.PveStart(ctx, acc, "stage_1_2", starterDeck, cfg); !errors.Is(err, ErrStageLocked) {
+		t.Fatalf("pve_start skip want ErrStageLocked, got %v", err)
+	}
+	// 就算伪造 battle_id 直接报 StageClear 也过不了（先撞线性解锁）。
+	if _, err := repo.StageClear(ctx, acc, "stage_1_2", 1, 999999, PveSummary{}, cfg); !errors.Is(err, ErrStageLocked) {
 		t.Fatalf("skip want ErrStageLocked, got %v", err)
 	}
 	// 状态未变：无 stage 记录、gold 仍 0。
@@ -264,12 +294,79 @@ func TestRepo_StageClear_RejectsSkip(t *testing.T) {
 		t.Fatal("rejected clear should not create stage row")
 	}
 
-	// 通了 1_1 后再报 1_2 → 允许。
-	if _, err := repo.StageClear(ctx, acc, "stage_1_1", 1, cfg); err != nil {
+	// 通了 1_1 后再打 1_2 → 允许。
+	if _, err := mustClear(t, repo, ctx, acc, "stage_1_1", 1, cfg); err != nil {
 		t.Fatalf("clear 1_1: %v", err)
 	}
-	if _, err := repo.StageClear(ctx, acc, "stage_1_2", 1, cfg); err != nil {
+	if _, err := mustClear(t, repo, ctx, acc, "stage_1_2", 1, cfg); err != nil {
 		t.Fatalf("clear 1_2 after 1_1: %v", err)
+	}
+}
+
+// KAN-78 层1 DB 侧拒绝矩阵：秒推 / battle 重复消费（防重放）/ 无出兵 / 未解锁卡 /
+// 已消费局继续 report / 错关结算。
+func TestRepo_PveGuards(t *testing.T) {
+	repo, cfg, acc := setupRepo(t)
+	ctx := context.Background()
+	repo.Get(ctx, acc, cfg)
+
+	okSum := PveSummary{DurationTicks: 600, DeployCount: 1, KingHpPermille: 1000}
+
+	// —— 秒推：刚 PveStart（不倒拨）就报通关 → 墙钟 < 15s 拒。
+	bid, err := repo.PveStart(ctx, acc, "stage_1_1", starterDeck, cfg)
+	if err != nil {
+		t.Fatalf("pve start: %v", err)
+	}
+	if err := repo.PveReport(ctx, acc, bid,
+		[]PveCmd{{Tick: 30, Phase: 0, Side: 1, Card: "knight", X: 4500, Y: 17000}}, nil, cfg); err != nil {
+		t.Fatalf("report: %v", err)
+	}
+	if _, err := repo.StageClear(ctx, acc, "stage_1_1", 1, bid, okSum, cfg); !errors.Is(err, ErrPveBattleInvalid) {
+		t.Fatalf("instant clear want ErrPveBattleInvalid, got %v", err)
+	}
+
+	// —— 无出兵：倒拨后但服务器没收到任何玩家指令的另一局 → 拒。
+	bid2, _ := repo.PveStart(ctx, acc, "stage_1_1", starterDeck, cfg)
+	repo.db.Pool.Exec(ctx, `UPDATE pve_battles SET started_at = NOW() - INTERVAL '5 minutes' WHERE id=$1`, bid2)
+	if _, err := repo.StageClear(ctx, acc, "stage_1_1", 1, bid2, okSum, cfg); !errors.Is(err, ErrPveBattleInvalid) {
+		t.Fatalf("no-deploy clear want ErrPveBattleInvalid, got %v", err)
+	}
+
+	// —— 合法通关（复用秒推那局：把它倒拨）→ 过；同一 battle_id 再报 → 已消费拒（防重放）。
+	repo.db.Pool.Exec(ctx, `UPDATE pve_battles SET started_at = NOW() - INTERVAL '5 minutes' WHERE id=$1`, bid)
+	if _, err := repo.StageClear(ctx, acc, "stage_1_1", 1, bid, okSum, cfg); err != nil {
+		t.Fatalf("legit clear: %v", err)
+	}
+	if _, err := repo.StageClear(ctx, acc, "stage_1_1", 1, bid, okSum, cfg); !errors.Is(err, ErrPveBattleInvalid) {
+		t.Fatalf("replayed battle_id want ErrPveBattleInvalid, got %v", err)
+	}
+	// 已消费局继续 report → 拒。
+	if err := repo.PveReport(ctx, acc, bid,
+		[]PveCmd{{Tick: 99, Phase: 0, Side: 1, Card: "zap", X: 1000, Y: 1000}}, nil, cfg); !errors.Is(err, ErrPveBattleInvalid) {
+		t.Fatalf("report after consume want ErrPveBattleInvalid, got %v", err)
+	}
+
+	// —— 错关结算：battle 是 1_1 的、拿去报 1_2（1_1 已通 → 线性解锁过，但关不匹配）→ 拒。
+	bid3, sum3 := pveBattleFor(t, repo, ctx, acc, "stage_1_1", cfg)
+	if _, err := repo.StageClear(ctx, acc, "stage_1_2", 1, bid3, sum3, cfg); !errors.Is(err, ErrPveBattleInvalid) {
+		t.Fatalf("wrong-stage battle want ErrPveBattleInvalid, got %v", err)
+	}
+
+	// —— 未解锁卡进卡组：golem（legendary 锁定）→ PveStart 拒。
+	badDeck := []string{"golem", "archers", "giant", "goblins", "minions", "fireball", "arrows", "zap"}
+	if _, err := repo.PveStart(ctx, acc, "stage_1_1", badDeck, cfg); !errors.Is(err, ErrPveBattleInvalid) {
+		t.Fatalf("locked-card deck want ErrPveBattleInvalid, got %v", err)
+	}
+
+	// —— 别人的 battle：新账号拿 acc 的 battle_id 报 → 拒。
+	var acc2 int64
+	repo.db.Pool.QueryRow(ctx,
+		`INSERT INTO accounts (provider, external_id) VALUES ('device', 'econ-test-2')
+		 ON CONFLICT (provider, external_id) DO UPDATE SET last_login_at = NOW() RETURNING id`).Scan(&acc2)
+	repo.Get(ctx, acc2, cfg)
+	bid4, sum4 := pveBattleFor(t, repo, ctx, acc, "stage_1_1", cfg)
+	if _, err := repo.StageClear(ctx, acc2, "stage_1_1", 1, bid4, sum4, cfg); !errors.Is(err, ErrPveBattleInvalid) {
+		t.Fatalf("foreign battle want ErrPveBattleInvalid, got %v", err)
 	}
 }
 
@@ -301,8 +398,8 @@ func TestRepo_CollectIdle(t *testing.T) {
 	}
 
 	// ③ 通关到 chapter 1（stage_1_2）→ rate 50/h。倒拨 2h → +100。
-	repo.StageClear(ctx, acc, "stage_1_1", 1, cfg)
-	repo.StageClear(ctx, acc, "stage_1_2", 1, cfg) // highest=stage_1_2 (chapter 1)
+	mustClear(t, repo, ctx, acc, "stage_1_1", 1, cfg)
+	mustClear(t, repo, ctx, acc, "stage_1_2", 1, cfg) // highest=stage_1_2 (chapter 1)
 	repo.db.Pool.Exec(ctx,
 		`UPDATE economy_state SET idle_last_collect_ts = $2 WHERE account_id=$1`,
 		acc, st.IdleLastCollect-7200) // -2h
@@ -344,8 +441,8 @@ func TestRepo_CollectIdle_ServerAuthoritative(t *testing.T) {
 	repo, cfg, acc := setupRepo(t)
 	ctx := context.Background()
 	repo.Get(ctx, acc, cfg)
-	repo.StageClear(ctx, acc, "stage_1_1", 1, cfg)
-	repo.StageClear(ctx, acc, "stage_1_2", 1, cfg)
+	mustClear(t, repo, ctx, acc, "stage_1_1", 1, cfg)
+	mustClear(t, repo, ctx, acc, "stage_1_2", 1, cfg)
 
 	// 倒拨 3h，领取应 +150（chapter1 50/h × 3）。
 	repo.db.Pool.Exec(ctx, `UPDATE economy_state SET idle_last_collect_ts = (SELECT EXTRACT(EPOCH FROM NOW())::bigint - 10800) WHERE account_id=$1`, acc)
@@ -364,12 +461,13 @@ func TestRepo_StageClear_ShardDrop(t *testing.T) {
 	repo.Get(ctx, acc, cfg)
 
 	// 先打通 1_1 + 1_2（首通已发 skeletons:3）。
-	repo.StageClear(ctx, acc, "stage_1_1", 3, cfg)
-	repo.StageClear(ctx, acc, "stage_1_2", 3, cfg)
+	mustClear(t, repo, ctx, acc, "stage_1_1", 3, cfg)
+	mustClear(t, repo, ctx, acc, "stage_1_2", 3, cfg)
 
 	// 重复刷 1_2 共 200 次：30% 掉落 → 累计 shards 远超首通的 3。
+	// （每次都要新会话——battle 一次性消费本身就是防重放；顺带覆盖高频建会话路径。）
 	for i := 0; i < 200; i++ {
-		repo.StageClear(ctx, acc, "stage_1_2", 1, cfg)
+		mustClear(t, repo, ctx, acc, "stage_1_2", 1, cfg)
 	}
 	st, _ := repo.Get(ctx, acc, cfg)
 	c, _ := cardOf(st, "skeletons")

@@ -20,6 +20,7 @@ const SpriteDB = preload("res://view/sprite_db.gd")
 const HudWidgets = preload("res://view/ui/hud_widgets.gd")   # V5-S9 玩家名片
 const RunSceneScene := "res://view/run_scene.tscn"
 const StageProgressScript = preload("res://logic/stage_progress.gd")   # V5-S7c 闯关判星
+const PveRecorderScript = preload("res://net/pve_recorder.gd")         # KAN-79 防作弊录制
 const STAGE_MAP_SCENE := "res://view/stage_map.tscn"
 
 const TOPBAR_H := 54.0
@@ -141,6 +142,10 @@ var _hitstop_t := 0.0
 var _ending := false
 var _end_t := 0.0
 var _end_result := 0
+# —— KAN-78/79 PVE 防作弊 ——
+var _pve_recorder = null        # PveRecorder（闯关模式才建；null=其他模式零影响）
+var _pve_battle_id: int = 0     # PveStart 下发的会话 id
+var _pve_http: HTTPRequest = null
 var _end_pscore := 0.0
 var _end_oscore := 0.0
 var _end_buttons_added := false
@@ -176,9 +181,26 @@ func _ready() -> void:
 		match_obj.setup(String(node.get("level_id")), run.deck, mods)
 	elif GameStateScript.stage_id != "":
 		# V5-S7c 闯关模式：setup_stage 注入 coef/遭遇/ai + 服务器拉来的养成档（for_battle，权威 level/rank）。
+		# KAN-78 开战报到：拿 battle_id（服务器时钟记 started_at + 权威养成快照）；
+		# 报到失败 = 不让开战（决策 48 断线即不可玩），弹回闯关地图。
+		_pve_http = HTTPRequest.new()
+		add_child(_pve_http)
+		var start_res: Dictionary = await GameStateScript.economy().pve_start(
+			_pve_http, GameStateScript.session().token(), GameStateScript.stage_id, GameStateScript.player_deck)
+		if not bool(start_res.get("ok", false)):
+			print("[V5][pve] 开战报到失败 → 弹回闯关地图（断线即不可玩）")
+			GameStateScript.stage_id = ""
+			GameStateScript.deck_mode = ""
+			get_tree().change_scene_to_file(STAGE_MAP_SCENE)
+			return
+		_pve_battle_id = int(start_res.get("battle_id", 0))
 		var pdata = GameStateScript.economy().for_battle(loader.cards.keys())
-		print("[V5][battle] 模式=闯关 stage=%s deck=%s" % [GameStateScript.stage_id, str(GameStateScript.player_deck)])
+		print("[V5][battle] 模式=闯关 stage=%s deck=%s battle_id=%d" % [GameStateScript.stage_id, str(GameStateScript.player_deck), _pve_battle_id])
 		match_obj.setup_stage(GameStateScript.stage_id, GameStateScript.player_deck, pdata)
+		# KAN-79：录制器挂双方出牌 + 周期哈希，战斗中批量上报（重放验证的证据链）。
+		_pve_recorder = PveRecorderScript.new()
+		_pve_recorder.battle_id = _pve_battle_id
+		_pve_recorder.attach(match_obj)
 	else:
 		print("[V5][battle] 模式=自由 关=%s" % GameStateScript.level_id)
 		match_obj.setup(GameStateScript.level_id, GameStateScript.player_deck)
@@ -200,6 +222,9 @@ func _process(delta: float) -> void:
 	elif not match_obj.is_over():
 		match_obj.update(delta)
 		_battle_elapsed += delta       # V5-S7c：仅活跃战斗时长计入（判 time_under 星）
+		if _pve_recorder != null:
+			# KAN-79：周期攒批上报（fire-and-forget 协程；HTTPRequest 忙时该批自动并入下批）。
+			_pve_recorder.poll(delta, GameStateScript.economy(), _pve_http, GameStateScript.session().token())
 	_detect_events()                   # 逐帧 diff hp → 伤害数字/闪白/火花/顿帧/震屏（路线 A）
 	_detect_attacks()                  # 远程兵开火上升沿 → 投射物（路线 A）
 	_update_disp(delta)                # 10Hz→60fps 位置插值
@@ -1101,18 +1126,24 @@ func _on_tutorial_done() -> void:
 	get_tree().change_scene_to_file("res://view/main_menu.tscn")
 
 # V5-S7c 闯关战后：判星 + 存结果（stage_map 负责上报服务器 + 领奖开箱）+ 回闯关地图。
+# KAN-78/79：time_under 判定改用 pve_tick 换算时长（与服务器摘要校验完全同源，消边界分歧）；
+# 战后 flush 剩余指令流（重放器要全量证据）→ 摘要 + battle_id 随 stage_last_result 交上报。
 func _on_stage_return() -> void:
 	AudioManager.play_sfx("ui_button_press")
 	var sid: String = GameStateScript.stage_id
 	var outcome := {
 		"won": _end_result == BattleScript.RESULT_PLAYER_WIN,
 		"king_hp_pct": _player_king_hp_pct(),
-		"duration_sec": _battle_elapsed,
+		"duration_sec": (match_obj.pve_tick / 10.0) if match_obj.pve_tick > 0 else _battle_elapsed,
 	}
 	var goals = loader.get_stage(sid).get("stars", [])
 	var stars: int = StageProgressScript.judge_stars(goals if goals is Array else [], outcome)
 	print("[V5][battle] 闯关战后 stage=%s won=%s king_hp=%.2f dur=%.1fs → stars=%d" % [sid, str(outcome.won), outcome.king_hp_pct, outcome.duration_sec, stars])
-	GameStateScript.stage_last_result = {"stage_id": sid, "stars": stars}
+	var summary := {}
+	if _pve_recorder != null:
+		await _pve_recorder.flush(GameStateScript.economy(), _pve_http, GameStateScript.session().token())
+		summary = _pve_recorder.summary(int(round(_player_king_hp_pct() * 1000.0)))
+	GameStateScript.stage_last_result = {"stage_id": sid, "stars": stars, "battle_id": _pve_battle_id, "summary": summary}
 	GameStateScript.stage_id = ""
 	GameStateScript.deck_mode = ""
 	get_tree().change_scene_to_file(STAGE_MAP_SCENE)

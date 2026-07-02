@@ -45,9 +45,65 @@ message EconomyActionReq {
 
 // N5 通关上报：客户端把 (stage_id, stars) 报上来，服务器 sanity 校验（关卡存在/
 // stars≥1/stars≤配置上限/进度连续防跳关）+ 发首通/重复奖励 + 记进度，回新 EconomyState。
+// KAN-78 防作弊扩展：必须带本局 battle_id（PveStartResp 发的）+ 战报摘要；服务器校验
+// battle 属己/关匹配/未消费（防重放）、墙钟时长 ≥ 下限、声称 tick 与墙钟一致（无法时间
+// 压缩）、星数与摘要自洽（king_hp/time_under）。
 message StageClearReq {
   string stage_id = 1;
   int32 stars = 2;   // 0=未取胜（拒）；≥1=通关星数（不能超该关 stars 配置条数）
+  int64 battle_id = 3;        // KAN-78：本局 PVE 战斗会话 id（PveStart 下发）
+  BattleSummary summary = 4;  // KAN-78：战报摘要（与 stars 声明交叉校验）
+}
+
+// —— KAN-78/79 PVE 防作弊：开战报到 + 指令流/哈希上报 ——
+// HTTP（api:8080，Bearer 会话令牌）：
+//   POST /v5/pve/start    PveStartReq  → PveStartResp（开战报到；服务器时钟记 started_at
+//                         + 从 economy_cards 权威读 deck 的 level/rank 快照存档）
+//   POST /v5/pve/report   PveReportReq → PveReportResp（战斗中周期批量追加指令/哈希；
+//                         服务器按到达时间记批次 → 时序真实性，作弊无法压缩时间）
+
+message PveStartReq {
+  string stage_id = 1;
+  repeated string deck = 2;   // 本局 8 张卡组（服务器校验全 unlocked，堵未解锁卡进战斗）
+}
+
+message PveStartResp {
+  int64 battle_id = 1;
+}
+
+// 一条出牌指令（双方都录：玩家在 tick 间隙出牌 phase=0，AI 在 tick 内出牌 phase=1；
+// 相位区分让服务端重放器能逐 bit 复现原局时序——见 logic/pve_replay.gd）。
+message PveCmd {
+  int32 tick = 1;      // gap 牌=出牌时已完成的 tick 数 N（重放在第 N+1 tick regen 前应用）；
+                       // in 牌=所在 tick 序号（重放在该 tick regen 后应用）
+  int32 phase = 2;     // 0=gap（tick 间隙，玩家）/ 1=in（tick 内，AI）
+  int32 side = 3;      // 1=player / 2=opponent(AI)
+  string card_id = 4;
+  int32 x_milli = 5;   // tile × 1000（与 battle.proto DeployCmd 同款量化）
+  int32 y_milli = 6;
+}
+
+// 周期状态哈希（每 10 tick 一条，Match.state_hash()）。改内存改状态 → hash 与重放不符。
+message PveHashRec {
+  int32 tick = 1;
+  bytes hash = 2;      // sha256, 32 bytes
+}
+
+message PveReportReq {
+  int64 battle_id = 1;
+  repeated PveCmd cmds = 2;       // 自上一批以来新增的指令（追加式）
+  repeated PveHashRec hashes = 3; // 自上一批以来新增的哈希
+}
+
+message PveReportResp {
+  bool ok = 1;
+}
+
+// 战报摘要（StageClear 附带，层1 sanity；重放器复算值与之交叉验证）。
+message BattleSummary {
+  int32 duration_ticks = 1;    // 本局逻辑 tick 总数（10Hz）
+  int32 deploy_count = 2;      // 玩家出牌次数
+  int32 king_hp_permille = 3;  // 我方王塔血量千分比 0~1000（判 king_hp_pct 星用）
 }
 
 // N6 挂机领取：无参（now 全服务器定，改本地时钟无效）。服务器按 (now − last_collect)

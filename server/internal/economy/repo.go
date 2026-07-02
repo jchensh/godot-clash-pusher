@@ -156,7 +156,9 @@ func (r *Repo) Unlock(ctx context.Context, accountID int64, cardID string, cfg *
 // 服务器 sanity 校验（关存在 / stars≥1 / stars≤starCap / 线性解锁防跳关）+ 发首通/重复
 // 奖励（含 shard_drop 概率掉落）+ 记进度（stars 取 max、cleared=true、刷 highest_cleared）。
 // 返回新状态。校验/发奖全服务器权威（镜像 player_data.grant_stage_reward + stage_progress）。
-func (r *Repo) StageClear(ctx context.Context, accountID int64, stageID string, stars int, cfg *Config) (State, error) {
+// KAN-78 起必须带 battleID + summary（PveStart 发的会话）：同事务消费该会话
+// （限速/时长一致/实收出兵/星数与摘要自洽，见 consumePveBattle），一局只能结算一次。
+func (r *Repo) StageClear(ctx context.Context, accountID int64, stageID string, stars int, battleID int64, sum PveSummary, cfg *Config) (State, error) {
 	stage, ok := cfg.Stage(stageID)
 	if !ok {
 		return State{}, ErrUnknownStage
@@ -184,6 +186,11 @@ func (r *Repo) StageClear(ctx context.Context, accountID int64, stageID string, 
 	}
 	defer tx.Rollback(ctx)
 	if err := ensureSeeded(ctx, tx, accountID, cfg); err != nil {
+		return State{}, err
+	}
+
+	// KAN-78 防作弊：校验并消费 PVE 战斗会话（同事务锁行 → 防并发双花/重放）。
+	if err := consumePveBattle(ctx, tx, accountID, battleID, stageID, stars, sum, stage, cfg, time.Now()); err != nil {
 		return State{}, err
 	}
 

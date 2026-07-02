@@ -1,0 +1,40 @@
+# KAN-79 PVE 重放验证器镜像：Go verifier 轮询 pve_battles → exec headless Godot
+# 跑 tools/pve_verify.gd（与客户端同一份确定性 logic/）重放对帐。
+#
+# 前置：server/docker/godot-linux.zip（Godot 4.6.3-stable linux x86_64 官方 zip，
+# ~70MB 不入 git；缺失时构建报错——下载命令见 docker/README.md）。
+# 项目文件运行时经 compose 挂 /repo:ro，entrypoint 拷最小集到可写 /work/project
+# （Godot 首跑要写 res://.godot/ 缓存）——代码更新不用重建镜像，compose 重启即可。
+
+# -------- Build stage --------
+FROM golang:1.25-alpine AS builder
+WORKDIR /src
+ARG GOPROXY=https://goproxy.cn,direct
+ARG GOSUMDB=sum.golang.google.cn
+ENV GOPROXY=${GOPROXY}
+ENV GOSUMDB=${GOSUMDB}
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/verifier ./cmd/verifier
+
+# -------- Runtime stage --------
+# Godot headless 需要 glibc + fontconfig（alpine musl 不行 → debian slim）。
+FROM debian:bookworm-slim
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates unzip libfontconfig1 tzdata \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY docker/godot-linux.zip /tmp/godot.zip
+RUN unzip -q /tmp/godot.zip -d /tmp/godot \
+ && mv /tmp/godot/Godot_v*_linux.x86_64 /usr/local/bin/godot \
+ && chmod +x /usr/local/bin/godot \
+ && rm -rf /tmp/godot /tmp/godot.zip
+
+COPY --from=builder /out/verifier /usr/local/bin/verifier
+COPY docker/verifier-entrypoint.sh /usr/local/bin/verifier-entrypoint.sh
+RUN chmod +x /usr/local/bin/verifier-entrypoint.sh
+
+ENV GODOT_BIN=/usr/local/bin/godot
+ENV PROJECT_DIR=/work/project
+CMD ["/usr/local/bin/verifier-entrypoint.sh"]

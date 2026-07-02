@@ -13,5 +13,11 @@
   },
   "unlock_shards": { "common": 30, "rare": 50, "epic": 80, "legendary": 120 },
   "idle": { "gold_per_hour_per_chapter": 50, "cap_hours": 8 },
-  "rewards": { "first_clear_gold_base": 300, "first_clear_gold_per_chapter": 270, "repeat_gold_ratio": 0.1 }
+  "rewards": { "first_clear_gold_base": 300, "first_clear_gold_per_chapter": 270, "repeat_gold_ratio": 0.1 },
+  "anticheat": {
+    "_comment": "KAN-78/79 PVE 防作弊：min_stage_duration_s=通关墙钟时长下限(秒,堵秒推)；max_cmds_per_battle=单局指令流上限(堵灌爆)；verify_sample_rate=层2重放验证抽样率0~1(本地开发全验)",
+    "min_stage_duration_s": 15,
+    "max_cmds_per_battle": 2000,
+    "verify_sample_rate": 1.0
+  }
 }

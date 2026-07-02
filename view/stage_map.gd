@@ -95,7 +95,9 @@ func _report_and_delta(pending: Dictionary, token: String, all_ids: Array, econ,
 	var bgold := int(cache.gold) if cache != null else 0
 	var bgems := int(cache.gems) if cache != null else 0
 	var bshards := _total_shards(cache)
-	var res: Dictionary = await econ.report_stage_clear(_http, token, sid, stars, all_ids)
+	# KAN-78：battle_id + 战报摘要随上报（服务器限速/时长/星数摘要交叉校验后才发奖）。
+	var res: Dictionary = await econ.report_stage_clear(_http, token, sid, stars, all_ids,
+		int(pending.get("battle_id", 0)), pending.get("summary", {}))
 	if not bool(res.get("ok", false)):
 		return null
 	var after = econ.get_cache()

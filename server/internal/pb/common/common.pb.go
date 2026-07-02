@@ -74,6 +74,8 @@ const (
 	MsgId_ECONOMY_UNLOCK_REQ       MsgId = 65 // V5-N4：解锁
 	MsgId_ECONOMY_STAGE_CLEAR_REQ  MsgId = 66 // V5-N5：通关上报（stage_id, stars）
 	MsgId_ECONOMY_COLLECT_IDLE_REQ MsgId = 67 // V5-N6：挂机领取（now 全服务器定）
+	MsgId_PVE_START_REQ            MsgId = 68 // KAN-78：PVE 开战报到（服务器时钟记 started_at + 养成快照）
+	MsgId_PVE_REPORT_REQ           MsgId = 69 // KAN-79：PVE 指令流/哈希周期批量上报（时序真实性）
 )
 
 // Enum value maps for MsgId.
@@ -118,6 +120,8 @@ var (
 		65: "ECONOMY_UNLOCK_REQ",
 		66: "ECONOMY_STAGE_CLEAR_REQ",
 		67: "ECONOMY_COLLECT_IDLE_REQ",
+		68: "PVE_START_REQ",
+		69: "PVE_REPORT_REQ",
 	}
 	MsgId_value = map[string]int32{
 		"MSG_UNKNOWN":               0,
@@ -159,6 +163,8 @@ var (
 		"ECONOMY_UNLOCK_REQ":        65,
 		"ECONOMY_STAGE_CLEAR_REQ":   66,
 		"ECONOMY_COLLECT_IDLE_REQ":  67,
+		"PVE_START_REQ":             68,
+		"PVE_REPORT_REQ":            69,
 	}
 )
 
@@ -213,6 +219,7 @@ const (
 	ErrorCode_ERR_ECONOMY_AT_CAP           ErrorCode = 501 // V5-N4：已达等级/阶上限
 	ErrorCode_ERR_ECONOMY_LOCKED           ErrorCode = 502 // V5-N4：卡未解锁 / 不满足解锁条件
 	ErrorCode_ERR_ECONOMY_STAGE_LOCKED     ErrorCode = 503 // V5-N5：关卡未解锁（进度不连续/前一关未通关）
+	ErrorCode_ERR_PVE_BATTLE_INVALID       ErrorCode = 504 // KAN-78：PVE 战斗会话无效（battle_id 不存在/不属己/
 )
 
 // Enum value maps for ErrorCode.
@@ -238,6 +245,7 @@ var (
 		501: "ERR_ECONOMY_AT_CAP",
 		502: "ERR_ECONOMY_LOCKED",
 		503: "ERR_ECONOMY_STAGE_LOCKED",
+		504: "ERR_PVE_BATTLE_INVALID",
 	}
 	ErrorCode_value = map[string]int32{
 		"ERR_OK":                       0,
@@ -260,6 +268,7 @@ var (
 		"ERR_ECONOMY_AT_CAP":           501,
 		"ERR_ECONOMY_LOCKED":           502,
 		"ERR_ECONOMY_STAGE_LOCKED":     503,
+		"ERR_PVE_BATTLE_INVALID":       504,
 	}
 )
 
@@ -453,7 +462,7 @@ const file_common_proto_rawDesc = "" +
 	"\tavatar_id\x18\x03 \x01(\x05R\bavatarId\x12\x14\n" +
 	"\x05level\x18\x04 \x01(\x05R\x05level\x12\x1a\n" +
 	"\btrophies\x18\x05 \x01(\x05R\btrophies\x12$\n" +
-	"\x0eavatar_card_id\x18\x06 \x01(\tR\favatarCardId*\xba\x06\n" +
+	"\x0eavatar_card_id\x18\x06 \x01(\tR\favatarCardId*\xe1\x06\n" +
 	"\x05MsgId\x12\x0f\n" +
 	"\vMSG_UNKNOWN\x10\x00\x12\b\n" +
 	"\x04PING\x10\x01\x12\b\n" +
@@ -497,7 +506,9 @@ const file_common_proto_rawDesc = "" +
 	"\x13ECONOMY_RANK_UP_REQ\x10@\x12\x16\n" +
 	"\x12ECONOMY_UNLOCK_REQ\x10A\x12\x1b\n" +
 	"\x17ECONOMY_STAGE_CLEAR_REQ\x10B\x12\x1c\n" +
-	"\x18ECONOMY_COLLECT_IDLE_REQ\x10C*\x8f\x04\n" +
+	"\x18ECONOMY_COLLECT_IDLE_REQ\x10C\x12\x11\n" +
+	"\rPVE_START_REQ\x10D\x12\x12\n" +
+	"\x0ePVE_REPORT_REQ\x10E*\xac\x04\n" +
 	"\tErrorCode\x12\n" +
 	"\n" +
 	"\x06ERR_OK\x10\x00\x12\x10\n" +
@@ -519,7 +530,8 @@ const file_common_proto_rawDesc = "" +
 	"\x18ERR_ECONOMY_INSUFFICIENT\x10\xf4\x03\x12\x17\n" +
 	"\x12ERR_ECONOMY_AT_CAP\x10\xf5\x03\x12\x17\n" +
 	"\x12ERR_ECONOMY_LOCKED\x10\xf6\x03\x12\x1d\n" +
-	"\x18ERR_ECONOMY_STAGE_LOCKED\x10\xf7\x03BAZ?github.com/jchensh/godot-clash-pusher/server/internal/pb/commonb\x06proto3"
+	"\x18ERR_ECONOMY_STAGE_LOCKED\x10\xf7\x03\x12\x1b\n" +
+	"\x16ERR_PVE_BATTLE_INVALID\x10\xf8\x03BAZ?github.com/jchensh/godot-clash-pusher/server/internal/pb/commonb\x06proto3"
 
 var (
 	file_common_proto_rawDescOnce sync.Once

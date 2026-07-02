@@ -17,6 +17,7 @@ var config            # ConfigLoader：查卡牌 elixir_cost
 var skill_system      # SkillSystem：执行技能积木
 var unit_stat_mult: float = 1.0   # V5-S1：本方出兵数值乘区（hp/damage），由 Match 注入；默认 1.0（行为同改前）
 var player_data = null            # V5-S4：本方养成存档（PlayerData）；非空时出兵乘区按本卡 level/rank 算（敌方为 null 用 flat）
+var play_observer = null          # KAN-79：出牌成功回调 on_card_played(owner_id, card_id, pos)（PVE 录制器挂；null=零副作用）
 
 func _init(owner_id_ = 0, elixir_ = null, deck_ = null, config_ = null, skill_system_ = null) -> void:
 	owner_id = owner_id_
@@ -53,6 +54,9 @@ func can_play(hand_index: int) -> bool:
 func try_play_card(hand_index: int, pos: Vector2 = Vector2.ZERO) -> bool:
 	if deck == null or elixir == null or skill_system == null:
 		return false
+	# KAN-79：落点量化到毫 tile（与 PVP DeployCmd 同款编码）。让「录制值 = 执行值」恒成立
+	# （PVE 重放逐 bit 确定性）；PVP 路径 pos 本来就是毫 tile 还原的 → 幂等；0.001 tile 无手感影响。
+	pos = Vector2(round(pos.x * 1000.0) / 1000.0, round(pos.y * 1000.0) / 1000.0)
 	var hand: Array = deck.get_hand()
 	if hand_index < 0 or hand_index >= hand.size():
 		return false
@@ -68,6 +72,8 @@ func try_play_card(hand_index: int, pos: Vector2 = Vector2.ZERO) -> bool:
 		return false
 	deck.play(hand_index)
 	skill_system.play_card(card_id, owner_id, pos, _resolve_stat_mult(card_id), _resolve_skills(card_id))
+	if play_observer != null:
+		play_observer.on_card_played(owner_id, card_id, pos)
 	return true
 
 # 本次出牌的出兵数值乘区：有 player_data（我方养成）→ 按本卡 level/rank 算；

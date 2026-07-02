@@ -82,5 +82,25 @@ services:
       gateway:
         condition: service_started
 
+  # KAN-79 PVE 重放验证器：轮询 pve_battles 已消费待验局 → headless Godot 重放对帐
+  # → verdict 写回；mismatch → 账号 shadow 标记。镜像见 Dockerfile.verifier
+  # （需 docker/godot-linux.zip，见 docker/README.md）。项目文件运行时挂载，
+  # 代码更新 restart 即可、不用重建镜像。
+  verifier:
+    build:
+      context: .
+      dockerfile: Dockerfile.verifier
+    image: gcp-verifier:dev
+    environment:
+      DB_URL: ${DB_URL:-postgres://app:dev@postgres:5432/gcp?sslmode=disable}
+      CONFIG_DIR: /app/config
+      VERIFY_INTERVAL_S: "5"
+    volumes:
+      - ../config:/app/config:ro
+      - ..:/repo:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   pg_data:
