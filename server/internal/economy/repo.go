@@ -455,29 +455,31 @@ func (r *Repo) settle(ctx context.Context, accountID int64, cardID string, cfg *
 	return st, nil
 }
 
-// ensureSeeded creates the economy_state row + per-card rows for a fresh account.
+// ensureSeeded creates the economy_state row for a fresh account, and (idempotently)
+// backfills per-card rows for ALL config cards. 新卡上线后，已有账号也会在此补进缺失卡
+// （ON CONFLICT DO NOTHING：不动已有卡的 level/rank/shards/unlocked；新卡按 Starter 决定解锁）。
 func ensureSeeded(ctx context.Context, tx pgx.Tx, accountID int64, cfg *Config) error {
 	var exists bool
 	if err := tx.QueryRow(ctx,
 		`SELECT EXISTS(SELECT 1 FROM economy_state WHERE account_id=$1)`, accountID).Scan(&exists); err != nil {
 		return err
 	}
-	if exists {
-		return nil
-	}
-	if _, err := tx.Exec(ctx,
-		`INSERT INTO economy_state (account_id, idle_last_collect_ts) VALUES ($1, $2)`,
-		accountID, time.Now().Unix()); err != nil {
-		return err
+	if !exists {
+		if _, err := tx.Exec(ctx,
+			`INSERT INTO economy_state (account_id, idle_last_collect_ts) VALUES ($1, $2)`,
+			accountID, time.Now().Unix()); err != nil {
+			return err
+		}
 	}
 	ids := make([]string, 0, len(cfg.Cards))
 	for id := range cfg.Cards {
 		ids = append(ids, id)
 	}
-	sort.Strings(ids) // 确定性播种顺序
+	sort.Strings(ids) // 确定性播种/补种顺序
 	for _, id := range ids {
 		if _, err := tx.Exec(ctx,
-			`INSERT INTO economy_cards (account_id, card_id, unlocked) VALUES ($1, $2, $3)`,
+			`INSERT INTO economy_cards (account_id, card_id, unlocked) VALUES ($1, $2, $3)
+			 ON CONFLICT (account_id, card_id) DO NOTHING`,
 			accountID, id, cfg.Cards[id].Starter); err != nil {
 			return err
 		}

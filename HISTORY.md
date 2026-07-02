@@ -719,4 +719,12 @@
 - **附带澄清**：verifier 日志里 `bad hash entry`/`mismatch` 是在啃**集成测试合成数据**（`h="aa"`/单条指令，battle 653-655/463-477），非真实对局、非 bug（用户被崩溃挡住没打成真局）。验证器本身正常。
 - **运维铁律（卡池后续每步）**：改 logic/config → 重启 verifier 容器；加卡 → 另重启 api（+gateway 保配置版本）。
 
-**✅ 验收收尾（2026-07-03，本批一起提交）**：三件套 **T1/T2/T3** + **retrofit R-A/R-B** 真人验收通过——①闯关进战斗不再崩/卡死；②giant/golem 只拆塔；③baby_dragon(游戏内名「余烬火颅」)溅射清群。客户端 **345/345**。Jira **KAN-81/82/83/84 → Done**，闯关崩溃修复建 **KAN-89(Bug) → Done**。verifier 容器已重启同步。**下一步 = KAN-85 铺 32 张新卡**（届时 restart api + verifier；含新卡 id↔中文名对照表 + on_hit_status 的 xlsx 表示）。
+**✅ 验收收尾（2026-07-03，本批一起提交）**：三件套 **T1/T2/T3** + **retrofit R-A/R-B** 真人验收通过——①闯关进战斗不再崩/卡死；②giant/golem 只拆塔；③baby_dragon(游戏内名「余烬火颅」)溅射清群。客户端 **345/345**。Jira **KAN-81/82/83/84 → Done**，闯关崩溃修复建 **KAN-89(Bug) → Done**。verifier 容器已重启同步。**下一步 = KAN-85 铺 32 张新卡**（届时 restart api + verifier；含新卡 id↔中文名对照表 + on_hit_status 的 xlsx 表示）。**另交付美术清单** `docs/design/card_art_spec_48cards.xlsx`（48 卡×17 列，种族/职业/体型/移动/攻击/动画/特效，供美术画原画+帧动画+FX）。
+
+### V5 卡池扩充 · KAN-85 铺 32 张新卡（✅ 完成，2026-07-03，独占 master 自主开发）
+- **32 卡入库** → **48 张**（普通18/稀有14/史诗10/传奇6）：`cards.json`/`units.json`(+27 单位实体，含复用 minion/goblin/skeleton/spear_goblin body)/`card_progression.json`。数值=docs/design/03 §D 角色模板锚定示意值·待 KAN-87 probe。用足三件套：splash(fire_spirit/valkyrie/bomber/wizard/executioner/ice_wizard/princess)、building-target(bone_ram/royal_giant/hog_rider/battle_ram/balloon/lava_hound)、on_hit_status(ice/electro_spirit/ice_wizard/electro_wizard) + 法术 status(giant_snowball/freeze)；多积木(goblin_gang/electro_wizard 落地 zap)、亡语链(bone_ram→骷髅/battle_ram→蛮兵/phoenix→重生/lava_hound→6火犬)。
+- **build_config.py 扩**：Units +`on_hit_status_kind/dur/mag`、CardSkills +`status_kind/dur/mag`（flatten 嵌套 dict）+ `STATUS_KINDS` 枚举 + 下拉校验。`--from-json`+`--check` 往返一致（32 新卡 + status 列都镜像进 GameConfig.xlsx）。
+- **card_progression**：32 卡 rarity/base_power/`starter:false`(未解锁) + 轻量 rank_unlocks（swarm→count_add/法术→num_add/其余 stat；**epic+ signature 觉醒留 KAN-86**）。
+- **服务端 ensureSeeded 改增量补种**(`repo.go`)：`INSERT … ON CONFLICT (account_id,card_id) DO NOTHING` —— 新卡上线后**已有账号下次访问自动补进缺失卡**（不动已有养成；新卡 starter=false 播为未解锁）。修 `config_test`/`repo_integration_test` 的 16→48 断言。Go 的 `cfg.Cards` 只从 card_progression 读 rarity/starter/base_power（忽略 rank_unlocks、不碰 cards.json skills），故 status 字段不影响服务端。
+- **验证**：客户端 **345/345** + 临时 smoke（32 卡出兵数/三件套字段/lava_hound 裂6火犬/法术 status/电法师多积木，验后删）全过；Go economy 集成测（真 PG）全过（48 卡解析 + 播种 48）；`docker compose build gateway` 编译通过 → 重建 api+gateway + 重启 verifier，**api 日志 `economy config loaded (48 cards, cfg ver=96e05036)`**、DB 账号卡数=48。
+- **⚠️ 用户须知**：新卡播为**未解锁** → 用 GM unlock-all（或攒碎片）才进卡组/PvE；api+verifier 已重启加载新配置。**下一步 KAN-86：为 epic+legendary(16 张)填 signature 觉醒到 rank_unlocks**。

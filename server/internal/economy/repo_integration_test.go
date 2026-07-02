@@ -104,8 +104,8 @@ func TestRepo_SeedAndUpgrade(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(st.Cards) != 16 {
-		t.Fatalf("seeded cards=%d (want 16)", len(st.Cards))
+	if len(st.Cards) != 48 {
+		t.Fatalf("seeded cards=%d (want 48)", len(st.Cards))
 	}
 	if st.Gold != 0 {
 		t.Fatalf("fresh gold=%d", st.Gold)

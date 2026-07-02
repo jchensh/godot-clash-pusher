@@ -174,5 +174,376 @@
         "damage": 150
       }
     ]
+  },
+  "spear_goblins": {
+    "name": "长矛哥布林",
+    "elixir_cost": 2,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "spear_goblin_body",
+        "count": 3
+      }
+    ]
+  },
+  "bats": {
+    "name": "血蝠群",
+    "elixir_cost": 2,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "bat_body",
+        "count": 5
+      }
+    ]
+  },
+  "barbarians": {
+    "name": "蛮兵",
+    "elixir_cost": 5,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "barbarian_body",
+        "count": 5
+      }
+    ]
+  },
+  "minion_horde": {
+    "name": "怨灵大军",
+    "elixir_cost": 5,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "minion_body",
+        "count": 6
+      }
+    ]
+  },
+  "ice_spirit": {
+    "name": "冰灵",
+    "elixir_cost": 1,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "ice_spirit_body",
+        "count": 1
+      }
+    ]
+  },
+  "fire_spirit": {
+    "name": "火灵",
+    "elixir_cost": 1,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "fire_spirit_body",
+        "count": 1
+      }
+    ]
+  },
+  "electro_spirit": {
+    "name": "电灵",
+    "elixir_cost": 1,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "electro_spirit_body",
+        "count": 1
+      }
+    ]
+  },
+  "squire": {
+    "name": "见习骑士",
+    "elixir_cost": 2,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "squire_body",
+        "count": 1
+      }
+    ]
+  },
+  "axe_thrower": {
+    "name": "掷斧手",
+    "elixir_cost": 3,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "axe_thrower_body",
+        "count": 1
+      }
+    ]
+  },
+  "cave_spiders": {
+    "name": "洞穴蛛群",
+    "elixir_cost": 3,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "cave_spider_body",
+        "count": 4
+      }
+    ]
+  },
+  "rock_shower": {
+    "name": "石雨",
+    "elixir_cost": 2,
+    "skills": [
+      {
+        "type": "aoe_damage",
+        "radius": 2.2,
+        "damage": 125
+      }
+    ]
+  },
+  "bone_ram": {
+    "name": "亡骨冲车",
+    "elixir_cost": 4,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "bone_ram_body",
+        "count": 1
+      }
+    ]
+  },
+  "royal_giant": {
+    "name": "皇家巨像",
+    "elixir_cost": 5,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "royal_giant_body",
+        "count": 1
+      }
+    ]
+  },
+  "hog_rider": {
+    "name": "野猪骑士",
+    "elixir_cost": 4,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "hog_rider_body",
+        "count": 1
+      }
+    ]
+  },
+  "valkyrie": {
+    "name": "瓦尔基里",
+    "elixir_cost": 4,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "valkyrie_body",
+        "count": 1
+      }
+    ]
+  },
+  "bomber": {
+    "name": "投弹亡灵",
+    "elixir_cost": 2,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "bomber_body",
+        "count": 1
+      }
+    ]
+  },
+  "mega_minion": {
+    "name": "巨型怨灵",
+    "elixir_cost": 3,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "mega_minion_body",
+        "count": 1
+      }
+    ]
+  },
+  "goblin_gang": {
+    "name": "哥布林帮",
+    "elixir_cost": 3,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "goblin_body",
+        "count": 3
+      },
+      {
+        "type": "spawn_unit",
+        "unit_id": "spear_goblin_body",
+        "count": 2
+      }
+    ]
+  },
+  "battle_ram": {
+    "name": "战锤冲车",
+    "elixir_cost": 4,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "battle_ram_body",
+        "count": 1
+      }
+    ]
+  },
+  "giant_snowball": {
+    "name": "寒冰球",
+    "elixir_cost": 2,
+    "skills": [
+      {
+        "type": "aoe_damage",
+        "radius": 2.0,
+        "damage": 110,
+        "status": {
+          "kind": "slow",
+          "dur": 1.5,
+          "mag": 0.35
+        }
+      }
+    ]
+  },
+  "goblin_barrel": {
+    "name": "哥布林桶",
+    "elixir_cost": 3,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "goblin_body",
+        "count": 3
+      }
+    ]
+  },
+  "wizard": {
+    "name": "巫师",
+    "elixir_cost": 4,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "wizard_body",
+        "count": 1
+      }
+    ]
+  },
+  "executioner": {
+    "name": "行刑者",
+    "elixir_cost": 5,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "executioner_body",
+        "count": 1
+      }
+    ]
+  },
+  "balloon": {
+    "name": "地狱气球",
+    "elixir_cost": 5,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "balloon_body",
+        "count": 1
+      }
+    ]
+  },
+  "skeleton_army": {
+    "name": "骷髅大军",
+    "elixir_cost": 4,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "skeleton_body",
+        "count": 14
+      }
+    ]
+  },
+  "phoenix": {
+    "name": "不死凤凰",
+    "elixir_cost": 4,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "phoenix_body",
+        "count": 1
+      }
+    ]
+  },
+  "freeze": {
+    "name": "冰冻术",
+    "elixir_cost": 4,
+    "skills": [
+      {
+        "type": "aoe_damage",
+        "radius": 3.0,
+        "damage": 0,
+        "status": {
+          "kind": "freeze",
+          "dur": 2.5
+        }
+      }
+    ]
+  },
+  "lava_hound": {
+    "name": "熔岩魔像",
+    "elixir_cost": 7,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "lava_hound_body",
+        "count": 1
+      }
+    ]
+  },
+  "ice_wizard": {
+    "name": "寒冰法师",
+    "elixir_cost": 3,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "ice_wizard_body",
+        "count": 1
+      }
+    ]
+  },
+  "electro_wizard": {
+    "name": "电法师",
+    "elixir_cost": 4,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "electro_wizard_body",
+        "count": 1
+      },
+      {
+        "type": "aoe_damage",
+        "radius": 2.0,
+        "damage": 90
+      }
+    ]
+  },
+  "princess": {
+    "name": "公主",
+    "elixir_cost": 3,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "princess_body",
+        "count": 1
+      }
+    ]
+  },
+  "inferno_dragon": {
+    "name": "地狱飞龙",
+    "elixir_cost": 4,
+    "skills": [
+      {
+        "type": "spawn_unit",
+        "unit_id": "inferno_dragon_body",
+        "count": 1
+      }
+    ]
   }
 }
