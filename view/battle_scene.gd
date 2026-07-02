@@ -154,6 +154,10 @@ var _end_buttons_added := false
 @onready var _vh: float = float(get_viewport_rect().size.y)
 
 func _ready() -> void:
+	# 修复空指针卡死：闯关模式 _ready 内有 await(pve_start 开战报到)，await 期间 match_obj 已建、
+	# 但 player/battle 要等 await 后的 setup_stage 才建。处理默认开启会让 _process 在 await 窗口跑到
+	# _sync_cards 访问 match_obj.player(Nil) 每帧报错卡死。故先关处理，末尾 setup 完再 set_process(true)。
+	set_process(false)
 	_font = load("res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf")
 	loader = ConfigLoaderScript.new()
 	loader.load_all()
@@ -932,7 +936,7 @@ func _on_card_up(i: int) -> void:
 
 # 仅作输入门控：出不起/空格 → disabled（disabled 不触发 button_down，拖不动）。卡面见 _draw_cards。
 func _sync_cards() -> void:
-	if match_obj == null:
+	if match_obj == null or match_obj.player == null:
 		return
 	var hand: Array = match_obj.player.deck.get_hand()
 	for i in _card_btns.size():

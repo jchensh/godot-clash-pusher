@@ -89,6 +89,20 @@ func _validate() -> void:
 				errors.append("unit '%s' 的 attack_range 应为数字" % id)
 			elif float(attack_range) < 0.0:
 				errors.append("unit '%s' 的 attack_range 应 ≥ 0" % id)
+		if u.has("splash_radius"):
+			var splash_radius = u.get("splash_radius")
+			if not _is_number(splash_radius):
+				errors.append("unit '%s' 的 splash_radius 应为数字" % id)
+			elif float(splash_radius) < 0.0:
+				errors.append("unit '%s' 的 splash_radius 应 ≥ 0" % id)
+		if u.has("target_priority") and not ["nearest", "buildings"].has(str(u.get("target_priority"))):
+			errors.append("unit '%s' 的 target_priority 应为 nearest 或 buildings" % id)
+		if u.has("on_hit_status"):
+			var ohs = u.get("on_hit_status")
+			if typeof(ohs) != TYPE_DICTIONARY:
+				errors.append("unit '%s' 的 on_hit_status 应为对象" % id)
+			elif (ohs as Dictionary).has("kind") and not ["slow", "stun", "freeze"].has(str((ohs as Dictionary).get("kind"))):
+				errors.append("unit '%s' 的 on_hit_status.kind 非法" % id)
 		if u.has("target_type") and not ["ground", "air"].has(str(u.get("target_type"))):
 			errors.append("unit '%s' 的 target_type 应为 ground 或 air" % id)
 
@@ -196,6 +210,12 @@ func _validate() -> void:
 				var uid = sk.get("unit_id", "")
 				if not units.has(uid):
 					errors.append("card '%s' 的 spawn_unit 引用了不存在的 unit '%s'" % [cid, str(uid)])
+			if typeof(sk) == TYPE_DICTIONARY and sk.has("status"):
+				var stt = sk.get("status")
+				if typeof(stt) != TYPE_DICTIONARY:
+					errors.append("card '%s' 的 skill status 应为对象" % cid)
+				elif (stt as Dictionary).has("kind") and not ["slow", "stun", "freeze"].has(str((stt as Dictionary).get("kind"))):
+					errors.append("card '%s' 的 skill status.kind 非法" % cid)
 
 	# 交叉引用：unit.death_spawn_unit（亡语召唤，V3-3）必须在 units 中。
 	for uid in units:

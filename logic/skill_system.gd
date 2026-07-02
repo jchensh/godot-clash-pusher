@@ -87,6 +87,7 @@ func _direct_damage(block: Dictionary, owner_id: int, pos: Vector2) -> void:
 	if target == null:
 		return   # 无敌方单位 → 空放
 	target.take_damage(float(block.get("damage", 0.0)))
+	_apply_block_status(block, target)   # T3：点伤积木可带 status
 
 func _aoe_damage(block: Dictionary, owner_id: int, center: Vector2) -> void:
 	var arena = _arena()
@@ -99,6 +100,7 @@ func _aoe_damage(block: Dictionary, owner_id: int, center: Vector2) -> void:
 			continue   # 只打存活敌方
 		if u.pos.distance_to(center) <= radius + _EPSILON:
 			u.take_damage(damage)
+			_apply_block_status(block, u)   # T3：范围伤积木可带 status（freeze 术=damage 0+status）
 
 # 治疗术（V3-3）：治疗范围内存活友军（damage 字段复用为治疗量）。
 func _aoe_heal(block: Dictionary, owner_id: int, center: Vector2) -> void:
@@ -112,6 +114,14 @@ func _aoe_heal(block: Dictionary, owner_id: int, center: Vector2) -> void:
 			continue   # 只治友军
 		if u.pos.distance_to(center) <= radius + _EPSILON:
 			u.heal(amount)
+
+# T3：伤害积木可带 status:{kind,dur,mag} → 对命中的敌方单位施加状态（如 freeze 术 = damage 0 + status）。
+func _apply_block_status(block: Dictionary, target) -> void:
+	var st = block.get("status", {})
+	if typeof(st) != TYPE_DICTIONARY or (st as Dictionary).is_empty():
+		return
+	if target != null and target.has_method("apply_status"):
+		target.apply_status(str(st.get("kind", "")), float(st.get("dur", 0.0)), float(st.get("mag", 0.0)))
 
 # 最逼近 pos 的存活敌方单位；无则 null。
 func _nearest_enemy_to(pos: Vector2, owner_id: int):

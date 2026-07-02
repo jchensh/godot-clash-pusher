@@ -655,3 +655,68 @@
 **真人验收**：用例 [docs/ACCEPTANCE_V5_KAN49.md](docs/ACCEPTANCE_V5_KAN49.md)（8 例：地形/精灵/塔/HUD/涟漪投射物FX/juice/胜负语义/**side2 视角全面**——side2 是联机特有最大风险点，须单独验精灵朝向不反、落点合法、本方数据正确）。**验收过 + 用户拍板 → KAN-49 Done**。
 
 **分支/worktree**：本次在 `master-zaiDev` worktree（feat/zaiDev 分支原址）新建 `feat/kan49-net-visual` 开发（基于 master 尖端 ce699df；zaiDev 分支保留不动、待用户清理）。Jira KAN-49 To Do → **正在进行**。
+
+### V5 卡池扩充设计（16→48）+ 三件套引擎 — 设计四部曲完成、T1 splash 开工（🚧 进行中，2026-07-03）
+
+**背景**：战斗系统已可用但卡池仅 16 张、深度不足。用户发起卡牌系统深度扩充：扩池 + 稀有度/流派/觉醒三维体系。plan-first、逐阶段用户确认，四阶段设计文档产出于 `docs/design/`：
+- `01_research.md`：CR 品类调研（稀有度/进化/流派/费用平衡/卡池规模，WebSearch）+ 本项目 16 卡 per-elixir 价值锚。
+- `02_design_constitution.md`：稀有度(4 档·数值放大系数硬性 1.0)/流派(6 做 2 缓)/觉醒(rank 永久制·机制优先)/CV 平衡尺(CV=√(队伍HP×DPS)·近战地面基准 80·远程对空吃半预算) + 三件套 schema。
+- `03_card_library.md`：+32 张达 48，金字塔 18/14/10/6，全表 + tech_debt + retrofit。
+- `04_awakenings_meta.md`：16 张 epic+legendary signature 觉醒 + meta 分析(Lavaloon/Hog/Bait + 2 结构隐患) + 平衡原则(最小杠杆优先)。
+
+**关键决策（用户逐阶段拍板 2026-07-03）**：①**稀有度≠强度**（`base_power` 只作战力折算/展示、禁喂战斗数值；同级同费不看稀有度）；②Champion 第 5 档暂不做（主动激活技能=重引擎）；③觉醒走 **rank 永久制**（非 CR 循环/进化槽，复用 `rank_unlocks`）；④signature 觉醒仅 epic+；⑤规模 ~48、金字塔 18/14/10/6；⑥6 流派做（swarm/beatdown/cycle/splash-control/air/bait-lite）、真 Siege+桥头 spam 缓；⑦**三件套(splash/building-target/status)** 获批为前置引擎工作；⑧retrofit **R-A(baby_dragon 加 splash) + R-B(giant/golem 只拆塔) 都做**。
+
+**实现顺序**：三件套 T1/T2/T3 → retrofit R-A/R-B → 32 卡数值铺入 config + 校验 → 觉醒填 rank_unlocks → probe 平衡 → T6/T7 延后件(balloon death_aoe / inferno ramp / electro chain)。
+
+**T1 · 单位攻击溅射 splash（本步 · 🚧 代码+单测完成，待用户确认后进 T2）**：
+- `logic/unit.gd`：+`splash_radius`（默认 0=单体，零回归）；`setup` 解析；`apply_stat_mult` 不缩放它（radius 非战斗数值）。
+- `logic/arena.gd`：攻击结算阶段 +`_collect_splash(attacks, attacker, primary, damage)`——命中后对 primary 周围 `splash_radius` 内**其他存活敌方单位**同施伤；只打单位不含塔、尊重 `can_hit_type`（地面溅射不误伤空军）、排除主目标防双击；收集式与主攻击同批 apply，确定性。
+- `logic/config_loader.gd`：unit 校验加 `splash_radius` 可选（数字、≥0）。
+- 单测 `tests/test_splash.gd`（4：多敌溅射 / 半径外不中 / 地面溅射不误伤空军 / splash=0 单体零回归）。**客户端 331/331**（+4，零回归）。注：顶部总览表的 313 为 KAN-49 时点旧值、之后 S9/KAN-76/78-79 累加至 327 未回写总览；本步 327+4→**331**。
+- **边界**：T1 只做「单位攻击溅射」；法术 `aoe_damage` 不受影响；建筑索敌(T2)/状态(T3)/retrofit(R-A/R-B) 为后续步。
+- **未提交**（用户暂不提交）。
+
+**Jira 建单（用户 2026-07-03 明确要求用 Atlas MCP 建，覆盖"手工维护"默认）**：**KAN-80~88 共 9 张挂 Epic KAN-50 下**——KAN-80 设计四部曲(已完成) / KAN-81 T1(正在进行) / KAN-82 T2 + KAN-83 T3 + KAN-84 retrofit R-A/R-B + KAN-85 铺 32 卡 + KAN-86 16 觉醒 + KAN-87 probe 平衡(均待办 To Do) / KAN-88 延后件 T6/T7/chain(Idea)。
+
+**T2 · 建筑索敌 target_priority=buildings（🚧 代码+单测完成，待用户确认后进 T3）**：
+- `logic/unit.gd`：+`target_priority`（"nearest" 缺省=现状零回归 / "buildings"）；`setup` 解析。
+- `logic/arena.gd`：`_acquire_target` 加分支——buildings 时无视敌方单位、直锁 `nearest_enemy_tower`、不被 aggro 分心。反制靠 body-block + 塔火 + 高单体 DPS（无防御建筑"拉扯"，见 docs/design/04 隐患A）。**本步先上纯版**；"优先建筑但仍受 aggro 拉扯"软版留 retrofit(KAN-84)/probe 定。
+- `logic/config_loader.gd`：unit 校验加 `target_priority` 可选（nearest/buildings）。
+- 单测 `tests/test_building_target.gd`（4：无视敌兵直锁塔 / 攻塔不打身边兵 / 朝塔推进不被侧兵勾走 / 缺省 nearest 仍分心零回归）。**客户端 335/335**（+4，零回归）。
+- 服务哪些卡：bone_ram/royal_giant/hog_rider/battle_ram/balloon/lava_hound + retrofit giant/golem。**未提交**。
+
+**T3 · 状态系统 status(slow/stun/freeze)（🚧 代码+单测完成，待用户确认）——三件套收官**：
+- `logic/unit.gd`：+`on_hit_status`(命中施加) + 单状态计时层(`_status_kind/_timer/_mag`)；`apply_status`(硬控不被 slow 顶掉) / `tick_status`(衰减过期清空) / `action_speed_mult`(stun·freeze→0、slow→1-mag、无→1) / `is_stunned` / `has_status`；`can_attack` 加 stun 门；`tick_cooldown` 按 action_speed_mult 缩放（slow 减慢攻击恢复、stun 冻结冷却）。
+- `logic/arena.gd`：tick 加 `tick_status`；移动 `_move_toward(u, target, dt × action_speed_mult)`（slow 减速/stun 停步）；攻击结算带 on_hit_status → apply 阶段对命中【单位】施加状态（塔不受状态，`is Unit` 守卫）；`_collect_splash` 透传 status（splash+slow 同施）。
+- `logic/skill_system.gd`：`_aoe_damage`/`_direct_damage` 支持 `status` 块 → 命中敌兵施加（freeze 术 = damage 0 + status）；helper `_apply_block_status`。
+- `logic/config_loader.gd`：unit `on_hit_status`(对象 + kind 合法) + card skill `status`(对象 + kind 合法) 校验。
+- 单测 `tests/test_status.gd`（10：施加/衰减过期 · slow 行动乘区 · stun·freeze 停动停攻 · 硬控不被 slow 覆盖 · slow 减慢冷却 · on-hit 施加 · 眩晕不造成伤害 · 法术 freeze · slow 减少推进 · 无状态零回归）。**客户端 345/345**（+10，零回归；踩坑：移动测试原用地面兵，绕桥致 y 进度非单调误判 → 改飞兵直线越河）。
+- 服务：ice/electro_spirit、giant_snowball、freeze、ice_wizard、electro_wizard + heal/lightning/musketeer/baby_dragon 等觉醒。**未提交**。
+
+> **三件套 T1/T2/T3 全部代码+单测完成**（KAN-81/82/83，未提交），客户端 **345/345**。下一步 = retrofit R-A/R-B（KAN-84）→ 32 卡铺入（KAN-85）→ 觉醒填表（KAN-86）→ probe 平衡（KAN-87）。
+
+**retrofit R-A/R-B（KAN-84，🚧 代码+配置完成，待真人验收）**：三件套就绪后给现有卡挂机制、让 RPS 三角闭合。
+- **R-A** `config/units.json` baby_dragon_body +`splash_radius: 1.5`：单体飞行肉 → 空中反 swarm（补"空中清群"边）。
+- **R-B** `config/units.json` giant_body + golem_body +`target_priority: "buildings"`：现会打兵 → 真·只拆塔 beatdown（无视敌兵直取塔；golem 亡语裂 2 哥布林保留）。
+- **xlsx 同步（用户提醒）**：`splash_radius`/`target_priority` 是 units 新字段、原 `build_config.py` 固定 `UNIT_HEADERS` 不含 → 直接改 JSON 会破 xlsx 往返（--check 报缺字段、--from-json 丢字段）。**故给 `build_config.py` 加两列往返**：`UNIT_HEADERS` +2 列 + `TARGET_PRIORITIES` 枚举 + Excel→JSON 可选读（splash>0 / target_priority≠nearest 才写，仿 death_spawn）+ JSON→Excel 写 + target_priority 下拉校验。流程：基线 `--check` ok（原本同步、无未回灌手改）→ 改 JSON → `--from-json` 重建 xlsx → `--check` ok（往返一致）。
+- **验证**：客户端 **345/345**（零回归：配置带新字段过校验、giant/golem 只拆塔 + baby_dragon splash 无单测回归）；`config check ok`。**决策**：这俩是 unit 字段 → 进 Excel 镜像（同 units.json 全镜像惯例，非 arena.json 式排除），designer 可在 Units sheet 调 splash 半径。**on_hit_status（嵌套 dict）的 xlsx 表示留 KAN-85**（届时有 status 单位才需）。
+- **play-feel 交真人验收**（改现有 PvE 手感，用例见 docs/design 派生 + 对话）；**probe 数值复衡并入 KAN-87**（AI-vs-AI 非可靠绝对裁判、数值仍 placeholder）。**未提交**。
+
+**🐞 修复：闯关进战斗空指针卡死（KAN-78 await 隐患，本轮验收暴露、非本轮改动引起）**
+- **现象**：选卡组进闯关战斗，`view/battle_scene.gd:937 _sync_cards` 每帧 `Invalid access to property or key 'deck' on a base object of type 'Nil'`（`match_obj.player` 为 Nil）卡死。
+- **根因**：闯关模式 `_ready` 有 `await economy.pve_start`（KAN-78 开战报到）；`match_obj` 在 await 前已建（第160行）、`player/battle` 要等 await 返回后 `setup_stage`（第199行）才建。节点处理默认开启 → await 挂起期间 `_process` 照跑，而 `_sync_cards` 只挡了 `match_obj==null`、没挡 `player==null` → 空指针（`_draw`/`_detect_*`/`_update_disp` 都挡了 `battle==null` 故安全，独 `_sync_cards` 漏挡）。
+- **修复**：①`_ready` 开头 `set_process(false)`，末尾 setup 完的 `set_process(true)` 才逐帧（根治 await 窗口，其余早退场景也不再空转）；②`_sync_cards` 补 `match_obj.player == null` 守卫。headless 编辑器导入无脚本错误。**与本轮卡/引擎/config 改动无关**（未碰 view/；units.json 新字段是客户端战斗用、服务端不读）。**真人重测确认**。
+- **相关提醒**：本轮改了 `config/units.json`（配置版本 sha256 会 bump）→ 建议**重启 Go 服务端**让它加载新配置，保 KAN-79 重放验证时客户端 sim 与服务端校验用同一份配置（否则 baby_dragon splash / giant 只拆塔的行为差异可能致重放 hash 不一致）。
+
+**🔎 KAN-78/79 反作弊 × 卡池扩充/养成 冲突排查（dockers 实跑验证，2026-07-03）**
+- **背景**：用户问三件套/新卡/养成会不会和 KAN-78/79 重放验证打架。
+- **结论：架构上安全，冲突是"版本同步"运维问题、非架构问题。** 验证器 `tools/pve_verify.gd` 自己 `ConfigLoader.load_all()` 读 `res://config` + 复用 `res://logic`（MatchScript/BattleScript…）+ 服务器权威养成快照 → 与客户端 sim **同配置同逻辑同养成**、无逐卡硬编码，新卡/新机制/养成天然一致。
+- **实跑验证**（临时 smoke `tools/_pve_retrofit_smoke.gd`，验后删）：录一局含 retrofit 机制（baby_dragon splash + giant/golem 只拆塔）→ 进程内 `PveReplay.replay` + 真 CLI `pve_verify.gd` **均 pass**（逐 hash 全等、win、ticks=428/king_permille=1000 一致）。三件套/retrofit 确定性穿过 KAN-79 完整链路。
+- **真冲突（运维·3 处须同版本：客户端 res:// / Go 内存 cfg / verifier 容器拷贝）**：
+  1. **verifier 容器 = 启动那刻从只读挂载 `/repo` 拷 logic/config 到 `/work/project`**（`verifier-entrypoint.sh`）→ **改 logic/config 后必须 `docker restart server-verifier-1` 重新拷**，否则用旧逻辑重放 → 每局 ticks/king_hp 对不上 → mismatch → `accounts.ban_status=1` shadow 标记。**本轮已重启同步**（容器 2h 前起、我改动更晚；重启后日志确认 re-staged + polling）。
+  2. **加新卡(KAN-85) → 必须重启 api**：`ensureSeeded` 从服务端内存 cfg 播种 `economy_cards`；`PveStart` 要求卡组 8 张全有行 + unlocked，否则 "card unknown" 拒开战。
+  3. **min_stage_duration_s=15（墙钟）vs 强卡快通**：giant 只拆塔可能 <15s 通关 → `validatePveClaim` 判 "too fast" 误杀。铺卡/平衡时留意。
+- **附带澄清**：verifier 日志里 `bad hash entry`/`mismatch` 是在啃**集成测试合成数据**（`h="aa"`/单条指令，battle 653-655/463-477），非真实对局、非 bug（用户被崩溃挡住没打成真局）。验证器本身正常。
+- **运维铁律（卡池后续每步）**：改 logic/config → 重启 verifier 容器；加卡 → 另重启 api（+gateway 保配置版本）。
+
+**✅ 验收收尾（2026-07-03，本批一起提交）**：三件套 **T1/T2/T3** + **retrofit R-A/R-B** 真人验收通过——①闯关进战斗不再崩/卡死；②giant/golem 只拆塔；③baby_dragon(游戏内名「余烬火颅」)溅射清群。客户端 **345/345**。Jira **KAN-81/82/83/84 → Done**，闯关崩溃修复建 **KAN-89(Bug) → Done**。verifier 容器已重启同步。**下一步 = KAN-85 铺 32 张新卡**（届时 restart api + verifier；含新卡 id↔中文名对照表 + on_hit_status 的 xlsx 表示）。

@@ -43,6 +43,8 @@ UNIT_HEADERS = [
     "body_radius_tiles",
     "unit_type",
     "attack_targets",
+    "splash_radius",
+    "target_priority",
     "death_spawn_unit",
     "death_spawn_count",
     "notes",
@@ -87,6 +89,7 @@ DECK_HEADERS = [
 SKILL_TYPES = ["spawn_unit", "direct_damage", "aoe_damage", "aoe_heal"]
 UNIT_TYPES = ["ground", "air"]
 ATTACK_TARGETS = ["ground", "air", "both"]   # 该单位能攻击的目标类型（V3-2 对空克制）
+TARGET_PRIORITIES = ["nearest", "buildings"]  # 索敌优先级（T2 建筑索敌）：nearest 缺省 / buildings 只锁敌塔
 TARGETS = ["first_enemy_in_lane"]
 SIDES = ["player", "ai"]
 DIFFICULTIES = ["rookie", "easy", "normal", "hard", "extreme"]
@@ -209,6 +212,18 @@ def build_json_from_workbook(workbook_path: Path = WORKBOOK_PATH) -> tuple[dict[
             "target_type": unit_type,
             "attack_targets": attack_targets,
         }
+        # T1 溅射（可选）：仅当填了 splash_radius 且 >0 才写入（0/空=单体，不落 JSON 保持零回归）。
+        splash = row.get("splash_radius")
+        if not _is_blank(splash):
+            splash_radius = _number_float(splash, f"unit {unit_id}.splash_radius")
+            if splash_radius > 0.0:
+                units[unit_id]["splash_radius"] = splash_radius
+        # T2 建筑索敌（可选）：仅当填了非 nearest 才写入。
+        target_priority = _text(row.get("target_priority"))
+        if target_priority and target_priority != "nearest":
+            if target_priority not in TARGET_PRIORITIES:
+                raise ConfigError(f"unit {unit_id} target_priority must be one of {TARGET_PRIORITIES}")
+            units[unit_id]["target_priority"] = target_priority
         # 亡语召唤（V3-3，可选）：仅当填了 death_spawn_unit 才写入。
         ds_unit = _text(row.get("death_spawn_unit"))
         if ds_unit:
@@ -385,6 +400,8 @@ def workbook_from_json(workbook_path: Path = WORKBOOK_PATH) -> None:
                 unit.get("body_radius", ""),
                 unit.get("target_type", ""),
                 unit.get("attack_targets", ""),
+                unit.get("splash_radius", ""),
+                unit.get("target_priority", ""),
                 unit.get("death_spawn_unit", ""),
                 unit.get("death_spawn_count", ""),
                 "",
@@ -392,6 +409,7 @@ def workbook_from_json(workbook_path: Path = WORKBOOK_PATH) -> None:
         )
     _add_list_validation(ws_units, "unit_type", UNIT_TYPES)
     _add_list_validation(ws_units, "attack_targets", ATTACK_TARGETS)
+    _add_list_validation(ws_units, "target_priority", TARGET_PRIORITIES)
 
     ws_cards = wb.create_sheet("Cards")
     _setup_sheet(ws_cards, CARD_HEADERS, {"card_id": 16, "name": 14, "category": 14, "notes": 26})
