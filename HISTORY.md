@@ -740,3 +740,19 @@
 - **验证**：客户端 **353/353**（+8 `test_v5_awakening`：effective_skills 的 unit_field/set_field/num_add 正确 + 运行时余烬火颅溅射变大+减速、雷暴命中眩晕、golem 崩解裂石心魔像、留 KAN-88 占位不改积木）；临时觉醒重放 smoke（rank3 觉醒局 record→PveReplay **逐 hash 全等 pass**，验后删）。
 - **服务端无改**：Go `cfg.Cards` 只读 rarity/starter/base_power、忽略 rank_unlocks → 经济/播种不变，**api/gateway 无需重启**；仅 **verifier 已重启**（觉醒经 card_progression.gd 应用，重放需新配置/逻辑）。
 - **下一步 KAN-87 probe 平衡**（48 卡+觉醒数值定稿）/ KAN-88 延后件（T6 death_aoe / T7 ramp / chain / haste）。
+
+### V5 三国题材改版 · 轨道A1+A2 文案层三国化（✅ 代码+配置完成，待真人验收，2026-07-04）
+
+**背景**：用户与美术设计师拍板——世界观/画风**全换三国题材**（魏/蜀/吴/群雄四阵营，热血物语方向三头身高清像素，序列帧为主）；**卡ID/费用/数值/机制/流派/结构全部冻结**（ID 是 DB economy_cards/decks、重放、反作弊校验主键，不动=服务端零改动，换皮压缩在显示层+素材层）。美术真相源=用户新交付《三国card_art_spec_48cards.xlsx》（48卡×19列，+阵营列 12×4 羁绊预留、+设计备注 sheet：稀有度=人物档次映射、顶级人物储备曹刘孙关张赵吕马、飞行包装=机关兽/飞具/方术三家）。施工图 [PLAN_V5_SANGUO.md](PLAN_V5_SANGUO.md)（轨道A A1~A4 + 决策 6 条 + 48 卡命名对照表）。**数值线 KAN-87/88 挂起**（用户指示，轨道A 后复盘；本 session 前段的 CV 审计离群结论保留：inferno_dragon 平 200 DPS 全池最超模等，见对话记录与 PLAN_V5_SANGUO §0）。
+
+**A1 · 美术表口径对齐入库**：新表觉醒列有 5 处写的是 04 设计稿目标态、超前于 KAN-86 已实现机制（表自身"觉醒机制保持不变"强约束自相矛盾）→ 按"以实现为准"降级改写：左慈阴兵王领队→+2数量(14→18) / 司马懿减速叠层至冻结→强减速 / 孙尚香燃烧减速地带→命中减速 / 庞统火鸾满配重生+落地减速→仅满配重生 / 于吉范围眩晕→单体眩晕；**增强版全部列为 KAN-88 机制升级项**（cell 内【】标注）。另 4 张延后件觉醒（荀彧 haste/孔明灯 T6/张角 chain/机关龙 T7）标注"当前数值占位"。修订版覆盖入库 `docs/design/card_art_spec_48cards.xlsx`（奇幻旧版 git 历史留档；docs/design/01-04 内卡名仍为奇幻旧名、存档备查，三国名以美术表+config 为准）。
+
+**A2 · 文案层三国化**：
+- `config/cards.json`：48 卡 name 三国化 + 新增 **`faction` 字段**（wei/shu/wu/qun，魏12/蜀12/吴12/群雄12；当前仅题材归属+未来羁绊预留，不产生克制）。`config/units.json`：39 单位 name（衍生/觉醒单位改名：石心魔像→**石心攻城兽**、喷火火犬→**喷火小龙**、熔岩火犬→**南蛮幼鸢**、凤凰(重生)→**火鸾·重启**）。`config/card_progression.json`：22 处 rank_unlocks note 换三国觉醒名（破法箭/烈焰东风/古之恶来/雷暴(单体)/王佐军心/临空火坛/阴兵如潮/凤火重启/寒江绝策/机关化生/火神降临/冢虎寒域/黄天雷劫/枭姬火阵/火脉过载 + 群卡计数名 阴兵/山越兵/魂鸦/弩手）。
+- **🐞 顺带修复 i18n 卡名断层**：UI 卡名走 `tr("card_"+id)`（deck_builder/card_collection/card_detail/battle HUD/net_battle/run_scene/account_create），`config/i18n.json` 原只有旧 16 卡键 → **KAN-85 铺的 32 张新卡在 UI 一直显示原始键名**（如 card_spear_goblins）。本次 en/zh 各补全 **48 键**（zh=三国名；en=英译初版，名将用拼音 Huang Zhong/Zhou Yu/Sima Yi/Zhang Jiao/Sun Shangxiang，待后续审校）。
+- 稀有度显示名：`view/card_collection.gd` + `view/card_detail.gd` `_rarity_zh` 普通/稀有/史诗/传说 → **寻常/精良/非凡/无双**（**内部枚举 common/rare/epic/legendary 不动**——DB/配置/服务端在用；品质框颜色不变）。
+- 工具链：`tools/build_config.py` Cards sheet +`faction` 列（FACTIONS 枚举+下拉校验；空=不写 JSON 零回归）；`logic/config_loader.gd` cards faction 可选校验（枚举）。`--from-json` 重建 GameConfig.xlsx + `--check` 往返一致。
+- **验证**：客户端单测 **353/353**（零回归）；config check ok。
+- **运维**：改 config → 版本 hash bump，需重启 api+gateway+verifier；本次 **docker daemon 未运行**（Docker Desktop 拉起超时）→ 无旧配置容器在跑、无 mismatch 风险；**下次 docker 起来容器自启即加载新配置**（verifier entrypoint 启动时拷贝、api/gateway 启动时解析）——若届时容器已带旧配置在跑，手动 `docker restart server-api-1 server-gateway-1 server-verifier-1`。
+- **Jira 未同步**（Atlassian MCP 本会话不可用需授权）：手工清单见 PLAN_V5_SANGUO.md §4——①新建 Story「三国化-A1A2」In Progress（真人验收后 Done）②Task「三国化-A3 场景系统美术清单」To Do ③Story「三国化-A4 素材接入+世界观文本+遭遇奖励回填」To Do ④KAN-88 描述追加 5 项增强觉醒 ⑤KAN-87 挂起备注。
+- **真人验收点**：图鉴/卡详情/卡组构建/战斗 HUD 全 48 卡显示三国名（**重点：32 张新卡不再显示 card_xxx 键名**）；稀有度显示 寻常/精良/非凡/无双；7 字长名（归附山越短刀兵/蜀汉火脉机关龙）在卡格/HUD 的截断表现（溢出则 A3 一并调 UI）。

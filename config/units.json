@@ -1,6 +1,6 @@
 {
   "knight_body": {
-    "name": "骑士",
+    "name": "虎贲校尉",
     "hp": 600,
     "damage": 75,
     "attack_speed": 1.2,
@@ -12,7 +12,7 @@
     "attack_targets": "ground"
   },
   "archer_body": {
-    "name": "弓箭手",
+    "name": "魏武强弩手",
     "hp": 120,
     "damage": 40,
     "attack_speed": 1.0,
@@ -24,7 +24,7 @@
     "attack_targets": "both"
   },
   "giant_body": {
-    "name": "巨人",
+    "name": "黄巾攻城力士",
     "hp": 2000,
     "damage": 120,
     "attack_speed": 1.5,
@@ -37,7 +37,7 @@
     "target_priority": "buildings"
   },
   "goblin_body": {
-    "name": "哥布林",
+    "name": "山越短刀兵",
     "hp": 80,
     "damage": 50,
     "attack_speed": 1.1,
@@ -49,7 +49,7 @@
     "attack_targets": "ground"
   },
   "minion_body": {
-    "name": "亡灵",
+    "name": "魂鸦",
     "hp": 90,
     "damage": 35,
     "attack_speed": 1.0,
@@ -61,7 +61,7 @@
     "attack_targets": "both"
   },
   "mini_pekka_body": {
-    "name": "迷你皮卡",
+    "name": "黑甲周仓",
     "hp": 700,
     "damage": 320,
     "attack_speed": 1.8,
@@ -73,7 +73,7 @@
     "attack_targets": "ground"
   },
   "musketeer_body": {
-    "name": "火枪手",
+    "name": "神射黄忠",
     "hp": 340,
     "damage": 110,
     "attack_speed": 1.1,
@@ -85,7 +85,7 @@
     "attack_targets": "both"
   },
   "skeleton_body": {
-    "name": "骷髅",
+    "name": "黄巾阴兵",
     "hp": 40,
     "damage": 40,
     "attack_speed": 1.0,
@@ -97,7 +97,7 @@
     "attack_targets": "ground"
   },
   "baby_dragon_body": {
-    "name": "小龙",
+    "name": "黄盖火龙鸢",
     "hp": 900,
     "damage": 80,
     "attack_speed": 1.3,
@@ -110,7 +110,7 @@
     "splash_radius": 1.5
   },
   "golem_body": {
-    "name": "石头人",
+    "name": "江东镇岳巨械",
     "hp": 3000,
     "damage": 100,
     "attack_speed": 1.6,
@@ -125,7 +125,7 @@
     "death_spawn_count": 2
   },
   "spear_goblin_body": {
-    "name": "长矛哥布林",
+    "name": "山越投矛兵",
     "hp": 45,
     "damage": 38,
     "attack_speed": 1.0,
@@ -137,7 +137,7 @@
     "attack_targets": "both"
   },
   "bat_body": {
-    "name": "血蝠",
+    "name": "江东机关蜂",
     "hp": 35,
     "damage": 32,
     "attack_speed": 1.0,
@@ -149,7 +149,7 @@
     "attack_targets": "both"
   },
   "barbarian_body": {
-    "name": "蛮兵",
+    "name": "青州悍卒",
     "hp": 280,
     "damage": 58,
     "attack_speed": 1.3,
@@ -161,7 +161,7 @@
     "attack_targets": "ground"
   },
   "ice_spirit_body": {
-    "name": "冰灵",
+    "name": "寒山符童",
     "hp": 60,
     "damage": 30,
     "attack_speed": 1.0,
@@ -178,7 +178,7 @@
     }
   },
   "fire_spirit_body": {
-    "name": "火灵",
+    "name": "赤焰符童",
     "hp": 60,
     "damage": 80,
     "attack_speed": 1.0,
@@ -191,7 +191,7 @@
     "splash_radius": 1.5
   },
   "electro_spirit_body": {
-    "name": "电灵",
+    "name": "雷符童子",
     "hp": 60,
     "damage": 24,
     "attack_speed": 1.0,
@@ -207,7 +207,7 @@
     }
   },
   "squire_body": {
-    "name": "见习骑士",
+    "name": "虎贲新兵",
     "hp": 340,
     "damage": 50,
     "attack_speed": 1.2,
@@ -219,7 +219,7 @@
     "attack_targets": "ground"
   },
   "axe_thrower_body": {
-    "name": "掷斧手",
+    "name": "巴郡飞斧手",
     "hp": 160,
     "damage": 70,
     "attack_speed": 1.1,
@@ -231,7 +231,7 @@
     "attack_targets": "ground"
   },
   "cave_spider_body": {
-    "name": "洞穴蛛",
+    "name": "巴蜀毒蛛",
     "hp": 70,
     "damage": 40,
     "attack_speed": 1.0,
@@ -243,7 +243,7 @@
     "attack_targets": "ground"
   },
   "bone_ram_body": {
-    "name": "亡骨冲车",
+    "name": "阴兵撞车",
     "hp": 650,
     "damage": 120,
     "attack_speed": 1.5,
@@ -258,7 +258,7 @@
     "death_spawn_count": 2
   },
   "royal_giant_body": {
-    "name": "皇家巨像",
+    "name": "刘晔霹雳车",
     "hp": 1800,
     "damage": 150,
     "attack_speed": 1.5,
@@ -271,7 +271,7 @@
     "target_priority": "buildings"
   },
   "hog_rider_body": {
-    "name": "野猪骑士",
+    "name": "虎豹破城骑",
     "hp": 1000,
     "damage": 120,
     "attack_speed": 1.6,
@@ -284,7 +284,7 @@
     "target_priority": "buildings"
   },
   "valkyrie_body": {
-    "name": "瓦尔基里",
+    "name": "山越旋刃卫",
     "hp": 900,
     "damage": 90,
     "attack_speed": 1.5,
@@ -297,7 +297,7 @@
     "splash_radius": 1.5
   },
   "bomber_body": {
-    "name": "投弹亡灵",
+    "name": "无当火油手",
     "hp": 130,
     "damage": 80,
     "attack_speed": 1.9,
@@ -310,7 +310,7 @@
     "splash_radius": 1.5
   },
   "mega_minion_body": {
-    "name": "巨型怨灵",
+    "name": "重甲机关隼",
     "hp": 340,
     "damage": 120,
     "attack_speed": 1.5,
@@ -322,7 +322,7 @@
     "attack_targets": "both"
   },
   "battle_ram_body": {
-    "name": "战锤冲车",
+    "name": "青州撞城队",
     "hp": 700,
     "damage": 100,
     "attack_speed": 1.5,
@@ -337,7 +337,7 @@
     "death_spawn_count": 2
   },
   "wizard_body": {
-    "name": "巫师",
+    "name": "都督周瑜",
     "hp": 340,
     "damage": 130,
     "attack_speed": 1.4,
@@ -350,7 +350,7 @@
     "splash_radius": 1.8
   },
   "executioner_body": {
-    "name": "行刑者",
+    "name": "恶来典韦",
     "hp": 620,
     "damage": 90,
     "attack_speed": 1.6,
@@ -363,7 +363,7 @@
     "splash_radius": 2.5
   },
   "balloon_body": {
-    "name": "地狱气球",
+    "name": "孔明轰天灯",
     "hp": 1100,
     "damage": 400,
     "attack_speed": 2.5,
@@ -376,7 +376,7 @@
     "target_priority": "buildings"
   },
   "phoenix_body": {
-    "name": "不死凤凰",
+    "name": "庞统火鸾",
     "hp": 600,
     "damage": 90,
     "attack_speed": 1.3,
@@ -390,7 +390,7 @@
     "death_spawn_count": 1
   },
   "phoenix_reborn_body": {
-    "name": "凤凰(重生)",
+    "name": "火鸾·重启",
     "hp": 300,
     "damage": 60,
     "attack_speed": 1.3,
@@ -402,7 +402,7 @@
     "attack_targets": "both"
   },
   "lava_hound_body": {
-    "name": "熔岩魔像",
+    "name": "南蛮火鸢母兽",
     "hp": 3400,
     "damage": 40,
     "attack_speed": 1.3,
@@ -417,7 +417,7 @@
     "death_spawn_count": 6
   },
   "lava_pup_body": {
-    "name": "熔岩火犬",
+    "name": "南蛮幼鸢",
     "hp": 110,
     "damage": 35,
     "attack_speed": 1.0,
@@ -429,7 +429,7 @@
     "attack_targets": "both"
   },
   "ice_wizard_body": {
-    "name": "寒冰法师",
+    "name": "冢虎司马懿",
     "hp": 240,
     "damage": 30,
     "attack_speed": 1.5,
@@ -447,7 +447,7 @@
     }
   },
   "electro_wizard_body": {
-    "name": "电法师",
+    "name": "天公将军张角",
     "hp": 340,
     "damage": 90,
     "attack_speed": 1.8,
@@ -463,7 +463,7 @@
     }
   },
   "princess_body": {
-    "name": "公主",
+    "name": "枭姬孙尚香",
     "hp": 220,
     "damage": 120,
     "attack_speed": 3.0,
@@ -476,7 +476,7 @@
     "splash_radius": 1.5
   },
   "inferno_dragon_body": {
-    "name": "地狱飞龙",
+    "name": "蜀汉火脉机关龙",
     "hp": 700,
     "damage": 200,
     "attack_speed": 1.0,
@@ -488,7 +488,7 @@
     "attack_targets": "both"
   },
   "golemite_body": {
-    "name": "石心魔像",
+    "name": "石心攻城兽",
     "hp": 400,
     "damage": 40,
     "attack_speed": 1.5,
@@ -501,7 +501,7 @@
     "target_priority": "buildings"
   },
   "fire_pup_body": {
-    "name": "喷火火犬",
+    "name": "喷火小龙",
     "hp": 110,
     "damage": 40,
     "attack_speed": 1.2,

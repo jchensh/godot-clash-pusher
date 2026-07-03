@@ -52,7 +52,7 @@ UNIT_HEADERS = [
     "death_spawn_count",
     "notes",
 ]
-CARD_HEADERS = ["card_id", "name", "elixir_cost", "category", "enabled", "notes"]
+CARD_HEADERS = ["card_id", "name", "faction", "elixir_cost", "category", "enabled", "notes"]
 SKILL_HEADERS = [
     "card_id",
     "order",
@@ -97,6 +97,7 @@ UNIT_TYPES = ["ground", "air"]
 ATTACK_TARGETS = ["ground", "air", "both"]   # 该单位能攻击的目标类型（V3-2 对空克制）
 TARGET_PRIORITIES = ["nearest", "buildings"]  # 索敌优先级（T2 建筑索敌）：nearest 缺省 / buildings 只锁敌塔
 STATUS_KINDS = ["slow", "stun", "freeze"]  # 状态效果（T3）：slow 带 mag、stun/freeze 不带
+FACTIONS = ["wei", "shu", "wu", "qun"]  # 三国阵营（2026-07-04 改版）：魏/蜀/吴/群雄；仅题材归属+羁绊预留，不产生克制
 TARGETS = ["first_enemy_in_lane"]
 SIDES = ["player", "ai"]
 DIFFICULTIES = ["rookie", "easy", "normal", "hard", "extreme"]
@@ -256,11 +257,16 @@ def build_json_from_workbook(workbook_path: Path = WORKBOOK_PATH) -> tuple[dict[
         card_enabled[card_id] = enabled
         if not enabled:
             continue
-        cards[card_id] = {
-            "name": _text(row.get("name")),
-            "elixir_cost": _number(row.get("elixir_cost"), f"card {card_id}.elixir_cost"),
-            "skills": [],
-        }
+        card_obj: dict[str, Any] = {"name": _text(row.get("name"))}
+        # 三国阵营（可选）：非空才写入 JSON，保持无阵营卡零回归。
+        faction = _text(row.get("faction"))
+        if faction:
+            if faction not in FACTIONS:
+                raise ConfigError(f"card {card_id} faction must be one of {FACTIONS}")
+            card_obj["faction"] = faction
+        card_obj["elixir_cost"] = _number(row.get("elixir_cost"), f"card {card_id}.elixir_cost")
+        card_obj["skills"] = []
+        cards[card_id] = card_obj
 
     skills_by_card: dict[str, list[tuple[int, dict[str, Any]]]] = {}
     for row in skill_rows:
@@ -445,7 +451,8 @@ def workbook_from_json(workbook_path: Path = WORKBOOK_PATH) -> None:
     _setup_sheet(ws_cards, CARD_HEADERS, {"card_id": 16, "name": 14, "category": 14, "notes": 26})
     for card_id, card in cards.items():
         category = "troop" if any(skill.get("type") == "spawn_unit" for skill in card.get("skills", [])) else "spell"
-        ws_cards.append([card_id, card.get("name", ""), card.get("elixir_cost", ""), category, True, ""])
+        ws_cards.append([card_id, card.get("name", ""), card.get("faction", ""), card.get("elixir_cost", ""), category, True, ""])
+    _add_list_validation(ws_cards, "faction", FACTIONS)
 
     ws_skills = wb.create_sheet("CardSkills")
     _setup_sheet(ws_skills, SKILL_HEADERS, {"card_id": 16, "skill_type": 16, "unit_id": 18, "target": 22, "notes": 26})

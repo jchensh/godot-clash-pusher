@@ -284,10 +284,10 @@ func _unlock_need(rarity: String) -> int:
 
 func _rarity_zh(r: String) -> String:
 	match r:
-		"common": return "普通"
-		"rare": return "稀有"
-		"epic": return "史诗"
-		"legendary": return "传说"
+		"common": return "寻常"
+		"rare": return "精良"
+		"epic": return "非凡"
+		"legendary": return "无双"
 	return r
 
 func _set_wallet(gold: int, gems: int) -> void:

@@ -27,7 +27,7 @@ var _wallet_holder: Control
 var _grid: GridContainer
 var _status: Label
 var _sort_key := "rarity"
-var _sort_asc := true                 # 记忆上次选择；默认稀有度升序（普通→传说）
+var _sort_asc := true                 # 记忆上次选择；默认稀有度升序（寻常→无双）
 var _key_btns := {}
 var _dir_btn: Button
 
@@ -122,7 +122,7 @@ func _dir_label() -> String:
 # 切某键时套该键的自然默认方向（可再按升降序翻转）。
 func _default_asc(key: String) -> bool:
 	match key:
-		"cost", "rarity": return true    # 便宜在前 / 普通→传说
+		"cost", "rarity": return true    # 便宜在前 / 寻常→无双
 		_: return false                  # 等级高在前 / 可养成在前
 	return true
 
@@ -215,10 +215,10 @@ func _on_back() -> void:
 # ---------- helpers ----------
 func _rarity_zh(r: String) -> String:
 	match r:
-		"common": return "普通"
-		"rare": return "稀有"
-		"epic": return "史诗"
-		"legendary": return "传说"
+		"common": return "寻常"
+		"rare": return "精良"
+		"epic": return "非凡"
+		"legendary": return "无双"
 	return r
 
 func _max_rank(config) -> int:

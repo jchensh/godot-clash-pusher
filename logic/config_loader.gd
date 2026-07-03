@@ -73,6 +73,9 @@ func _validate() -> void:
 			errors.append("card '%s' 缺少 elixir_cost" % id)
 		if not (card.has("skills") and typeof(card["skills"]) == TYPE_ARRAY):
 			errors.append("card '%s' 缺少 skills 数组" % id)
+		# 三国阵营（2026-07-04 改版，可选字段）：魏/蜀/吴/群雄，仅题材归属+羁绊预留。
+		if card.has("faction") and not ["wei", "shu", "wu", "qun"].has(str(card.get("faction"))):
+			errors.append("card '%s' 的 faction 应为 wei/shu/wu/qun" % id)
 
 	for id in units:
 		var u = units[id]
