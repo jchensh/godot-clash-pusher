@@ -28,6 +28,26 @@ static var meta = null                # MetaProgress（局间持久；run 开始
 static var campaign = null             # CampaignState（活跃战役）；null = 非战役模式
 static var campaign_last_result := 0   # 上一场战役战斗结果（Battle.RESULT_*）；campaign_scene 读后清 0
 
+# —— 横版战斗实验开关（PLAN_V5_HBATTLE H2）——
+# 纯表现层偏好（怎么画战场），存本地 user://settings.cfg——与决策 48 无冲突（非经济/养成/进度）。
+# battle_scene 读取；战役/新手引导强制竖版（门控在 battle_scene）。联机 net_battle 暂不支持（H6）。
+const _SETTINGS_PATH := "user://settings.cfg"
+static var _battle_layout := ""        # 内存缓存；"" = 未从盘加载
+static func battle_layout() -> String:   # "portrait"(默认) / "landscape"(横版实验)
+	if _battle_layout == "":
+		_battle_layout = "portrait"
+		var c := ConfigFile.new()
+		if c.load(_SETTINGS_PATH) == OK:
+			_battle_layout = String(c.get_value("battle", "layout", "portrait"))
+	return _battle_layout
+
+static func set_battle_layout(v: String) -> void:
+	_battle_layout = v
+	var c := ConfigFile.new()
+	c.load(_SETTINGS_PATH)   # 忽略返回值：不存在则空配置（对齐 I18n.set_language）
+	c.set_value("battle", "layout", v)
+	c.save(_SETTINGS_PATH)
+
 # —— V4-S4 联机会话（登录 token + 档案/杯数，跨场景复用）——
 static var _session = null
 static func session():                 # 懒创建；主菜单/联机对战页共用

@@ -123,6 +123,7 @@ const UNIT_VIS := {
 var match_obj
 var loader
 var _font: Font
+var _landscape := false       # H2 横版实验（PLAN_V5_HBATTLE）：true=我左敌右投影；只影响变换层，逻辑零感知
 var selected_card := -1
 var _card_btns: Array = []
 # —— V3-5b 新手引导（仅战役有 tutorial 脚本的关）——
@@ -219,6 +220,10 @@ func _ready() -> void:
 	else:
 		print("[V5][battle] 模式=自由 关=%s" % GameStateScript.level_id)
 		match_obj.setup(GameStateScript.level_id, GameStateScript.player_deck)
+	# H2 横版实验开关：仅 PvE 生效；战役/新手引导强制竖版（教程高亮是竖版语义，且新手不吃实验特性）。
+	var pve_free: bool = (campaign == null or campaign.is_over()) and not GameStateScript.tutorial
+	_landscape = pve_free and GameStateScript.battle_layout() == "landscape"
+	print("[V5][battle] 版式=%s" % ("横版(实验·我左敌右)" if _landscape else "竖版"))
 	AudioManager.play_music(battle_music_id)
 	AudioManager.play_ambience("amb_battle_wind")
 	match_obj.set_opponent_controller(AIControllerScript.new(match_obj, loader))
@@ -256,26 +261,71 @@ func _process(delta: float) -> void:
 			_add_result_buttons()
 	queue_redraw()
 
-# —— 坐标映射 ——
+# —— 坐标映射（H1 统一变换层：逻辑 tile ↔ 屏幕 px 只经本区块，绘制/输入代码禁止手算方向）——
+# 逻辑坐标恒为竖版语义：x∈[0,grid_w) 横向、y∈[0,grid_h) 纵深、y 小=敌方（logic 层不知道屏幕）。
+# H2 横版（_landscape，PLAN_V5_HBATTLE §2）：敌右我左，sx←(grid_h-y)、sy←x；
+# 「屏幕向上 / 部署半场 / footprint」等方向语义全在本区块内翻转，区块外零方向假设。
 func _field_rect() -> Rect2:
-	return Rect2(0.0, TOPBAR_H, _vw, _vh - TOPBAR_H - HUD_BOTTOM_H)
+	var zone := Rect2(0.0, TOPBAR_H, _vw, _vh - TOPBAR_H - HUD_BOTTOM_H)
+	if _landscape:
+		# H2 临时投影区（H5 切横屏窗口前）：竖屏场区内按 grid_h:grid_w 满宽 letterbox 垂直居中。
+		var a = match_obj.battle.arena
+		var h: float = zone.size.x * float(a.grid_w) / float(a.grid_h)
+		return Rect2(zone.position.x, zone.position.y + (zone.size.y - h) * 0.5, zone.size.x, h)
+	return zone
 
 func _t2s(p: Vector2) -> Vector2:
 	var a = match_obj.battle.arena
 	var fr := _field_rect()
+	if _landscape:   # 逻辑 y=0（敌底线）→ 屏幕右缘；逻辑 x → 屏幕纵向
+		return Vector2(fr.position.x + (a.grid_h - p.y) / a.grid_h * fr.size.x,
+					   fr.position.y + p.x / a.grid_w * fr.size.y) + _shake
 	return Vector2(fr.position.x + p.x / a.grid_w * fr.size.x,
 				   fr.position.y + p.y / a.grid_h * fr.size.y) + _shake   # _shake 只动场内、HUD 不抖
 
 func _s2t(s: Vector2) -> Vector2:
 	var a = match_obj.battle.arena
 	var fr := _field_rect()
+	if _landscape:
+		return Vector2((s.y - fr.position.y) / fr.size.y * a.grid_w,
+					   (1.0 - (s.x - fr.position.x) / fr.size.x) * a.grid_h)
 	return Vector2((s.x - fr.position.x) / fr.size.x * a.grid_w,
 				   (s.y - fr.position.y) / fr.size.y * a.grid_h)
 
-func _tile_px() -> Vector2:
+func _tile_px() -> Vector2:   # 一个逻辑格画在屏幕上的 (宽,高)
 	var a = match_obj.battle.arena
 	var fr := _field_rect()
+	if _landscape:
+		return Vector2(fr.size.x / a.grid_h, fr.size.y / a.grid_w)
 	return Vector2(fr.size.x / a.grid_w, fr.size.y / a.grid_h)
+
+func _ur() -> float:          # 单位绘制参考半径基准 = tile 屏幕边长均值（对投影方向不敏感）
+	var tp := _tile_px()
+	return (tp.x + tp.y) * 0.5
+
+func _tile_rect(tx: int, ty: int) -> Rect2:   # 逻辑格 (tx,ty) 的屏幕矩形（terrain 铺 tile 用）
+	if _landscape:
+		return Rect2(_t2s(Vector2(tx, ty + 1)), _tile_px())   # y 翻转投影 → 屏幕左上角 = 逻辑 (tx, ty+1)
+	return Rect2(_t2s(Vector2(tx, ty)), _tile_px())
+
+func _fp_screen(fw: float, fh: float) -> Vector2:   # 建筑 footprint(逻辑格数) → 屏幕 (宽,高)
+	var tp := _tile_px()
+	if _landscape:
+		return Vector2(fh * tp.x, fw * tp.y)   # 逻辑纵深(fh)→屏幕横向、逻辑宽(fw)→屏幕纵向
+	return Vector2(fw * tp.x, fh * tp.y)
+
+func _screen_up_tiles(n: float) -> Vector2:   # 「屏幕向上 n 格」对应的逻辑位移（塔顶锚点/箭口）
+	if _landscape:
+		return Vector2(-n, 0.0)   # 横版屏幕上方 = 逻辑 -x
+	return Vector2(0.0, -n)
+
+func _deploy_zone_rect(a) -> Rect2:   # 己方可部署半场的屏幕矩形（部署提示/高亮）
+	var fr := _field_rect()
+	if _landscape:   # 我方 y≥deploy_y_min 投影为屏幕左段 x≤x1
+		var x1: float = _t2s(Vector2(0, a.deploy_player_y_min)).x
+		return Rect2(fr.position.x, fr.position.y, x1 - fr.position.x, fr.size.y)
+	var y0: float = _t2s(Vector2(0, a.deploy_player_y_min)).y
+	return Rect2(fr.position.x, y0, fr.size.x, fr.position.y + fr.size.y - y0)
 
 # —— 绘制 ——
 func _draw() -> void:
@@ -299,12 +349,11 @@ func _draw() -> void:
 	_draw_tutorial()
 
 func _draw_terrain(a) -> void:
-	var tp := _tile_px()
 	for ty in range(a.grid_h):
 		for tx in range(a.grid_w):
 			var t: int = a.tile_type(tx, ty)
-			var s := _t2s(Vector2(tx, ty))
-			var rect := Rect2(s.x, s.y, tp.x + 1.0, tp.y + 1.0)
+			var rect := _tile_rect(tx, ty)
+			rect.size += Vector2.ONE   # +1px 防瓦片间缝
 			if t == a.TILE_WATER:
 				_draw_water_tile(rect)
 			elif t != a.TILE_TOWER and ty >= a.river_y_min and ty < a.river_y_max:
@@ -312,10 +361,7 @@ func _draw_terrain(a) -> void:
 			else:
 				_draw_ground_tile(tx, ty, rect, ty < a.grid_h / 2)   # 塔占位下也铺地（塔贴图透明盖上）
 	# 己方半场可部署区描边提示
-	var fr := _field_rect()
-	var y0 := _t2s(Vector2(0, a.deploy_player_y_min)).y
-	draw_rect(Rect2(fr.position.x, y0, fr.size.x, fr.position.y + fr.size.y - y0),
-			Color(0.4, 0.8, 0.5, 0.10))
+	draw_rect(_deploy_zone_rect(a), Color(0.4, 0.8, 0.5, 0.10))
 
 func _blit_tile(tex: Texture2D, cell: Vector2i, rect: Rect2, mod: Color) -> void:
 	draw_texture_rect_region(tex, rect, Rect2(cell.x * TILE_PX, cell.y * TILE_PX, TILE_PX, TILE_PX), mod)
@@ -332,19 +378,18 @@ func _draw_water_tile(rect: Rect2) -> void:
 	_blit_tile(TEX_WATER, Vector2i(fr % WATER_COLS, fr / WATER_COLS), rect, Color.WHITE)
 
 func _draw_towers() -> void:
-	var tp := _tile_px()
 	for side in [match_obj.battle.player_towers, match_obj.battle.opponent_towers]:
 		for t in side:
 			var base: Color = COL_PLAYER if t.owner_id == 0 else COL_OPPONENT
 			var c := _t2s(t.pos)
 			var king: bool = t.is_king()
-			var fw_px: float = t.fw * tp.x
-			var foot_bottom: float = c.y + t.fh * tp.y * 0.5     # footprint 底边 = 塔贴地处
+			var fp := _fp_screen(t.fw, t.fh)
+			var foot_bottom: float = c.y + fp.y * 0.5            # footprint 底边 = 塔贴地处
 			var tex: Texture2D = TEX_TOWER_KING if king else TEX_TOWER_PRINCESS
 			var ts: Vector2 = tex.get_size()
 			# 保持贴图原始长宽比（不再压扁填正方形）：以 footprint 宽为基准缩放，底部对齐贴地。
 			# 王塔横宽(building1=1.5:1)、公主方正(building6=1:1)，王塔系数更大以保主次（否则公主反而更高）。
-			var draw_w: float = fw_px * (1.35 if king else 1.05)
+			var draw_w: float = fp.x * (1.35 if king else 1.05)
 			var draw_h: float = draw_w * ts.y / ts.x
 			var rx: float = c.x - draw_w * 0.5
 			var ry: float = foot_bottom - draw_h
@@ -366,8 +411,7 @@ func _draw_towers() -> void:
 				_draw_crown(Vector2(c.x, by - 13.0), 20.0, COL_CROWN, true)
 
 func _draw_units(a) -> void:
-	var tp := _tile_px()
-	var ur: float = (tp.x + tp.y) * 0.5
+	var ur: float = _ur()
 	var cur := {}
 	for u in a.get_units():
 		if not u.is_alive():
@@ -510,7 +554,7 @@ func _text(pos: Vector2, s: String, col: Color, size: int) -> void:
 	draw_string(_font, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
 
 # —— 出牌交互（拖拽部署，CR 式：按卡→拖到场上→松手落子，决策 41）——
-# 落点抬到手指上方（拇指不遮挡）。
+# 落点抬到手指上方（拇指不遮挡）——「屏幕向上」为屏幕语义，在屏幕空间抬完再 _s2t，横竖版通用。
 func _drop_tile_from(screen: Vector2) -> Vector2:
 	var lift: float = _tile_px().y * DROP_LIFT_TILES
 	return _s2t(screen + Vector2(0.0, -lift))
@@ -571,8 +615,7 @@ func _draw_drag_ghost(a) -> void:
 		return
 	var info: Dictionary = _card_info(str(hand[selected_card]))
 	var drop_tile: Vector2 = _drop_tile_from(_drag_screen)
-	var tp := _tile_px()
-	var ur: float = (tp.x + tp.y) * 0.5
+	var ur: float = _ur()
 	var legal: bool = a.can_deploy(0, drop_tile) if info["spawn"] else true
 	var col: Color = COL_OK if legal else COL_BAD
 	var c: Vector2 = _t2s(drop_tile)
@@ -605,16 +648,12 @@ func _draw_deploy_hint(a) -> void:
 		return
 	if not _card_info(str(hand[selected_card]))["spawn"]:
 		return
-	var fr := _field_rect()
-	var y0: float = _t2s(Vector2(0, a.deploy_player_y_min)).y
 	var pulse: float = 0.12 + 0.06 * (0.5 + 0.5 * sin(_elapsed * 6.0))
-	draw_rect(Rect2(fr.position.x, y0, fr.size.x, fr.position.y + fr.size.y - y0),
-			Color(COL_OK.r, COL_OK.g, COL_OK.b, pulse))
+	draw_rect(_deploy_zone_rect(a), Color(COL_OK.r, COL_OK.g, COL_OK.b, pulse))
 
 # 命中/落地 FX：按 kind 分派（sheet 序列帧 or 程序化）。AOE 卡用 radius 定大小。
 func _draw_fx() -> void:
-	var tp := _tile_px()
-	var ur: float = (tp.x + tp.y) * 0.5
+	var ur: float = _ur()
 	for f in _fx:
 		var p: float = clampf((_elapsed - f["t0"]) / f["dur"], 0.0, 1.0)
 		var c: Vector2 = _t2s(f["pos"])
@@ -726,7 +765,7 @@ func _detect_events() -> void:
 				var was_alive: bool = float(_thp[id]) > 0.0
 				var d: float = float(_thp[id]) - cur
 				if d > 0.5:
-					_on_hit(id, t.pos - Vector2(0, t.fh * 0.5), d)
+					_on_hit(id, t.pos + _screen_up_tiles(t.fh * 0.5), d)   # 伤害数字锚在塔身上部（屏幕语义）
 					if was_alive and t.is_destroyed():
 						_on_tower_destroyed(t.pos, t.is_king())
 			_thp[id] = cur
@@ -784,7 +823,7 @@ func _detect_attacks() -> void:
 			if tcur > tprev + 0.01:
 				var victim = _tower_target(t)
 				if victim != null:
-					var muzzle: Vector2 = (t.pos as Vector2) - Vector2(0.0, float(t.fh) * 0.4)
+					var muzzle: Vector2 = (t.pos as Vector2) + _screen_up_tiles(float(t.fh) * 0.4)   # 箭口=塔身上部（屏幕语义）
 					var tdist: float = muzzle.distance_to(victim.pos)
 					_projectiles.append({"from": muzzle, "to": victim.pos, "t0": _elapsed,
 							"dur": clampf(tdist / PROJ_SPEED, 0.1, 0.5), "kind": "arrow"})
@@ -805,8 +844,7 @@ func _tower_target(t):
 
 # 投射物：from→to 线性飞行，按 kind 画箭/法术弹/火球。
 func _draw_projectiles() -> void:
-	var tp := _tile_px()
-	var ur: float = (tp.x + tp.y) * 0.5
+	var ur: float = _ur()
 	for pr in _projectiles:
 		var t: float = clampf((_elapsed - pr["t0"]) / pr["dur"], 0.0, 1.0)
 		var a: Vector2 = _t2s(pr["from"])
@@ -864,8 +902,7 @@ func _update_shake(delta: float) -> void:
 
 # 命中火花（白膜：径向短线）+ 浮动伤害数字。
 func _draw_combat_fx() -> void:
-	var tp := _tile_px()
-	var ur: float = (tp.x + tp.y) * 0.5
+	var ur: float = _ur()
 	for s in _sparks:
 		var p: float = clampf((_elapsed - s["t0"]) / s["dur"], 0.0, 1.0)
 		var c: Vector2 = _t2s(s["pos"])
@@ -1240,8 +1277,9 @@ func _tut_rect(hl: String) -> Rect2:
 			return Rect2(10, _vh - HUD_BOTTOM_H + 4, _vw - 124, 30)
 		"hand":
 			return Rect2(6, _vh - HUD_BOTTOM_H + 38, _vw - 12, HUD_BOTTOM_H - 44)
-		"field":
-			return Rect2(0, TOPBAR_H + (_vh - TOPBAR_H - HUD_BOTTOM_H) * 0.5, _vw, (_vh - TOPBAR_H - HUD_BOTTOM_H) * 0.5)
+		"field":   # 己方半场（教程仅战役竖版使用；横版实验开关为 PvE 闯关，不相交）
+			var fr := _field_rect()
+			return Rect2(fr.position.x, fr.position.y + fr.size.y * 0.5, fr.size.x, fr.size.y * 0.5)
 	return Rect2(0, 0, _vw, _vh)
 
 func _tut_finger(r: Rect2) -> void:
