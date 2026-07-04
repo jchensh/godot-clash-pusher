@@ -43,16 +43,17 @@
 - 真人抽查：主菜单→养成图鉴/卡详情/卡组构建/战斗 HUD 卡名全为三国名（**含 32 张新卡不再显示 card_xxx 键名**）；稀有度显示 寻常/精良/非凡/无双。
 - 观察点（不阻塞）：7 字长名（归附山越短刀兵/蜀汉火脉机关龙）在 battle HUD 截 10 字/卡格宽度内是否溢出，溢出则 A3 一并调 UI。
 
-## 4. Jira 同步清单（Atlassian MCP 本会话不可用，**请手工执行**）
+## 4. Jira 同步清单（✅ 已全部建单结清，2026-07-05 经 Atlassian MCP 代建）
 
 挂 Epic KAN-50 下（真人验收欠账台账 → [docs/ACCEPTANCE_SANGUO.md](docs/ACCEPTANCE_SANGUO.md)）：
-1. 新建 Story「三国化-A1A2：美术表口径对齐入库 + 文案层三国化（48卡名/单位名/觉醒名 + faction 字段 + 稀有度显示名 + i18n 48卡双语补全）」→ **In Review**（代码完成，等真人验收 A 组用例；过后 Done）。
-2. 新建 Task「三国化-A2.5：占位精灵铺满 48 卡（sprite_db 39/39 + tint 染色 + ph 账本）」→ **In Review**（等真人验收 B 组用例；过后 Done）。
-3. 新建 Task「三国化-A3：场景与系统美术清单（塔/地形/UI 品质框/S9 头像/音频方向）」→ To Do。
-4. 新建 Story「三国化-A4：素材分批接入 + 世界观文本 + 遭遇/奖励回填新卡」→ To Do。
-5. 新建 Story「横版战斗（表现层）H1~H6」→ **Idea**（施工图 [PLAN_V5_HBATTLE.md](PLAN_V5_HBATTLE.md)，开工时转 To Do）。
-6. KAN-88 描述追加 5 项增强觉醒升级项：左慈阴兵王领队(带溅射)/司马懿减速叠层至冻结/孙尚香燃烧减速地带/庞统火鸾落地减速/于吉范围眩晕。
-7. KAN-87 加备注：数值线挂起（2026-07-04 用户指示），轨道A 后复盘重启。
+1. ✅ **KAN-90** Story「三国化-A1A2：美术表口径对齐入库 + 文案层三国化」→ In Review（等 A 组验收全过转 Done）。
+2. ✅ **KAN-91** Task「三国化-A2.5：占位精灵铺满 48 卡」→ In Review（等 B 组验收）。
+3. ✅ **KAN-92** Task「三国化-A3：场景与系统美术清单」→ In Review（等表评审）。
+4. ✅ **KAN-93** Story「三国化-A4：素材接入 + 世界观文本 + 遭遇/奖励回填」→ 待办。
+5. ✅ **KAN-94** Story「横版战斗（表现层）H1~H6」→ In Review（H1+H2 完成、E-2/E-3 验收过；施工图 [PLAN_V5_HBATTLE.md](PLAN_V5_HBATTLE.md)）。
+6. ✅ KAN-88 描述已追加 5 项增强觉醒升级项（左慈领队溅射/司马懿冻结/孙尚香燃烧地带/庞统落地减速/于吉范围眩晕）。
+7. ✅ KAN-87 已加挂起备注（轨道A 后复盘重启，CV 离群结论保留）。
+   另建：**KAN-95** 首批 BGM（In Review）/ **KAN-96** DragScroll 滚动+穿透修复（Bug，In Review）/ **KAN-97** UI 体系改造 F1~F3（待办，[PLAN_V5_UIFRAME.md](PLAN_V5_UIFRAME.md)）/ **KAN-98** net_battle 结算层树序 bug（待办，随 F1 修）。
 
 ## 5. 48 卡三国命名对照（真相源=美术表与 config；此表便于人读）
 

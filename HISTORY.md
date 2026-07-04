@@ -862,4 +862,20 @@
 - **根因**：`view/ui/drag_scroll.gd`（2026-07-04 滚动交互修复引入）按下时只判"落点在 ScrollContainer 矩形内"就代管并吞事件，**不知道上面盖了弹窗**——reward_chest 是 stage_map 根下的全屏层（PRESET_FULL_RECT + STOP），其【继续】按钮 (240,880) 正落在闯关列表滚动区矩形内 → press 被吞、按钮收不到点击、无报错。
 - **更隐蔽的第二刀**：轻点派发 `_hit_button` 只搜滚动子树 → 命中**弹窗底下被遮住的关卡按钮**直接 `pressed.emit()` = **穿透误触**（用户看到的"点别处能退出"其实是误触关卡按钮切了场景，不是正常退出）。
 - **修复**（一处通用，组卡/创号/图鉴/闯关四界面同享）：press 代管前加 `_covered()` 判定——`get_viewport().gui_get_hovered_control()` 取鼠标下最顶层 Control，不属于本 ScrollContainer 子树（含自身）= 滚动区被盖 → 不代管、点击走正常 GUI 路径（弹窗按钮恢复、穿透同时堵死）。触摸路径不受影响（DEVICE_ID_EMULATION 事件本就跳过）。
-- **验证**：客户端全量 **366/366** 零回归。真人回归 = 台账 **C-6**（发奖弹窗按钮 + 不再穿透）；C 组其余滚动手感用例顺带重测。
+- **验证**：客户端全量 **366/366** 零回归。真人回归 = 台账 **C-6**（发奖弹窗按钮 + 不再穿透）——**2026-07-05 真人验收通过**，与横版 H1H2 一并提交（69bfe6a + 82fdc44 已推 master）。
+
+### V5 · UI 体系全面盘查 + 改造立项（KAN-97/98）+ Jira 看板补账 KAN-90~98（📋 方案已拍板待开工，2026-07-05）
+
+**背景**：用户在 DragScroll 穿透修复后指出"整个游戏 UI 层级经常错误穿透（半透明界面能点到下层按钮）"，要求全面盘查客户端 UI 框架能否支撑未来各类 UI（全屏/页签/提示框/弹窗/跳字/半透明）。
+
+**盘查（view/ 17 场景/组件全过，结论落 [PLAN_V5_UIFRAME.md](PLAN_V5_UIFRAME.md) §0 现状地图）**：
+- **结论：只有样式库（PixelUI）没有层级骨架**——全项目 0 CanvasLayer、无统一弹窗/toast 通道、弹窗写法三家三样（chest 手搓 STOP / run `_dim` / 结算层 STOP+延迟按钮）、三套输入系统并行互不知晓（GUI mouse_filter / DragScroll 前置 `_input` / 场景手搓坐标判断）。穿透是结构性的。
+- **新实锤 🔴 KAN-98**：net_battle 结算暗幕拦不住手牌——`_end_result_layer` 建于 `_ready`、手牌按钮建于进房后 `_build_cards`，**Godot Control 输入命中按树序（后加者先命中，与 z_index 无关）**→ 结算演出期点卡牌区被卡按钮吃掉。单机 battle_scene 无此问题（建层顺序恰好相反）。"视觉在上≠点击在上"陷阱的实证。
+- 无害面确认：4×toast 全 Label IGNORE ✓；run_scene `_dim`（ColorRect STOP）是做对了的先例 ✓；匹配中界面无遮罩但底下无可点物 ✓；战斗伤害数字 `_draw` 派生 ✓。
+
+**改造方案（用户 2026-07-05 拍板"就按这个来做"，施工图 PLAN_V5_UIFRAME.md）**：F1 层级骨架（`UI` autoload CanvasLayer 栈 MODAL=50<TOAST=90 + Modal 基类 + UI.modal/toast 入口 + DragScroll 双保险 + 顺带根治 KAN-98）→ F2 存量迁移（chest/run 弹层/4×toast/教程暗幕）→ F3 规约固化（新 UI 必须声明层级、禁树序当层级、z_index 不拦输入——写进 CLAUDE.md + pixel_ui.gd 头）。**待用户指示开工**。
+
+**Jira 看板补账（Atlassian MCP 本会话已授权，全部代建）**：
+- 新建 **KAN-90** 三国化-A1A2（Story，In Review）/ **KAN-91** A2.5 占位精灵（Task，In Review）/ **KAN-92** A3 美术清单（Task，In Review）/ **KAN-93** A4 素材+文本+回填（Story，待办）/ **KAN-94** 横版战斗 H1~H6（Story，In Review，H1H2 已完成）/ **KAN-95** 首批 BGM（Task，In Review）/ **KAN-96** DragScroll 滚动+穿透修复（Bug，In Review）/ **KAN-97** UI 体系改造 F1~F3（Task，待办）/ **KAN-98** net_battle 结算层树序 bug（Bug，待办，随 F1 修）——全部挂 Epic KAN-50。
+- **KAN-88** 描述追加三国化 A1 降级的 5 项增强觉醒升级项（左慈领队溅射/司马懿冻结/孙尚香燃烧地带/庞统落地减速/于吉范围眩晕）；**KAN-87** 加挂起备注（轨道A 后复盘，CV 离群结论保留）。
+- PLAN_V5_SANGUO §4 手工清单就此结清；此后 Jira 恢复由我经 MCP 维护（用户 2026-07-05 授权开启）。

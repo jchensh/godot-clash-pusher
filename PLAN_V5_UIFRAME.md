@@ -1,0 +1,46 @@
+# PLAN_V5_UIFRAME.md — 客户端 UI 体系改造施工图（层级骨架 + 弹窗基类，Jira KAN-97/98）
+
+> 2026-07-05 用户回报「半透明界面经常错误穿透、能点到下层按钮」→ 全面盘查 view/ 层 17 个场景/组件 → 结论：**客户端只有样式库（PixelUI 管好看）、没有层级骨架（没人管谁在上面、谁收点击）**，穿透是结构性的。用户已拍板按本方案改造（F1→F2→F3），**待用户指示开工**。
+
+## 0. 盘查现状地图（2026-07-05，代码级核实）
+
+| UI 形态 | 实例 | 实现方式 | 输入拦截 | 状态 |
+|---|---|---|---|---|
+| 全屏场景 | 15 个场景（main_menu/battle/stage_map…） | 根 Control/Node2D 全代码搭建 | 场景切换互斥 | ✅ 无层级问题 |
+| 背景/装饰 | PixelUI.add_background、钱包条、名片 | mouse_filter=IGNORE | 不吃输入 | ✅ |
+| 滚动列表 | 组卡/创号/图鉴/闯关 ×DragScroll | `Node._input` 前置拦截（绕 GUI） | 自研 | ⚠️ 已撞两刀（KAN-96），遮挡判定已补但仍是并行输入系统 |
+| 模态弹窗 | reward_chest / run_scene `_dim` 弹层 | 全屏 Control STOP（各自手搓） | GUI 正统 | ⚠️ 写法三家三样，无基类无规约 |
+| 结算演出层 | battle/net_battle `_result_layer` | 全屏 STOP + `_draw` 演出 | GUI | 🔴 **net_battle 树序 bug（KAN-98）**：结算层建于 `_ready`、手牌按钮建于进房后 → 按钮树序在结算层之上，暗幕拦不住卡牌区点击 |
+| 教程覆盖 | battle_scene `_draw` 暗幕 | 无 Control 实体，`_input` 手搓吞 tap | 前置 `_input` | ⚠️ 视觉与输入实体分离，机制脆 |
+| toast | base_camp/card_detail/account_create/deck_builder ×4 | Label IGNORE + tween | 不吃输入 | ✅（但 4 处复制粘贴） |
+| 跳字 | 战斗伤害数字（`_draw` 派生） | 无实体 | 不吃输入 | ✅ 保持 |
+
+**根因三条**：①全项目 0 个 CanvasLayer、无统一弹窗/toast 通道，层级=各场景 add_child 树序潜规则；②Godot Control 输入命中按**树序**而非 z_index/绘制序——"视觉在上≠点击在上"（KAN-98 实锤）；③三套输入系统并行互不知晓（GUI mouse_filter / DragScroll 前置 `_input` / 场景手搓坐标判断），撞车是必然（KAN-96 实锤）。
+
+## 1. 目标设计（轻量骨架，不推翻 PixelUI 样式库）
+
+- **`view/ui/ui_layers.gd`（autoload `UI`，第 3 个 autoload）**：常驻 CanvasLayer 栈——`MODAL=50`（弹窗/结算/教程）< `TOAST=90`（提示/跳字，恒 IGNORE 不挡手）。场景自身留 layer 0，战斗 HUD 现状不动。CanvasLayer 的 GUI 事件按 layer 从高到低分发 → **modal 开着时下层从机制上收不到点击**，不再靠每个弹窗自觉 STOP。场景切换自动清 modal 层（防残留）。
+- **`view/ui/modal.gd`（弹窗基类）**：全屏 Control + 自带暗幕（ColorRect STOP，alpha 可配）+ 内容根 + `closed` 信号 + 可选"点暗幕关闭/跳过"回调。入口 `UI.modal(node)`。
+- **toast 统一入口 `UI.toast(msg, col)`**：替换 4 处复制粘贴；`UI.float_text()` 备给非战斗界面跳字（战斗伤害数字仍走 `_draw`，不迁）。
+- **DragScroll 双保险**：按下代管前 `UI.modal_open() or 现有 hovered 遮挡判定` 任一命中即不代管。
+- **规约（F3 固化）**：新 UI 必须声明层级；禁止用兄弟树序当层级；z_index 只管绘制、要挡点击必须配 mouse_filter；覆盖类 UI 一律走 `UI.modal`。
+
+## 2. 施工步骤（每步 commit + 停下确认）
+
+| 步 | 内容 | 验收 |
+|---|---|---|
+| **F1 层级骨架** | ui_layers autoload + modal 基类 + battle/net_battle 结算层迁入 MODAL（**顺带根治 KAN-98**）+ DragScroll 接入双保险 | 单测：modal 开启时下层控件收不到点击、层值序、关闭还原；真人：联机打一局结算演出期点卡牌区无反应、结算按钮可点 |
+| **F2 存量迁移** | reward_chest / run_scene 弹层 / 4×toast / 教程暗幕（补输入实体）逐个迁入 | 单测零回归；真人回归 C 组（滚动）+ 发奖开箱 + 肉鸽弹层 + 新手教程各一遍 |
+| **F3 规约固化** | 规约写进 CLAUDE.md（架构铁律区）+ pixel_ui.gd 文件头；HISTORY 记档 | 文档评审 |
+
+## 3. 风险
+
+- autoload 增加（I18n/AudioManager→+UI）：headless 单测环境 autoload 可用性需首步验证（test_runner 是 --script 模式，必要时基类做成可独立实例化、autoload 只是持有者）。
+- 教程暗幕迁移涉及新手引导流程（S9 已真人验收过）——F2 单列回归用例，别破新手局。
+- 战斗内 HUD（手牌/圣水条）刻意不动：属场景绘制，与弹窗层级正交；横版 H4 再重排。
+
+## 4. Jira
+
+- **KAN-97** UI 体系改造 F1~F3（任务，待办）——本施工图对应单。
+- **KAN-98** net_battle 结算暗幕拦不住手牌（缺陷，待办）——随 F1 根治，不单独打补丁。
+- 关联已修先例：**KAN-96**（DragScroll 穿透，In Review）。
