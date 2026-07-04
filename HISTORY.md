@@ -890,7 +890,9 @@
 - **4×toast → `UI.toast` 一行转发壳**（base_camp/card_detail/account_create/deck_builder）：14 行×4 的复制粘贴体消灭，场景级默认参数保留（card_detail 错误红 y=760 / account_create 停 1.4s / deck_builder y=920）；`UI.toast` +`hold` 停留参数；deck_builder 字号 22→24 统一（顺带）。toast 现落 TOAST 层（90）恒不挡手。
 - **battle 教程覆盖补输入实体**：新 `_tut_layer`（Modal，dim=0，视觉仍由 `_draw_tutorial` 在场景层画）——**tap 步 STOP 吞点击防误出牌 / action 步（card_played）IGNORE 放行出牌**，每步 `_tut_sync_layer()` 切换；教程走完或进结算自动撤层；**删前置 `_input` 手搓吞点击**（三套并行输入系统再消一套）。Modal +`bg_click_cb`（免建子类的点空白回调，教程 tap 推进用）。
 - **验证**：`test_ui_layers` +2（bg_click_cb / chest 迁移形态：继承+dim0+按钮装配+点空白跳过≠关闭），全量 **374/374**；一次性脚本扫 view/+view/ui 全部 .gd 可编译实例化（8 个被触碰场景无一被单测 preload，防漏）；headless 实跑主场景冒烟零错误。docker 零操作。
-- **真人验收**：F 组追加 F-5 开箱全流程 / F-6 肉鸽弹层 / F-7 新手教程回归★ / F-8 四处 toast 抽查。**剩 F3 规约固化**（CLAUDE.md + pixel_ui.gd 头，待用户指示）。
+- **真人验收**：F 组追加 F-5 开箱全流程 / F-6 肉鸽弹层 / F-7 新手教程回归★ / F-8 四处 toast 抽查。
+
+**F3 · 规约固化（✅ 2026-07-05，随 F2 同批提交）**：四条 UI 层级规约入 **CLAUDE.md 架构铁律区**（第 4 条铁律「UI 层级走骨架，不走树序」）+ **pixel_ui.gd 文件头**（样式库入口处提醒）：①覆盖类 UI 一律继承 modal.gd 经 `UI.modal()` 推入 ②提示/跳字走 `UI.toast()` ③z_index 只管绘制不管点击、挡输入必配 mouse_filter ④前置 `Node._input` 拦截器必须查 `UI.modal_open()` 让路。至此 **KAN-97 F1~F3 代码/文档全部完成**，剩 F 组 8 例真人验收（过后 KAN-97/98 → Done）。
 
 **Jira 看板补账（Atlassian MCP 本会话已授权，全部代建）**：
 - 新建 **KAN-90** 三国化-A1A2（Story，In Review）/ **KAN-91** A2.5 占位精灵（Task，In Review）/ **KAN-92** A3 美术清单（Task，In Review）/ **KAN-93** A4 素材+文本+回填（Story，待办）/ **KAN-94** 横版战斗 H1~H6（Story，In Review，H1H2 已完成）/ **KAN-95** 首批 BGM（Task，In Review）/ **KAN-96** DragScroll 滚动+穿透修复（Bug，In Review）/ **KAN-97** UI 体系改造 F1~F3（Task，待办）/ **KAN-98** net_battle 结算层树序 bug（Bug，待办，随 F1 修）——全部挂 Epic KAN-50。

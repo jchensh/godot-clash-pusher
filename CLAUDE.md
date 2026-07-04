@@ -27,6 +27,7 @@
 - **逻辑层 / 显示层彻底分离**：逻辑层持有真实状态（位置/血量/圣水），不关心画面；显示层每帧读逻辑状态画出来。
 - 玩家与 AI **完全对称**：两者都只是「向逻辑层发指令」。
 - 数值/卡牌**走配置，不硬编码**。Godot 运行时读取 `config/cards.json`、`config/units.json`、`config/levels.json`；`config/GameConfig.xlsx` 是给人类策划读改的工作簿镜像。
+- **UI 层级走骨架，不走树序**（2026-07-05 起，PLAN_V5_UIFRAME/KAN-97）：覆盖类 UI（弹窗/确认框/结算/教程覆盖）一律继承 `view/ui/modal.gd` 经 autoload `UI.modal()` 推入弹窗层（CanvasLayer 50）；提示/跳字走 `UI.toast()`（90 层恒不挡手）。❌ 禁手搓全屏 Control 靠 add_child 树序压层（z_index 只管绘制不管点击命中，想挡输入必须配 mouse_filter）；前置 `Node._input` 拦截器（DragScroll 类）必须查 `UI.modal_open()` 对弹窗让路。规约细则见 `view/ui/pixel_ui.gd` 文件头。
 
 ## 配置工作流（JSON / Excel 双入口）
 - **agent 默认改 JSON**：直接编辑 `config/cards.json` / `units.json` / `levels.json`（Godot 运行时读取路径，省上下文）。`config/arena.json` 是 V3 2D 场地结构性配置，**不进 Excel 镜像**。

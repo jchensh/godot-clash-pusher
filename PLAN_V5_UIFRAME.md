@@ -31,7 +31,7 @@
 |---|---|---|
 | **F1 层级骨架 ✅ 2026-07-05** | `view/ui/ui_layers.gd`（autoload `UI`：MODAL=50/TOAST=90 + UI.modal/toast 入口 + 场景切换自动清弹窗）+ `view/ui/modal.gd` 基类（幂等 `_assemble` 装配：暗幕/STOP/全屏锚；子类覆写 `_build()`）+ battle/net_battle 结算层迁入 MODAL（`dim_alpha=0`，演出黑幕仍由 `_draw` 渐入——**KAN-98 根治**）+ DragScroll 双保险（modal 开着一律让路）+ 顺手修教程 `_input` 结算期吞点击隐患。**实施笔记**：test_runner 在 `_initialize` 跑=离线树（`_ready`/`push_input`/绝对路径/`get_viewport` 均不可用）→ Modal 装配做成幂等双入口、DragScroll 找 UI 走 `Engine.get_main_loop().root` 相对路径、输入隔离降级为结构断言（层值/STOP/全屏锚——分发本身是引擎行为）| 单测 ✅（+6，372/372：层值序/开闭/closed 信号/暗幕装配/隔离结构/DragScroll 让路/toast）；真人 ⬜ 台账 F 组（联机结算演出期点卡牌区无反应、结算按钮可点） |
 | **F2 存量迁移 ✅ 2026-07-05** | ①reward_chest 继承 Modal（暗幕仍自绘垫底 `dim_alpha=0`；`_gui_input` 跳过→覆写 `_on_bg_click`；stage_map 改 `UI.modal(chest)`）②run_scene 奖励/结算覆盖层：场景内 `_overlay+_dim` 树序压层 → Modal 实例 + `UI.modal`（`_dim()` 删除）③4×toast 改一行转发 `UI.toast`（base_camp/card_detail/account_create/deck_builder，场景级默认参数保留，字号统一 24；`UI.toast` +hold 参数）④battle 教程覆盖补输入实体：`_tut_layer` Modal（dim=0，视觉仍 `_draw`）——tap 步 STOP 吞点击 / action 步 IGNORE 放行出牌 / 结束或进结算自动撤层，删前置 `_input` 手搓；Modal +`bg_click_cb`（免子类的点空白回调） | 单测 ✅（+2，374/374）+ 全 view 脚本编译检查 + 实跑冒烟；真人 ⬜ F 组 F-5~F-8（开箱全流程/肉鸽弹层/新手教程/toast 抽查） |
-| **F3 规约固化** | 规约写进 CLAUDE.md（架构铁律区）+ pixel_ui.gd 文件头；HISTORY 记档 | 文档评审 |
+| **F3 规约固化 ✅ 2026-07-05** | 四条规约入 CLAUDE.md 架构铁律区（第 4 条铁律）+ pixel_ui.gd 文件头（①覆盖类 UI 一律 Modal+UI.modal ②提示走 UI.toast ③z_index 不管点击、挡输入必配 mouse_filter ④前置 _input 拦截器必须对 modal 让路）；HISTORY 记档 | 文档评审（随 F 组真人验收一并过目） |
 
 ## 3. 风险
 
