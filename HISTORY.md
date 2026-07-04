@@ -755,4 +755,35 @@
 - **验证**：客户端单测 **353/353**（零回归）；config check ok。
 - **运维**：改 config → 版本 hash bump，需重启 api+gateway+verifier；本次 **docker daemon 未运行**（Docker Desktop 拉起超时）→ 无旧配置容器在跑、无 mismatch 风险；**下次 docker 起来容器自启即加载新配置**（verifier entrypoint 启动时拷贝、api/gateway 启动时解析）——若届时容器已带旧配置在跑，手动 `docker restart server-api-1 server-gateway-1 server-verifier-1`。
 - **Jira 未同步**（Atlassian MCP 本会话不可用需授权）：手工清单见 PLAN_V5_SANGUO.md §4——①新建 Story「三国化-A1A2」In Progress（真人验收后 Done）②Task「三国化-A3 场景系统美术清单」To Do ③Story「三国化-A4 素材接入+世界观文本+遭遇奖励回填」To Do ④KAN-88 描述追加 5 项增强觉醒 ⑤KAN-87 挂起备注。
-- **真人验收点**：图鉴/卡详情/卡组构建/战斗 HUD 全 48 卡显示三国名（**重点：32 张新卡不再显示 card_xxx 键名**）；稀有度显示 寻常/精良/非凡/无双；7 字长名（归附山越短刀兵/蜀汉火脉机关龙）在卡格/HUD 的截断表现（溢出则 A3 一并调 UI）。
+- **真人验收点**：图鉴/卡详情/卡组构建/战斗 HUD 全 48 卡显示三国名（**重点：32 张新卡不再显示 card_xxx 键名**）；稀有度显示 寻常/精良/非凡/无双；7 字长名（归附山越短刀兵/蜀汉火脉机关龙）在卡格/HUD 的截断表现（溢出则 A3 一并调 UI）。（2026-07-04 尾声：dockers 全起、api 已加载新配置 `cfg ver=cd27932e…`、verifier re-staged——运维同步闭环。真人验收用户暂欠。）
+
+### V5 三国改版 · 48 卡可玩性查证 + 横版战斗立项（📋 查证+方案，2026-07-04，未 commit 待用户指示）
+
+**48 卡"能不能玩"查证结论**（回应用户问询）：
+- **机制层：全可玩**。48 卡 config/逻辑/经济播种全通（353 单测），GM unlock-all 后即可组卡进 PvE/天梯，三件套机制/觉醒都真生效。
+- **表现层：29/39 单位无贴图**。`view/sprite_db.gd`（纯表现 manifest）只登记了 10 个旧单位的帧动画；其余 29 个新单位战斗中回退**白膜占位**（`frame()` 返回空 → 调用方画白膜，不崩）、卡面肖像为 null（文字卡）。golem 本身就是"orc 贴图放大暂替"先例。
+- **内容整合层**：PvE 敌人不出新卡（15 遭遇模板全旧 16 卡）+ 奖励只掉 8 张旧卡碎片——A4 回填项（已在 PLAN_V5_SANGUO）。
+- **A2.5 提案（待用户拍板后开工）**：按用户"重复代替+改大小改颜色"思路，sprite_db 铺满 29 条复用映射（按三国复用组配贴图+染色/缩放：山越系=goblin、阴兵系=skelly、魂鸦/机关兽系=fire_skull 染色、青州=knight/orc…），需 sprite_db/绘制侧补 per-unit modulate 支持（小改）；正式素材到位后逐组替换。
+
+**横版战斗立项（用户 2026-07-04 指示"只方案先记着"，未开工）**：战斗加横向版本——我方在左敌方在右、单位左右走，**动机=侧视帧动画素材减半**（一套侧视帧+flip_h 镜像替代现在的 row/row_up 上下两行）；**盘面 18×32、地形、logic 全不变，纯表现层投影**。施工图 [PLAN_V5_HBATTLE.md](PLAN_V5_HBATTLE.md)：
+- 像素账完美：竖版 720×1280=40px/格 ↔ 横版 1280×720=40px/格（旋转后密度不变）。
+- 变换收敛先例：net_battle side2 的 `_t2s()` 180° 翻转模式 → battle_scene 9 处 `_tile_px()` 手算先收敛成统一 `_t2s/_s2t`（H1 纯重构可先行），再加旋转分支（H2）。
+- 步骤 H1 变换层收敛 → H2 横版投影 → H3 精灵侧视约定(row_side+flip_h，三国素材直接按侧视交付) → H4 横版 HUD(mockup 先行) → H5 版式切换+屏幕方向(战斗切横屏、菜单恒竖屏) → H6 net_battle×side2 复合真机验收。
+- **硬验收：同一局重放纵/横两版战斗结果+逐 tick hash 完全一致**（logic 零改动的证明）；纵版保留共存。
+- 排期建议：A3 之后/A4 同期（让美术直接按"侧视帧"约定画，避免先画上下行再返工）。
+- Jira（手工）：新建 Story「横版战斗（表现层）H1~H6」→ **Idea** 挂 KAN-50。
+
+本段涉及文档：新增 PLAN_V5_HBATTLE.md；PLAN_V5_SANGUO.md 加 A2.5/横版关联线注记；PLAN_V5.md/CLAUDE.md 指针更新。**代码零改动。**
+
+### V5 三国改版 · A2.5 占位精灵铺满 48 卡（✅ 代码+单测完成，待真人验收，2026-07-04，未 commit 待用户指示）
+
+**目标**：29 个缺贴图的新单位从"白膜占位"升级为"复用贴图+染色+缩放"的可辨识占位（用户拍板"重复代替、改大小改颜色"），且**替换正式素材要顺手**。
+
+- **`view/sprite_db.gd` 铺满 39/39 单位**（此前 10）：新启用素材包同源贴图 7 张（goblin_slinger/skelly_warrior/orc/orc_soldier/orc_archer/wraith/slime——PNG 头解析确认全部 4列×16px 标准网格，行号按包惯例配、留真人校正，同 V3-7b 流程）+ fire_skull/mage/knight/archer/axe 复用。**条目级新增 `tint`（占位染色）+ `ph`（占位标记）**；染色按阵营色语言（魏蓝/蜀绿/吴红/群雄黄 + 冰蓝/电黄/火橙个体色）。golem/baby_dragon 两条旧"暂替"也补了 tint+ph（吴红系）。
+- **便于替换的设计**（用户核心要求）：①每单位独立条目、替换互不影响；②文件头写死"替换三步"（放 PNG→定网格→改条目删 tint/ph）；③`placeholder_ids()` 盘点 API + **单测账本**（`test_placeholder_inventory` 断言占位数=31，每替换一条正式素材递减一并更新断言——刻意的进度账本）；④tint/ph 删掉即回自然色，无残留逻辑。
+- **染色链路**：`frame()` 返回值 +`tint`；battle_scene/net_battle_scene 战斗精灵 `fill×tint`（队伍色可读性优先、tint 作次级区分）；卡面/图鉴/卡组槽/名片头像走 `card_portrait_tint()` 自然色染（个体识别主场）——`_draw_card_art`×2 / `make_card_portrait` / deck_builder 槽位 / hud_widgets 头像共 5 处接入。
+- **UNIT_VIS 半径表补 29 条**（battle_scene + net_battle_scene 两份同表）：按美术表体型档（极小0.35/小0.4/中0.5/大0.62/巨0.85），血条/投影/入场缩放随体型正确。
+- **法术图标 +2**：北地霜石→Ice-Burst_crystal、郭嘉寒江计→Ice-Burst_transparent-blue（48px 帧）；无图法术剩 4 张文字卡（魏武箭阵/剑阁滚木/荀彧安军策/剑阁落石阵，与旧行为一致）。
+- **副作用（好的）**：S9 创号头像池从 10 张兵卡扩到 ~39（account_create 按"有肖像"过滤）；山越奇袭坛等召唤类卡自动获得所召单位肖像。
+- **验证**：客户端 **357/357**（+4 `test_sprite_db`：全单位有条目 / 全帧 src 在贴图边界内〔顺带验证了估的行号不越界〕/ tint 类型 / 占位盘点=31）。**纯 view 改动，无需重启 docker**（verifier 只 stage logic/config）。
+- **真人验收点**：①图鉴 48 卡肖像全有图有色（4 张法术文字卡除外）；②全新卡组进战斗无白膜白圈、颜色可辨；③体型层次（母兽/霹雳车/轰天灯 显著大）；④**行号校正回报**：哪个单位"走路帧像攻击/帧错位"报名字即可（新贴图行号为包惯例估值）；⑤名片/创号头像染色正常。

@@ -197,6 +197,7 @@ func _refresh() -> void:
 			var id = _selected[i]
 			s.label.text = _card_name(id)
 			s.portrait.texture = SpriteDB.card_portrait_tex(str(id), _loader)
+			s.portrait.modulate = SpriteDB.card_portrait_tint(str(id), _loader)
 			s.portrait.visible = s.portrait.texture != null
 			s.btn.add_theme_stylebox_override("normal", PixelUI.sbpixel(SLOT_FILLED_BG, 2, Color(0.40, 0.55, 0.42)))
 		else:

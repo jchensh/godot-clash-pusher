@@ -95,7 +95,7 @@ const WATER_COLS := 4
 const WATER_N := 12
 const WATER_FPS := 5.0
 
-# 兵种白膜回退外形（无精灵时；按 owner 队伍色填）。
+# 兵种白膜回退外形（无精灵时；按 owner 队伍色填）。精灵渲染框也以 r 为基（×SpriteDB scale）。
 const UNIT_VIS := {
 	"giant_body":      {"r": 0.85},
 	"knight_body":     {"r": 0.55},
@@ -107,6 +107,17 @@ const UNIT_VIS := {
 	"goblin_body":     {"r": 0.4},
 	"skeleton_body":   {"r": 0.38},
 	"golem_body":      {"r": 0.85},
+	# A2.5 三国占位（2026-07-04）：新单位半径按体型档（极小0.35/小0.4/中0.5/大0.62/巨0.85）。与 battle_scene 同表。
+	"spear_goblin_body": {"r": 0.38}, "bat_body": {"r": 0.32}, "barbarian_body": {"r": 0.5},
+	"ice_spirit_body": {"r": 0.35}, "fire_spirit_body": {"r": 0.35}, "electro_spirit_body": {"r": 0.35},
+	"squire_body": {"r": 0.45}, "axe_thrower_body": {"r": 0.42}, "cave_spider_body": {"r": 0.35},
+	"bone_ram_body": {"r": 0.62}, "royal_giant_body": {"r": 0.8}, "hog_rider_body": {"r": 0.55},
+	"valkyrie_body": {"r": 0.55}, "bomber_body": {"r": 0.4}, "mega_minion_body": {"r": 0.48},
+	"battle_ram_body": {"r": 0.6}, "wizard_body": {"r": 0.48}, "executioner_body": {"r": 0.52},
+	"balloon_body": {"r": 0.65}, "phoenix_body": {"r": 0.5}, "phoenix_reborn_body": {"r": 0.45},
+	"lava_hound_body": {"r": 0.85}, "lava_pup_body": {"r": 0.35}, "ice_wizard_body": {"r": 0.45},
+	"electro_wizard_body": {"r": 0.48}, "princess_body": {"r": 0.42}, "inferno_dragon_body": {"r": 0.52},
+	"golemite_body": {"r": 0.5}, "fire_pup_body": {"r": 0.35},
 }
 
 var _loader
@@ -473,9 +484,9 @@ func _draw_units(a) -> void:
 		if _flip:
 			spr_owner = 0 if u.owner_id == 1 else 1
 		var spr: Dictionary = SpriteDB.frame(u.unit_id, st, spr_owner, _elapsed)
-		if not spr.is_empty():   # 精灵帧（modulate=fill 染队伍色+受击闪白）
+		if not spr.is_empty():   # 精灵帧（modulate=fill 染队伍色+受击闪白，×占位 tint 区分共享贴图）
 			var box: float = rad * 2.0 * float(spr["scale"])
-			draw_texture_rect_region(spr["tex"], Rect2(c - Vector2(box, box) * 0.5, Vector2(box, box)), spr["src"], fill)
+			draw_texture_rect_region(spr["tex"], Rect2(c - Vector2(box, box) * 0.5, Vector2(box, box)), spr["src"], fill * spr.get("tint", Color.WHITE))
 		else:                    # 无精灵 → 白膜回退
 			draw_circle(c, rad, fill)
 			draw_arc(c, rad, 0.0, TAU, 20, base.darkened(0.4), 2.0)
@@ -1111,7 +1122,7 @@ func _draw_card_art(cid: String, c: Vector2, box: float) -> void:
 	if info["spawn"]:
 		var spr: Dictionary = SpriteDB.frame(str(info["unit_id"]), "walk", 1, 0.0)   # owner=1→正面行
 		if not spr.is_empty():
-			draw_texture_rect_region(spr["tex"], Rect2(c - Vector2(box, box) * 0.5, Vector2(box, box)), spr["src"], Color.WHITE)
+			draw_texture_rect_region(spr["tex"], Rect2(c - Vector2(box, box) * 0.5, Vector2(box, box)), spr["src"], spr.get("tint", Color.WHITE))
 			return
 	_draw_card_spell_icon(cid, c, box)
 

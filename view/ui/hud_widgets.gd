@@ -109,6 +109,7 @@ static func nameplate(nickname: String, avatar_card_id: String, loader, trophies
 	if tex != null:
 		var pic := TextureRect.new()
 		pic.texture = tex
+		pic.modulate = SpriteDB.card_portrait_tint(avatar_card_id, loader)
 		pic.position = Vector2(fx + 7, 7)
 		pic.size = Vector2(av - 14, av - 14)
 		pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
