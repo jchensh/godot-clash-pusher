@@ -29,7 +29,7 @@ func _input(event: InputEvent) -> void:
 		return   # 真机触摸→模拟鼠标：交给 ScrollContainer 原生触摸拖动
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
-			if _sc.get_global_rect().has_point(event.position):
+			if _sc.get_global_rect().has_point(event.position) and not _covered():
 				_pressing = true
 				_moved = 0.0
 				get_viewport().set_input_as_handled()   # press 由本层代管；tap 时再派发点击
@@ -43,6 +43,13 @@ func _input(event: InputEvent) -> void:
 		if _moved > DRAG_THRESHOLD:
 			_sc.scroll_vertical -= int(round(event.relative.y))
 		get_viewport().set_input_as_handled()
+
+# 滚动区被其它 UI 层盖住（发奖弹窗等）时不代管，让点击走正常 GUI 路径。
+# 判定：鼠标下最顶层 Control 不属于本容器子树 = 有遮挡。
+# 修 2026-07-05：闯关发奖弹窗「继续」按钮点不动（press 被本层吞）+ 轻点穿透误触弹窗底下的关卡按钮。
+func _covered() -> bool:
+	var hovered := get_viewport().gui_get_hovered_control()
+	return hovered != null and hovered != _sc and not _sc.is_ancestor_of(hovered)
 
 # 轻点：命中滚动内容里最上层的可见可用 BaseButton，派发 pressed（语义等价点击）。
 func _dispatch_tap(pos: Vector2) -> void:
