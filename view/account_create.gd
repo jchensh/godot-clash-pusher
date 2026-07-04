@@ -7,6 +7,7 @@ extends Control
 
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const GameStateScript := preload("res://view/game_state.gd")
+const DragScroll := preload("res://view/ui/drag_scroll.gd")
 const SpriteDB := preload("res://view/sprite_db.gd")
 const BG_TEX := preload("res://assets/ui/menu_bg.png")
 const MENU_SCENE := "res://view/main_menu.tscn"
@@ -19,6 +20,7 @@ var _counter: Label
 var _confirm_btn: Button
 var _selected_avatar := ""
 var _avatar_frames := {}     # card_id -> 选中金边 Panel
+var _av_content: Control     # 头像网格滚动内容层（48 卡后头像池 ~39 超屏，拖动/滚轮滑动）
 var _config
 var _busy := false
 
@@ -58,7 +60,7 @@ func _build() -> void:
 	_counter = _center_label("0 / 10", 408, 22, PixelUI.COL_HINT)
 	_center_label("最多 10 个中文字（英文数字算半个）", 440, 18, PixelUI.COL_HINT)
 
-	# —— 头像网格（全部怪物卡）——
+	# —— 头像网格（全部怪物卡；ScrollContainer：头像池 ~39 超屏，滚轮 + 按住拖动滑动）——
 	_center_label("选择头像", 500, 26, PixelUI.COL_PARCHMENT)
 	var ids := _monster_cards()
 	var cols := 4
@@ -66,11 +68,23 @@ func _build() -> void:
 	var gap := 16.0
 	var grid_w: float = cols * cell + (cols - 1) * gap
 	var x0: float = (720.0 - grid_w) / 2.0
+	var rows_n: int = int(ceil(ids.size() / float(cols)))
+	var scroll := ScrollContainer.new()
+	scroll.position = Vector2(28, 538)
+	scroll.size = Vector2(664, 564)   # 到确认按钮(1150)上方；内容在此窗内滚动
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER   # 隐藏滚条不占列宽；拖动/滚轮仍可滚
+	scroll.scroll_deadzone = 16   # 真机触摸：阈值内=点选头像，超出=原生拖动滚动
+	add_child(scroll)
+	DragScroll.attach(scroll)   # 桌面鼠标按住拖动（触摸走原生）
+	_av_content = Control.new()
+	_av_content.custom_minimum_size = Vector2(664.0, ((rows_n - 1) * (cell + gap) + cell + 8.0) if rows_n > 0 else 0.0)
+	scroll.add_child(_av_content)
 	for i in ids.size():
 		var col := i % cols
 		var row := i / cols
-		var x: float = x0 + col * (cell + gap)
-		var y: float = 552.0 + row * (cell + gap)
+		var x: float = (x0 - 28.0) + col * (cell + gap)   # 内容层局部坐标
+		var y: float = 4.0 + row * (cell + gap)
 		_avatar_tile(ids[i], x, y, cell)
 
 	# —— 确认 ——
@@ -100,10 +114,10 @@ func _avatar_tile(card_id: String, x: float, y: float, cell: float) -> void:
 	btn.add_theme_stylebox_override("hover", PixelUI.sbpixel(Color(0.26, 0.37, 0.50), 2, PixelUI.COL_GOLD))
 	btn.add_theme_stylebox_override("pressed", PixelUI.sbpixel(Color(0.16, 0.24, 0.34), 2, Color(0.45, 0.62, 0.85)))
 	btn.pressed.connect(_on_avatar.bind(card_id))
-	add_child(btn)
+	_av_content.add_child(btn)
 	var port := SpriteDB.make_card_portrait(card_id, _config, Vector2(x + 22, y + 12), Vector2(cell - 44, cell - 52))
 	if port != null:
-		add_child(port)
+		_av_content.add_child(port)
 	var lbl := Label.new()
 	lbl.text = tr("card_" + card_id)
 	lbl.position = Vector2(x, y + cell - 34)
@@ -112,14 +126,14 @@ func _avatar_tile(card_id: String, x: float, y: float, cell: float) -> void:
 	lbl.add_theme_font_size_override("font_size", 16)
 	lbl.add_theme_color_override("font_color", Color(1, 1, 1))
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(lbl)
+	_av_content.add_child(lbl)
 	var frame := Panel.new()
 	frame.position = Vector2(x - 2, y - 2)
 	frame.size = Vector2(cell + 4, cell + 4)
 	frame.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color(0, 0, 0, 0), 4, PixelUI.COL_GOLD))
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	frame.visible = false
-	add_child(frame)
+	_av_content.add_child(frame)
 	_avatar_frames[card_id] = frame
 
 func _on_avatar(card_id: String) -> void:

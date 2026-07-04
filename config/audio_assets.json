@@ -4,8 +4,8 @@
     "type": "music",
     "group": "menu",
     "bus": "Music",
-    "path": "res://sound/bgm/music_main_menu.ogg",
-    "asset_status": "planned",
+    "path": "res://sound/bgm/music_main_menu.wav",
+    "asset_status": "imported",
     "loop": true,
     "volume_db": -9.0,
     "pitch_min": 1.0,
@@ -15,8 +15,8 @@
     "suggested_duration_s": "45-75",
     "implementation_phase": "P0",
     "trigger": "main_menu _ready",
-    "effect_notes": "黑暗中世纪身份主题；低弦乐、框鼓、远钟和微弱唱诗，先把世界观立住。",
-    "source_notes": "未入库；待制作/采购音频文件"
+    "effect_notes": "三国主菜单主题：宁静东方古韵（古筝/笛类音色），先立氛围；后续按 A3 音频方向换正式定制曲。",
+    "source_notes": "占位正式曲：Oriental by Shadowfire452，OpenGameArt CC0（公共领域，可商用免署名）；WAV 原格式入库。"
   },
   "music_battle_normal": {
     "display_name_zh": "常规战斗循环",
@@ -24,7 +24,7 @@
     "group": "battle",
     "bus": "Music",
     "path": "res://sound/bgm/music_battle_normal.ogg",
-    "asset_status": "planned",
+    "asset_status": "imported",
     "loop": true,
     "volume_db": -10.0,
     "pitch_min": 1.0,
@@ -34,8 +34,8 @@
     "suggested_duration_s": "60-90",
     "implementation_phase": "P0",
     "trigger": "normal battle _ready",
-    "effect_notes": "中速战斗循环；鼓点清楚但不要过密，给部署、命中和法术音效留空间。",
-    "source_notes": "未入库；待制作/采购音频文件"
+    "effect_notes": "三国战斗循环：古筝+笛动作节奏（热血物语向），鼓点中速给部署/命中音效留空间；后续按 A3 换定制曲。",
+    "source_notes": "占位正式曲：Ninja Theme by Spring Spring，OpenGameArt CC0（公共领域，可商用免署名）；OGG 原文件入库。"
   },
   "music_battle_boss": {
     "display_name_zh": "精英/首领战斗循环",

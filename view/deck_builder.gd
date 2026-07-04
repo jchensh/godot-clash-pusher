@@ -6,6 +6,7 @@ extends Control
 
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const HudWidgets := preload("res://view/ui/hud_widgets.gd")
+const DragScroll := preload("res://view/ui/drag_scroll.gd")
 const GameStateScript = preload("res://view/game_state.gd")
 const ConfigLoaderScript = preload("res://logic/config_loader.gd")
 const SpriteDB = preload("res://view/sprite_db.gd")
@@ -36,6 +37,7 @@ var _power_label: Label
 var _cache                              # EconomyStateCache 缓存的 PlayerData（服务器快照）；null=离线/自由对战
 var _recommended := 0                   # 闯关模式下本关推荐战力（着色基准）
 var _mode := ""                         # 组卡上下文：stage / edit / 其它(自由对战)
+var _pool_content: Control              # 卡池滚动内容层（48 卡超屏，ScrollContainer 拖动/滚轮滑动）
 
 func _ready() -> void:
 	_loader = ConfigLoaderScript.new()
@@ -126,17 +128,27 @@ func _build() -> void:
 
 	_count_label = _pin_label("", Vector2(400, 162), Vector2(290, 28), 24, GOLD, HORIZONTAL_ALIGNMENT_RIGHT)
 
-	# 分隔线 + 卡池
+	# 分隔线 + 卡池（ScrollContainer：滚轮 + 手指/鼠标按住拖动滑动——48 卡超屏必滚）
 	_rect(Color(0.30, 0.34, 0.30, 0.8), Vector2(30, 386), Vector2(660, 3))
 	_pin_label(tr("deck_pool"), Vector2(30, 398), Vector2(660, 26), 20, PixelUI.COL_MUTED, HORIZONTAL_ALIGNMENT_LEFT)
 	var ids: Array = _card_pool()
+	var rows: int = int(ceil(ids.size() / 4.0))
+	var scroll := ScrollContainer.new()
+	scroll.position = Vector2(28, 428)
+	scroll.size = Vector2(664, 548)   # 到底部按钮(988)上方留 12px；内容在此窗内滚动
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER   # 隐藏滚条不占列宽；拖动/滚轮仍可滚
+	scroll.scroll_deadzone = 16   # 真机触摸：阈值内=点选卡，超出=原生拖动滚动
+	add_child(scroll)
+	DragScroll.attach(scroll)   # 桌面鼠标按住拖动（触摸走原生，见 drag_scroll.gd）
+	_pool_content = Control.new()
+	_pool_content.custom_minimum_size = Vector2(664.0, ((rows - 1) * 100.0 + 96.0) if rows > 0 else 0.0)
+	scroll.add_child(_pool_content)
 	for i in ids.size():
 		var id = ids[i]
 		var col := i % 4
 		var row := i / 4
-		var x := 30.0 + col * 170.0
-		var y := 440.0 + row * 100.0
-		_pool_tile(id, x, y)
+		_pool_tile(id, 2.0 + col * 170.0, 4.0 + row * 100.0)   # 内容层局部坐标（+2/+4 给选中金边留描边位）
 
 	# 底部按钮
 	_action_button(tr("btn_back"), 70, 988, 240, "dark", _on_back)
@@ -158,13 +170,13 @@ func _pool_tile(id, x: float, y: float) -> void:
 	btn.add_theme_stylebox_override("hover", PixelUI.sbpixel(bg.lightened(0.15), 2, border))
 	btn.add_theme_stylebox_override("pressed", PixelUI.sbpixel(bg.darkened(0.12), 2, border))
 	btn.pressed.connect(_toggle.bind(id))
-	add_child(btn)
+	_pool_content.add_child(btn)
 	var port := SpriteDB.make_card_portrait(str(id), _loader, Vector2(x + 49, y + 3), Vector2(52, 40))
 	if port != null:   # 有肖像 → 图在上、名+费在下；无肖像(箭雨/滚石/治疗) → 名+费居中
-		add_child(port)
-		_pin_label("%s\n%d" % [_card_name(id), _cost(id)], Vector2(x, y + 42), Vector2(150, 40), 15, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER)
+		_pool_content.add_child(port)
+		_pin_label("%s\n%d" % [_card_name(id), _cost(id)], Vector2(x, y + 42), Vector2(150, 40), 15, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER, _pool_content)
 	else:
-		_pin_label("%s\n%d" % [_card_name(id), _cost(id)], Vector2(x, y), Vector2(150, 84), 21, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER)
+		_pin_label("%s\n%d" % [_card_name(id), _cost(id)], Vector2(x, y), Vector2(150, 84), 21, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER, _pool_content)
 	# 选中金边（默认隐藏，_refresh 控制 visible）
 	var frame := Panel.new()
 	frame.position = Vector2(x - 2, y - 2)
@@ -172,7 +184,7 @@ func _pool_tile(id, x: float, y: float) -> void:
 	frame.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color(0, 0, 0, 0), 4, GOLD))
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	frame.visible = false
-	add_child(frame)
+	_pool_content.add_child(frame)
 	_frames[id] = frame
 
 func _toggle(id) -> void:
@@ -323,7 +335,7 @@ func _title(text: String, y: float, fs: int) -> void:
 func _center_label(text: String, y: float, font_size: int, color: Color) -> Label:
 	return _pin_label(text, Vector2(0, y), Vector2(720, float(font_size) + 16.0), font_size, color, HORIZONTAL_ALIGNMENT_CENTER)
 
-func _pin_label(text: String, pos: Vector2, size: Vector2, font_size: int, color: Color, align: int) -> Label:
+func _pin_label(text: String, pos: Vector2, size: Vector2, font_size: int, color: Color, align: int, parent: Control = null) -> Label:
 	var l := Label.new()
 	l.text = text
 	l.position = pos
@@ -333,5 +345,5 @@ func _pin_label(text: String, pos: Vector2, size: Vector2, font_size: int, color
 	l.add_theme_font_size_override("font_size", font_size)
 	l.add_theme_color_override("font_color", color)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(l)
+	(parent if parent != null else self).add_child(l)
 	return l

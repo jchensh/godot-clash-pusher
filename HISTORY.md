@@ -787,3 +787,50 @@
 - **副作用（好的）**：S9 创号头像池从 10 张兵卡扩到 ~39（account_create 按"有肖像"过滤）；山越奇袭坛等召唤类卡自动获得所召单位肖像。
 - **验证**：客户端 **357/357**（+4 `test_sprite_db`：全单位有条目 / 全帧 src 在贴图边界内〔顺带验证了估的行号不越界〕/ tint 类型 / 占位盘点=31）。**纯 view 改动，无需重启 docker**（verifier 只 stage logic/config）。
 - **真人验收点**：①图鉴 48 卡肖像全有图有色（4 张法术文字卡除外）；②全新卡组进战斗无白膜白圈、颜色可辨；③体型层次（母兽/霹雳车/轰天灯 显著大）；④**行号校正回报**：哪个单位"走路帧像攻击/帧错位"报名字即可（新贴图行号为包惯例估值）；⑤名片/创号头像染色正常。
+- **收尾（2026-07-04）**：A1A2+A2.5+横版立项已提交推送（72624b5 / b75c387）；真人验收欠账集中台账 **[docs/ACCEPTANCE_SANGUO.md](docs/ACCEPTANCE_SANGUO.md)**（A 组 4 例 + B 组 5 例 + S8e 老账），Jira 建议口径改为 **In Review**（用户 2026-07-04 指示"验收欠着、单放 In Review"）。
+
+### V5 三国改版 · A3 场景与系统美术清单（✅ 表已产出待评审，2026-07-04，未 commit 待用户指示）
+
+**用户四决策**（已入 PLAN_V5_SANGUO §0 决策 7~10）：①**塔分阵营皮肤**（我方汉军套恒定 + 敌方魏/蜀/吴/群雄四套随章节，P0=我方+黄巾）②**UI 本次小改**：保像素风、中式化配色纹样（大改版后续另立项）③**头像首批 16**（四阵营×4）④**塔损毁=坍缩残骸图**（低矮不挡兵路；现状为程序化"原图压低 42%+染暗"，battle_scene:351——正式图逐套替换）。
+
+**产出 [docs/design/scene_system_art_spec.xlsx](docs/design/scene_system_art_spec.xlsx)**（6 sheet / 69 行，与 48 卡表同风格：目标路径/现资源对照/尺寸规格/优先级/状态列）：
+- **塔与战场 14 项**：塔 5 套（我方汉军 P0 / 黄巾 P0 / 魏蜀吴 P1，均 3/4 俯视方向无关构图=横版兼容）+ 坍缩残骸×5 套 + 地形 3 主题（中原 P0 / 山地·江河 P1，对应章节叙事）+ 浮桥（**标注横版两朝向变体强约束**，联动 PLAN_V5_HBATTLE H3 素材约定）+ 装饰物件。
+- **战斗 FX 18 项**：状态 FX 统一 5 套（结霜/眩晕/冻结/灼烧[T7 预留]/治疗，全池共用阵营只差符纹——对齐 T3 引擎架构）+ 9 张法术落点表现 + 通用 4（命中/亡语召唤/入场/塔损爆）。
+- **UI 系统件 8 项**：品质框 4 档（对照现 RARITY_COL 色值，加中式角饰递进）+ **阵营徽记×4（新增，图鉴筛选/卡面角标/未来羁绊 UI 复用）** + 货币 3（五铢钱/玉璧/虎符碎片）+ 按钮 3 套×3 态与面板 2（同尺寸同 9-slice 结构中式重绘，PixelUI 框架不动）+ menu_bg + 章节节点；**表内显式记录"UI 大改版=后续另立项"**。
+- **头像 16**：四阵营×4（魏：虎贲校尉/典韦/司马懿/荀彧；蜀：黄忠/周仓/庞统/无当火油手；吴：周瑜/孙尚香/黄盖/山越旋刃卫；群雄：张角/于吉/左慈/黄巾力士），128×128 方形大头。
+- **音频方向 6**：BGM×3+胜负 stinger+SFX 换皮方向，落地走既有 AudioConfig.xlsx→audio_assets.json 管线。
+- **资产盘点结论**（建表前核实）：塔现用 building1(王)/building6(公主)、库存 2-5/7-8；UI 皮=12 张（按钮 3×3+面板 2+menu_bg）；地形=Lonesome_Forest 系 tileset；Boss vampire_lord 全套为奇幻遗产（三国 Boss 素材列"储备"，随 A4/后续）。
+- **验收**：属文档评审（用户+美术过表：项齐/规格对/优先级认），已挂 [ACCEPTANCE_SANGUO.md](ACCEPTANCE_SANGUO.md) 台账第 4 条，Jira 建议 三国化-A3 → In Review。**代码/config 零改动**（部署区高亮等 3 项标注"保持程序化、无需素材"）。
+
+### V5 三国改版 · 验收首轮反馈 + 组卡/创号滚动交互修复（🐞→✅ 代码+测试完成，2026-07-04，未 commit 待用户指示）
+
+**用户验收首轮回报**：组卡界面卡名/肖像正常（"能看到的都配上图了"）、对战可打无问题（A-3 ✅ / B-2 大体 ✅）；**阻塞 bug：卡池无法滚动**——deck_builder 是 V3 时代按 16 卡设计的**纯绝对布局、无滚动容器**，48 卡铺到 y≈1624 远超 720×1280 视口，且底部 返回/保存 按钮悬浮压在卡上。用户要求做"手指/鼠标按住上下拖动"的滑动交互。
+
+**波及排查**：`account_create`（S9 创号选头像）**同类问题**——A2.5 让头像池 10→39（按"有肖像的兵卡"过滤），网格铺到 y≈2046、确认按钮(1150)被埋。`card_collection`/`stage_map` 已用 ScrollContainer 不受影响（但桌面只能滚轮、不能鼠标拖动）。
+
+**修复（对齐既有 ScrollContainer 模式 + 一个全局输入开关）**：
+- `view/deck_builder.gd`：卡池区 → ScrollContainer(28,428,664×548，到底部按钮上方)，瓦片/肖像/名费标签/选中金边全进内容层（局部坐标，`_pin_label` 加可选 parent 参数）；**滚条隐藏**（SHOW_NEVER——不占列宽、拖动/滚轮仍可滚）；`scroll_deadzone=16`（阈值内=点选卡、超出=滚动，手势不打架）。按钮不再与卡重叠。
+- `view/account_create.gd`：头像网格 → 同款 ScrollContainer(28,538,664×564)。
+- `project.godot` +`input_devices/pointing/emulate_touch_from_mouse=true`：鼠标产生触摸事件 → **ScrollContainer 的"按住拖动"在桌面鼠标下生效**（真机触摸本就原生支持，此开关让桌面与手机手感一致）；副作用为正——图鉴/闯关地图两处旧 ScrollContainer 顺带获得鼠标拖动，三处滚动界面手感统一。战斗拖拽部署走鼠标事件不受影响（安卓 touch→mouse 默认模拟本就在用），仍列专项回归用例兜底。
+- **验证**：headless 编辑器解析 0 错误；客户端全量 **357/357** 零回归。**纯 view/工程设置改动，无需重启 docker。**
+- **验收用例 C 组 ×5** 追加进 [docs/ACCEPTANCE_SANGUO.md](docs/ACCEPTANCE_SANGUO.md)：C-1 卡池拖动滚动到底 / C-2 点选 vs 拖动不误触 / C-3 创号头像滚动 / C-4 图鉴·闯关地图拖动顺带受益 / **C-5 ★战斗拖拽部署回归**（全局输入开关的专项兜底，PvE+联机各一局）。
+
+**🔁 二次修（同日）：emulate_touch_from_mouse 路线失败 → 自写 DragScroll 层**。用户复测：滚轮可滚、**鼠标按住拖动仍不行**（按下被子按钮捕获，drag 事件到不了 ScrollContainer，引擎触摸模拟在桌面不可靠）。改法：
+- **撤销** project.godot 的 `emulate_touch_from_mouse`（顺带消掉 C-5 担心的战斗输入面）。
+- 新增 **`view/ui/drag_scroll.gd`**（通用组件）：挂 ScrollContainer 子节点，`Node._input` 前置拦截**真实鼠标**事件——按在滚动区=本层代管；位移≤14px 松手=轻点 → 命中测试内容里最上层 BaseButton 派发 `pressed`（语义点击）；超阈值=拖动 → 直改 `scroll_vertical` 并吞事件（按钮不误触不残留按压态）。**触摸模拟出的鼠标事件（DEVICE_ID_EMULATION）跳过** → 真机触摸走 ScrollContainer 原生拖动，不双重滚动；滚轮不拦截。
+- **四界面统一接入**：deck_builder（卡池）/ account_create（头像）/ card_collection（图鉴）/ stage_map（闯关列表），各一行 `DragScroll.attach(scroll)`。
+- 验证：headless 解析 0 错误、客户端 357/357。C-5 降级为"抽查一局部署正常"（战斗输入已零改动）。
+
+### V5 三国改版 · 首批 BGM 入库（菜单 + 战斗，✅ 完成待真人试听，2026-07-04，未 commit 待用户指示）
+
+**背景**：`sound/` 目录自音频骨架(V3-8)以来一直是"清单先行、文件空缺"（AudioManager 静默跳过），游戏从无 BGM。用户要求配菜单+战斗各一套。
+
+- **选曲（均 OpenGameArt **CC0 公共领域**，可商用免署名——商业 F2P 无授权尾债）**：
+  - `music_main_menu` ← **Oriental**（Shadowfire452）：宁静东方古韵（菜单/城镇向），WAV 原格式入库（~22s 循环）。
+  - `music_battle_normal` ← **Ninja Theme**（Spring Spring）：古筝/笛+合成器动作节奏（社区评"双截龙3味"，正对热血物语气质），OGG 入库。PvE 与 PvP 战斗同用此键（PvE boss 变体键仍 planned）。
+  - 曾试 Taiko drums loop（更贴战鼓）但为 **CC-BY 3.0** 需署名 → 弃用，不背署名维护义务。
+- **接入**：文件放 `sound/bgm/`（headless 导入 ok）；`config/audio_assets.json` 两条 → `asset_status=imported` + 菜单 path 改 `.wav` + effect_notes 三国化 + **source_notes 记来源与许可**；`build_audio_config.py --from-json` + `--check` 往返一致（xlsx 镜像同步）。
+- **🐞 顺手修 AudioManager loop 缺口**：清单里 `loop:true` 从未落到资源（导入默认不循环，曲子播一遍就静音）——`_load_stream` 按清单给 OggVorbis/MP3 设 `loop`、WAV 设 `LOOP_FORWARD + loop_end(按格式算帧数)`。
+- **新增 `tests/test_audio_assets.gd`**：asset_status=imported/final 的条目文件必须存在且可加载为 AudioStream（防"清单说有、盘上没有"漂移；planned 仍允许缺文件）。客户端 **358/358**（+1）。
+- **踩坑记录**：uv `run soundfile` 转码 WAV→OGG 在 Windows 原生崩（libsndfile vorbis 写崩、退出码 127 误导以为 uv 坏）→ 放弃转码、WAV 直用（3.9MB 占位可接受，正式定制曲时按 A3 音频方向替换）。
+- **验收（并入台账 D 组）**：菜单东方古韵循环播放、界面间切换不重头；进战斗切动作曲、退出回菜单曲；音量 -9/-10dB 预设不压音效。

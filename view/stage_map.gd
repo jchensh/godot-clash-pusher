@@ -8,6 +8,7 @@ extends Control
 
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const HudWidgets := preload("res://view/ui/hud_widgets.gd")
+const DragScroll := preload("res://view/ui/drag_scroll.gd")
 const GameStateScript := preload("res://view/game_state.gd")
 const StageProgressScript := preload("res://logic/stage_progress.gd")
 const RewardChestScript := preload("res://view/ui/reward_chest.gd")
@@ -53,7 +54,9 @@ func _build_static() -> void:
 	scroll.position = Vector2(40, 196)
 	scroll.size = Vector2(640, 936)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.scroll_deadzone = 16
 	add_child(scroll)
+	DragScroll.attach(scroll)   # 桌面鼠标按住拖动（触摸走原生）
 	_list = VBoxContainer.new()
 	_list.add_theme_constant_override("separation", 12)
 	_list.custom_minimum_size = Vector2(640, 0)

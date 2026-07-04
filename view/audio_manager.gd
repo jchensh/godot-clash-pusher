@@ -147,6 +147,18 @@ func _load_stream(asset_id: String) -> AudioStream:
 	if loaded == null or not (loaded is AudioStream):
 		return null
 	var stream := loaded as AudioStream
+	# 清单 loop 声明落到资源上（导入默认不循环；music/ambience 循环靠这里生效，2026-07-04 接首批 BGM 时补）。
+	if bool(def.get("loop", false)):
+		if stream is AudioStreamOggVorbis:
+			(stream as AudioStreamOggVorbis).loop = true
+		elif stream is AudioStreamMP3:
+			(stream as AudioStreamMP3).loop = true
+		elif stream is AudioStreamWAV:
+			var w := stream as AudioStreamWAV
+			w.loop_mode = AudioStreamWAV.LOOP_FORWARD
+			var bytes_per_frame: int = (2 if w.format == AudioStreamWAV.FORMAT_16_BITS else 1) * (2 if w.stereo else 1)
+			w.loop_begin = 0
+			w.loop_end = w.data.size() / maxi(1, bytes_per_frame)
 	_cache[asset_id] = stream
 	return stream
 

@@ -7,6 +7,7 @@ extends Control
 
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const HudWidgets := preload("res://view/ui/hud_widgets.gd")
+const DragScroll := preload("res://view/ui/drag_scroll.gd")
 const CardSortScript := preload("res://logic/card_sort.gd")
 const GameStateScript := preload("res://view/game_state.gd")
 const SpriteDB := preload("res://view/sprite_db.gd")
@@ -60,7 +61,9 @@ func _build_static() -> void:
 	scroll.position = Vector2(40, 212)
 	scroll.size = Vector2(640, 920)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.scroll_deadzone = 16
 	add_child(scroll)
+	DragScroll.attach(scroll)   # 桌面鼠标按住拖动（触摸走原生）
 	_grid = GridContainer.new()
 	_grid.columns = 2
 	_grid.add_theme_constant_override("h_separation", 16)
