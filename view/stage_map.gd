@@ -216,7 +216,7 @@ func _show_chest(reward: Dictionary) -> void:
 	var chest = RewardChestScript.new()
 	chest.setup(int(reward.get("stars", 0)), int(reward.get("cap", 3)),
 			int(reward.get("gold", 0)), int(reward.get("gems", 0)), int(reward.get("shards", 0)), bool(reward.get("first", false)))
-	add_child(chest)
+	UI.modal(chest)   # F2：弹窗层承载（恒高于场景层与滚动拦截，穿透从机制上绝迹）
 
 # ---------- helpers ----------
 func _stage_name(st: Dictionary) -> String:

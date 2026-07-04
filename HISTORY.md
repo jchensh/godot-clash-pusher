@@ -884,6 +884,14 @@
 - **验证**：`tests/test_ui_layers.gd` +6（层值序/推入开闭/closed 信号/暗幕装配/隔离结构/DragScroll 让路/toast），全量 **372/372**；headless 实跑主场景冒烟无错（autoload 加载正常）；editor 过导入无告警。**纯 view+project.godot，docker 零操作。**
 - **真人验收**：台账 F 组 4 例（单机结算回归 / ★联机结算演出期点手牌无反应=KAN-98 验证 / 发奖弹窗回归 / 中途退出抽查）。Jira：KAN-98 → In Review；KAN-97 保持 正在进行（F2 存量迁移/F3 规约固化未做）。
 
+**F2 · 存量覆盖层迁移（✅ 代码+单测完成，2026-07-05，待真人验收 F-5~F-8）**：
+- **reward_chest → Modal 子类**：删自有 `signal closed`/锚/STOP（基类管）；暗幕保留自绘（`_init` 置 `dim_alpha=0`——基类 ColorRect 是子节点会盖住自身 `_draw` 的宝箱演出，故暗幕必须留在 `_draw` 垫底）；`_gui_input` 跳过逻辑 → 覆写 `_on_bg_click()`；`_close` 走基类 `close()`。stage_map `add_child(chest)` → `UI.modal(chest)`（与 DragScroll 的滚动区彻底分层，KAN-96 类穿透机制上绝迹）。
+- **run_scene 奖励/结算覆盖层 → Modal**：原「场景内 `_overlay` 容器 + `_dim()` ColorRect STOP」树序压层模式 → `_refresh_overlay` 按 mode 建 Modal 实例（基类 0.72 暗幕）推 `UI.modal`、mode=none 时 queue_free；`_dim()` 删除、`_overlay = _layer()` 删除。奖励三选一/跳过/结算回菜单回调零改动（内容仍挂 `_overlay` 变量，类型换成 Modal）。
+- **4×toast → `UI.toast` 一行转发壳**（base_camp/card_detail/account_create/deck_builder）：14 行×4 的复制粘贴体消灭，场景级默认参数保留（card_detail 错误红 y=760 / account_create 停 1.4s / deck_builder y=920）；`UI.toast` +`hold` 停留参数；deck_builder 字号 22→24 统一（顺带）。toast 现落 TOAST 层（90）恒不挡手。
+- **battle 教程覆盖补输入实体**：新 `_tut_layer`（Modal，dim=0，视觉仍由 `_draw_tutorial` 在场景层画）——**tap 步 STOP 吞点击防误出牌 / action 步（card_played）IGNORE 放行出牌**，每步 `_tut_sync_layer()` 切换；教程走完或进结算自动撤层；**删前置 `_input` 手搓吞点击**（三套并行输入系统再消一套）。Modal +`bg_click_cb`（免建子类的点空白回调，教程 tap 推进用）。
+- **验证**：`test_ui_layers` +2（bg_click_cb / chest 迁移形态：继承+dim0+按钮装配+点空白跳过≠关闭），全量 **374/374**；一次性脚本扫 view/+view/ui 全部 .gd 可编译实例化（8 个被触碰场景无一被单测 preload，防漏）；headless 实跑主场景冒烟零错误。docker 零操作。
+- **真人验收**：F 组追加 F-5 开箱全流程 / F-6 肉鸽弹层 / F-7 新手教程回归★ / F-8 四处 toast 抽查。**剩 F3 规约固化**（CLAUDE.md + pixel_ui.gd 头，待用户指示）。
+
 **Jira 看板补账（Atlassian MCP 本会话已授权，全部代建）**：
 - 新建 **KAN-90** 三国化-A1A2（Story，In Review）/ **KAN-91** A2.5 占位精灵（Task，In Review）/ **KAN-92** A3 美术清单（Task，In Review）/ **KAN-93** A4 素材+文本+回填（Story，待办）/ **KAN-94** 横版战斗 H1~H6（Story，In Review，H1H2 已完成）/ **KAN-95** 首批 BGM（Task，In Review）/ **KAN-96** DragScroll 滚动+穿透修复（Bug，In Review）/ **KAN-97** UI 体系改造 F1~F3（Task，待办）/ **KAN-98** net_battle 结算层树序 bug（Bug，待办，随 F1 修）——全部挂 Epic KAN-50。
 - **KAN-88** 描述追加三国化 A1 降级的 5 项增强觉醒升级项（左慈领队溅射/司马懿冻结/孙尚香燃烧地带/庞统落地减速/于吉范围眩晕）；**KAN-87** 加挂起备注（轨道A 后复盘，CV 离群结论保留）。

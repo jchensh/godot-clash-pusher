@@ -11,6 +11,7 @@ signal closed
 
 var dim_alpha := 0.72            # 暗幕不透明度；0 = 无暗幕（如结算层：演出黑幕由场景 _draw 渐入）
 var close_on_bg_click := false   # 点空白即关闭（确认框类弹窗置 true）
+var bg_click_cb: Callable = Callable()   # 点空白自定义回调（免建子类的轻量覆写；优先于 close_on_bg_click）
 var _assembled := false
 
 func _ready() -> void:
@@ -44,5 +45,7 @@ func _gui_input(event: InputEvent) -> void:
 		_on_bg_click()
 
 func _on_bg_click() -> void:
-	if close_on_bg_click:
+	if bg_click_cb.is_valid():
+		bg_click_cb.call()
+	elif close_on_bg_click:
 		close()

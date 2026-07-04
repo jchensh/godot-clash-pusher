@@ -9,6 +9,7 @@ extends "res://tests/test_case.gd"
 const UILayersScript = preload("res://view/ui/ui_layers.gd")
 const ModalScript = preload("res://view/ui/modal.gd")
 const DragScrollScript = preload("res://view/ui/drag_scroll.gd")
+const RewardChestScript = preload("res://view/ui/reward_chest.gd")
 
 var _made: Array = []   # 本用例挂到 root 的节点，teardown 统一清（防污染后续测试）
 
@@ -114,3 +115,28 @@ func test_toast_layer() -> void:
 	var l = ui._toast_layer.get_child(before)
 	assert_true(l is Label, "toast 是 Label")
 	assert_eq(l.mouse_filter, Control.MOUSE_FILTER_IGNORE, "toast 不挡手")
+
+func test_modal_bg_click_cb() -> void:
+	# F2：点空白自定义回调（教程层 tap 推进用），优先于默认关闭行为。
+	var ui = _ui()
+	var m = ModalScript.new()
+	var hits := []
+	m.bg_click_cb = func() -> void: hits.append(1)
+	ui.modal(m)
+	m._on_bg_click()
+	assert_eq(hits.size(), 1, "bg_click_cb 被回调")
+	assert_false(m.is_queued_for_deletion(), "有 cb 时不走默认关闭")
+
+func test_reward_chest_migrated_to_modal() -> void:
+	# F2：发奖开箱继承 Modal——装配建按钮、暗幕自绘（dim=0）、点空白=跳过到末态而非关闭。
+	var ui = _ui()
+	var chest = RewardChestScript.new()
+	chest.setup(2, 3, 100, 5, 20, true)
+	ui.modal(chest)
+	assert_true(chest.has_method("close"), "chest 继承 Modal（有 close/closed）")
+	assert_almost_eq(chest.dim_alpha, 0.0, 0.001, "chest 暗幕自绘：基类暗幕关闭")
+	assert_eq(chest.mouse_filter, Control.MOUSE_FILTER_STOP, "chest 根 STOP")
+	assert_not_null(chest._btn, "装配建了【继续】按钮")
+	chest._on_bg_click()
+	assert_almost_eq(chest._t, 2.05, 0.001, "点空白跳到 T_BTN 末态")
+	assert_false(chest.is_queued_for_deletion(), "跳过≠关闭")

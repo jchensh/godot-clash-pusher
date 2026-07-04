@@ -130,6 +130,7 @@ var _card_btns: Array = []
 # —— V3-5b 新手引导（仅战役有 tutorial 脚本的关）——
 var _tut_steps: Array = []   # 当前关引导步骤（tutorial.json）；空=无引导
 var _tut_i: int = -1         # 当前步下标；-1=无引导/已结束
+var _tut_layer = null        # F2 教程输入实体（Modal，dim=0）：tap 步 STOP 吞点击、action 步 IGNORE 放行出牌
 var _result_layer: Control
 var _dragging := false
 var _drag_screen := Vector2.ZERO
@@ -1078,6 +1079,9 @@ func _start_ending() -> void:
 	_end_result = match_obj.get_result()
 	_end_pscore = match_obj.battle.total_tower_hp(match_obj.battle.player_towers)
 	_end_oscore = match_obj.battle.total_tower_hp(match_obj.battle.opponent_towers)
+	if _tut_layer != null and is_instance_valid(_tut_layer):
+		_tut_layer.close()   # 教程未走完就结束：撤输入实体，别吞结算按钮
+		_tut_layer = null
 	UI.modal(_result_layer)   # 推入弹窗层：演出期不能出牌（场景切换时该层自动清）
 	match _end_result:
 		BattleScript.RESULT_PLAYER_WIN:
@@ -1229,16 +1233,29 @@ func _init_tutorial() -> void:
 	if typeof(steps) == TYPE_ARRAY and not (steps as Array).is_empty():
 		_tut_steps = steps
 		_tut_i = 0
+		# F2：教程输入实体入弹窗层——tap 步吞点击不再靠前置 _input 手搓（视觉仍由 _draw_tutorial 画）。
+		_tut_layer = ModalScript.new()
+		_tut_layer.dim_alpha = 0.0            # 暗幕/高亮/气泡在场景层 _draw（引用教程状态），本层只管输入
+		_tut_layer.bg_click_cb = _tut_tap     # tap 步点任意处推进
+		UI.modal(_tut_layer)
+		_tut_sync_layer()
 
-func _input(event: InputEvent) -> void:
-	if _ending:
-		return   # 结算期教程不再吞点击（防教程未走完的局吞掉结算按钮）
-	if _tut_i < 0 or _tut_i >= _tut_steps.size():
-		return
-	var step: Dictionary = _tut_steps[_tut_i]
-	if str(step.get("advance", "tap")) == "tap" and event is InputEventMouseButton and event.pressed:
+# tap 步点击推进（经 Modal 的点空白回调；action 步时本层 IGNORE，点击直达场景不会走到这）。
+func _tut_tap() -> void:
+	if _tut_i >= 0 and _tut_i < _tut_steps.size() \
+			and str(_tut_steps[_tut_i].get("advance", "tap")) == "tap":
 		_tut_next()
-		get_viewport().set_input_as_handled()   # tap 步骤吃掉点击，不触发出牌
+
+# 按当前步骤切输入实体：tap=STOP（吞点击防误出牌）；action（如 card_played）=IGNORE（放行出牌）；结束=撤层。
+func _tut_sync_layer() -> void:
+	if _tut_layer == null or not is_instance_valid(_tut_layer):
+		return
+	if _tut_i < 0:
+		_tut_layer.close()
+		_tut_layer = null
+		return
+	var tap: bool = str(_tut_steps[_tut_i].get("advance", "tap")) == "tap"
+	_tut_layer.mouse_filter = Control.MOUSE_FILTER_STOP if tap else Control.MOUSE_FILTER_IGNORE
 
 func _tut_next() -> void:
 	if _tut_i < 0:
@@ -1246,6 +1263,7 @@ func _tut_next() -> void:
 	_tut_i += 1
 	if _tut_i >= _tut_steps.size():
 		_tut_i = -1   # 引导结束
+	_tut_sync_layer()
 
 func _tut_on_action(action: String) -> void:
 	if _tut_i < 0 or _tut_i >= _tut_steps.size():

@@ -42,8 +42,8 @@ func modal_open() -> bool:
 			return true
 	return false
 
-# 统一 toast：居中提示，1s 停留 + 0.5s 淡出（手感对齐既有各场景 _toast；F2 迁移替换 4 处复制粘贴）。
-func toast(msg: String, col: Color = PixelUI.COL_GOLD, y: float = 1080.0) -> void:
+# 统一 toast：居中提示，hold 秒停留 + 0.5s 淡出（F2 起替代各场景复制粘贴的 _toast，字号统一 24）。
+func toast(msg: String, col: Color = PixelUI.COL_GOLD, y: float = 1080.0, hold: float = 1.0) -> void:
 	var l := Label.new()
 	l.text = msg
 	l.position = Vector2(0, y)
@@ -54,6 +54,6 @@ func toast(msg: String, col: Color = PixelUI.COL_GOLD, y: float = 1080.0) -> voi
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_toast_layer.add_child(l)
 	var tw := l.create_tween()
-	tw.tween_interval(1.0)
+	tw.tween_interval(hold)
 	tw.tween_property(l, "modulate:a", 0.0, 0.5)
 	tw.tween_callback(l.queue_free)

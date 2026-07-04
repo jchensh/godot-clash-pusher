@@ -222,16 +222,4 @@ func _scale_to(c: Control, s: float) -> void:
 	create_tween().tween_property(c, "scale", Vector2(s, s), 0.07)
 
 func _toast(msg: String) -> void:
-	var l := Label.new()
-	l.text = msg
-	l.position = Vector2(0, 1080)
-	l.size = Vector2(720, 40)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.add_theme_font_size_override("font_size", 24)
-	l.add_theme_color_override("font_color", PixelUI.COL_GOLD)
-	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(l)
-	var tw := create_tween()
-	tw.tween_interval(1.0)
-	tw.tween_property(l, "modulate:a", 0.0, 0.5)
-	tw.tween_callback(l.queue_free)
+	UI.toast(msg)   # F2：统一走 toast 层（顶层不挡手）

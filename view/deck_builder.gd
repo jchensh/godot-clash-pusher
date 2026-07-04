@@ -285,19 +285,7 @@ func _reset_ladder_btn() -> void:
 		_battle_btn.text = "出征"
 
 func _ladder_toast(msg: String) -> void:
-	var l := Label.new()
-	l.text = msg
-	l.position = Vector2(0, 920)
-	l.size = Vector2(720, 36)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.add_theme_font_size_override("font_size", 22)
-	l.add_theme_color_override("font_color", GOLD)
-	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(l)
-	var tw := create_tween()
-	tw.tween_interval(1.4)
-	tw.tween_property(l, "modulate:a", 0.0, 0.5)
-	tw.tween_callback(l.queue_free)
+	UI.toast(msg, GOLD, 920.0, 1.4)   # F2：统一走 toast 层（字号随之 22→24 统一）
 
 # ---------- 小工具 ----------
 func _rect(color: Color, pos: Vector2, size: Vector2) -> ColorRect:

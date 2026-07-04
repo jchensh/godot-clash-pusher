@@ -16,6 +16,7 @@ const MetaScript = preload("res://logic/meta_progress.gd")
 const SaveScript = preload("res://logic/save_system.gd")
 const BattleScript = preload("res://logic/battle.gd")
 const SpriteDB = preload("res://view/sprite_db.gd")
+const ModalScript = preload("res://view/ui/modal.gd")   # F2：奖励/结算覆盖层走 UI.modal 弹窗层
 
 const BATTLE_SCENE := "res://view/battle_scene.tscn"
 const MENU_SCENE := "res://view/main_menu.tscn"
@@ -29,7 +30,7 @@ const C_BOSS := Color(0.85, 0.35, 0.32)
 
 var _loader
 var _content: Control          # 地图/卡组/按钮层（状态变化时重建）
-var _overlay: Control          # 奖励/结算覆盖层
+var _overlay: Control          # 奖励/结算覆盖层：F2 起为 Modal 实例（UI.modal 弹窗层承载），mode=none 时为 null
 var _mode := "none"            # none / reward / summary
 var _reward_kind := "card"     # card / relic
 var _offers: Array = []        # 当前奖励候选 id
@@ -49,7 +50,6 @@ func _ready() -> void:
 			_start_new_run()
 	_build_bg()
 	_content = _layer()
-	_overlay = _layer()
 	_process_pending_result()
 	_refresh_content()
 	_refresh_overlay()
@@ -148,16 +148,24 @@ func _refresh_content() -> void:
 	_button(_content, tr("btn_new_run"), Vector2(360, 1090), Vector2(150, 84), "stone", _on_new_run)
 	_button(_content, tr("btn_menu"), Vector2(530, 1090), Vector2(150, 84), "dark", _on_menu)
 
-# ---------------- 奖励 / 结算覆盖层 ----------------
+# ---------------- 奖励 / 结算覆盖层（F2：Modal + UI.modal 弹窗层，替代场景内 _dim 树序压层）----------------
 func _refresh_overlay() -> void:
-	_clear(_overlay)
+	if _overlay != null and is_instance_valid(_overlay):
+		_overlay.queue_free()
+	_overlay = null
 	if _mode == "reward":
+		_overlay = _new_overlay()
 		_build_reward()
 	elif _mode == "summary":
+		_overlay = _new_overlay()
 		_build_summary()
 
+func _new_overlay() -> Control:
+	var m := ModalScript.new()   # 基类自带 0.72 暗幕 + 全屏 STOP（原 _dim 的职责）
+	UI.modal(m)
+	return m
+
 func _build_reward() -> void:
-	_dim(_overlay)
 	_offer_nodes = {}
 	var is_relic: bool = _reward_kind == "relic"
 	AudioManager.play_sfx("relic_reveal" if is_relic else "reward_panel_open")
@@ -190,7 +198,6 @@ func _build_reward() -> void:
 	_anim_pop(skip, 0.12 + idx * 0.10, 20.0)
 
 func _build_summary() -> void:
-	_dim(_overlay)
 	var run = GameStateScript.run
 	var won: bool = run.status == RunStateScript.RUN_WON
 	_anim_pop(_label(_overlay, tr("run_cleared") if won else tr("run_over"), Vector2(0, 360), Vector2(720, 70), 56, (C_CURRENT if won else C_BOSS), HORIZONTAL_ALIGNMENT_CENTER), 0.0, -30.0)
@@ -293,13 +300,6 @@ func _layer() -> Control:
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(c)
 	return c
-
-func _dim(parent: Control) -> void:
-	var d := ColorRect.new()
-	d.color = Color(0, 0, 0, 0.72)
-	d.set_anchors_preset(Control.PRESET_FULL_RECT)
-	d.mouse_filter = Control.MOUSE_FILTER_STOP
-	parent.add_child(d)
 
 func _clear(c: Control) -> void:
 	while c.get_child_count() > 0:

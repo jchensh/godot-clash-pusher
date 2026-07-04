@@ -296,19 +296,7 @@ func _set_wallet(gold: int, gems: int) -> void:
 	_wallet_holder.add_child(HudWidgets.wallet_bar(gold, gems, 560.0))
 
 func _toast(msg: String) -> void:
-	var l := Label.new()
-	l.text = msg
-	l.position = Vector2(0, 760)
-	l.size = Vector2(720, 40)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.add_theme_font_size_override("font_size", 24)
-	l.add_theme_color_override("font_color", Color("e24b4a"))
-	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(l)
-	var tw := create_tween()
-	tw.tween_interval(1.0)
-	tw.tween_property(l, "modulate:a", 0.0, 0.5)
-	tw.tween_callback(l.queue_free)
+	UI.toast(msg, Color("e24b4a"), 760.0)   # F2：统一走 toast 层（错误红、升级按钮上方）
 
 func _label(text: String, pos: Vector2, fs: int, col: Color, w: float, align := HORIZONTAL_ALIGNMENT_LEFT) -> Label:
 	var l := Label.new()

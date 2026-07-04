@@ -1,15 +1,13 @@
-# RewardChest —— V5-S7c 领奖开箱动画（决策48，设计 §5）。
+# RewardChest —— V5-S7c 领奖开箱动画（决策48，设计 §5；F2 起继承 Modal 走 UI.modal 弹窗层）。
 #
-# stage_map 在闯关战后（已向服务器上报、拿到实发奖励 delta）add_child 本节点播放：
+# stage_map 在闯关战后（已向服务器上报、拿到实发奖励 delta）UI.modal(本节点) 播放：
 #   暗幕 → 宝箱抖动 → 弹开金光 → 星级逐颗点亮 → 奖励数字滚动 → [继续]。
-# 点击可跳过到末态（不强制看完）。纯 _draw + Tween 派生，0 贴图资源（字体除外）。
-# setup(stars, cap, gold, gems, shards, first) 配置；关闭发 closed 信号。
-extends Control
+# 点击空白可跳过到末态（不强制看完）。纯 _draw + Tween 派生，0 贴图资源（字体除外）。
+# setup(stars, cap, gold, gems, shards, first) 配置；关闭走基类 close()（closed 信号 + queue_free）。
+extends "res://view/ui/modal.gd"
 
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const FONT := preload("res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf")
-
-signal closed
 
 const T_OPEN := 0.6     # 抖动→弹开
 const T_STARS := 0.85   # 星级开始
@@ -28,12 +26,13 @@ var _shards := 0
 var _first := true
 var _btn: Button
 
+func _init() -> void:
+	dim_alpha = 0.0   # 暗幕由本类 _draw 画（须垫在自绘宝箱之下；基类 ColorRect 是子节点会盖住 _draw）
+
 func setup(stars: int, cap: int, gold: int, gems: int, shards: int, first: bool) -> void:
 	_stars = stars; _cap = cap; _gold = gold; _gems = gems; _shards = shards; _first = first
 
-func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
-	mouse_filter = Control.MOUSE_FILTER_STOP   # 拦截点击
+func _build() -> void:
 	_btn = Button.new()
 	_btn.text = "继续"
 	_btn.size = Vector2(240, 76)
@@ -51,14 +50,13 @@ func _process(delta: float) -> void:
 		_btn.visible = true
 	queue_redraw()
 
-func _gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and _t < T_BTN:
+func _on_bg_click() -> void:
+	if _t < T_BTN:
 		_t = T_BTN   # 跳过到末态
 
 func _close() -> void:
 	AudioManager.play_sfx("ui_button_press")
-	closed.emit()
-	queue_free()
+	close()
 
 func _draw() -> void:
 	var vp := size
