@@ -29,7 +29,7 @@
 
 | 步 | 内容 | 验收 |
 |---|---|---|
-| **F1 层级骨架** | ui_layers autoload + modal 基类 + battle/net_battle 结算层迁入 MODAL（**顺带根治 KAN-98**）+ DragScroll 接入双保险 | 单测：modal 开启时下层控件收不到点击、层值序、关闭还原；真人：联机打一局结算演出期点卡牌区无反应、结算按钮可点 |
+| **F1 层级骨架 ✅ 2026-07-05** | `view/ui/ui_layers.gd`（autoload `UI`：MODAL=50/TOAST=90 + UI.modal/toast 入口 + 场景切换自动清弹窗）+ `view/ui/modal.gd` 基类（幂等 `_assemble` 装配：暗幕/STOP/全屏锚；子类覆写 `_build()`）+ battle/net_battle 结算层迁入 MODAL（`dim_alpha=0`，演出黑幕仍由 `_draw` 渐入——**KAN-98 根治**）+ DragScroll 双保险（modal 开着一律让路）+ 顺手修教程 `_input` 结算期吞点击隐患。**实施笔记**：test_runner 在 `_initialize` 跑=离线树（`_ready`/`push_input`/绝对路径/`get_viewport` 均不可用）→ Modal 装配做成幂等双入口、DragScroll 找 UI 走 `Engine.get_main_loop().root` 相对路径、输入隔离降级为结构断言（层值/STOP/全屏锚——分发本身是引擎行为）| 单测 ✅（+6，372/372：层值序/开闭/closed 信号/暗幕装配/隔离结构/DragScroll 让路/toast）；真人 ⬜ 台账 F 组（联机结算演出期点卡牌区无反应、结算按钮可点） |
 | **F2 存量迁移** | reward_chest / run_scene 弹层 / 4×toast / 教程暗幕（补输入实体）逐个迁入 | 单测零回归；真人回归 C 组（滚动）+ 发奖开箱 + 肉鸽弹层 + 新手教程各一遍 |
 | **F3 规约固化** | 规约写进 CLAUDE.md（架构铁律区）+ pixel_ui.gd 文件头；HISTORY 记档 | 文档评审 |
 

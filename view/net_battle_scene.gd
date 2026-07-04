@@ -21,6 +21,7 @@ const BattleClientScript := preload("res://net/battle_client.gd")
 const BattleScript := preload("res://logic/battle.gd")
 const SpriteDB := preload("res://view/sprite_db.gd")
 const HudWidgets := preload("res://view/ui/hud_widgets.gd")   # V5-S9 双方名片
+const ModalScript := preload("res://view/ui/modal.gd")        # F1 弹窗基类（结算层走 UI.modal，修 KAN-98）
 const MainMenuScene := "res://view/main_menu.tscn"
 
 const TOPBAR_H := 54.0
@@ -1156,19 +1157,24 @@ func _short(s: String, n: int) -> String:
 
 
 # —— 胜负演出（全 _draw 驱动；由 _on_result 服务端信号触发，result 是 side 语义）——
+# F1 起结算层走 UI.modal 弹窗层（CanvasLayer 50）：根治 KAN-98——原先本层建于 _ready、
+# 手牌按钮建于进房后 _build_cards，Control 输入按树序命中 → 按钮压在结算层之上拦不住；
+# 弹窗层高于场景层，输入隔离由层级保证，与建立顺序无关。
 func _build_result_panel() -> void:
-	_end_result_layer = Control.new()
-	_end_result_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_end_result_layer.mouse_filter = Control.MOUSE_FILTER_STOP
-	_end_result_layer.visible = false
-	add_child(_end_result_layer)
+	_end_result_layer = ModalScript.new()
+	_end_result_layer.dim_alpha = 0.0   # 结算暗幕由 _draw_end_screen 渐入演出，本层只拦输入+装按钮
+
+func _exit_tree() -> void:
+	# 对局未结束就离场（结算层从未入树）时手动释放；入树后由 UI 层随场景切换清理。
+	if _end_result_layer != null and not _end_result_layer.is_inside_tree():
+		_end_result_layer.free()
 
 func _start_ending() -> void:
 	if _ending:
 		return
 	_ending = true
 	_end_t = 0.0
-	_end_result_layer.visible = true   # 透明全屏，拦截点击（演出期不能出牌）
+	UI.modal(_end_result_layer)   # 推入弹窗层：演出期不能出牌（场景切换时自动清）
 	# 服务端 winner: 0=平/1=side1/2=side2。本方胜利 = winner == my_side。
 	var mine := 1 if not _flip else 2
 	if _end_winner == 0:

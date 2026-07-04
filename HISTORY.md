@@ -875,6 +875,15 @@
 
 **改造方案（用户 2026-07-05 拍板"就按这个来做"，施工图 PLAN_V5_UIFRAME.md）**：F1 层级骨架（`UI` autoload CanvasLayer 栈 MODAL=50<TOAST=90 + Modal 基类 + UI.modal/toast 入口 + DragScroll 双保险 + 顺带根治 KAN-98）→ F2 存量迁移（chest/run 弹层/4×toast/教程暗幕）→ F3 规约固化（新 UI 必须声明层级、禁树序当层级、z_index 不拦输入——写进 CLAUDE.md + pixel_ui.gd 头）。**待用户指示开工**。
 
+**F1 · UI 层级骨架落地（✅ 代码+单测完成，2026-07-05 用户拍板即刻开工，待真人验收 F 组）**：
+- **`view/ui/ui_layers.gd`（autoload `UI`，第 3 个业务 autoload）**：CanvasLayer 栈 MODAL=50 < TOAST=90；`UI.modal(node)` 推弹窗（绑定当前场景 tree_exiting → 场景切换自动清，防跨场景残留）+ `UI.modal_open()`（过滤待删）+ `UI.toast(msg)`（统一 1s 停留 0.5s 淡出，F2 替换 4 处复制粘贴用）。project.godot 注册。
+- **`view/ui/modal.gd` 弹窗基类**：全屏锚 + 根 STOP 兜底（真正隔离由 CanvasLayer 层级保证）+ 可配暗幕（`dim_alpha`，0=无）+ `closed` 信号 + `_on_bg_click()`（默认按 `close_on_bg_click`，子类可覆写做跳过动画）；子类覆写 `_build()` 搭内容、勿覆写 `_ready`。
+- **battle/net_battle 结算层迁入 MODAL**：`_result_layer/_end_result_layer` 改 Modal（`dim_alpha=0`，演出黑幕仍由 `_draw_end_screen` 渐入），`_start_ending` 时 `UI.modal()` 推入——**KAN-98 根治**（原 net_battle 结算层建于 `_ready`、手牌按钮建于进房后，Control 输入按树序命中 → 按钮压层拦不住；弹窗层恒高于场景层，与建立顺序无关）。战斗中途离场时 `_exit_tree` 兜底释放未入树的结算层。顺手修隐患：battle 教程 `_input` 加 `_ending` 早退（防教程未走完的局吞掉结算按钮点击）。
+- **DragScroll 双保险**：`_covered()` 先查 `UI.modal_open()`（本层是 `Node._input` 前置拦截，CanvasLayer 挡不住它，必须自觉让路）再走原 hovered 遮挡判定。
+- **踩坑（runner 架构现实，记档）**：test_runner 在 `SceneTree._initialize` 跑 = **离线树**——`_ready` 不触发、`push_input`/绝对路径 get_node/`get_viewport()` 全不可用（autoload 也晚于测试加载，game_helper 日志在汇总后打印可证）。应对：①Modal 装配改**幂等 `_assemble()` 双入口**（`_ready` + `UI.modal` 显式调）；②DragScroll 找 UI 改 `Engine.get_main_loop().root` 相对路径 + `get_viewport()` null 守卫；③"modal 拦点击"的行为级测试降级为**结构断言**（宿主层=50/根 STOP/全屏锚——GUI 按 CanvasLayer 从高到低分发是引擎行为，不替引擎测），行为验证走真人 F 组。
+- **验证**：`tests/test_ui_layers.gd` +6（层值序/推入开闭/closed 信号/暗幕装配/隔离结构/DragScroll 让路/toast），全量 **372/372**；headless 实跑主场景冒烟无错（autoload 加载正常）；editor 过导入无告警。**纯 view+project.godot，docker 零操作。**
+- **真人验收**：台账 F 组 4 例（单机结算回归 / ★联机结算演出期点手牌无反应=KAN-98 验证 / 发奖弹窗回归 / 中途退出抽查）。Jira：KAN-98 → In Review；KAN-97 保持 正在进行（F2 存量迁移/F3 规约固化未做）。
+
 **Jira 看板补账（Atlassian MCP 本会话已授权，全部代建）**：
 - 新建 **KAN-90** 三国化-A1A2（Story，In Review）/ **KAN-91** A2.5 占位精灵（Task，In Review）/ **KAN-92** A3 美术清单（Task，In Review）/ **KAN-93** A4 素材+文本+回填（Story，待办）/ **KAN-94** 横版战斗 H1~H6（Story，In Review，H1H2 已完成）/ **KAN-95** 首批 BGM（Task，In Review）/ **KAN-96** DragScroll 滚动+穿透修复（Bug，In Review）/ **KAN-97** UI 体系改造 F1~F3（Task，待办）/ **KAN-98** net_battle 结算层树序 bug（Bug，待办，随 F1 修）——全部挂 Epic KAN-50。
 - **KAN-88** 描述追加三国化 A1 降级的 5 项增强觉醒升级项（左慈领队溅射/司马懿冻结/孙尚香燃烧地带/庞统落地减速/于吉范围眩晕）；**KAN-87** 加挂起备注（轨道A 后复盘，CV 离群结论保留）。

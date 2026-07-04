@@ -18,6 +18,7 @@ const GameStateScript = preload("res://view/game_state.gd")
 const RunModifiersScript = preload("res://logic/run_modifiers.gd")
 const SpriteDB = preload("res://view/sprite_db.gd")
 const HudWidgets = preload("res://view/ui/hud_widgets.gd")   # V5-S9 玩家名片
+const ModalScript = preload("res://view/ui/modal.gd")        # F1 弹窗基类（结算层走 UI.modal，KAN-97）
 const RunSceneScene := "res://view/run_scene.tscn"
 const StageProgressScript = preload("res://logic/stage_progress.gd")   # V5-S7c 闯关判星
 const PveRecorderScript = preload("res://net/pve_recorder.gd")         # KAN-79 防作弊录制
@@ -1058,15 +1059,17 @@ func _draw_card_spell_icon(cid: String, c: Vector2, box: float) -> void:
 func _short(s: String, n: int) -> String:
 	return s if s.length() <= n else s.substr(0, n - 1) + "…"
 
-# —— HUD：结算面板 ——
+# —— HUD：结算面板（F1 起走 UI.modal 弹窗层：输入隔离由 CanvasLayer 层级保证，KAN-97）——
 func _build_result_panel() -> void:
-	_result_layer = Control.new()
-	_result_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_result_layer.mouse_filter = Control.MOUSE_FILTER_STOP
-	_result_layer.visible = false
-	add_child(_result_layer)
+	_result_layer = ModalScript.new()
+	_result_layer.dim_alpha = 0.0   # 结算暗幕由 _draw_end_screen 渐入演出，本层只拦输入+装按钮
+	# 不立即入树：_start_ending 时 UI.modal() 推入弹窗层（高于场景层，手牌/HUD 机制上收不到点击）。
 	# 调暗/标题/王冠/比分由 _draw_end_screen 动画绘制；本层只承载（延迟淡入的）按钮。
-	# 比赛一结束即 visible（透明全屏 STOP）→ 拦截点击、演出期间不能再出牌。
+
+func _exit_tree() -> void:
+	# 战斗未打完就离场（结算层从未入树）时手动释放，防游离节点泄漏；入树后由 UI 层随场景切换清理。
+	if _result_layer != null and not _result_layer.is_inside_tree():
+		_result_layer.free()
 
 # 比赛结束：进入演出（调暗/标题 sting/王冠落入/比分滚动），按钮稍后淡入。
 func _start_ending() -> void:
@@ -1075,7 +1078,7 @@ func _start_ending() -> void:
 	_end_result = match_obj.get_result()
 	_end_pscore = match_obj.battle.total_tower_hp(match_obj.battle.player_towers)
 	_end_oscore = match_obj.battle.total_tower_hp(match_obj.battle.opponent_towers)
-	_result_layer.visible = true   # 透明全屏，拦截点击（演出期不能出牌）
+	UI.modal(_result_layer)   # 推入弹窗层：演出期不能出牌（场景切换时该层自动清）
 	match _end_result:
 		BattleScript.RESULT_PLAYER_WIN:
 			AudioManager.play_sfx("stinger_victory")
@@ -1228,6 +1231,8 @@ func _init_tutorial() -> void:
 		_tut_i = 0
 
 func _input(event: InputEvent) -> void:
+	if _ending:
+		return   # 结算期教程不再吞点击（防教程未走完的局吞掉结算按钮）
 	if _tut_i < 0 or _tut_i >= _tut_steps.size():
 		return
 	var step: Dictionary = _tut_steps[_tut_i]

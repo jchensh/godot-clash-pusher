@@ -44,11 +44,19 @@ func _input(event: InputEvent) -> void:
 			_sc.scroll_vertical -= int(round(event.relative.y))
 		get_viewport().set_input_as_handled()
 
-# 滚动区被其它 UI 层盖住（发奖弹窗等）时不代管，让点击走正常 GUI 路径。
-# 判定：鼠标下最顶层 Control 不属于本容器子树 = 有遮挡。
-# 修 2026-07-05：闯关发奖弹窗「继续」按钮点不动（press 被本层吞）+ 轻点穿透误触弹窗底下的关卡按钮。
+# 滚动区被其它 UI 层盖住（发奖弹窗等）时不代管，让点击走正常 GUI 路径。双保险（F1，KAN-97）：
+# ① UI.modal 弹窗层开着 → 点击属于弹窗，一律不代管（本层是 Node._input 前置拦截，CanvasLayer 挡不住它，必须自觉让路）；
+# ② 鼠标下最顶层 Control 不属于本容器子树 = 同场景内有遮挡（2026-07-05 发奖弹窗穿透的原修复，保留兜底）。
 func _covered() -> bool:
-	var hovered := get_viewport().gui_get_hovered_control()
+	var ml := Engine.get_main_loop()
+	if ml is SceneTree:   # 经 root 找 UI autoload（相对路径：不依赖树激活，headless 单测同样可用）
+		var ui = (ml as SceneTree).root.get_node_or_null("UI")
+		if ui != null and ui.modal_open():
+			return true
+	var vp := get_viewport()
+	if vp == null:
+		return false
+	var hovered := vp.gui_get_hovered_control()
 	return hovered != null and hovered != _sc and not _sc.is_ancestor_of(hovered)
 
 # 轻点：命中滚动内容里最上层的可见可用 BaseButton，派发 pressed（语义等价点击）。
