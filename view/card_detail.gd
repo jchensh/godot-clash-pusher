@@ -29,6 +29,7 @@ func _ready() -> void:
 	AudioManager.play_music("music_main_menu")
 	_cid = GameStateScript.detail_card
 	_build_static()
+	Events.economy_changed.connect(_on_economy_changed)   # 框架地基#2：动作后的刷新统一走订阅
 	_http = HTTPRequest.new()
 	add_child(_http)
 	await _bootstrap()
@@ -62,6 +63,10 @@ func _bootstrap() -> void:
 	var econ = GameStateScript.economy()
 	if not econ.is_loaded:
 		await econ.refresh(_http, _token, _all_ids)
+	_populate()
+
+# 框架地基#2（KAN-100）：升级/升阶/解锁成功后的刷新统一走订阅。
+func _on_economy_changed(_cache) -> void:
 	_populate()
 
 func _populate() -> void:
@@ -181,8 +186,7 @@ func _do_action(op: String) -> void:
 		_: res = await econ.unlock(_http, _token, _cid, _all_ids)
 	_busy = false
 	if bool(res.get("ok", false)):
-		AudioManager.play_sfx("ui_card_drop_valid")
-		_populate()
+		AudioManager.play_sfx("ui_card_drop_valid")   # 刷新由 economy_changed 订阅负责
 	else:
 		_toast(_err_text(int(res.get("error_code", 0))))
 

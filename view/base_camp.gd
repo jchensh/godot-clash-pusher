@@ -26,6 +26,7 @@ var _cta_btn: Button
 func _ready() -> void:
 	AudioManager.play_music("music_main_menu")
 	_build_static()
+	Events.economy_changed.connect(_on_economy_changed)   # 框架地基#2：动作后的刷新统一走订阅
 	_http = HTTPRequest.new()
 	add_child(_http)
 	await _bootstrap()
@@ -95,10 +96,13 @@ func _bootstrap() -> void:
 	var all_ids: Array = config.cards.keys()
 	var econ = GameStateScript.economy()
 	var res: Dictionary = await econ.refresh(_http, session.token(), all_ids)
-	if bool(res.get("ok", false)):
-		_populate(econ.get_cache(), config)
-	else:
-		_set_offline()
+	if not bool(res.get("ok", false)):
+		_set_offline()   # 成功路径的展示由 economy_changed 订阅刷新（框架地基#2）
+
+# 框架地基#2（KAN-100）：经济快照变更订阅——本页动作（领挂机）或任何来源的变更统一在此刷新。
+func _on_economy_changed(cache) -> void:
+	if cache != null:
+		_populate(cache, GameStateScript.config())
 
 func _populate(cache, config) -> void:
 	_set_wallet(cache.gold, cache.gems)
@@ -159,9 +163,8 @@ func _on_collect_pressed() -> void:
 	_collect_btn.disabled = true
 	var session = GameStateScript.session()
 	var config = GameStateScript.config()
-	var res: Dictionary = await GameStateScript.economy().collect_idle(_http, session.token(), config.cards.keys())
-	if bool(res.get("ok", false)):
-		_populate(GameStateScript.economy().get_cache(), config)
+	await GameStateScript.economy().collect_idle(_http, session.token(), config.cards.keys())
+	# 成功 → economy_changed 订阅刷新界面；失败 → 维持原状（按钮保持禁用，与旧行为一致）
 
 func _on_stage_pressed() -> void:
 	Router.goto("stage_map")

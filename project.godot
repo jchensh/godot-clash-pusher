@@ -24,6 +24,7 @@ I18n="*res://view/i18n.gd"
 AudioManager="*res://view/audio_manager.gd"
 UI="*res://view/ui/ui_layers.gd"
 Router="*res://view/scene_router.gd"
+Events="*res://view/events.gd"
 
 [display]
 

@@ -15,6 +15,7 @@ func _ready() -> void:
 	_http = HTTPRequest.new()
 	add_child(_http)
 	_build_gm()       # GM 区骨架（标题+状态+按钮）
+	Events.economy_changed.connect(_on_economy_changed)   # 框架地基#2：GM 动作后的状态行刷新走订阅
 	_init_gm()        # async：登录 + 拉状态填充（fire-and-forget 协程）
 
 func _build() -> void:
@@ -178,10 +179,13 @@ func _do_gm(ops: Dictionary) -> void:
 	var all_ids: Array = GameStateScript.config().cards.keys()
 	var res: Dictionary = await econ.gm_apply(_http, session.token(), ops, all_ids)
 	_set_gm_enabled(true)
-	if bool(res.get("ok", false)):
-		_refresh_gm_status()
-	elif _gm_status != null:
+	# 成功路径：economy_changed 订阅已在 await 期间刷新状态行（框架地基#2）
+	if not bool(res.get("ok", false)) and _gm_status != null:
 		_gm_status.text = "GM 失败 status=%d" % int(res.get("status_code", 0))
+
+# 框架地基#2（KAN-100）：GM 动作成功后的状态行刷新统一走订阅。
+func _on_economy_changed(_cache) -> void:
+	_refresh_gm_status()
 
 func _refresh_gm_status() -> void:
 	if _gm_status == null:

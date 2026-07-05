@@ -915,3 +915,17 @@
 - **验收尾修③（2026-07-06，真人过主流程后）**：日志两次「Lambda capture at index 0 was freed」（转场链上触发）——UI.modal 的场景退出自动清 lambda **捕获弹窗对象本身**：弹窗先于场景正常关闭（教程撤层/开箱看完关掉）后场景再退出，one-shot 兜底被唤起时捕获已死 → 引擎报错（有 is_instance_valid 守卫、行为无恙，纯噪声）。修 = 捕获 `instance_id` + `instance_from_id` 查活（ID 永不复用，查无此人安静跳过），lambda 零对象捕获。384/384。
 - **真人验收用例（KAN-99）**：R-0 GM 重置账号→创号→**应自动进新手引导战**（本次踩坑的回归验证★）；R-1 主菜单六入口各进一次+返回（观察 0.3s 黑幕转场顺滑）；R-2 闯关全链 基地→地图→组卡→开战→战后回地图开箱；R-3 设置页换语言+换战斗版式（reload 重建正常、语言即时生效）；R-4 单机战斗「再来一局」（=Router.reload 保留模式重开）；R-5 天梯 组卡→匹配→对局→结算回菜单+「再来一局」；R-6 探险肉鸽/新手引导（GM 重置后）各过一遍；R-7 转场中快速连点乱按（应被黑幕挡住、无双跳/穿透）。
 - Jira：**KAN-99** 建单挂 Epic KAN-50 → 正在进行 → 代码+单测完成转 **In Review**（验收过再 Done）。缺口 #2 事件总线 / #3 日志 / #4 lint 后续逐单立项。
+
+---
+
+### V5 · 框架地基#2 Events 事件总线（KAN-100，✅ 代码+单测完成待真人验收，2026-07-06）
+
+**做了什么（GDQuest Events 单例模式）**：
+- **`view/events.gd`（autoload `Events`）**：首个信号 `economy_changed(cache)`——经济/养成服务器快照更新广播。加新信号原则 = 有真实消费方才加（YAGNI）。
+- **发射端收口**：`EconomyStateCache` 快照落地归一到 `_apply`（顺带消掉 refresh 里的重复代码）+ `seed_from_local`，两处尾调 `_emit_changed()`——refresh/领挂机/升级/升阶/解锁/通关发奖/GM 全部自动广播。本类是 RefCounted，经 main_loop root 动态查找总线并判空（offline 单测树/极早期启动安静跳过，对齐 DragScroll 找 UI 方案）。
+- **订阅端改造（只接真有页内经济动作的三页）**：base_camp（领挂机）/ card_detail（升级/升阶/解锁）/ settings（GM 8 按钮）——`_ready` 订阅一次，动作 handler 里的手动重刷全删（「加新动作忘刷新」类 bug 机制上绝迹）。**刻意不接** stage_map/card_collection：无页内经济动作，且「缓存已加载不重拉」的入场路径必须保留显式 populate，强行订阅只会双重刷新（YAGNI 实证）。
+- **边界铁律**：logic/ 战斗逻辑层禁用总线（lockstep 确定性要求调用顺序严格固定）——`test_events` 源码扫描（`\bEvents\.`）把关；入 CLAUDE.md 架构铁律第 6 条。
+- **验证**：`tests/test_events.gd` +5（信号契约 / seed 广播 / _apply 广播（服务器快照 shape fixture）/ 无总线安全 / logic 封禁扫描），全量 **389/389**；headless 冒烟干净。纯客户端，docker 零操作。
+- **踩坑（记档纠偏）**：--script 单测模式下 **autoload 其实已挂 root**（F1 时期笔记「autoload 晚于测试加载」不准确——晚的是 _ready 级处理，不是节点挂载）。测试再 add_child 同名节点会被引擎自动改名 → 发射端查到真 autoload、订阅连在孤儿节点上收不到（探针二分实锤）。正解 = get-or-create 复用真 autoload（对齐 test_ui_layers._ui 先例）+ 测完 disconnect；「无总线」用例用临时改名藏 autoload 模拟缺席。
+- **真人验收用例（KAN-100）**：E-1 基地领挂机 → 钱包/挂机额即时刷新；E-2 卡详情升级/升阶/解锁 → 数值/按钮态即时刷新（金币扣减可见）；E-3 设置页 GM 任按一个 → 状态行即时更新；E-4 回归：闯关开箱/图鉴排序切换行为不变（未接总线页面）。
+- Jira：**KAN-100** 建单挂 Epic KAN-50 → 正在进行 → 代码+单测完成转 **In Review**。缺口 #3 日志 / #4 lint 待做。

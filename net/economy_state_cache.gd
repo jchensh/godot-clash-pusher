@@ -26,23 +26,30 @@ func refresh(http, token: String, all_card_ids: Array) -> Dictionary:
 		last_error = res
 		print("[V5][econ] 拉状态失败 status=%d" % int(res.get("status_code", 0)))
 		return res
-	# 服务器快照 → PlayerData（apply_server_state 用服务器 schema 重建）。
-	if cache == null:
-		cache = PlayerDataScript.new()
-	cache.apply_server_state(res["state"], all_card_ids)
-	is_loaded = true
-	last_error = {}
+	# 服务器快照 → PlayerData（_apply 统一落地 + Events.economy_changed 广播，框架地基#2）。
+	_apply(res["state"], all_card_ids)
 	print("[V5][econ] 拉状态 ok gold=%d gems=%d 解锁=%d/%d highest=%s" % [cache.gold, cache.gems, cache.unlocked_card_ids().size(), cache.cards.size(), cache.highest_cleared])
 	return {"ok": true}
 
 
-## 把一次服务器返回的状态快照应用到缓存（refresh/动作共用）。
+## 把一次服务器返回的状态快照应用到缓存（refresh/动作共用），并广播变更。
 func _apply(state_dict: Dictionary, all_card_ids: Array) -> void:
 	if cache == null:
 		cache = PlayerDataScript.new()
 	cache.apply_server_state(state_dict, all_card_ids)
 	is_loaded = true
 	last_error = {}
+	_emit_changed()
+
+
+## 框架地基#2（KAN-100）：快照变更广播。总线是 autoload `Events`（offline 单测树没有），
+## 本类是 RefCounted 无法 get_node → 经 main_loop root 动态查找并判空（对齐 DragScroll 找 UI 方案）。
+func _emit_changed() -> void:
+	var ml := Engine.get_main_loop()
+	if ml is SceneTree:
+		var ev = (ml as SceneTree).root.get_node_or_null("Events")
+		if ev != null:
+			ev.economy_changed.emit(cache)
 
 
 ## V5-S7（决策48）动作门面：领取挂机金币。服务器算 (now−last_collect) 产出 + 落库，回新状态 → 更新缓存。
@@ -145,3 +152,4 @@ func get_cache():
 ## 由 SaveSystem.load_player 读出的 player_data 传入。不改变 is_loaded（仍未从服务器确认）。
 func seed_from_local(player_data) -> void:
 	cache = player_data
+	_emit_changed()
