@@ -10,7 +10,6 @@ const GameStateScript := preload("res://view/game_state.gd")
 const DragScroll := preload("res://view/ui/drag_scroll.gd")
 const SpriteDB := preload("res://view/sprite_db.gd")
 const BG_TEX := preload("res://assets/ui/menu_bg.png")
-const MENU_SCENE := "res://view/main_menu.tscn"
 
 const NAME_MAX_HALF := 20   # 宽度上限：中文/全角=2 半格、英数=1 半格 → 10 全角
 
@@ -35,7 +34,7 @@ func _ready() -> void:
 func _build() -> void:
 	var bg := TextureRect.new()
 	bg.texture = BG_TEX
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
@@ -183,7 +182,7 @@ func _on_confirm() -> void:
 	var ok: bool = await session.update_identity(_http, nick, _selected_avatar)
 	if ok:
 		print("[V5][account] 创号成功 → 回主菜单（路由进新手引导）")
-		get_tree().change_scene_to_file(MENU_SCENE)
+		Router.goto("main_menu")
 	else:
 		_toast("起名被拒（可能太长），换一个试试")
 		_busy = false

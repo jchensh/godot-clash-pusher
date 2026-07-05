@@ -19,10 +19,8 @@ const RunModifiersScript = preload("res://logic/run_modifiers.gd")
 const SpriteDB = preload("res://view/sprite_db.gd")
 const HudWidgets = preload("res://view/ui/hud_widgets.gd")   # V5-S9 玩家名片
 const ModalScript = preload("res://view/ui/modal.gd")        # F1 弹窗基类（结算层走 UI.modal，KAN-97）
-const RunSceneScene := "res://view/run_scene.tscn"
 const StageProgressScript = preload("res://logic/stage_progress.gd")   # V5-S7c 闯关判星
 const PveRecorderScript = preload("res://net/pve_recorder.gd")         # KAN-79 防作弊录制
-const STAGE_MAP_SCENE := "res://view/stage_map.tscn"
 
 const TOPBAR_H := 54.0
 const HUD_BOTTOM_H := 176.0
@@ -209,7 +207,7 @@ func _ready() -> void:
 			print("[V5][pve] 开战报到失败 → 弹回闯关地图（断线即不可玩）")
 			GameStateScript.stage_id = ""
 			GameStateScript.deck_mode = ""
-			get_tree().change_scene_to_file(STAGE_MAP_SCENE)
+			Router.goto("stage_map")
 			return
 		_pve_battle_id = int(start_res.get("battle_id", 0))
 		var pdata = GameStateScript.economy().for_battle(loader.cards.keys())
@@ -1156,20 +1154,20 @@ func _result_btn(txt: String, y: float, cb: Callable) -> void:
 func _on_run_continue() -> void:
 	AudioManager.play_sfx("ui_button_press")
 	GameStateScript.run_last_result = match_obj.get_result()
-	get_tree().change_scene_to_file(RunSceneScene)
+	Router.goto("run")
 
 func _on_campaign_continue() -> void:
 	AudioManager.play_sfx("ui_button_press")
 	GameStateScript.campaign_last_result = match_obj.get_result()
-	get_tree().change_scene_to_file("res://view/campaign_scene.tscn")
+	Router.goto("campaign")
 
 func _on_rematch() -> void:
 	AudioManager.play_sfx("ui_button_press")
-	get_tree().reload_current_scene()
+	Router.reload()
 
 func _on_menu() -> void:
 	AudioManager.play_sfx("ui_button_back")
-	get_tree().change_scene_to_file("res://view/main_menu.tscn")
+	Router.goto("main_menu")
 
 # V5-S9 新手引导战结束（胜负不论）：标记引导完成（服务器权威）+ 清状态 → 回主菜单。
 func _on_tutorial_done() -> void:
@@ -1182,7 +1180,7 @@ func _on_tutorial_done() -> void:
 	var session = GameStateScript.session()
 	await session.mark_tutorial_done(http)
 	http.queue_free()
-	get_tree().change_scene_to_file("res://view/main_menu.tscn")
+	Router.goto("main_menu")
 
 # V5-S7c 闯关战后：判星 + 存结果（stage_map 负责上报服务器 + 领奖开箱）+ 回闯关地图。
 # KAN-78/79：time_under 判定改用 pve_tick 换算时长（与服务器摘要校验完全同源，消边界分歧）；
@@ -1205,7 +1203,7 @@ func _on_stage_return() -> void:
 	GameStateScript.stage_last_result = {"stage_id": sid, "stars": stars, "battle_id": _pve_battle_id, "summary": summary}
 	GameStateScript.stage_id = ""
 	GameStateScript.deck_mode = ""
-	get_tree().change_scene_to_file(STAGE_MAP_SCENE)
+	Router.goto("stage_map")
 
 func _player_king_hp_pct() -> float:
 	for t in match_obj.battle.player_towers:

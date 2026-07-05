@@ -10,12 +10,6 @@ const DragScroll := preload("res://view/ui/drag_scroll.gd")
 const GameStateScript = preload("res://view/game_state.gd")
 const ConfigLoaderScript = preload("res://logic/config_loader.gd")
 const SpriteDB = preload("res://view/sprite_db.gd")
-const BATTLE_SCENE := "res://view/battle_scene.tscn"
-const LEVEL_SELECT_SCENE := "res://view/level_select.tscn"
-const STAGE_MAP_SCENE := "res://view/stage_map.tscn"
-const BASE_CAMP_SCENE := "res://view/base_camp.tscn"
-const NET_BATTLE_SCENE := "res://view/net_battle_scene.tscn"   # V5-S9 天梯
-const MAIN_MENU_SCENE := "res://view/main_menu.tscn"
 const DECK_SIZE := 8
 
 const TROOP_BG := Color(0.20, 0.30, 0.42)
@@ -241,21 +235,21 @@ func _on_battle() -> void:
 	# edit 模式（基地编辑）= 只存卡组回基地；其余 = 进战斗（battle 读 stage_id 选闯关/自由）。
 	if _mode == "edit":
 		print("[V5][deck] 保存卡组回基地 deck=%s" % str(_selected))
-		get_tree().change_scene_to_file(BASE_CAMP_SCENE)
+		Router.goto("base_camp")
 		return
 	# ★ 单人对战上下文互斥：清掉 roguelite/战役 静态状态，避免 battle 因 stale run/campaign
 	#   误判模式（战后弹去肉鸽/战役并推进）。battle 据 stage_id 选闯关 vs 自由。
 	GameStateScript.run = null
 	GameStateScript.campaign = null
 	print("[V5][deck] 出战 mode=%s stage_id='%s' deck=%s" % [_mode, GameStateScript.stage_id, str(_selected)])
-	get_tree().change_scene_to_file(BATTLE_SCENE)
+	Router.goto("battle")
 
 func _on_back() -> void:
 	match _mode:
-		"stage": get_tree().change_scene_to_file(STAGE_MAP_SCENE)
-		"edit": get_tree().change_scene_to_file(BASE_CAMP_SCENE)
-		"ladder": get_tree().change_scene_to_file(MAIN_MENU_SCENE)
-		_: get_tree().change_scene_to_file(LEVEL_SELECT_SCENE)
+		"stage": Router.goto("stage_map")
+		"edit": Router.goto("base_camp")
+		"ladder": Router.goto("main_menu")
+		_: Router.goto("level_select")
 
 # V5-S9 天梯：把选好的卡组存到服务器槽1（lobby 按槽取卡组建房）→ 进 PVP 匹配。
 func _go_ladder() -> void:
@@ -274,7 +268,7 @@ func _go_ladder() -> void:
 	http.queue_free()
 	if ok:
 		print("[V5][deck] 天梯卡组已存槽1 → 进匹配 deck=%s" % str(_selected))
-		get_tree().change_scene_to_file(NET_BATTLE_SCENE)
+		Router.goto("net_battle")
 	else:
 		_ladder_toast("卡组保存失败，请重试")
 		_reset_ladder_btn()

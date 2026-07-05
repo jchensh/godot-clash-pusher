@@ -12,8 +12,6 @@ const GameStateScript := preload("res://view/game_state.gd")
 const StageProgressScript := preload("res://logic/stage_progress.gd")
 const BG_TEX := preload("res://assets/ui/menu_bg.png")
 
-const MENU_SCENE := "res://view/main_menu.tscn"
-const STAGE_MAP_SCENE := "res://view/stage_map.tscn"          # S7c（未建则提示）
 
 var _http: HTTPRequest
 var _wallet_holder: Control
@@ -36,7 +34,7 @@ func _ready() -> void:
 func _build_static() -> void:
 	var bg := TextureRect.new()
 	bg.texture = BG_TEX
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
@@ -166,16 +164,10 @@ func _on_collect_pressed() -> void:
 		_populate(GameStateScript.economy().get_cache(), config)
 
 func _on_stage_pressed() -> void:
-	_go(STAGE_MAP_SCENE, "闯关地图（S7c）即将上线")
+	Router.goto("stage_map")
 
 func _on_back_pressed() -> void:
-	get_tree().change_scene_to_file(MENU_SCENE)
-
-func _go(path: String, not_ready_hint: String) -> void:
-	if ResourceLoader.exists(path):
-		get_tree().change_scene_to_file(path)
-	else:
-		_toast(not_ready_hint)
+	Router.goto("main_menu")
 
 # ---------- ui builders（沿用 main_menu 范式）----------
 func _center_label(text: String, y: float, font_size: int, color: Color) -> Label:

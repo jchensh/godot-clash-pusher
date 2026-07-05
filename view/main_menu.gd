@@ -11,14 +11,6 @@ const BG_TEX := preload("res://assets/ui/menu_bg.png")
 const GameStateScript := preload("res://view/game_state.gd")
 const CampaignStateScript := preload("res://logic/campaign_state.gd")
 
-const ACCOUNT_CREATE_SCENE := "res://view/account_create.tscn"
-const BASE_CAMP_SCENE := "res://view/base_camp.tscn"          # 闯关 PVE 中枢
-const CARD_COLLECTION_SCENE := "res://view/card_collection.tscn"  # 养成
-const DECK_BUILDER_SCENE := "res://view/deck_builder.tscn"
-const RUN_SCENE := "res://view/run_scene.tscn"                # 探险 Roguelite
-const SETTINGS_SCENE := "res://view/settings.tscn"
-const BATTLE_SCENE := "res://view/battle_scene.tscn"          # 新手引导战
-
 var _status: Label
 
 func _ready() -> void:
@@ -31,7 +23,7 @@ func _ready() -> void:
 func _build_bg() -> void:
 	var bg := TextureRect.new()
 	bg.texture = BG_TEX
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
@@ -55,7 +47,7 @@ func _bootstrap() -> void:
 	if session.needs_account_setup():
 		print("[V5][menu] 新账号未创号 → account_create")
 		http.queue_free()
-		get_tree().change_scene_to_file(ACCOUNT_CREATE_SCENE)
+		Router.goto("account_create")
 		return
 	# 未完成新手引导 → 强制引导战（打完一局回菜单）。
 	if not session.tutorial_done():
@@ -74,7 +66,7 @@ func _start_tutorial() -> void:
 	GameStateScript.campaign_last_result = 0
 	GameStateScript.tutorial = true
 	GameStateScript.stage_id = ""
-	get_tree().change_scene_to_file(BATTLE_SCENE)
+	Router.goto("battle")
 
 # —— 菜单（路由放行后才建）——
 func _build_menu(online: bool) -> void:
@@ -99,25 +91,24 @@ func _on_ladder() -> void:
 	# V5-S9 改动5：天梯先选卡组（存槽1）再进匹配。
 	GameStateScript.deck_mode = "ladder"
 	GameStateScript.stage_id = ""
-	get_tree().change_scene_to_file(DECK_BUILDER_SCENE)
+	Router.goto("deck_builder")
 
 func _on_stage() -> void:
-	get_tree().change_scene_to_file(BASE_CAMP_SCENE)
+	Router.goto("base_camp")
 
 func _on_progression() -> void:
-	if ResourceLoader.exists(CARD_COLLECTION_SCENE):
-		get_tree().change_scene_to_file(CARD_COLLECTION_SCENE)
+	Router.goto("card_collection")
 
 func _on_deck() -> void:
 	GameStateScript.deck_mode = "edit"
 	GameStateScript.stage_id = ""
-	get_tree().change_scene_to_file(DECK_BUILDER_SCENE)
+	Router.goto("deck_builder")
 
 func _on_run() -> void:
-	get_tree().change_scene_to_file(RUN_SCENE)
+	Router.goto("run")
 
 func _on_settings() -> void:
-	get_tree().change_scene_to_file(SETTINGS_SCENE)
+	Router.goto("settings")
 
 # ---------- ui builders ----------
 func _title(text: String, y: float, font_size: int) -> void:

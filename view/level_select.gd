@@ -8,8 +8,6 @@ const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const BG_TEX := preload("res://assets/ui/menu_bg.png")
 const GameStateScript = preload("res://view/game_state.gd")
 const ConfigLoaderScript = preload("res://logic/config_loader.gd")
-const DECK_BUILDER_SCENE := "res://view/deck_builder.tscn"
-const MENU_SCENE := "res://view/main_menu.tscn"
 
 # 5 档（V3-9）：rookie→extreme 由易到难；底色渐变 青绿→绿→蓝→琥珀→深红。
 const DIFF_RANK := {"rookie": 0, "easy": 1, "normal": 2, "hard": 3, "extreme": 4}
@@ -28,7 +26,7 @@ func _ready() -> void:
 func _build() -> void:
 	var bg := TextureRect.new()
 	bg.texture = BG_TEX
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
@@ -70,10 +68,10 @@ func _choose(level_id: String) -> void:
 	GameStateScript.level_id = level_id
 	GameStateScript.deck_mode = "level"   # 自由对战上下文（清 stage_id，避免 stale 闯关态串味）
 	GameStateScript.stage_id = ""
-	get_tree().change_scene_to_file(DECK_BUILDER_SCENE)
+	Router.goto("deck_builder")
 
 func _on_back() -> void:
-	get_tree().change_scene_to_file(MENU_SCENE)
+	Router.goto("main_menu")
 
 # ---------- 关卡卡片 ----------
 func _level_button(level: Dictionary, level_id: String, y: float) -> void:

@@ -14,8 +14,6 @@ const StageProgressScript := preload("res://logic/stage_progress.gd")
 const RewardChestScript := preload("res://view/ui/reward_chest.gd")
 const BG_TEX := preload("res://assets/ui/menu_bg.png")
 
-const BASE_CAMP_SCENE := "res://view/base_camp.tscn"
-const DECK_BUILDER_SCENE := "res://view/deck_builder.tscn"
 
 const ROW_CLEARED_BG := Color("1f2a24"); const ROW_CLEARED_BD := Color("3b6d3a")
 const ROW_CURRENT_BG := Color("2a2110"); const ROW_CURRENT_BD := Color("ecb94e")
@@ -36,7 +34,7 @@ func _ready() -> void:
 func _build_static() -> void:
 	var bg := TextureRect.new()
 	bg.texture = BG_TEX
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
@@ -206,11 +204,11 @@ func _challenge(sid: String) -> void:
 	GameStateScript.stage_id = sid
 	GameStateScript.deck_mode = "stage"
 	print("[V5][map] 挑战 %s → 组卡(stage)" % sid)
-	get_tree().change_scene_to_file(DECK_BUILDER_SCENE)
+	Router.goto("deck_builder")
 
 func _on_back() -> void:
 	AudioManager.play_sfx("ui_button_back")
-	get_tree().change_scene_to_file(BASE_CAMP_SCENE)
+	Router.goto("base_camp")
 
 func _show_chest(reward: Dictionary) -> void:
 	var chest = RewardChestScript.new()

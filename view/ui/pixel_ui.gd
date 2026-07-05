@@ -11,6 +11,8 @@
 # 2. 提示/跳字走 `UI.toast()`（TOAST 层恒最顶且 IGNORE 不挡手），别在场景里手写 Label+tween。
 # 3. z_index 只影响绘制不影响 Control 点击命中——想挡输入必须配 mouse_filter，别指望 z_index。
 # 4. 想绕 GUI 做前置 `Node._input` 拦截（DragScroll 类）：必须先查 `UI.modal_open()` 让路弹窗层。
+# 5. 想铺满（全屏根/暗幕/幕布）必须 `set_anchors_and_offsets_preset`——裸 set_anchors_preset 只改
+#    锚点且保留当前矩形（新节点=0×0 隐形不拦输入，2026-07-06 P0 教训），view 层已单测封禁。
 extends RefCounted
 
 # —— 色板（黑暗中世纪夜色，权威常量；改色重跑 gen_ui_assets.py）——
@@ -70,7 +72,7 @@ static func sbpixel(bg: Color, border_w: int = 3, border_col: Color = Color(0, 0
 static func add_background(parent: Control) -> TextureRect:
 	var bg := TextureRect.new()
 	bg.texture = load("res://assets/ui/menu_bg.png")
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(bg)

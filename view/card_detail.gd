@@ -11,7 +11,6 @@ const GameStateScript := preload("res://view/game_state.gd")
 const SpriteDB := preload("res://view/sprite_db.gd")
 const BG_TEX := preload("res://assets/ui/menu_bg.png")
 
-const COLLECTION_SCENE := "res://view/card_collection.tscn"
 const RARITY_COL := {
 	"common": Color("9aa0ad"), "rare": Color("4a6db0"),
 	"epic": Color("7c5ea8"), "legendary": Color("d8a23a"),
@@ -37,7 +36,7 @@ func _ready() -> void:
 func _build_static() -> void:
 	var bg := TextureRect.new()
 	bg.texture = BG_TEX
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
@@ -47,7 +46,7 @@ func _build_static() -> void:
 	_wallet_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_wallet_holder)
 	_content = Control.new()
-	_content.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_content)
 	_back_button(1168)
@@ -192,7 +191,7 @@ func _err_text(code: int) -> String:
 
 func _on_back() -> void:
 	AudioManager.play_sfx("ui_button_back")
-	get_tree().change_scene_to_file(COLLECTION_SCENE)
+	Router.goto("card_collection")
 
 # ---------- 小部件 ----------
 func _action_btn(label: String, kind: String, cost_icon: String, cost: int, ok: bool, pos: Vector2, w: float, cb: Callable, disabled_hint := "") -> void:

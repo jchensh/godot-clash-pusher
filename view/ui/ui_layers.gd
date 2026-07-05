@@ -1,6 +1,7 @@
 # UILayers（autoload `UI`）—— 客户端 UI 层级骨架（PLAN_V5_UIFRAME F1，KAN-97）。
 #
-# 全局 CanvasLayer 栈：场景自身在 layer 0，MODAL=50（弹窗/结算/覆盖层）< TOAST=90（提示，恒不挡手）。
+# 全局 CanvasLayer 栈：场景自身在 layer 0，MODAL=50（弹窗/结算/覆盖层）< TOAST=90（提示，恒不挡手）
+# < 转场幕布=100（autoload Router 切场景黑幕，view/scene_router.gd，KAN-99）。
 # Godot 分发 GUI 输入按 CanvasLayer 从高到低：modal 开着时场景层**从机制上**收不到点击——
 # 不再依赖各弹窗自觉 STOP / 兄弟树序压层（KAN-98 教训：Control 输入命中按树序，与 z_index 无关）。
 # 入口：UI.modal(node) 推弹窗（配 view/ui/modal.gd 基类）；UI.toast(msg) 打提示。
@@ -30,10 +31,18 @@ func modal(m: Control) -> void:
 	if m.has_method("_assemble"):
 		m._assemble()   # Modal 基类幂等装配兜底（离线树不触发 _ready 时仍完成装配）
 	var scene: Node = get_tree().current_scene if is_inside_tree() else null
+	print("[UI] modal 推入 %s（清理绑定场景=%s）" % [m.name, scene.name if scene != null else "<null>"])
 	if scene != null:
+		# 捕获 instance_id 而非对象：弹窗常在场景退出前就正常关闭（教程撤层/开箱看完），
+		# lambda 捕获已释放对象会让引擎打「Lambda capture was freed」错（2026-07-06 验收实测）；
+		# ID 永不复用，instance_from_id 查无此人即安静跳过。
+		var mid: int = m.get_instance_id()
+		var scene_name: String = String(scene.name)
 		scene.tree_exiting.connect(func() -> void:
-			if is_instance_valid(m):
-				m.queue_free()
+			var mm: Object = instance_from_id(mid)
+			if mm != null:
+				print("[UI] modal 随场景退出自动清: %s（场景=%s）" % [(mm as Node).name, scene_name])
+				(mm as Node).queue_free()
 		, CONNECT_ONE_SHOT)
 
 func modal_open() -> bool:

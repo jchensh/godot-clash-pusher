@@ -68,6 +68,10 @@ func test_modal_dim_assembly() -> void:
 	ui.modal(m)
 	assert_eq(m.mouse_filter, Control.MOUSE_FILTER_STOP, "根 STOP 兜底拦截")
 	assert_true(m.get_child_count() > 0 and m.get_child(0) is ColorRect, "默认装暗幕 ColorRect 且垫底")
+	var dim_vp := (m.get_child(0) as ColorRect).get_viewport()
+	if dim_vp != null and dim_vp.get_visible_rect().size.x > 1.0:
+		var dim_rs: Vector2 = (m.get_child(0) as ColorRect).get_global_rect().size
+		assert_true(dim_rs.x > 1.0 and dim_rs.y > 1.0, "暗幕实际矩形已铺开（实测=%s）" % dim_rs)
 	var m2 = ModalScript.new()
 	m2.dim_alpha = 0.0          # 结算层形态：演出黑幕由场景 _draw 渐入，本层无暗幕
 	ui.modal(m2)
@@ -91,6 +95,14 @@ func test_modal_isolation_structure() -> void:
 	assert_almost_eq(m.anchor_top, 0.0, 0.001, "全屏锚 上")
 	assert_almost_eq(m.anchor_right, 1.0, 0.001, "全屏锚 右")
 	assert_almost_eq(m.anchor_bottom, 1.0, 0.001, "全屏锚 下")
+	# 2026-07-06 P0 回归网：光看锚点会漏 set_anchors_preset「保留当前矩形→永远 0×0」陷阱
+	# （教程弹层点不到、手牌照常可拖的根因）。offline 树无视口尺寸则跳过——稳定防线 =
+	# test_scene_router 的源码封禁扫描；真实几何已由 headless 实跑探针钉死（720×1280）。
+	var vp: Viewport = m.get_viewport()
+	var vps: Vector2 = vp.get_visible_rect().size if vp != null else Vector2.ZERO
+	if vps.x > 1.0:
+		var rs: Vector2 = m.get_global_rect().size
+		assert_true(rs.x > 1.0 and rs.y > 1.0, "根实际矩形已铺开（实测=%s）" % rs)
 
 func test_dragscroll_yields_to_modal() -> void:
 	# 双保险①：DragScroll 是 Node._input 前置拦截，CanvasLayer 挡不住它，必须自觉对 modal 让路。

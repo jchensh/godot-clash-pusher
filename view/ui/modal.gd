@@ -22,12 +22,14 @@ func _assemble() -> void:
 	if _assembled:
 		return
 	_assembled = true
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	# ⚠️ 必须用带 offsets 版：set_anchors_preset 只改锚点并保留当前矩形（新建节点=0×0 → 永远 0×0，
+	# 根本拦不到输入）——2026-07-06 P0 实锤（教程弹层点不到、手牌照常可拖），勿回退。
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	if dim_alpha > 0.0:
 		var d := ColorRect.new()
 		d.color = Color(0.04, 0.03, 0.07, dim_alpha)   # 夜色石板调，对齐 PixelUI 暗幕语言
-		d.set_anchors_preset(Control.PRESET_FULL_RECT)
+		d.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		d.mouse_filter = Control.MOUSE_FILTER_IGNORE   # 输入由本层根统一拦
 		add_child(d)
 		move_child(d, 0)
@@ -42,6 +44,7 @@ func close() -> void:
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		print("[UI] modal 收到点击 → _on_bg_click（%s）" % name)
 		_on_bg_click()
 
 func _on_bg_click() -> void:

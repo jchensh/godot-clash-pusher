@@ -5,7 +5,6 @@ extends Control
 
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const GameStateScript := preload("res://view/game_state.gd")
-const MENU_SCENE := "res://view/main_menu.tscn"
 
 var _http: HTTPRequest
 var _gm_status: Label = null
@@ -48,7 +47,7 @@ func _layout_button(text: String, lay: String, x: float, y: float, active: bool)
 func _set_layout(lay: String) -> void:
 	AudioManager.play_sfx("ui_button_press")
 	GameStateScript.set_battle_layout(lay)
-	get_tree().reload_current_scene()   # 重建本页刷新按钮态（对齐 _set_lang）
+	Router.reload()   # 重建本页刷新按钮态（对齐 _set_lang）
 
 func _lang_button(text: String, loc: String, x: float, y: float, active: bool) -> void:
 	var btn := Button.new()
@@ -65,7 +64,7 @@ func _lang_button(text: String, loc: String, x: float, y: float, active: bool) -
 
 func _set_lang(loc: String) -> void:
 	I18n.set_language(loc)
-	get_tree().reload_current_scene()   # 以新语言重建本页（即时见效）
+	Router.reload()   # 以新语言重建本页（即时见效）
 
 func _back_button(y: float) -> void:
 	var bw := 240.0
@@ -82,7 +81,7 @@ func _back_button(y: float) -> void:
 	add_child(btn)
 
 func _on_back() -> void:
-	get_tree().change_scene_to_file(MENU_SCENE)
+	Router.goto("main_menu")
 
 func _scale_to(c: Control, s: float) -> void:
 	create_tween().tween_property(c, "scale", Vector2(s, s), 0.07)

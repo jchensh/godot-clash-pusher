@@ -18,8 +18,6 @@ const BattleScript = preload("res://logic/battle.gd")
 const SpriteDB = preload("res://view/sprite_db.gd")
 const ModalScript = preload("res://view/ui/modal.gd")   # F2：奖励/结算覆盖层走 UI.modal 弹窗层
 
-const BATTLE_SCENE := "res://view/battle_scene.tscn"
-const MENU_SCENE := "res://view/main_menu.tscn"
 const OFFER_COUNT := 3
 
 const GOLD := Color(1.0, 0.84, 0.36)
@@ -220,7 +218,7 @@ func _on_fight() -> void:
 	if _mode != "none" or GameStateScript.run.is_over():
 		return
 	AudioManager.play_sfx("run_node_select")
-	get_tree().change_scene_to_file(BATTLE_SCENE)   # battle_scene 读 GameState.run 自行建场
+	Router.goto("battle")   # battle_scene 读 GameState.run 自行建场
 
 func _on_pick(id) -> void:
 	if _picking:
@@ -283,12 +281,12 @@ func _on_new_run() -> void:
 
 func _on_menu() -> void:
 	AudioManager.play_sfx("ui_button_back")
-	get_tree().change_scene_to_file(MENU_SCENE)
+	Router.goto("main_menu")
 
 func _on_summary_menu() -> void:
 	AudioManager.play_sfx("ui_button_back")
 	GameStateScript.run = null          # run 已结束，清掉（meta 已存盘）
-	get_tree().change_scene_to_file(MENU_SCENE)
+	Router.goto("main_menu")
 
 # ---------------- 小工具 ----------------
 func _build_bg() -> void:
@@ -296,7 +294,7 @@ func _build_bg() -> void:
 
 func _layer() -> Control:
 	var c := Control.new()
-	c.set_anchors_preset(Control.PRESET_FULL_RECT)
+	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(c)
 	return c

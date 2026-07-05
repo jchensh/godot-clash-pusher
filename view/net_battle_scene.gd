@@ -22,7 +22,6 @@ const BattleScript := preload("res://logic/battle.gd")
 const SpriteDB := preload("res://view/sprite_db.gd")
 const HudWidgets := preload("res://view/ui/hud_widgets.gd")   # V5-S9 双方名片
 const ModalScript := preload("res://view/ui/modal.gd")        # F1 弹窗基类（结算层走 UI.modal，修 KAN-98）
-const MainMenuScene := "res://view/main_menu.tscn"
 
 const TOPBAR_H := 54.0
 const HUD_BOTTOM_H := 176.0
@@ -213,7 +212,7 @@ func _on_cancel_pressed() -> void:
 	print("[net] 用户取消匹配，返回主菜单")
 	if _client != null:
 		_client.cancel_match()
-	get_tree().change_scene_to_file(MainMenuScene)
+	Router.goto("main_menu")
 
 
 func _on_matched(_your_side: int, opponent_name: String, _opponent_avatar: String) -> void:
@@ -1241,11 +1240,11 @@ func _result_btn(txt: String, y: float, cb: Callable) -> void:
 
 func _on_rematch() -> void:
 	AudioManager.play_sfx("ui_button_press")
-	get_tree().reload_current_scene()
+	Router.reload()
 
 func _on_menu() -> void:
 	AudioManager.play_sfx("ui_button_back")
-	get_tree().change_scene_to_file(MainMenuScene)
+	Router.goto("main_menu")
 
 
 func _unhandled_input(event: InputEvent) -> void:

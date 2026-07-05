@@ -9,8 +9,6 @@ const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const GameStateScript = preload("res://view/game_state.gd")
 const ConfigLoaderScript = preload("res://logic/config_loader.gd")
 const CampaignStateScript = preload("res://logic/campaign_state.gd")
-const BATTLE_SCENE := "res://view/battle_scene.tscn"
-const MENU_SCENE := "res://view/main_menu.tscn"
 
 const C_DONE := Color(0.22, 0.40, 0.26)
 const C_CURRENT := Color(0.50, 0.42, 0.16)
@@ -75,11 +73,11 @@ func _build() -> void:
 
 func _on_fight() -> void:
 	AudioManager.play_sfx("run_node_select")
-	get_tree().change_scene_to_file(BATTLE_SCENE)   # battle_scene 读 GameState.campaign 自行建场
+	Router.goto("battle")   # battle_scene 读 GameState.campaign 自行建场
 
 func _on_menu() -> void:
 	AudioManager.play_sfx("ui_button_back")
-	get_tree().change_scene_to_file(MENU_SCENE)
+	Router.goto("main_menu")
 
 # ---------- 小工具 ----------
 func _panel(pos: Vector2, size: Vector2, bg: Color, border: Color, bw: int) -> Control:
