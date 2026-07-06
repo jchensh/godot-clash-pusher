@@ -234,14 +234,14 @@ func _on_battle() -> void:
 		return
 	# edit 模式（基地编辑）= 只存卡组回基地；其余 = 进战斗（battle 读 stage_id 选闯关/自由）。
 	if _mode == "edit":
-		print("[V5][deck] 保存卡组回基地 deck=%s" % str(_selected))
+		Log.i("[V5][deck] 保存卡组回基地 deck=%s" % str(_selected))
 		Router.goto("base_camp")
 		return
 	# ★ 单人对战上下文互斥：清掉 roguelite/战役 静态状态，避免 battle 因 stale run/campaign
 	#   误判模式（战后弹去肉鸽/战役并推进）。battle 据 stage_id 选闯关 vs 自由。
 	GameStateScript.run = null
 	GameStateScript.campaign = null
-	print("[V5][deck] 出战 mode=%s stage_id='%s' deck=%s" % [_mode, GameStateScript.stage_id, str(_selected)])
+	Log.i("[V5][deck] 出战 mode=%s stage_id='%s' deck=%s" % [_mode, GameStateScript.stage_id, str(_selected)])
 	Router.goto("battle")
 
 func _on_back() -> void:
@@ -267,7 +267,7 @@ func _go_ladder() -> void:
 	var ok: bool = await session.save_deck(http, 1, _selected.duplicate())
 	http.queue_free()
 	if ok:
-		print("[V5][deck] 天梯卡组已存槽1 → 进匹配 deck=%s" % str(_selected))
+		Log.i("[V5][deck] 天梯卡组已存槽1 → 进匹配 deck=%s" % str(_selected))
 		Router.goto("net_battle")
 	else:
 		_ladder_toast("卡组保存失败，请重试")

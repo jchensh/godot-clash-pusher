@@ -31,7 +31,7 @@ func modal(m: Control) -> void:
 	if m.has_method("_assemble"):
 		m._assemble()   # Modal 基类幂等装配兜底（离线树不触发 _ready 时仍完成装配）
 	var scene: Node = get_tree().current_scene if is_inside_tree() else null
-	print("[UI] modal 推入 %s（清理绑定场景=%s）" % [m.name, scene.name if scene != null else "<null>"])
+	Log.i("[UI] modal 推入 %s（清理绑定场景=%s）" % [m.name, scene.name if scene != null else "<null>"])
 	if scene != null:
 		# 捕获 instance_id 而非对象：弹窗常在场景退出前就正常关闭（教程撤层/开箱看完），
 		# lambda 捕获已释放对象会让引擎打「Lambda capture was freed」错（2026-07-06 验收实测）；
@@ -41,7 +41,7 @@ func modal(m: Control) -> void:
 		scene.tree_exiting.connect(func() -> void:
 			var mm: Object = instance_from_id(mid)
 			if mm != null:
-				print("[UI] modal 随场景退出自动清: %s（场景=%s）" % [(mm as Node).name, scene_name])
+				Log.i("[UI] modal 随场景退出自动清: %s（场景=%s）" % [(mm as Node).name, scene_name])
 				(mm as Node).queue_free()
 		, CONNECT_ONE_SHOT)
 

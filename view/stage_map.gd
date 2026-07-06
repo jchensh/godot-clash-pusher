@@ -77,10 +77,10 @@ func _bootstrap() -> void:
 	var reward = null
 	var pending = GameStateScript.stage_last_result
 	if typeof(pending) == TYPE_DICTIONARY and pending.has("stage_id"):
-		print("[V5][map] 收到战后结果 %s" % str(pending))
+		Log.i("[V5][map] 收到战后结果 %s" % str(pending))
 		GameStateScript.stage_last_result = {}
 		reward = await _report_and_delta(pending, token, all_ids, econ, config)
-		print("[V5][map] 发奖结果 %s" % str(reward))
+		Log.i("[V5][map] 发奖结果 %s" % str(reward))
 	_populate(econ.get_cache(), config)
 	if reward != null:
 		_show_chest(reward)
@@ -89,7 +89,7 @@ func _report_and_delta(pending: Dictionary, token: String, all_ids: Array, econ,
 	var sid := String(pending.get("stage_id", ""))
 	var stars := int(pending.get("stars", 0))
 	if stars < 1 or sid == "":
-		print("[V5][map] %s 未通关(stars=%d) → 不上报、不发奖" % [sid, stars])
+		Log.i("[V5][map] %s 未通关(stars=%d) → 不上报、不发奖" % [sid, stars])
 		return null   # 未通关 = 不上报、不开箱
 	var cache = econ.get_cache()
 	var was_cleared := cache != null and bool((cache.stages.get(sid, {}) as Dictionary).get("cleared", false))
@@ -203,7 +203,7 @@ func _challenge(sid: String) -> void:
 	AudioManager.play_sfx("ui_button_press")
 	GameStateScript.stage_id = sid
 	GameStateScript.deck_mode = "stage"
-	print("[V5][map] 挑战 %s → 组卡(stage)" % sid)
+	Log.i("[V5][map] 挑战 %s → 组卡(stage)" % sid)
 	Router.goto("deck_builder")
 
 func _on_back() -> void:

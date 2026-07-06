@@ -181,7 +181,7 @@ func _ready() -> void:
 		# 战役模式：当前关 level_id + 关卡默认教学卡组（不受组卡影响）。
 		if campaign.current_focus() == "boss":
 			battle_music_id = "music_battle_boss"
-		print("[V5][battle] 模式=战役 关=%s" % campaign.current_level_id())
+		Log.i("[V5][battle] 模式=战役 关=%s" % campaign.current_level_id())
 		match_obj.setup(campaign.current_level_id(), [])
 	elif run != null and not run.is_over():
 		# Roguelite 模式：当前节点 level_id + run 卡组 + relic/节点难度修正器。
@@ -193,7 +193,7 @@ func _ready() -> void:
 		var nm: Dictionary = RunModifiersScript.node_mod(loader.get_run("default"), node_type)
 		if not nm.is_empty():
 			mods.append(nm)
-		print("[V5][battle] 模式=肉鸽 关=%s" % String(node.get("level_id")))
+		Log.i("[V5][battle] 模式=肉鸽 关=%s" % String(node.get("level_id")))
 		match_obj.setup(String(node.get("level_id")), run.deck, mods)
 	elif GameStateScript.stage_id != "":
 		# V5-S7c 闯关模式：setup_stage 注入 coef/遭遇/ai + 服务器拉来的养成档（for_battle，权威 level/rank）。
@@ -204,26 +204,26 @@ func _ready() -> void:
 		var start_res: Dictionary = await GameStateScript.economy().pve_start(
 			_pve_http, GameStateScript.session().token(), GameStateScript.stage_id, GameStateScript.player_deck)
 		if not bool(start_res.get("ok", false)):
-			print("[V5][pve] 开战报到失败 → 弹回闯关地图（断线即不可玩）")
+			Log.w("[V5][pve] 开战报到失败 → 弹回闯关地图（断线即不可玩）")
 			GameStateScript.stage_id = ""
 			GameStateScript.deck_mode = ""
 			Router.goto("stage_map")
 			return
 		_pve_battle_id = int(start_res.get("battle_id", 0))
 		var pdata = GameStateScript.economy().for_battle(loader.cards.keys())
-		print("[V5][battle] 模式=闯关 stage=%s deck=%s battle_id=%d" % [GameStateScript.stage_id, str(GameStateScript.player_deck), _pve_battle_id])
+		Log.i("[V5][battle] 模式=闯关 stage=%s deck=%s battle_id=%d" % [GameStateScript.stage_id, str(GameStateScript.player_deck), _pve_battle_id])
 		match_obj.setup_stage(GameStateScript.stage_id, GameStateScript.player_deck, pdata)
 		# KAN-79：录制器挂双方出牌 + 周期哈希，战斗中批量上报（重放验证的证据链）。
 		_pve_recorder = PveRecorderScript.new()
 		_pve_recorder.battle_id = _pve_battle_id
 		_pve_recorder.attach(match_obj)
 	else:
-		print("[V5][battle] 模式=自由 关=%s" % GameStateScript.level_id)
+		Log.i("[V5][battle] 模式=自由 关=%s" % GameStateScript.level_id)
 		match_obj.setup(GameStateScript.level_id, GameStateScript.player_deck)
 	# H2 横版实验开关：仅 PvE 生效；战役/新手引导强制竖版（教程高亮是竖版语义，且新手不吃实验特性）。
 	var pve_free: bool = (campaign == null or campaign.is_over()) and not GameStateScript.tutorial
 	_landscape = pve_free and GameStateScript.battle_layout() == "landscape"
-	print("[V5][battle] 版式=%s" % ("横版(实验·我左敌右)" if _landscape else "竖版"))
+	Log.i("[V5][battle] 版式=%s" % ("横版(实验·我左敌右)" if _landscape else "竖版"))
 	AudioManager.play_music(battle_music_id)
 	AudioManager.play_ambience("amb_battle_wind")
 	match_obj.set_opponent_controller(AIControllerScript.new(match_obj, loader))
@@ -1195,7 +1195,7 @@ func _on_stage_return() -> void:
 	}
 	var goals = loader.get_stage(sid).get("stars", [])
 	var stars: int = StageProgressScript.judge_stars(goals if goals is Array else [], outcome)
-	print("[V5][battle] 闯关战后 stage=%s won=%s king_hp=%.2f dur=%.1fs → stars=%d" % [sid, str(outcome.won), outcome.king_hp_pct, outcome.duration_sec, stars])
+	Log.i("[V5][battle] 闯关战后 stage=%s won=%s king_hp=%.2f dur=%.1fs → stars=%d" % [sid, str(outcome.won), outcome.king_hp_pct, outcome.duration_sec, stars])
 	var summary := {}
 	if _pve_recorder != null:
 		await _pve_recorder.flush(GameStateScript.economy(), _pve_http, GameStateScript.session().token())

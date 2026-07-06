@@ -11,7 +11,7 @@ extends RefCounted
 ##   add_child(http)                       # HTTPRequest 必须在 SceneTree 里
 ##   var res = await auth.login(http)
 ##   if res.ok:
-##       print("logged in, token=", auth.access_token)
+##       Log.i("logged in, token=%s" % auth.access_token)
 ##
 ## 后续 V4-S2 起的 profile / V4-S3 起的 WS 会复用 auth.access_token 做鉴权。
 

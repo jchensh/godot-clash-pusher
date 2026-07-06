@@ -63,7 +63,7 @@ func start(server_ws_url: String, token: String, deck_slot: int = 1) -> int:
 	_ws_url = server_ws_url
 	_token = token
 	_deck_slot = deck_slot
-	print("[net] 连接 + 匹配中 (卡组槽 %d)" % deck_slot)
+	Log.i("[net] 连接 + 匹配中 (卡组槽 %d)" % deck_slot)
 	return ws.connect_to(_full_url())
 
 
@@ -97,14 +97,14 @@ func poll(delta: float = 0.0) -> void:
 func _on_opened() -> void:
 	if _room_id == "":
 		# 首次连上 → 发 FindMatch 入队匹配。
-		print("[net] 已连上 gateway，发送 FindMatch（卡组槽=%d，arena=1）" % _deck_slot)
+		Log.i("[net] 已连上 gateway，发送 FindMatch（卡组槽=%d，arena=1）" % _deck_slot)
 		var req = _MatchPb.FindMatchReq.new()
 		req.set_deck_slot(_deck_slot)
 		req.set_arena(1)
 		ws.send_frame(_CommonPb.MsgId.FIND_MATCH_REQ, req.to_bytes())
 	else:
 		# 已匹配后断线重连 → 用 room_id 回到原房。
-		print("[net] 重连已连上，发送 JoinRoom（房=%s）回原局" % _room_id)
+		Log.i("[net] 重连已连上，发送 JoinRoom（房=%s）回原局" % _room_id)
 		var jr = _BattlePb.JoinRoomReq.new()
 		jr.set_room_id(_room_id)
 		ws.send_frame(_CommonPb.MsgId.JOIN_ROOM_REQ, jr.to_bytes())
@@ -114,7 +114,7 @@ func _on_closed() -> void:
 	if _ended:
 		return
 	if not _started:
-		print("[net] 连接关闭（尚未进房，多为匹配前连不上服务器/被拒）→ 掉线")
+		Log.w("[net] 连接关闭（尚未进房，多为匹配前连不上服务器/被拒）→ 掉线")
 		disconnected.emit()   # 还没 join 成功就断 → 直接报掉线
 		return
 	if not _reconnecting:
@@ -122,7 +122,7 @@ func _on_closed() -> void:
 		_reconnecting = true
 		_reconnect_accum = 0.0
 		_reconnect_elapsed = 0.0
-		print("[net] 连接中断, 重连中…")
+		Log.i("[net] 连接中断, 重连中…")
 		reconnecting.emit()
 
 
@@ -147,7 +147,7 @@ func _on_frame(msg_id: int, payload: PackedByteArray) -> void:
 func _handle_match_found(payload: PackedByteArray) -> void:
 	var mf = _MatchPb.MatchFoundPush.new()
 	if mf.from_bytes(payload) != _MatchPb.PB_ERR.NO_ERRORS:
-		print("[net] ⚠ MatchFoundPush 解析失败，丢弃")
+		Log.w("[net] ⚠ MatchFoundPush 解析失败，丢弃")
 		return
 	_room_id = mf.get_room_id()   # 非空后,断线重连走 JoinRoom(room_id)
 	var opp_name := ""
@@ -156,13 +156,13 @@ func _handle_match_found(payload: PackedByteArray) -> void:
 	if opp != null:
 		opp_name = opp.get_nickname()
 		opp_avatar = opp.get_avatar_card_id()
-	print("[net] 已匹配: 对手=%s 我方=%d 房间=%s" % [opp_name, mf.get_your_side(), _room_id])
+	Log.i("[net] 已匹配: 对手=%s 我方=%d 房间=%s" % [opp_name, mf.get_your_side(), _room_id])
 	matched.emit(mf.get_your_side(), opp_name, opp_avatar)
 
 
 ## 匹配中取消(退队)。服务端按账号出队,不需要 queue_id。
 func cancel_match() -> void:
-	print("[net] 发送取消匹配（退队）")
+	Log.i("[net] 发送取消匹配（退队）")
 	ws.send_frame(_CommonPb.MsgId.CANCEL_MATCH_REQ, _MatchPb.CancelMatchReq.new().to_bytes())
 
 
@@ -171,7 +171,7 @@ func cancel_match() -> void:
 func _handle_join_resp(payload: PackedByteArray) -> void:
 	var resp = _BattlePb.JoinRoomResp.new()
 	if resp.from_bytes(payload) != _BattlePb.PB_ERR.NO_ERRORS:
-		print("[net] ⚠ JoinRoomResp 解析失败，丢弃")
+		Log.w("[net] ⚠ JoinRoomResp 解析失败，丢弃")
 		return
 	your_side = resp.get_your_side()
 	# side1→player(OWNER_PLAYER)，side2→opponent(OWNER_OPPONENT)，两端一致建同一初始态。
@@ -182,7 +182,7 @@ func _handle_join_resp(payload: PackedByteArray) -> void:
 	# 空 progress（旧服务端）→ 不注入保持白板；本地 EconomyStateCache 不参与（防改缓存作弊）。
 	_inject_progress(match_obj.player, resp.get_side1_progress())
 	_inject_progress(match_obj.opponent, resp.get_side2_progress())
-	print("[net][KAN-76] 养成注入: side1[%s] side2[%s]" % [
+	Log.i("[net][KAN-76] 养成注入: side1[%s] side2[%s]" % [
 		_progress_summary(resp.get_side1_progress()), _progress_summary(resp.get_side2_progress())])
 	_playing = true
 	_end_reported = false
@@ -195,7 +195,7 @@ func _handle_join_resp(payload: PackedByteArray) -> void:
 	if opp != null:
 		opp_name = opp.get_nickname()
 		opp_avatar = opp.get_avatar_card_id()
-	print("[net] 进房, 我方=%d, 开打" % your_side)
+	Log.i("[net] 进房, 我方=%d, 开打" % your_side)
 	joined.emit(your_side, opp_name, opp_avatar)
 
 
@@ -287,7 +287,7 @@ func _handle_result(payload: PackedByteArray) -> void:
 	_playing = false
 	_ended = true
 	_reconnecting = false
-	print("[net] 对局结束: winner=%d reason=%d" % [res.get_winner(), res.get_reason()])
+	Log.i("[net] 对局结束: winner=%d reason=%d" % [res.get_winner(), res.get_reason()])
 	result.emit(res.get_winner(), res.get_reason())
 
 

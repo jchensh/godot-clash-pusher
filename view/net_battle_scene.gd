@@ -181,9 +181,9 @@ func _connect_flow() -> void:
 	_status = "登录中…"
 	if not await _session.ensure(_http):
 		_status = "登录失败，请检查网络/服务器"
-		print("[net] 登录失败，无法进入 PVP 匹配")
+		Log.w("[net] 登录失败，无法进入 PVP 匹配")
 		return
-	print("[net] 登录成功，ws=%s，进入 PVP 匹配" % _session.ws_url)
+	Log.i("[net] 登录成功，ws=%s，进入 PVP 匹配" % _session.ws_url)
 	_matchmaking = true
 	_status = "匹配中…"
 	_show_cancel_button()
@@ -209,14 +209,14 @@ func _show_cancel_button() -> void:
 
 
 func _on_cancel_pressed() -> void:
-	print("[net] 用户取消匹配，返回主菜单")
+	Log.i("[net] 用户取消匹配，返回主菜单")
 	if _client != null:
 		_client.cancel_match()
 	Router.goto("main_menu")
 
 
 func _on_matched(_your_side: int, opponent_name: String, _opponent_avatar: String) -> void:
-	print("[net] UI 收到匹配成功，对手=%s，等待进房建局" % opponent_name)
+	Log.i("[net] UI 收到匹配成功，对手=%s，等待进房建局" % opponent_name)
 	if opponent_name != "":
 		_status = "已匹配：%s，准备开战…" % opponent_name
 	else:
@@ -224,7 +224,7 @@ func _on_matched(_your_side: int, opponent_name: String, _opponent_avatar: Strin
 
 
 func _on_joined(your_side: int, opponent_name: String, opponent_avatar: String) -> void:
-	print("[net] UI 进房完成，我方 side=%d，视角翻转=%s，对手=%s，开始渲染战斗" % [your_side, str(your_side == 2), opponent_name])
+	Log.i("[net] UI 进房完成，我方 side=%d，视角翻转=%s，对手=%s，开始渲染战斗" % [your_side, str(your_side == 2), opponent_name])
 	_flip = your_side == 2
 	_matchmaking = false
 	_status = "对手：%s" % opponent_name if opponent_name != "" else ""
@@ -259,7 +259,7 @@ func _build_nameplates(opp_name: String, opp_avatar: String) -> void:
 
 
 func _on_result(winner: int, _reason: int) -> void:
-	print("[net] UI 收到对局结算，winner=%d（1=我方/2=对方/0=平）" % winner)
+	Log.i("[net] UI 收到对局结算，winner=%d（1=我方/2=对方/0=平）" % winner)
 	_end_winner = winner
 	_start_ending()
 	# 刷新档案，回主菜单时杯数已更新。
@@ -268,13 +268,13 @@ func _on_result(winner: int, _reason: int) -> void:
 
 
 func _on_disconnected() -> void:
-	print("[net] UI 连接彻底断开（重连窗口耗尽或匹配前断开）")
+	Log.w("[net] UI 连接彻底断开（重连窗口耗尽或匹配前断开）")
 	if not _ending:
 		_status = "连接断开"
 
 
 func _on_reconnecting() -> void:
-	print("[net] UI 连接中断，重连中…")
+	Log.i("[net] UI 连接中断，重连中…")
 	if not _ending:
 		_status = "连接中断，重连中…"
 

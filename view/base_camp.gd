@@ -86,10 +86,10 @@ func _build_idle_card(y: float) -> void:
 
 # ---------- 数据 ----------
 func _bootstrap() -> void:
-	print("[V5][base] 进入基地 → 登录 + 拉经济状态")
+	Log.i("[V5][base] 进入基地 → 登录 + 拉经济状态")
 	var session = GameStateScript.session()
 	if not await session.ensure(_http):
-		print("[V5][base] 登录失败 → 离线展示")
+		Log.w("[V5][base] 登录失败 → 离线展示")
 		_set_offline()
 		return
 	var config = GameStateScript.config()

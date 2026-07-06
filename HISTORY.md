@@ -929,3 +929,17 @@
 - **踩坑（记档纠偏）**：--script 单测模式下 **autoload 其实已挂 root**（F1 时期笔记「autoload 晚于测试加载」不准确——晚的是 _ready 级处理，不是节点挂载）。测试再 add_child 同名节点会被引擎自动改名 → 发射端查到真 autoload、订阅连在孤儿节点上收不到（探针二分实锤）。正解 = get-or-create 复用真 autoload（对齐 test_ui_layers._ui 先例）+ 测完 disconnect；「无总线」用例用临时改名藏 autoload 模拟缺席。
 - **真人验收用例（KAN-100）**：E-1 基地领挂机 → 钱包/挂机额即时刷新；E-2 卡详情升级/升阶/解锁 → 数值/按钮态即时刷新（金币扣减可见）；E-3 设置页 GM 任按一个 → 状态行即时更新；E-4 回归：闯关开箱/图鉴排序切换行为不变（未接总线页面）。
 - Jira：**KAN-100** 建单挂 Epic KAN-50 → 正在进行 → 代码+单测完成转 **In Review**。缺口 #3 日志 / #4 lint 待做。
+（后记：真人验收 E-1~E-4 全过 → **KAN-100 Done**，提交 `283e2cf`；顺带行为级验证 KAN-99 两修复。误入库的 default_bus_layout.tres 已删（`db1f7c5`）。）
+
+---
+
+### V5 · 框架地基#3 Log 日志系统（KAN-101，✅ 代码+单测完成待真人验收，2026-07-06）
+
+**做了什么（抄 Loggie 思路的零依赖薄版，对齐自写 runner 传统）**：
+- **`view/log.gd`（`class_name Log` 静态类，刻意非 autoload）**：`Log.d/i/w/e` 四级 + 相对时间戳（`[分:秒.毫秒][级] 内容`）+ 级别门槛（debug 构建全量 / release 构建剥离 d 级）+ w/e 转发 push_warning/push_error（编辑器调试器可见性保留）+ `_sink` 可注入（单测捕获输出；sink 接管后不向引擎转发，免得测试输出冒吓人 ERROR）。**选静态类不选 autoload**：logic/net 的 RefCounted 直调零依赖，绕开 Events 总线踩过的 main_loop 查找舞。
+- **收编 60 处裸 print（15 文件）**：view 10 文件 35 处 + net 5 文件 25 处（含 auth/profile 文档注释示例 2 处同步改）。**逐条定级**：失败/掉线/解析异常 →`w`（登录失败/服务器拒绝/WS 断线/pb 解析失败等 14 处）；高频噪声 →`d`（modal 收到点击、PVE 批次上报 ok）；业务里程碑 →`i`（场景流/经济动作/联机事件）。**豁免**：net/proto/（godobuf 生成物，改了会被重新生成覆盖）、tests/tools/addons（harness 输出）；logic 层摸底本就零 print。
+- **规约固化**：CLAUDE.md 架构铁律第 7 条「日志走 Log，禁裸 print」+ `test_log` 源码扫描（view/net/logic/ai 全量，豁免 log.gd 本体与 net/proto/）。
+- **验证**：`tests/test_log.gd` +4（级别过滤含 release 剥离语义 / w·e 恒过门槛 / 时间戳+级别格式 / 禁裸 print 扫描），全量 **393/393**；headless 冒烟实见新格式 `[00:00.527][I] [V5][menu] …`。纯客户端，docker 零操作。
+- **不做**（YAGNI，需要时再开）：文件落盘 sink（桌面版引擎默认已写 user://logs/godot.log；安卓真机要现场日志时再开 `debug/file_logging` 或接 sink）、远程日志上报。
+- **真人验收用例（KAN-101）**：L-1 F5 跑一圈常规流程（菜单→基地→闯关一局→养成升级→设置 GM）——输出台日志全部带 `[时:分.毫秒][级]` 前缀、信息与改造前等量不丢；L-2 编辑器 Debugger 的 Errors 面板——登录失败/服务器拒绝类此后以黄色 warning 呈现（w 级转发）；L-3 抽查无「裸」print 残留（无前缀行）。
+- Jira：**KAN-101** 建单挂 Epic KAN-50 → 正在进行 → 代码+单测完成转 **In Review**。缺口 #4 lint 工具链待做（最后一块）。

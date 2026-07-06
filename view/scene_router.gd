@@ -67,12 +67,12 @@ func goto(route: String, params: Dictionary = {}) -> void:
 		return
 	if _busy:
 		# 不丢单：新场景 _ready 里的自动重定向（登录路由/报到失败弹回）常落在转场收尾窗口内。
-		print("[Router] 转场进行中，暂存接力 goto(%s)" % route)
+		Log.i("[Router] 转场进行中，暂存接力 goto(%s)" % route)
 		_pending = [route, params]
 		return
 	_busy = true
 	_begin_route(route, params)
-	print("[Router] goto %s (%s)" % [route, path])
+	Log.i("[Router] goto %s (%s)" % [route, path])
 	_dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	await _fade_to(1.0)
 	var err := get_tree().change_scene_to_file(path)

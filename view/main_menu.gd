@@ -37,7 +37,7 @@ func _bootstrap() -> void:
 	var session = GameStateScript.session()
 	var ok: bool = await session.ensure(http)
 	if not ok:
-		print("[V5][menu] 登录失败 → 离线降级菜单")
+		Log.w("[V5][menu] 登录失败 → 离线降级菜单")
 		if _status != null:
 			_status.text = "（离线）未连接服务器"
 		_build_menu(false)
@@ -45,13 +45,13 @@ func _bootstrap() -> void:
 		return
 	# 未创号（服务器 avatar_card_id 为空）→ 创号页。
 	if session.needs_account_setup():
-		print("[V5][menu] 新账号未创号 → account_create")
+		Log.i("[V5][menu] 新账号未创号 → account_create")
 		http.queue_free()
 		Router.goto("account_create")
 		return
 	# 未完成新手引导 → 强制引导战（打完一局回菜单）。
 	if not session.tutorial_done():
-		print("[V5][menu] 新手引导未完成 → 强制引导战")
+		Log.i("[V5][menu] 新手引导未完成 → 强制引导战")
 		http.queue_free()
 		_start_tutorial()
 		return

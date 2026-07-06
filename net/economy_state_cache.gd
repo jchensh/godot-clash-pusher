@@ -24,11 +24,11 @@ func refresh(http, token: String, all_card_ids: Array) -> Dictionary:
 	var res: Dictionary = await _client.get_state(http, token)
 	if not bool(res.get("ok", false)):
 		last_error = res
-		print("[V5][econ] 拉状态失败 status=%d" % int(res.get("status_code", 0)))
+		Log.w("[V5][econ] 拉状态失败 status=%d" % int(res.get("status_code", 0)))
 		return res
 	# 服务器快照 → PlayerData（_apply 统一落地 + Events.economy_changed 广播，框架地基#2）。
 	_apply(res["state"], all_card_ids)
-	print("[V5][econ] 拉状态 ok gold=%d gems=%d 解锁=%d/%d highest=%s" % [cache.gold, cache.gems, cache.unlocked_card_ids().size(), cache.cards.size(), cache.highest_cleared])
+	Log.i("[V5][econ] 拉状态 ok gold=%d gems=%d 解锁=%d/%d highest=%s" % [cache.gold, cache.gems, cache.unlocked_card_ids().size(), cache.cards.size(), cache.highest_cleared])
 	return {"ok": true}
 
 
@@ -59,10 +59,10 @@ func collect_idle(http, token: String, all_card_ids: Array) -> Dictionary:
 	var res: Dictionary = await _client.collect_idle(http, token)
 	if bool(res.get("ok", false)):
 		_apply(res["state"], all_card_ids)
-		print("[V5][econ] 领挂机 ok gold %d→%d" % [before, cache.gold])
+		Log.i("[V5][econ] 领挂机 ok gold %d→%d" % [before, cache.gold])
 	else:
 		last_error = res
-		print("[V5][econ] 领挂机失败 status=%d code=%d" % [int(res.get("status_code", 0)), int(res.get("error_code", 0))])
+		Log.w("[V5][econ] 领挂机失败 status=%d code=%d" % [int(res.get("status_code", 0)), int(res.get("error_code", 0))])
 	return res
 
 
@@ -85,10 +85,10 @@ func _action(http, op: String, token: String, card_id: String, all_card_ids: Arr
 	if bool(res.get("ok", false)):
 		_apply(res["state"], all_card_ids)
 		var cs: Dictionary = cache.card_state(card_id)
-		print("[V5][econ] %s %s ok → gold=%d level=%d rank=%d unlocked=%s" % [op, card_id, cache.gold, int(cs.get("level", 0)), int(cs.get("rank", 0)), str(cache.is_unlocked(card_id))])
+		Log.i("[V5][econ] %s %s ok → gold=%d level=%d rank=%d unlocked=%s" % [op, card_id, cache.gold, int(cs.get("level", 0)), int(cs.get("rank", 0)), str(cache.is_unlocked(card_id))])
 	else:
 		last_error = res
-		print("[V5][econ] %s %s 失败 status=%d code=%d" % [op, card_id, int(res.get("status_code", 0)), int(res.get("error_code", 0))])
+		Log.w("[V5][econ] %s %s 失败 status=%d code=%d" % [op, card_id, int(res.get("status_code", 0)), int(res.get("error_code", 0))])
 	return res
 
 ## V5-S7c 闯关上报门面：报 (stage_id, stars)，服务器 sanity + 发奖 + 记进度 → 回新状态更新缓存。
@@ -97,10 +97,10 @@ func report_stage_clear(http, token: String, stage_id: String, stars: int, all_c
 	var res: Dictionary = await _client.report_stage_clear(http, token, stage_id, stars, battle_id, summary)
 	if bool(res.get("ok", false)):
 		_apply(res["state"], all_card_ids)
-		print("[V5][econ] 上报通关 %s stars=%d battle=%d ok → gold=%d highest=%s" % [stage_id, stars, battle_id, cache.gold, cache.highest_cleared])
+		Log.i("[V5][econ] 上报通关 %s stars=%d battle=%d ok → gold=%d highest=%s" % [stage_id, stars, battle_id, cache.gold, cache.highest_cleared])
 	else:
 		last_error = res
-		print("[V5][econ] 上报通关 %s stars=%d battle=%d 失败 status=%d code=%d" % [stage_id, stars, battle_id, int(res.get("status_code", 0)), int(res.get("error_code", 0))])
+		Log.w("[V5][econ] 上报通关 %s stars=%d battle=%d 失败 status=%d code=%d" % [stage_id, stars, battle_id, int(res.get("status_code", 0)), int(res.get("error_code", 0))])
 	return res
 
 
@@ -108,9 +108,9 @@ func report_stage_clear(http, token: String, stage_id: String, stars: int, all_c
 func pve_start(http, token: String, stage_id: String, deck: Array) -> Dictionary:
 	var res: Dictionary = await _client.pve_start(http, token, stage_id, deck)
 	if bool(res.get("ok", false)):
-		print("[V5][pve] 开战报到 ok stage=%s battle_id=%d" % [stage_id, int(res.get("battle_id", 0))])
+		Log.i("[V5][pve] 开战报到 ok stage=%s battle_id=%d" % [stage_id, int(res.get("battle_id", 0))])
 	else:
-		print("[V5][pve] 开战报到失败 stage=%s status=%d code=%d" % [stage_id, int(res.get("status_code", 0)), int(res.get("error_code", 0))])
+		Log.w("[V5][pve] 开战报到失败 stage=%s status=%d code=%d" % [stage_id, int(res.get("status_code", 0)), int(res.get("error_code", 0))])
 	return res
 
 
@@ -125,10 +125,10 @@ func gm_apply(http, token: String, ops: Dictionary, all_card_ids: Array) -> Dict
 	var res: Dictionary = await _client.gm_apply(http, token, ops)
 	if bool(res.get("ok", false)):
 		_apply(res["state"], all_card_ids)
-		print("[V5][GM] apply ok → gold=%d gems=%d 解锁=%d/%d highest=%s" % [cache.gold, cache.gems, cache.unlocked_card_ids().size(), cache.cards.size(), cache.highest_cleared])
+		Log.i("[V5][GM] apply ok → gold=%d gems=%d 解锁=%d/%d highest=%s" % [cache.gold, cache.gems, cache.unlocked_card_ids().size(), cache.cards.size(), cache.highest_cleared])
 	else:
 		last_error = res
-		print("[V5][GM] apply 失败 status=%d code=%d" % [int(res.get("status_code", 0)), int(res.get("error_code", 0))])
+		Log.w("[V5][GM] apply 失败 status=%d code=%d" % [int(res.get("status_code", 0)), int(res.get("error_code", 0))])
 	return res
 
 

@@ -72,11 +72,11 @@ func flush(econ_client, http, token: String) -> void:
 	hashes = []
 	var res: Dictionary = await econ_client.pve_report(http, token, battle_id, send_cmds, send_hashes)
 	if bool(res.get("ok", false)):
-		print("[V5][pve] 上报批次 ok（%d 指令 / %d 哈希）" % [send_cmds.size(), send_hashes.size()])
+		Log.d("[V5][pve] 上报批次 ok（%d 指令 / %d 哈希）" % [send_cmds.size(), send_hashes.size()])
 	else:
 		cmds = send_cmds + cmds
 		hashes = send_hashes + hashes
-		print("[V5][pve] 上报批次失败 status=%d（并入下批重试）" % int(res.get("status_code", 0)))
+		Log.w("[V5][pve] 上报批次失败 status=%d（并入下批重试）" % int(res.get("status_code", 0)))
 	_flushing = false
 
 

@@ -172,7 +172,7 @@ func _on_confirm() -> void:
 	_refresh_confirm()
 	AudioManager.play_sfx("ui_button_press")
 	var nick := _name_edit.text.strip_edges()
-	print("[V5][account] 创号提交 name='%s' avatar=%s" % [nick, _selected_avatar])
+	Log.i("[V5][account] 创号提交 name='%s' avatar=%s" % [nick, _selected_avatar])
 	var session = GameStateScript.session()
 	if not await session.ensure(_http):
 		_toast("登录失败，请检查网络")
@@ -181,7 +181,7 @@ func _on_confirm() -> void:
 		return
 	var ok: bool = await session.update_identity(_http, nick, _selected_avatar)
 	if ok:
-		print("[V5][account] 创号成功 → 回主菜单（路由进新手引导）")
+		Log.i("[V5][account] 创号成功 → 回主菜单（路由进新手引导）")
 		Router.goto("main_menu")
 	else:
 		_toast("起名被拒（可能太长），换一个试试")
