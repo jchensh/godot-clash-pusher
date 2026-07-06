@@ -40,7 +40,8 @@ func _init(config_ = null) -> void:
 # 不污染 ConfigLoader 基础配置。空数组 = 行为与改前一致（起手圣水仍 0）。
 # opponent_deck_override（V4-S3 lockstep）：联机时双方卡组都由服务端开局下发，
 # 故需能显式指定对手卡组（side2_deck）；单机不传 = 用关卡 ai_deck（行为不变）。
-func setup(level_id: String = "level_01", player_deck_override: Array = [], modifiers: Array = [], opponent_deck_override: Array = []) -> void:
+func setup(level_id: String = "level_01", player_deck_override: Array = [],
+		modifiers: Array = [], opponent_deck_override: Array = []) -> void:
 	var level: Dictionary = RunModifiersScript.effective_level(config.get_level(level_id), modifiers)
 	ai_difficulty = String(level.get("ai_difficulty", "normal"))
 	battle = BattleScript.new()

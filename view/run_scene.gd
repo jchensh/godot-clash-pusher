@@ -124,7 +124,8 @@ func _refresh_content() -> void:
 		var border: Color = C_BOSS if ntype == RunMapScript.TYPE_BOSS else base.lightened(0.2)
 		var mark := "✓" if done else ("▶" if current else "·")
 		var txt := tr("run_node_row") % [mark, int(node.get("act", 0)) + 1, tr("node_" + ntype), String(node.get("level_id"))]
-		var row := _panel(_content, Vector2(40, y), Vector2(640, 52), base.darkened(0.35), border, 3 if (current or ntype == RunMapScript.TYPE_BOSS) else 1)
+		var row := _panel(_content, Vector2(40, y), Vector2(640, 52), base.darkened(0.35), border,
+				3 if (current or ntype == RunMapScript.TYPE_BOSS) else 1)
 		_label(row, txt, Vector2(16, 0), Vector2(610, 52), 20, Color.WHITE if not done else Color(0.7, 0.8, 0.7), HORIZONTAL_ALIGNMENT_LEFT)
 		y += 60.0
 
@@ -132,7 +133,8 @@ func _refresh_content() -> void:
 	var deck_names: Array = []
 	for cid in run.deck:
 		deck_names.append(tr("card_" + str(cid)))
-	_label(_content, tr("run_deck") % [run.deck.size(), ", ".join(deck_names)], Vector2(40, y + 6), Vector2(640, 48), 16, Color(0.80, 0.86, 0.92), HORIZONTAL_ALIGNMENT_LEFT)
+	_label(_content, tr("run_deck") % [run.deck.size(), ", ".join(deck_names)], Vector2(40, y + 6),
+			Vector2(640, 48), 16, Color(0.80, 0.86, 0.92), HORIZONTAL_ALIGNMENT_LEFT)
 	var relic_names: Array = []
 	for rid in run.relics:
 		relic_names.append(tr("relic_" + str(rid) + "_name"))
@@ -198,7 +200,8 @@ func _build_reward() -> void:
 func _build_summary() -> void:
 	var run = GameStateScript.run
 	var won: bool = run.status == RunStateScript.RUN_WON
-	_anim_pop(_label(_overlay, tr("run_cleared") if won else tr("run_over"), Vector2(0, 360), Vector2(720, 70), 56, (C_CURRENT if won else C_BOSS), HORIZONTAL_ALIGNMENT_CENTER), 0.0, -30.0)
+	_anim_pop(_label(_overlay, tr("run_cleared") if won else tr("run_over"), Vector2(0, 360),
+			Vector2(720, 70), 56, (C_CURRENT if won else C_BOSS), HORIZONTAL_ALIGNMENT_CENTER), 0.0, -30.0)
 	var line := (tr("run_summary_win") % run.wins) if won else (tr("run_summary_lose") % run.wins)
 	_anim_pop(_label(_overlay, line, Vector2(0, 450), Vector2(720, 30), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER), 0.18, 20.0)
 	if GameStateScript.meta != null:
@@ -210,7 +213,8 @@ func _build_summary() -> void:
 			var names: Array = []
 			for rid in newly:
 				names.append(tr("relic_" + str(rid) + "_name"))
-			_anim_pop(_label(_overlay, tr("unlocked") % ", ".join(names), Vector2(0, 540), Vector2(720, 28), 18, GOLD, HORIZONTAL_ALIGNMENT_CENTER), 0.42, 20.0)
+			_anim_pop(_label(_overlay, tr("unlocked") % ", ".join(names), Vector2(0, 540),
+					Vector2(720, 28), 18, GOLD, HORIZONTAL_ALIGNMENT_CENTER), 0.42, 20.0)
 	_anim_pop(_button(_overlay, tr("btn_back_menu"), Vector2(210, 620), Vector2(300, 72), "dark", _on_summary_menu), 0.55, 20.0)
 
 # ---------------- 交互回调 ----------------

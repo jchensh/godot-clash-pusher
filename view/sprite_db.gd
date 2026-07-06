@@ -53,7 +53,7 @@ const SPELL_ICON := {
 # 各状态：fw/fh 帧尺寸、cols 列数、row 朝下行、row_up 朝上行(可选)、n 帧数、fps、
 #   sc 该状态相对 scale 的补偿倍率(可选，补不同帧画布字符占比差)。
 # 条目级可选：tint（占位染色，Color）、ph（true=占位待正式素材）。
-static var DB := {
+const DB := {
 	# ============ 已坐实素材（V3-7b 10 条，三国正式素材到位后同样逐条替换） ============
 	"knight_body": {  # 虎贲校尉：nc 24×24 4列(走) + cb 32×32 4列(劈砍)
 		"scale": 1.35,

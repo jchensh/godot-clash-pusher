@@ -25,7 +25,8 @@ func test_audio_assets_have_chinese_planning_notes() -> void:
 	for asset_id in loader.audio_assets:
 		var a: Dictionary = loader.get_audio_asset(asset_id)
 		assert_true(String(a.get("display_name_zh", "")).length() > 0, "audio asset %s should have Chinese display name" % asset_id)
-		assert_true(["planned", "sourced", "imported", "final"].has(String(a.get("asset_status", ""))), "audio asset %s should have valid status" % asset_id)
+		assert_true(["planned", "sourced", "imported", "final"].has(String(a.get("asset_status", ""))),
+				"audio asset %s should have valid status" % asset_id)
 		assert_true(String(a.get("effect_notes", "")).length() > 0, "audio asset %s should have Chinese effect notes" % asset_id)
 
 func test_audio_paths_are_under_sound_folder() -> void:

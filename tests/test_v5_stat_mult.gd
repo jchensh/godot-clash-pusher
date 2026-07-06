@@ -22,7 +22,8 @@ func _units_of(m, owner_id: int) -> Array:
 
 # —— Unit.apply_stat_mult 直测：只缩放 hp/damage，其余不动 ——
 func test_apply_stat_mult_scales_hp_and_damage_only() -> void:
-	var cfg = {"hp": 100.0, "damage": 50.0, "attack_speed": 1.2, "move_speed": 1.6, "attack_range": 4.5, "aggro_radius": 5.0, "body_radius": 0.5}
+	var cfg = {"hp": 100.0, "damage": 50.0, "attack_speed": 1.2, "move_speed": 1.6,
+			"attack_range": 4.5, "aggro_radius": 5.0, "body_radius": 0.5}
 	var u = UnitScript.new("x", 0, cfg, Vector2.ZERO)
 	u.apply_stat_mult(2.0)
 	assert_almost_eq(u.max_hp, 200.0, 0.001, "max_hp 翻倍")

@@ -168,9 +168,11 @@ func _pool_tile(id, x: float, y: float) -> void:
 	var port := SpriteDB.make_card_portrait(str(id), _loader, Vector2(x + 49, y + 3), Vector2(52, 40))
 	if port != null:   # 有肖像 → 图在上、名+费在下；无肖像(箭雨/滚石/治疗) → 名+费居中
 		_pool_content.add_child(port)
-		_pin_label("%s\n%d" % [_card_name(id), _cost(id)], Vector2(x, y + 42), Vector2(150, 40), 15, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER, _pool_content)
+		_pin_label("%s\n%d" % [_card_name(id), _cost(id)], Vector2(x, y + 42), Vector2(150, 40),
+				15, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER, _pool_content)
 	else:
-		_pin_label("%s\n%d" % [_card_name(id), _cost(id)], Vector2(x, y), Vector2(150, 84), 21, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER, _pool_content)
+		_pin_label("%s\n%d" % [_card_name(id), _cost(id)], Vector2(x, y), Vector2(150, 84),
+				21, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER, _pool_content)
 	# 选中金边（默认隐藏，_refresh 控制 visible）
 	var frame := Panel.new()
 	frame.position = Vector2(x - 2, y - 2)

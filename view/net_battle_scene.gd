@@ -486,7 +486,8 @@ func _draw_units(a) -> void:
 		var spr: Dictionary = SpriteDB.frame(u.unit_id, st, spr_owner, _elapsed)
 		if not spr.is_empty():   # 精灵帧（modulate=fill 染队伍色+受击闪白，×占位 tint 区分共享贴图）
 			var box: float = rad * 2.0 * float(spr["scale"])
-			draw_texture_rect_region(spr["tex"], Rect2(c - Vector2(box, box) * 0.5, Vector2(box, box)), spr["src"], fill * spr.get("tint", Color.WHITE))
+			draw_texture_rect_region(spr["tex"], Rect2(c - Vector2(box, box) * 0.5, Vector2(box, box)),
+					spr["src"], fill * spr.get("tint", Color.WHITE))
 		else:                    # 无精灵 → 白膜回退
 			draw_circle(c, rad, fill)
 			draw_arc(c, rad, 0.0, TAU, 20, base.darkened(0.4), 2.0)
@@ -938,7 +939,8 @@ func _draw_projectiles() -> void:
 			"fireball":
 				var fi: int = 1 + int(_elapsed * 14.0) % 7
 				var sz: float = ur * 1.0
-				draw_texture_rect_region(TEX_PROJ_FIREBALL, Rect2(pos - Vector2(sz, sz) * 0.5, Vector2(sz, sz)), Rect2(fi * PROJ_FB_FPX, 0, PROJ_FB_FPX, PROJ_FB_FPX))
+				draw_texture_rect_region(TEX_PROJ_FIREBALL, Rect2(pos - Vector2(sz, sz) * 0.5, Vector2(sz, sz)),
+						Rect2(fi * PROJ_FB_FPX, 0, PROJ_FB_FPX, PROJ_FB_FPX))
 
 func _play_projectile_audio(kind: String) -> void:
 	match kind:

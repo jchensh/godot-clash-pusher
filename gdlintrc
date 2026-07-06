@@ -1,0 +1,64 @@
+# gdlint 配置（框架地基#4，KAN-102）。调校原则：真问题必须修；风格规则按房规取舍并留痕。
+# - excluded_directories：addons(第三方插件) / proto(net/proto godobuf 生成物) / .godot(引擎缓存)
+# - function-argument-name：放行尾下划线——V1 起构造参防遮蔽房规（config_/deck_/owner_id_）
+# - load-constant-name：放行前下划线 PascalCase——私有 preload 房规（_AuthPb/_BattlePb）
+# - max-line-length 140：中文注释信息密度高，默认 100 是英文习惯；超 140 的逐行手工换行
+# - max-file-lines 1500：battle_scene(1320)/net_battle(1253) 巨石已知、拆分另立项；此值防继续膨胀
+# - max-returns 10：logic 校验门禁链(try_play_card)与查表函数(_fx_dur)的多 return 是合法形态
+# - 禁用 class-definitions-order / no-elif-return / no-else-return：存量重排纯 churn 无行为价值（有意拒绝）
+# - 禁用 max-public-methods：对测试类(20+ test_ 方法)与数据类无意义；复杂度观测走 gdradon
+# 运行：HTTPS_PROXY=http://127.0.0.1:7897 uv run --with "gdtoolkit==4.*" gdlint .
+class-definitions-order:
+- tools
+- classnames
+- extends
+- docstrings
+- signals
+- enums
+- consts
+- staticvars
+- exports
+- pubvars
+- prvvars
+- onreadypubvars
+- onreadyprvvars
+- others
+class-load-variable-name: (([A-Z][a-z0-9]*)+|_?[a-z][a-z0-9]*(_[a-z0-9]+)*)
+class-name: ([A-Z][a-z0-9]*)+
+class-variable-name: _?[a-z][a-z0-9]*(_[a-z0-9]+)*
+comparison-with-itself: null
+constant-name: _?[A-Z][A-Z0-9]*(_[A-Z0-9]+)*
+disable:
+- class-definitions-order
+- no-elif-return
+- no-else-return
+- max-public-methods
+duplicated-load: null
+enum-element-name: '[A-Z][A-Z0-9]*(_[A-Z0-9]+)*'
+enum-name: ([A-Z][a-z0-9]*)+
+excluded_directories: !!set
+  .git: null
+  .godot: null
+  addons: null
+  proto: null
+expression-not-assigned: null
+function-argument-name: _?[a-z][a-z0-9]*(_[a-z0-9]+)*_?
+function-arguments-number: 10
+function-name: (_on_([A-Z][a-z0-9]*)+(_[a-z0-9]+)*|_?[a-z][a-z0-9]*(_[a-z0-9]+)*)
+function-preload-variable-name: ([A-Z][a-z0-9]*)+
+load-constant-name: (_?([A-Z][a-z0-9]*)+|_?[A-Z][A-Z0-9]*(_[A-Z0-9]+)*)
+loop-variable-name: _?[a-z][a-z0-9]*(_[a-z0-9]+)*
+function-variable-name: '[a-z][a-z0-9]*(_[a-z0-9]+)*'
+max-file-lines: 1500
+max-line-length: 140
+max-public-methods: 20
+max-returns: 10
+mixed-tabs-and-spaces: null
+no-elif-return: null
+no-else-return: null
+signal-name: '[a-z][a-z0-9]*(_[a-z0-9]+)*'
+sub-class-name: _?([A-Z][a-z0-9]*)+
+tab-characters: 1
+trailing-whitespace: null
+unnecessary-pass: null
+unused-argument: null

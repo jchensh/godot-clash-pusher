@@ -34,7 +34,8 @@ func unlock(http: HTTPRequest, token: String, card_id: String) -> Dictionary:
 ## 发首通/重复奖励 + 记进度，回新 EconomyState。失败返回 {ok:false, error_code,...}。
 ## KAN-78：必须带 battle_id（PveStart 下发）+ summary{duration_ticks,deploy_count,
 ## king_hp_permille}——服务器限速/时长一致/星数摘要自洽校验。
-func report_stage_clear(http: HTTPRequest, token: String, stage_id: String, stars: int, battle_id: int = 0, summary: Dictionary = {}) -> Dictionary:
+func report_stage_clear(http: HTTPRequest, token: String, stage_id: String, stars: int,
+		battle_id: int = 0, summary: Dictionary = {}) -> Dictionary:
 	var req = EconomyProto.StageClearReq.new()
 	req.set_stage_id(stage_id)
 	req.set_stars(stars)

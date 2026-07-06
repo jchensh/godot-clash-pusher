@@ -943,3 +943,18 @@
 - **不做**（YAGNI，需要时再开）：文件落盘 sink（桌面版引擎默认已写 user://logs/godot.log；安卓真机要现场日志时再开 `debug/file_logging` 或接 sink）、远程日志上报。
 - **真人验收用例（KAN-101）**：L-1 F5 跑一圈常规流程（菜单→基地→闯关一局→养成升级→设置 GM）——输出台日志全部带 `[时:分.毫秒][级]` 前缀、信息与改造前等量不丢；L-2 编辑器 Debugger 的 Errors 面板——登录失败/服务器拒绝类此后以黄色 warning 呈现（w 级转发）；L-3 抽查无「裸」print 残留（无前缀行）。
 - Jira：**KAN-101** 建单挂 Epic KAN-50 → 正在进行 → 代码+单测完成转 **In Review**。缺口 #4 lint 工具链待做（最后一块）。
+（后记：真人 F5 验收过（时间戳分级/信息不丢/D 级分流正确）→ **KAN-101 Done**，提交 `5f13f79`。编辑器音频面板残留再次生成 default_bus_layout.tres，已删并提醒用户在编辑器里移除 Master 总线上两个禁用效果器。）
+
+---
+
+### V5 · 框架地基#4 lint 工具链（KAN-102，✅ 代码+lint 清零完成待验收，2026-07-06）——四缺口收官
+
+**做了什么（gdtoolkit = 社区事实标准；gdlint 4.5.0 经 uv 走代理，零本地安装负担）**：
+- **`gdlintrc` 按房规调校（根目录，取舍全部留痕在文件头注释）**：放行两条既有房规（构造参尾下划线 `config_/deck_` 防遮蔽——V1 起 logic 全用、不动 lockstep 关键构造器；私有 preload `_AuthPb` 前下划线）；`max-line-length` 100→**140**（中文注释信息密度高，100 是英文习惯）；`max-file-lines` 1500（battle_scene 1320/net_battle 1253 巨石已知、防继续膨胀）；`max-returns` 10（logic 校验门禁链/查表函数合法形态）；**禁用 4 条纯 churn 风格规则**（class-definitions-order 405 处存量重排无行为价值 / no-elif-return / no-else-return / max-public-methods 对测试类数据类无意义）；豁免目录 addons(第三方)/net-proto(godobuf 生成物)/.godot。
+- **全库 lint 清零**：首跑 2233 处（1807 在 proto 生成物）→ 我方 426 → 配置取舍消化风格类后，**修 36 处真问题**：battle_scene 4 处混用 tab/空格缩进（H1 变换收敛的续行对齐）、card_detail 2 个未用参数加 `_` 前缀、config_loader 4 个局部变量去 `_` 前缀更名（`valid_rarities` 等）、`sprite_db.DB` static var→**const**（只读清单本该是常量）、25 处 >140 字符长行手工换行（签名/格式串参数列拆行，零语义变化）。终态 `gdlint .` = **Success: no problems found**。
+- **好消息**：真 bug 类规则（自比较/重复加载/表达式悬空）全库 **0 命中**——vibe coding 的地基没烂。
+- **CI 把关**：`.github/workflows/lint.yml`——master 推送/PR 涉及 .gd/gdlintrc 时 ubuntu 跑 `gdlint .`（本地漏跑也兜得住，防规约退化）。
+- **gdradon 复杂度基线（巨石拆分立项的量化底数）**：我方代码 787 A / 69 B / 9 C / **1 F = `logic/config_loader._validate` CC=109**（配置交叉校验的线性检查清单，风险低但拆分时优先级参考）；E 级 16 处全在 proto 生成物（不管）。
+- **验证**：`gdlint .` 全库绿 + 全量单测 **393/393** 零回归（改动含 logic 签名换行/更名与 sprite_db const 化，编译扫描+全逻辑单测背书）+ headless editor 导入干净。CLAUDE.md 工具链段收录本地命令（gdformat 备而不用：全库重排污染 blame，新文件可单用）。
+- **真人验收用例（KAN-102）**：X-1 提交推送后 GitHub → Actions 页看到 `lint` workflow 绿；X-2（可选）本地跑 `uv run --with "gdtoolkit==4.*" gdlint .` 自见 Success。
+- Jira：**KAN-102** 建单挂 Epic KAN-50 → 正在进行 → 完成转 **In Review**。**框架地基四缺口（KAN-99 路由/KAN-100 总线/KAN-101 日志/KAN-102 lint）全部代码收官**；KAN-99 尚欠联机/探险两条流真人验收。

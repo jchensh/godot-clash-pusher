@@ -190,7 +190,7 @@ func _do_action(op: String) -> void:
 	else:
 		_toast(_err_text(int(res.get("error_code", 0))))
 
-func _err_text(code: int) -> String:
+func _err_text(_code: int) -> String:
 	return "操作失败（服务器拒绝）"
 
 func _on_back() -> void:
@@ -198,7 +198,8 @@ func _on_back() -> void:
 	Router.goto("card_collection")
 
 # ---------- 小部件 ----------
-func _action_btn(label: String, kind: String, cost_icon: String, cost: int, ok: bool, pos: Vector2, w: float, cb: Callable, disabled_hint := "") -> void:
+func _action_btn(label: String, kind: String, cost_icon: String, cost: int, ok: bool,
+		pos: Vector2, w: float, cb: Callable, disabled_hint := "") -> void:
 	var btn := Button.new()
 	btn.position = pos
 	btn.size = Vector2(w, 84)
@@ -218,7 +219,7 @@ func _action_btn(label: String, kind: String, cost_icon: String, cost: int, ok: 
 	elif disabled_hint != "":
 		_label(disabled_hint, pos + Vector2(0, 48), 15, PixelUI.COL_HINT, w, HORIZONTAL_ALIGNMENT_CENTER)
 
-func _action_btn2(label: String, kind: String, shards: int, gold: int, ok: bool, pos: Vector2, w: float, cb: Callable) -> void:
+func _action_btn2(label: String, _kind: String, shards: int, gold: int, ok: bool, pos: Vector2, w: float, cb: Callable) -> void:
 	var btn := Button.new()
 	btn.position = pos
 	btn.size = Vector2(w, 84)
@@ -230,7 +231,8 @@ func _action_btn2(label: String, kind: String, shards: int, gold: int, ok: bool,
 		else: _toast("货币不足"))
 	_content.add_child(btn)
 	_label(label, pos + Vector2(0, 10), 22, PixelUI.COL_PARCHMENT, w, HORIZONTAL_ALIGNMENT_CENTER)
-	var p1 := HudWidgets.cost_pill("shard", shards, int(GameStateScript.economy().get_cache().card_state(_cid).get("shards", 0)) >= shards, 100.0)
+	var p1 := HudWidgets.cost_pill("shard", shards,
+			int(GameStateScript.economy().get_cache().card_state(_cid).get("shards", 0)) >= shards, 100.0)
 	p1.position = pos + Vector2(w / 2.0 - 108, 46.0)
 	_content.add_child(p1)
 	var p2 := HudWidgets.cost_pill("coin", gold, int(GameStateScript.economy().get_cache().gold) >= gold, 116.0)

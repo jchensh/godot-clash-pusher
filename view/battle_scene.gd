@@ -279,18 +279,18 @@ func _t2s(p: Vector2) -> Vector2:
 	var fr := _field_rect()
 	if _landscape:   # 逻辑 y=0（敌底线）→ 屏幕右缘；逻辑 x → 屏幕纵向
 		return Vector2(fr.position.x + (a.grid_h - p.y) / a.grid_h * fr.size.x,
-					   fr.position.y + p.x / a.grid_w * fr.size.y) + _shake
+				fr.position.y + p.x / a.grid_w * fr.size.y) + _shake
 	return Vector2(fr.position.x + p.x / a.grid_w * fr.size.x,
-				   fr.position.y + p.y / a.grid_h * fr.size.y) + _shake   # _shake 只动场内、HUD 不抖
+			fr.position.y + p.y / a.grid_h * fr.size.y) + _shake   # _shake 只动场内、HUD 不抖
 
 func _s2t(s: Vector2) -> Vector2:
 	var a = match_obj.battle.arena
 	var fr := _field_rect()
 	if _landscape:
 		return Vector2((s.y - fr.position.y) / fr.size.y * a.grid_w,
-					   (1.0 - (s.x - fr.position.x) / fr.size.x) * a.grid_h)
+				(1.0 - (s.x - fr.position.x) / fr.size.x) * a.grid_h)
 	return Vector2((s.x - fr.position.x) / fr.size.x * a.grid_w,
-				   (s.y - fr.position.y) / fr.size.y * a.grid_h)
+			(s.y - fr.position.y) / fr.size.y * a.grid_h)
 
 func _tile_px() -> Vector2:   # 一个逻辑格画在屏幕上的 (宽,高)
 	var a = match_obj.battle.arena
@@ -445,7 +445,8 @@ func _draw_units(a) -> void:
 		var spr: Dictionary = SpriteDB.frame(u.unit_id, st, u.owner_id, _elapsed)
 		if not spr.is_empty():   # 精灵帧（modulate=fill 染队伍色+受击闪白，×占位 tint 区分共享贴图）
 			var box: float = rad * 2.0 * float(spr["scale"])
-			draw_texture_rect_region(spr["tex"], Rect2(c - Vector2(box, box) * 0.5, Vector2(box, box)), spr["src"], fill * spr.get("tint", Color.WHITE))
+			draw_texture_rect_region(spr["tex"], Rect2(c - Vector2(box, box) * 0.5, Vector2(box, box)),
+					spr["src"], fill * spr.get("tint", Color.WHITE))
 		else:                    # 无精灵 → 白膜回退
 			draw_circle(c, rad, fill)
 			draw_arc(c, rad, 0.0, TAU, 20, base.darkened(0.4), 2.0)
@@ -865,7 +866,8 @@ func _draw_projectiles() -> void:
 			"fireball":
 				var fi: int = 1 + int(_elapsed * 14.0) % 7   # 飞行帧循环（避开末尾炸帧）
 				var sz: float = ur * 1.0
-				draw_texture_rect_region(TEX_PROJ_FIREBALL, Rect2(pos - Vector2(sz, sz) * 0.5, Vector2(sz, sz)), Rect2(fi * PROJ_FB_FPX, 0, PROJ_FB_FPX, PROJ_FB_FPX))
+				draw_texture_rect_region(TEX_PROJ_FIREBALL, Rect2(pos - Vector2(sz, sz) * 0.5, Vector2(sz, sz)),
+						Rect2(fi * PROJ_FB_FPX, 0, PROJ_FB_FPX, PROJ_FB_FPX))
 
 func _play_projectile_audio(kind: String) -> void:
 	match kind:
@@ -1195,7 +1197,8 @@ func _on_stage_return() -> void:
 	}
 	var goals = loader.get_stage(sid).get("stars", [])
 	var stars: int = StageProgressScript.judge_stars(goals if goals is Array else [], outcome)
-	Log.i("[V5][battle] 闯关战后 stage=%s won=%s king_hp=%.2f dur=%.1fs → stars=%d" % [sid, str(outcome.won), outcome.king_hp_pct, outcome.duration_sec, stars])
+	Log.i("[V5][battle] 闯关战后 stage=%s won=%s king_hp=%.2f dur=%.1fs → stars=%d"
+			% [sid, str(outcome.won), outcome.king_hp_pct, outcome.duration_sec, stars])
 	var summary := {}
 	if _pve_recorder != null:
 		await _pve_recorder.flush(GameStateScript.economy(), _pve_http, GameStateScript.session().token())

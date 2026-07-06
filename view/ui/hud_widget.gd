@@ -130,7 +130,8 @@ func _outline(r: Rect2, c: Color) -> void:
 func _chip(rect: Rect2, icon: String, text: String, text_col: Color) -> void:
 	_bevel_box(rect, CHIP_FACE, CHIP_LITE, CHIP_DARK, CHIP_EDGE, 2, 2)
 	_icon(icon, Vector2(rect.position.x + 17, rect.position.y + rect.size.y / 2.0), 8.0)
-	_text(text, rect.position.x + 30, rect.position.y + (rect.size.y - 18) / 2.0 - 1.0, 18, text_col, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 34)
+	_text(text, rect.position.x + 30, rect.position.y + (rect.size.y - 18) / 2.0 - 1.0, 18,
+			text_col, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 34)
 
 func _icon(name: String, center: Vector2, r: float) -> void:
 	match name:

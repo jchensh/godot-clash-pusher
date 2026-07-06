@@ -1,0 +1,19 @@
+# gdlint CI 把关（框架地基#4，KAN-102）：master 推送/PR 涉及 .gd 时自动跑静态检查。
+# 规则配置 = 仓库根 gdlintrc（取舍理由见其文件头注释）；本地等价命令见 CLAUDE.md 工具链段。
+name: lint
+on:
+  push:
+    branches: [master]
+    paths: ['**.gd', 'gdlintrc', '.github/workflows/lint.yml']
+  pull_request:
+    paths: ['**.gd', 'gdlintrc', '.github/workflows/lint.yml']
+jobs:
+  gdlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install "gdtoolkit==4.*"
+      - run: gdlint .

@@ -90,7 +90,8 @@ func get_profile(http_req: HTTPRequest, access_token: String) -> Result:
 
 ## 推送某槽卡组. 200 -> 更新版本 + 本地卡组 + 落盘.
 ## 409 -> conflict=true 且自动重取最新档 (服务端版本胜出).
-func update_deck(http_req: HTTPRequest, access_token: String, slot: int, card_ids: Array, set_active: bool, expected_version: int) -> Result:
+func update_deck(http_req: HTTPRequest, access_token: String, slot: int, card_ids: Array,
+		set_active: bool, expected_version: int) -> Result:
 	var req = _ProfilePb.DeckUpdateReq.new()
 	req.set_slot(slot)
 	for c in card_ids:
