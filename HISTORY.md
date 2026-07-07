@@ -957,4 +957,4 @@
 - **gdradon 复杂度基线（巨石拆分立项的量化底数）**：我方代码 787 A / 69 B / 9 C / **1 F = `logic/config_loader._validate` CC=109**（配置交叉校验的线性检查清单，风险低但拆分时优先级参考）；E 级 16 处全在 proto 生成物（不管）。
 - **验证**：`gdlint .` 全库绿 + 全量单测 **393/393** 零回归（改动含 logic 签名换行/更名与 sprite_db const 化，编译扫描+全逻辑单测背书）+ headless editor 导入干净。CLAUDE.md 工具链段收录本地命令（gdformat 备而不用：全库重排污染 blame，新文件可单用）。
 - **真人验收用例（KAN-102）**：X-1 提交推送后 GitHub → Actions 页看到 `lint` workflow 绿；X-2（可选）本地跑 `uv run --with "gdtoolkit==4.*" gdlint .` 自见 Success。
-- Jira：**KAN-102** 建单挂 Epic KAN-50 → 正在进行 → 完成转 **In Review**。**框架地基四缺口（KAN-99 路由/KAN-100 总线/KAN-101 日志/KAN-102 lint）全部代码收官**；KAN-99 尚欠联机/探险两条流真人验收。
+- Jira：**KAN-102** 建单挂 Epic KAN-50 → 正在进行 → In Review → 提交 `a87383d` 推送后 **CI 首跑 19s 绿（gh 查证）→ Done**。**框架地基四缺口（KAN-99 路由/KAN-100 总线/KAN-101 日志/KAN-102 lint）全线收官**；KAN-99 尚欠联机/探险两条流真人验收（验过转 Done + 顺带可关 KAN-98）。
