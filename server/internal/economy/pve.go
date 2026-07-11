@@ -148,7 +148,7 @@ func (r *Repo) PveReport(ctx context.Context, accountID, battleID int64, cmds []
 }
 
 // consumePveBattle 在 StageClear 事务内校验并消费战斗会话（KAN-78 层1 核心）：
-//  1. battle 存在、属己、关匹配、未消费（FOR UPDATE 锁行 → 一局只能结算一次）
+//  1. battle 存在、属己、关匹配；相同 claim 的已消费 battle 幂等返回，变造重放拒绝
 //  2. 墙钟 elapsed ≥ MinStageDurationS（堵秒推——想通关必须真实等待时间流逝）
 //  3. 声称战斗时长（ticks/10）≤ 墙钟 elapsed×1.15+5（无法时间压缩；客户端暂停使墙钟
 //     偏长是允许的，反向压缩不允许）
@@ -156,40 +156,47 @@ func (r *Repo) PveReport(ctx context.Context, accountID, battleID int64, cmds []
 //  5. 声称星数与摘要自洽（king_hp_pct / time_under 逐星核对）
 //
 // 全过 → 标记 consumed_at + 存 claimed_stars/summary（层2 verifier 事后重放复核）。
-func consumePveBattle(ctx context.Context, tx pgx.Tx, accountID, battleID int64, stageID string, stars int, sum PveSummary, stage Stage, cfg *Config, now time.Time) error {
+// 返回 alreadyConsumed=true 表示相同 claim 的安全重试；调用方只回当前状态，绝不再次发奖。
+func consumePveBattle(ctx context.Context, tx pgx.Tx, accountID, battleID int64, stageID string, stars int, sum PveSummary, stage Stage, cfg *Config, now time.Time) (bool, error) {
 	if battleID <= 0 {
-		return fmt.Errorf("%w: missing battle_id", ErrPveBattleInvalid)
+		return false, fmt.Errorf("%w: missing battle_id", ErrPveBattleInvalid)
 	}
 	var dbStage string
 	var startedAt time.Time
 	var consumedAt *time.Time
+	var claimedStars *int
+	var claimedSummary []byte
 	var playerCmds int
 	if err := tx.QueryRow(ctx,
-		`SELECT stage_id, started_at, consumed_at,
+		`SELECT stage_id, started_at, consumed_at, claimed_stars, claimed_summary,
 		        (SELECT count(*) FROM jsonb_array_elements(cmds) e WHERE (e->>'s')::int = 1)
 		   FROM pve_battles WHERE id=$1 AND account_id=$2 FOR UPDATE`,
-		battleID, accountID).Scan(&dbStage, &startedAt, &consumedAt, &playerCmds); err != nil {
+		battleID, accountID).Scan(&dbStage, &startedAt, &consumedAt, &claimedStars, &claimedSummary, &playerCmds); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return fmt.Errorf("%w: battle not found", ErrPveBattleInvalid)
+			return false, fmt.Errorf("%w: battle not found", ErrPveBattleInvalid)
 		}
-		return err
+		return false, err
 	}
 	if dbStage != stageID {
-		return fmt.Errorf("%w: stage mismatch (battle=%s, claim=%s)", ErrPveBattleInvalid, dbStage, stageID)
+		return false, fmt.Errorf("%w: stage mismatch (battle=%s, claim=%s)", ErrPveBattleInvalid, dbStage, stageID)
 	}
 	if consumedAt != nil {
-		return fmt.Errorf("%w: battle already consumed", ErrPveBattleInvalid)
+		var previous PveSummary
+		if claimedStars == nil || *claimedStars != stars || json.Unmarshal(claimedSummary, &previous) != nil || previous != sum {
+			return false, fmt.Errorf("%w: consumed battle claim mismatch", ErrPveBattleInvalid)
+		}
+		return true, nil
 	}
 	if err := validatePveClaim(now.Sub(startedAt).Seconds(), stars, sum, stage, cfg, playerCmds); err != nil {
-		return err
+		return false, err
 	}
 	sumJSON, _ := json.Marshal(sum)
 	if _, err := tx.Exec(ctx,
 		`UPDATE pve_battles SET consumed_at=$3, claimed_stars=$4, claimed_summary=$5 WHERE id=$1 AND account_id=$2`,
 		battleID, accountID, now, stars, sumJSON); err != nil {
-		return err
+		return false, err
 	}
-	return nil
+	return false, nil
 }
 
 // validatePveClaim 是层1 的纯校验矩阵（无 DB，可单测）：

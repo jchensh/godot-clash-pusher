@@ -1000,3 +1000,47 @@
 - **验收揪出 P1 显示 bug（组卡卡池骑士图标严重超框）+ 根因链**：`TextureRect` **expand_mode 必须先于 texture/size 赋值**——默认 EXPAND_KEEP_SIZE 下赋 texture 的瞬间 minimum size=帧尺寸，后设的 size 被 clamp 顶大（52×40 → 100×96）；旧 24×24 帧比框小故潜伏至今。headless probe 实测坐实（texture 先=顶成 100×96 / expand 先=正常 52×40；**决定性条件 = size 赋值时 expand_mode 已生效**）。修 `sprite_db.make_card_portrait`（组卡/养成/卡详情/创号全收口）+ `hud_widgets` 名片头像（同坑预防）；用户直觉正确——**养成图鉴 96×96 框实际也被撑到 100×96 溢 4px**，一并修复。回归测试 `test_make_card_portrait_size_not_inflated_by_large_frame` 锁死顺序，经「注入 bug 顺序→测试变红(报 100×96)→还原→绿」**真反证**验证有效（第一次反证只挪 texture 没挪 size=假阴性，教训：反证手术必须精确复现原 bug；顺带教训：临时实验文件还原**禁用 git checkout**——会把未提交改动一起丢，当场吃过一次被迫重建 sprite_db 全部改动并 diff 核对）。坑已入长期记忆（TextureRect expand 顺序，类比 set_anchors_preset 陷阱）。
 - **验证**：客户端单测 **393→394**（+1 回归）全过零回归；gdlint 全绿；截图自检（竖/横战场+阴影 zoom）+ **真人 worktree 实机验收通过（2026-07-12）**：战斗背景河桥对齐/骑士走路动画+阴影/横版一局/组卡·养成·卡详情图标复查。纯客户端，docker 零操作。`tests/_shot_harness.*`（临时截图 harness）随验收完成删除。
 - Jira：**KAN-104** 建单挂 Epic KAN-50 → Done（真人验收+用户拍板）。A4（KAN-93）素材接入自此开张：38 张单位换皮沿本步管线逐条替换（sprite_db 三步 + 帧序算法 + natural/shadow 字段现成）。
+
+---
+
+### V5 · 上线工程 E1 在线主流程接线（KAN-105，✅ 完成，2026-07-12）
+
+**目标**：把 N1/N2 已存在但未进入生产场景流的 `SessionConn` / `ConfigPush` 接起来；登录、持久 WS、服务器配置与经济快照全部 ready 后才开放在线业务。开工时用户仅授权 Docker、Godot 由 Claude 在另一 worktree 占用；收尾时用户进一步授权使用 Godot。验证始终用显式指向 E1 worktree 的独立 headless 进程与隔离 userdata，未触碰 master 编辑器及 8000 端口。
+
+**唯一在线运行时**：
+- 新增 `net/online_runtime.gd` 并注册唯一 autoload `Online`：持有账号 Session、持久 `SessionConn`、服务器配置 `ConfigLoader`、`EconomyStateCache` 和内部 HTTP 同步器；状态机 = BOOTSTRAP → AUTHENTICATING → CONNECTING → SYNCING → ONLINE_READY / DEGRADED / SIGNED_OUT。
+- 既有 `session.ensure(http)` 语义升级为“认证 + profile + Session WS + ConfigPush + economy snapshot 均成功”；重复场景复用同一实例。`GameState.session/config/economy` 在真实 SceneTree 中统一委托 `Online`，纯逻辑无树测试才保留本地构造 fallback。
+- `config/network.json` 显式增加 `session_ws_url`；战斗 WS `ws_url` 保持不变。E2 前仍沿用当前 URL JWT，本步不越界改认证协议。
+
+**配置权威与 fail closed**：
+- `ConfigLoader.load_from_files(files)` 对服务器 bundle 先用候选实例完整结构/交叉引用校验，成功才原子替换；缺文件/坏包保留上一快照并进入 DEGRADED。
+- `SessionConn` 增加 `config_failed`、拒绝“up_to_date 但本地空缓存”、重连使用最新确认 cfgver、主动 close 不再误触发重连。
+- `EconomyStateCache` 所有写入口（挂机、养成、通关、PVE start/report、GM）统一走 Online ready guard；掉线直接返回 `online session not ready`，不发 HTTP。
+- `net/session.gd` 不再把 profile 离线缓存视为登录成功；缓存只保留只读用途。
+
+**场景收口**：
+- 主菜单登录失败只显示“重试连接”，删除 `_build_menu(false)` 离线业务菜单；本地存档权威的旧“探险”入口禁用并明确标成离线原型未开放。
+- battle/net_battle/deck_builder/level_select/campaign/run 不再各自 `ConfigLoader.load_all()`，统一读取 `GameState.config()` 的服务器快照。
+- 在线 PVE 在 session DEGRADED 时冻结 sim/卡牌输入；PVP 继续 poll 独立 battle WS 以维持网络顺序，但阻止本地出牌并显示恢复中。恢复 ONLINE_READY 后继续。
+
+**测试与验证**：
+- 新增/扩展 GDScript 单测：服务器 bundle 成功/坏包原子性、空缓存 up_to_date 拒绝、重连 cfgver、Online 初始非 ready、经济写 gate、唯一 autoload、生产场景禁止本地 `load_all` 与离线菜单源码门禁。
+- Godot 4.6.3 headless 导入/解析零错误；E1 开发基线 **408/408**、rebase KAN-104 后合并基线 **409/409** 通过。`uv run --with "gdtoolkit==4.*" gdlint .` 全库通过；`python tools/check_docs.py`（18 files）与 `git diff --check` 通过。
+- Go `go test ./...` + `go vet ./...` 通过；授权 Docker 的 PG/Redis 全套 integration（auth/profile/economy/matchmaking/battle/verify，`-p 1`）通过；API/Gateway `/healthz` 均 200。
+- 运行中 Gateway 真实 WS 探针成功：`/v5/session/ws` 返回 MsgId 60 ConfigPush，单帧 186023 bytes，证明现有 Docker 服务端契约可用。
+- 真启动链 smoke 通过：隔离新用户启动后依次完成登录 → profile → Session WS → ConfigPush → economy snapshot → 主菜单路由，日志确认 `ready cfg=3aceb94356e37d32`。
+- Gateway 受控重启 smoke 通过：客户端观测到 disconnect，约 2 秒后重新连接，再次拉取 economy 并回到同一配置版本的 ONLINE_READY（Connected=2、Ready=2）；重启后 API/Gateway `/healthz` 均 200，六个 compose 服务正常。
+
+**真人验收反馈与修正**：
+- 用户完成 PVE 验收：Docker 全套服务重启后 PVE 正确冻结；主菜单“探险（离线原型·未开放）”是 E1 刻意禁用的旧原型入口，不代表当前会话离线。PVP 真人验收仍挂账。
+- 全套服务重启令 Gateway/PG 约 41 秒不可用，暴露 `WebSocketPeer` 尚在 CONNECTING/CLOSING 时每 2 秒重复 `connect_to_url` 的 `ERR_ALREADY_IN_USE`。根因位于共享 `WSClient` 与 Session/PVP 两处重试循环；此前仅快速重启 Gateway 的 smoke 未覆盖慢恢复窗口。
+- 修复为 `WSClient.can_connect()` 只允许 CLOSED 状态拨号，有效重连时换新 peer 丢弃旧内部状态；SessionConn 与 BattleClient 均只在 socket 可连接时消费重试周期。新增两条 fake socket 回归测试覆盖 CONNECTING 不重入、CLOSED 立即重试。
+- PVE 冻结期间新增全屏“在线会话中断 / 恢复中…”状态层；sim、卡牌输入与经济写的原 fail-closed gate 不变。
+- 复验：Gateway 停止 8 秒（跨 4 个重试周期）后恢复，Connected=2、Ready=2、重入错误=0，配置版本保持 `3aceb94356e37d32`，Gateway `/healthz` 200。
+- 用户第二轮只关 Battle/API 复验又暴露复合可用性缺口：Battle 当前只是占位进程、不参与 PVE，关闭后 PVE 继续属预期；但 Gateway 仍在线时 API 停止约 13 秒，旧 `ONLINE_READY` 未感知 API 故障，PVE 继续推进到结算。服务恢复后 battle=1105 最终只结算一次（gold 0→300、verifier PASS），没有重复发奖。
+- **踩坑③ API 健康未进入在线状态**：Online 只看持久 Gateway WS；EconomyClient 无 timeout，权威请求可无限 `await request_completed`。修复为所有经济/PVE HTTP 统一 5 秒 timeout，并检查 HTTPRequest transport result；transport/5xx 经 EconomyStateCache reporter 反向驱动 Online → DEGRADED，PVE 随即冻结；Gateway 在线时 Online 每 2 秒重拉配置/经济快照，API 恢复后再回 READY。
+- **踩坑④ 战后双击绕过 final flush**：`_on_stage_return` 首次点击等待 recorder flush 时按钮仍可点；第二次进入后，`PveRecorder._flushing` 直接返回并提前跳场景，故日志打印两次。数据库实证 battle=1105 摘要 432 tick、最后 hash 仅 tick 400。修复为战后提交 single-flight + 按钮立即禁用/显示“提交战报中”；`PveRecorder.flush` 明确返回 bool，失败证据回队且停留结算页显示“重试提交”，只有最终证据提交成功才允许离场。
+- **踩坑⑤ pending 先删后报会丢结算凭据**：stage_map 旧逻辑先清 `stage_last_result` 再 await StageClear；失败后 battle_id/summary 消失。修复为服务器确认后才清；失败保留 pending、禁止开新局并显示“结算服务不可用·点击重试”。服务端把相同 `battle_id + stage + stars + summary` 的重复 StageClear 改为幂等返回当前状态、绝不二次发奖；变造 claim 仍 fail closed，覆盖“事务已提交但响应丢失”。
+- 自动复验：Godot E1 开发基线 **408/408**、合并基线 **409/409**；Go economy/verifier unit+vet 与真 PG integration 通过（含幂等重试不加钱、变造重放拒绝）；真实 API 停服 smoke 中权威请求 5 秒有界失败、Online READY→DEGRADED，API 恢复约 2 秒后重新拉经济状态并回 READY，config=`3aceb94356e37d32`、API `/healthz` 200。
+- **E6 挂账**：verifier 当前允许末段周期 hash 缺失，只要已有 hashes、全指令重放结果、duration/king_hp 最终对帐一致仍可 PASS；E6 必须增加 final report/最后 hash 覆盖结算 tick 的完整性门禁。本步不混改 verifier 协议。
+- 用户于 2026-07-12 确认 KAN-105 转 Done 并提交合入 master；PVE Gateway 断线与恢复已真人通过，PVP 真人验收作为明确挂账保留，不阻断本步收口。

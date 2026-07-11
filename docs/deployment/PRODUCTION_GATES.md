@@ -44,7 +44,8 @@
 - `server/cmd/api/main.go` 当前在所有部署挂载 GM；必须由后续实现撤销此前决定。
 - 服务端当前只有 `/healthz`，尚未实现 readiness/drain 状态机。
 - Gateway 房间/重连状态为进程内且存在无界/静默丢帧风险，只允许单活且仍需资源边界改造。
-- `net/session_conn.gd` 尚未成为生产主流程的唯一持久会话/配置 gate。
+- ~~`net/session_conn.gd` 尚未成为生产主流程的唯一持久会话/配置 gate。~~ E1/KAN-105 已由唯一 autoload `Online` 收口并完成 Gateway/API 故障恢复与 PVE 真人验证；PVP 真人断线验收挂账。
+- PVE verifier 尚未强制最后周期 hash/final report 覆盖结算 tick；E6 前不得把“部分 hashes + 最终摘要重放 PASS”视为完整证据链。
 - 仓库缺 Prod/Staging IaC 和 Caddy 配置；本地 compose 对外暴露端口且含开发默认值。
 
 ## 放行记录

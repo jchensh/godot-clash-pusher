@@ -62,22 +62,32 @@ func poll(delta: float, econ_client, http, token: String) -> void:
 
 
 ## 把当前攒的 cmds/hashes 发一批。失败 → 数据放回队头下批重试（尽力而为，保序）。
-func flush(econ_client, http, token: String) -> void:
-	if _flushing or battle_id <= 0 or (cmds.is_empty() and hashes.is_empty()):
-		return
+## 返回 true 表示当前无待上报证据；战后只有 true 才允许离开场景。
+func flush(econ_client, http, token: String) -> bool:
+	if _flushing:
+		return false
+	if battle_id <= 0:
+		return false
+	if cmds.is_empty() and hashes.is_empty():
+		return true
 	_flushing = true
 	var send_cmds := cmds
 	var send_hashes := hashes
 	cmds = []
 	hashes = []
 	var res: Dictionary = await econ_client.pve_report(http, token, battle_id, send_cmds, send_hashes)
-	if bool(res.get("ok", false)):
+	return _finish_flush(send_cmds, send_hashes, res)
+
+
+func _finish_flush(send_cmds: Array, send_hashes: Array, result: Dictionary) -> bool:
+	if bool(result.get("ok", false)):
 		Log.d("[V5][pve] 上报批次 ok（%d 指令 / %d 哈希）" % [send_cmds.size(), send_hashes.size()])
 	else:
 		cmds = send_cmds + cmds
 		hashes = send_hashes + hashes
-		Log.w("[V5][pve] 上报批次失败 status=%d（并入下批重试）" % int(res.get("status_code", 0)))
+		Log.w("[V5][pve] 上报批次失败 status=%d（并入下批重试）" % int(result.get("status_code", 0)))
 	_flushing = false
+	return bool(result.get("ok", false))
 
 
 ## 战报摘要（StageClear 附带；king_hp_permille 由 view 按王塔血算好传入）。

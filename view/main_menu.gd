@@ -12,6 +12,7 @@ const GameStateScript := preload("res://view/game_state.gd")
 const CampaignStateScript := preload("res://logic/campaign_state.gd")
 
 var _status: Label
+var _retry_btn: Button
 
 func _ready() -> void:
 	AudioManager.play_music("music_main_menu")
@@ -37,12 +38,13 @@ func _bootstrap() -> void:
 	var session = GameStateScript.session()
 	var ok: bool = await session.ensure(http)
 	if not ok:
-		Log.w("[V5][menu] 登录失败 → 离线降级菜单")
+		Log.w("[V5][menu] 在线启动失败，停留重试门")
 		if _status != null:
-			_status.text = "（离线）未连接服务器"
-		_build_menu(false)
+			_status.text = "未连接服务器，在线功能暂不可用"
+		_show_retry()
 		http.queue_free()
 		return
+	_clear_retry()
 	# 未创号（服务器 avatar_card_id 为空）→ 创号页。
 	if session.needs_account_setup():
 		Log.i("[V5][menu] 新账号未创号 → account_create")
@@ -56,7 +58,7 @@ func _bootstrap() -> void:
 		_start_tutorial()
 		return
 	http.queue_free()
-	_build_menu(true)
+	_build_menu()
 
 func _start_tutorial() -> void:
 	var config = GameStateScript.config()
@@ -69,22 +71,43 @@ func _start_tutorial() -> void:
 	Router.goto("battle")
 
 # —— 菜单（路由放行后才建）——
-func _build_menu(online: bool) -> void:
+func _build_menu() -> void:
 	if _status != null:
 		_status.queue_free()
 		_status = null
-	if online:
-		var session = GameStateScript.session()
-		var np := HudWidgets.nameplate(session.nickname(), session.avatar_card_id(), GameStateScript.config(), session.trophies(), true)
-		np.position = Vector2(40, 36)
-		add_child(np)
+	var session = GameStateScript.session()
+	var np := HudWidgets.nameplate(session.nickname(), session.avatar_card_id(), GameStateScript.config(), session.trophies(), true)
+	np.position = Vector2(40, 36)
+	add_child(np)
 	_menu_button("天梯征途", 440, _on_ladder, "gold", 40)
 	_menu_button("闯关", 556, _on_stage, "stone", 34)
 	_menu_button("养成", 664, _on_progression, "stone", 34)
 	_menu_button("卡组", 772, _on_deck, "stone", 34)
-	_menu_button("探险", 880, _on_run, "stone", 34)
+	var run_btn := _menu_button("探险（离线原型·未开放）", 880, _on_run, "stone", 24)
+	run_btn.disabled = true   # E1：本地存档原型不得作为 Prod 在线进度入口
 	_menu_button(tr("btn_settings"), 988, _on_settings, "stone", 34)
 	_center_label(tr("app_footer"), 1208, 22, PixelUI.COL_HINT)
+
+
+func _show_retry() -> void:
+	if _retry_btn != null:
+		_retry_btn.disabled = false
+		return
+	_retry_btn = _menu_button("重试连接", 720, _on_retry, "gold", 30)
+
+
+func _clear_retry() -> void:
+	if _retry_btn != null:
+		_retry_btn.queue_free()
+		_retry_btn = null
+
+
+func _on_retry() -> void:
+	if _retry_btn != null:
+		_retry_btn.disabled = true
+	if _status != null:
+		_status.text = "重新连接中…"
+	_bootstrap()
 
 # ---------- handlers ----------
 func _on_ladder() -> void:

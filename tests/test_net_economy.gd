@@ -61,3 +61,12 @@ func test_collect_idle_req() -> void:
 func test_default_and_override_url() -> void:
 	assert_eq(EconomyClient.new().api_url, "http://localhost:8080", "default url")
 	assert_eq(EconomyClient.new("http://x").api_url, "http://x", "override url")
+
+
+func test_authoritative_requests_have_bounded_timeout() -> void:
+	var ec = EconomyClient.new()
+	var http := HTTPRequest.new()
+	assert_almost_eq(ec.request_timeout_s, 5.0, 0.001, "E1 API 默认 5 秒有界失败")
+	ec._prepare_http(http)
+	assert_almost_eq(http.timeout, 5.0, 0.001, "每次权威请求应用 timeout")
+	http.free()

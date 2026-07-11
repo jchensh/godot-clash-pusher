@@ -19,6 +19,7 @@ const RECONNECT_INTERVAL := 2.0
 const RECONNECT_WINDOW := 60.0
 
 signal config_ready(version: String)   # 配置就绪（首次/更新/缓存命中）
+signal config_failed(reason: String)
 signal connected
 signal disconnected
 signal reconnecting
@@ -36,6 +37,7 @@ var _hb_accum := 0.0
 var _reconnect := false
 var _reconnect_accum := 0.0
 var _reconnect_elapsed := 0.0
+var _allow_reconnect := true
 
 
 func _init(url: String = "") -> void:
@@ -50,6 +52,7 @@ func _init(url: String = "") -> void:
 ## 用已登录的 token 建立持久会话连接。
 func start(token: String) -> void:
 	_token = token
+	_allow_reconnect = true
 	var cache := _load_cache()
 	_pending_cfgver = String(cache.get("version", ""))
 	# 先用本地缓存填上（秒启动展示，等服务器确认/更新覆盖）
@@ -59,9 +62,11 @@ func start(token: String) -> void:
 	_connect()
 
 
-func _connect() -> void:
+func _connect() -> int:
+	if not _ws.can_connect():
+		return ERR_BUSY
 	var url := "%s?token=%s&cfgver=%s" % [ws_url, _token.uri_encode(), _pending_cfgver.uri_encode()]
-	_ws.connect_to(url)
+	return _ws.connect_to(url)
 
 
 ## 每帧调用：推进 WS + 心跳 + 重连。
@@ -77,12 +82,13 @@ func poll(delta: float) -> void:
 		_reconnect_accum += delta
 		if _reconnect_elapsed >= RECONNECT_WINDOW:
 			_reconnect = false   # 放弃 → 上层应回登录
-		elif _reconnect_accum >= RECONNECT_INTERVAL:
+		elif _reconnect_accum >= RECONNECT_INTERVAL and _ws.can_connect():
 			_reconnect_accum = 0.0
 			_connect()
 
 
 func close() -> void:
+	_allow_reconnect = false
 	_reconnect = false
 	if _ws != null:
 		_ws.close()
@@ -107,7 +113,7 @@ func _on_opened() -> void:
 
 func _on_closed() -> void:
 	connected_flag = false
-	if not _reconnect:
+	if _allow_reconnect and not _reconnect:
 		_reconnect = true
 		_reconnect_accum = 0.0
 		_reconnect_elapsed = 0.0
@@ -125,17 +131,24 @@ func _on_frame(msg_id: int, payload: PackedByteArray) -> void:
 func _handle_config_push(payload: PackedByteArray) -> void:
 	var cp = SessionProto.ConfigPush.new()
 	if cp.from_bytes(payload) != SessionProto.PB_ERR.NO_ERRORS:
+		config_failed.emit("ConfigPush protobuf decode failed")
 		return
 	var ver := String(cp.get_version())
 	if cp.get_up_to_date():
+		if ver == "" or config_files.is_empty():
+			config_failed.emit("server confirmed empty config cache")
+			return
 		config_version = ver
+		_pending_cfgver = ver
 		config_ready.emit(ver)   # 缓存已最新（start 时已填 config_files）
 		return
 	var files := _parse_bundle(cp.get_bundle())
 	if files.is_empty():
+		config_failed.emit("server config bundle is empty or invalid")
 		return
 	config_version = ver
 	config_files = files
+	_pending_cfgver = ver
 	_save_cache(ver, files)
 	config_ready.emit(ver)
 

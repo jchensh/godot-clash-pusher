@@ -332,13 +332,21 @@ func TestRepo_PveGuards(t *testing.T) {
 		t.Fatalf("no-deploy clear want ErrPveBattleInvalid, got %v", err)
 	}
 
-	// —— 合法通关（复用秒推那局：把它倒拨）→ 过；同一 battle_id 再报 → 已消费拒（防重放）。
+	// —— 合法通关（复用秒推那局：把它倒拨）→ 过；相同 claim 重试幂等回状态，不重复发奖。
 	repo.db.Pool.Exec(ctx, `UPDATE pve_battles SET started_at = NOW() - INTERVAL '5 minutes' WHERE id=$1`, bid)
-	if _, err := repo.StageClear(ctx, acc, "stage_1_1", 1, bid, okSum, cfg); err != nil {
+	first, err := repo.StageClear(ctx, acc, "stage_1_1", 1, bid, okSum, cfg)
+	if err != nil {
 		t.Fatalf("legit clear: %v", err)
 	}
-	if _, err := repo.StageClear(ctx, acc, "stage_1_1", 1, bid, okSum, cfg); !errors.Is(err, ErrPveBattleInvalid) {
-		t.Fatalf("replayed battle_id want ErrPveBattleInvalid, got %v", err)
+	retry, err := repo.StageClear(ctx, acc, "stage_1_1", 1, bid, okSum, cfg)
+	if err != nil {
+		t.Fatalf("identical retry should be idempotent: %v", err)
+	}
+	if retry.Gold != first.Gold || retry.Gems != first.Gems {
+		t.Fatalf("idempotent retry changed wallet: first=%+v retry=%+v", first, retry)
+	}
+	if _, err := repo.StageClear(ctx, acc, "stage_1_1", 2, bid, okSum, cfg); !errors.Is(err, ErrPveBattleInvalid) {
+		t.Fatalf("changed consumed claim want ErrPveBattleInvalid, got %v", err)
 	}
 	// 已消费局继续 report → 拒。
 	if err := repo.PveReport(ctx, acc, bid,

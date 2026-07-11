@@ -111,3 +111,16 @@ func test_cache_reflects_latest_server_state() -> void:
 	cache.seed_from_local(pd2)
 	assert_eq(int(cache.get_cache().cards["knight"]["level"]), 3, "缓存被最新服务器状态覆盖=3")
 	assert_eq(int(cache.get_cache().gold), 50, "gold 被最新服务器覆盖=50")
+
+
+func test_transport_failure_reports_to_online_runtime() -> void:
+	var cache = EconomyStateCacheScript.new()
+	var reasons: Array = []
+	cache.transport_failure_reporter = func(reason: String): reasons.append(reason)
+	cache._observe_result({"ok": false, "status_code": 0}, "pve report")
+	assert_eq(reasons.size(), 1, "transport failure 必须反向驱动 Online 降级")
+	assert_true(String(reasons[0]).contains("pve report"), "原因包含操作名")
+	cache._observe_result({"ok": false, "status_code": 400}, "bad claim")
+	assert_eq(reasons.size(), 1, "业务 4xx 不应误判整站离线")
+	cache._observe_result({"ok": false, "status_code": 503}, "stage clear")
+	assert_eq(reasons.size(), 2, "API 5xx 也应 fail-closed")

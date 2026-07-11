@@ -7,7 +7,6 @@ extends Control
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const BG_TEX := preload("res://assets/ui/menu_bg.png")
 const GameStateScript = preload("res://view/game_state.gd")
-const ConfigLoaderScript = preload("res://logic/config_loader.gd")
 
 # 5 档（V3-9）：rookie→extreme 由易到难；底色渐变 青绿→绿→蓝→琥珀→深红。
 const DIFF_RANK := {"rookie": 0, "easy": 1, "normal": 2, "hard": 3, "extreme": 4}
@@ -33,8 +32,7 @@ func _build() -> void:
 
 	_title_text(tr("stage_select_title"), 80, 52)
 
-	var loader = ConfigLoaderScript.new()
-	loader.load_all()
+	var loader = GameStateScript.config()
 	var y := 206.0
 	for level_id in _sorted_level_ids(loader):
 		_level_button(loader.get_level(level_id), level_id, y)

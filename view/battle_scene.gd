@@ -10,7 +10,6 @@
 # 仍为白膜：精灵/粒子皮在 V3-7 接续。
 extends Node2D
 
-const ConfigLoaderScript = preload("res://logic/config_loader.gd")
 const MatchScript = preload("res://logic/match.gd")
 const BattleScript = preload("res://logic/battle.gd")
 const AIControllerScript = preload("res://ai/ai_controller.gd")
@@ -172,6 +171,9 @@ var _pve_http: HTTPRequest = null
 var _end_pscore := 0.0
 var _end_oscore := 0.0
 var _end_buttons_added := false
+var _online_paused := false       # E1：在线闯关掉线时冻结 sim/输入并绘制恢复提示
+var _stage_returning := false     # E1：战后最终 flush + 跳场景 single-flight
+var _stage_result_button: Button = null
 
 @onready var _vw: float = float(get_viewport_rect().size.x)
 @onready var _vh: float = float(get_viewport_rect().size.y)
@@ -182,8 +184,7 @@ func _ready() -> void:
 	# _sync_cards 访问 match_obj.player(Nil) 每帧报错卡死。故先关处理，末尾 setup 完再 set_process(true)。
 	set_process(false)
 	_font = load("res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf")
-	loader = ConfigLoaderScript.new()
-	loader.load_all()
+	loader = GameStateScript.config()
 	match_obj = MatchScript.new(loader)
 	var run = GameStateScript.run
 	var campaign = GameStateScript.campaign
@@ -247,10 +248,11 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if match_obj == null:
 		return
+	_online_paused = GameStateScript.stage_id != "" and not GameStateScript.is_online_ready()
 	_elapsed += delta
 	if _hitstop_t > 0.0:
 		_hitstop_t -= delta            # 顿帧：冻结 sim、画面继续
-	elif not match_obj.is_over():
+	elif not match_obj.is_over() and not _online_paused:
 		match_obj.update(delta)
 		_battle_elapsed += delta       # V5-S7c：仅活跃战斗时长计入（判 time_under 星）
 		if _pve_recorder != null:
@@ -264,6 +266,10 @@ func _process(delta: float) -> void:
 		_drag_screen = get_viewport().get_mouse_position()
 	_cull_transients()
 	_sync_cards()
+	if _online_paused:
+		_dragging = false
+		for button in _card_btns:
+			(button as Button).disabled = true
 	if match_obj.is_over() and not _ending:
 		_start_ending()
 	if _ending:
@@ -358,6 +364,21 @@ func _draw() -> void:
 	_draw_cards()
 	_draw_end_screen()
 	_draw_tutorial()
+	_draw_online_pause()
+
+
+func _draw_online_pause() -> void:
+	if not _online_paused:
+		return
+	# 覆盖层只做状态反馈；sim/出牌阻断仍由 _process 与输入 handler 的 ready gate 保证。
+	draw_rect(Rect2(0, 0, _vw, _vh), Color(0, 0, 0, 0.58))
+	var panel := Rect2(32.0, _vh * 0.42, _vw - 64.0, 116.0)
+	draw_rect(panel, COL_PANEL)
+	draw_rect(panel, COL_CROWN, false, 3.0)
+	draw_string(_font, Vector2(panel.position.x, panel.position.y + 47.0), "在线会话中断",
+			HORIZONTAL_ALIGNMENT_CENTER, panel.size.x, 24, Color.WHITE)
+	draw_string(_font, Vector2(panel.position.x, panel.position.y + 84.0), "恢复中…",
+			HORIZONTAL_ALIGNMENT_CENTER, panel.size.x, 20, COL_CROWN)
 
 func _draw_terrain(a) -> void:
 	if BG_ENABLED:
@@ -1004,7 +1025,7 @@ func _build_cards() -> void:
 
 # 按下卡牌 = 开始拖拽（disabled 卡不会触发 button_down，出不起的牌拖不动）。
 func _on_card_down(i: int) -> void:
-	if match_obj == null or match_obj.is_over():
+	if match_obj == null or match_obj.is_over() or (GameStateScript.stage_id != "" and not GameStateScript.is_online_ready()):
 		return
 	AudioManager.play_sfx("ui_card_pickup")
 	selected_card = i
@@ -1017,7 +1038,8 @@ func _on_card_up(i: int) -> void:
 	var sc := selected_card
 	_dragging = false
 	selected_card = -1
-	if not was_dragging or sc != i or match_obj == null or match_obj.is_over():
+	if (not was_dragging or sc != i or match_obj == null or match_obj.is_over()
+			or (GameStateScript.stage_id != "" and not GameStateScript.is_online_ready())):
 		return
 	var screen: Vector2 = get_viewport().get_mouse_position()
 	if screen.y < TOPBAR_H or screen.y > _vh - HUD_BOTTOM_H:
@@ -1152,7 +1174,7 @@ func _add_result_buttons() -> void:
 	elif GameStateScript.run != null:
 		_result_btn(tr("btn_continue"), _vh * 0.62, _on_run_continue)   # Roguelite：回 run 中枢推进/给奖励/结算
 	elif GameStateScript.stage_id != "":
-		_result_btn(tr("btn_back"), _vh * 0.62, _on_stage_return)   # V5-S7c：回闯关地图（地图侧上报+开箱）
+		_stage_result_button = _result_btn(tr("btn_back"), _vh * 0.62, _on_stage_return)   # V5-S7c：回地图结算
 	else:
 		_result_btn(tr("btn_rematch"), _vh * 0.62, _on_rematch)
 		_result_btn(tr("btn_menu"), _vh * 0.62 + 70.0, _on_menu)
@@ -1197,13 +1219,14 @@ func _ease_back(t: float) -> float:
 	var x: float = clampf(t, 0.0, 1.0) - 1.0
 	return 1.0 + c3 * x * x * x + c1 * x * x
 
-func _result_btn(txt: String, y: float, cb: Callable) -> void:
+func _result_btn(txt: String, y: float, cb: Callable) -> Button:
 	var b := Button.new()
 	b.text = txt
 	b.position = Vector2(_vw * 0.5 - 120, y)
 	b.size = Vector2(240, 56)
 	b.pressed.connect(cb)
 	_result_layer.add_child(b)
+	return b
 
 func _on_run_continue() -> void:
 	AudioManager.play_sfx("ui_button_press")
@@ -1240,6 +1263,12 @@ func _on_tutorial_done() -> void:
 # KAN-78/79：time_under 判定改用 pve_tick 换算时长（与服务器摘要校验完全同源，消边界分歧）；
 # 战后 flush 剩余指令流（重放器要全量证据）→ 摘要 + battle_id 随 stage_last_result 交上报。
 func _on_stage_return() -> void:
+	if _stage_returning:
+		return
+	_stage_returning = true
+	if _stage_result_button != null:
+		_stage_result_button.disabled = true
+		_stage_result_button.text = "提交战报中…"
 	AudioManager.play_sfx("ui_button_press")
 	var sid: String = GameStateScript.stage_id
 	var outcome := {
@@ -1253,7 +1282,14 @@ func _on_stage_return() -> void:
 			% [sid, str(outcome.won), outcome.king_hp_pct, outcome.duration_sec, stars])
 	var summary := {}
 	if _pve_recorder != null:
-		await _pve_recorder.flush(GameStateScript.economy(), _pve_http, GameStateScript.session().token())
+		var flushed: bool = await _pve_recorder.flush(GameStateScript.economy(), _pve_http, GameStateScript.session().token())
+		if not flushed:
+			Log.w("[V5][battle] 最终战报未提交，留在结算页等待重试")
+			_stage_returning = false
+			if _stage_result_button != null:
+				_stage_result_button.disabled = false
+				_stage_result_button.text = "重试提交"
+			return
 		summary = _pve_recorder.summary(int(round(_player_king_hp_pct() * 1000.0)))
 	GameStateScript.stage_last_result = {"stage_id": sid, "stars": stars, "battle_id": _pve_battle_id, "summary": summary}
 	GameStateScript.stage_id = ""

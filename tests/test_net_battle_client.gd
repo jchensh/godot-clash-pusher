@@ -21,7 +21,13 @@ class FakeWS extends RefCounted:
 	signal closed
 	signal frame_received(msg_id: int, payload: PackedByteArray)
 	var sent: Array = []
-	func connect_to(_url: String) -> int: return OK
+	var connect_calls := 0
+	var connectable := true
+	func can_connect() -> bool: return connectable
+	func connect_to(_url: String) -> int:
+		connect_calls += 1
+		connectable = false
+		return OK
 	func poll() -> void: pass
 	func is_open() -> bool: return true
 	func send_frame(msg_id: int, payload: PackedByteArray) -> void:
@@ -227,6 +233,22 @@ func test_reconnect_after_match_sends_join_room() -> void:
 	bc._on_opened()   # _room_id 已设 → 重连走 JoinRoom，而非 FindMatch
 	assert_eq(fake.count(CommonPb.MsgId.JOIN_ROOM_REQ), 1)
 	assert_eq(fake.count(CommonPb.MsgId.FIND_MATCH_REQ), 0)
+
+
+func test_reconnect_waits_until_socket_can_connect() -> void:
+	var pair = _new_client()
+	var bc = pair[0]
+	var fake = pair[1]
+	bc._started = true
+	bc._reconnecting = true
+	fake.connectable = false
+	bc.poll(BattleClient.RECONNECT_RETRY + 0.1)
+	assert_eq(fake.connect_calls, 0, "PVP CONNECTING 中不得重复拨号")
+	fake.connectable = true
+	bc.poll(0.0)
+	assert_eq(fake.connect_calls, 1, "PVP socket 可连接后立即重试一次")
+	bc.poll(BattleClient.RECONNECT_RETRY + 0.1)
+	assert_eq(fake.connect_calls, 1, "PVP 新拨号未结束时不得重入")
 
 func test_cancel_sends_cancel_req() -> void:
 	var pair = _new_client()

@@ -29,8 +29,9 @@ func ensure(http: HTTPRequest) -> bool:
 		if not lr.ok:
 			return false
 		logged_in = true
-	await profile.get_profile(http, auth.access_token)
-	return true
+	var profile_result = await profile.get_profile(http, auth.access_token)
+	# 决策48/E1：离线 profile cache 只可只读展示，不算在线登录成功。
+	return profile_result.ok and not profile_result.offline
 
 
 ## 重新拉档案(对局后刷新杯数等)。

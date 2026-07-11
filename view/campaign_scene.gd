@@ -7,7 +7,6 @@ extends Control
 
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const GameStateScript = preload("res://view/game_state.gd")
-const ConfigLoaderScript = preload("res://logic/config_loader.gd")
 const CampaignStateScript = preload("res://logic/campaign_state.gd")
 
 const C_DONE := Color(0.22, 0.40, 0.26)
@@ -24,8 +23,7 @@ var _loader
 func _ready() -> void:
 	AudioManager.play_music("music_run_map")
 	AudioManager.stop_ambience()
-	_loader = ConfigLoaderScript.new()
-	_loader.load_all()
+	_loader = GameStateScript.config()
 	# campaign 为空或已通关 → 开新战役（清旧结果）；进行中 → 续。
 	if GameStateScript.campaign == null or GameStateScript.campaign.is_over():
 		GameStateScript.campaign = CampaignStateScript.new(_loader.get_campaign("default").get("levels", []))

@@ -10,6 +10,7 @@ const CONTENT_TYPE := "application/x-protobuf"
 
 var api_url := "http://localhost:8080"
 var state := {}   # 最近一次服务器状态快照（缓存展示）
+var request_timeout_s := 5.0   # E1：权威 API 不可用时有界失败，禁止无限 await
 
 
 func _init(url: String = "") -> void:
@@ -94,6 +95,7 @@ func collect_idle(http: HTTPRequest, token: String) -> Dictionary:
 ## EconomyState（proto，复用解码）。ops = {add_gold,add_gems,add_shards_all,unlock_all,max_all_cards,
 ## clear_through_chapter,reset,add_shards:{card:n}}。请求是 JSON、响应是 proto，故不走 _request。
 func gm_apply(http: HTTPRequest, token: String, ops: Dictionary) -> Dictionary:
+	_prepare_http(http)
 	var headers := [
 		"Content-Type: application/json",
 		"Accept: " + CONTENT_TYPE,
@@ -104,6 +106,8 @@ func gm_apply(http: HTTPRequest, token: String, ops: Dictionary) -> Dictionary:
 	if err != OK:
 		return {"ok": false, "status_code": 0, "error": "request err %d" % err}
 	var res = await http.request_completed
+	if int(res[0]) != HTTPRequest.RESULT_SUCCESS:
+		return {"ok": false, "status_code": 0, "error": "request failed %d" % int(res[0])}
 	var status: int = res[1]
 	var resp_body: PackedByteArray = res[3]
 	if status == 200:
@@ -128,6 +132,7 @@ func _action(http: HTTPRequest, path: String, token: String, card_id: String) ->
 # 底层 POST（响应不是 EconomyState 的端点用）：200 → {ok, body:PackedByteArray}；
 # 非 200 → 解 ErrorResp 拿业务错误码。
 func _request_bytes(http: HTTPRequest, path: String, token: String, body: PackedByteArray) -> Dictionary:
+	_prepare_http(http)
 	var headers := [
 		"Content-Type: " + CONTENT_TYPE,
 		"Accept: " + CONTENT_TYPE,
@@ -137,6 +142,8 @@ func _request_bytes(http: HTTPRequest, path: String, token: String, body: Packed
 	if err != OK:
 		return {"ok": false, "status_code": 0, "error": "request err %d" % err}
 	var res = await http.request_completed
+	if int(res[0]) != HTTPRequest.RESULT_SUCCESS:
+		return {"ok": false, "status_code": 0, "error": "request failed %d" % int(res[0])}
 	var status: int = res[1]
 	var resp_body: PackedByteArray = res[3]
 	if status == 200:
@@ -149,6 +156,7 @@ func _request_bytes(http: HTTPRequest, path: String, token: String, body: Packed
 
 
 func _request(http: HTTPRequest, method: String, path: String, token: String, body: PackedByteArray) -> Dictionary:
+	_prepare_http(http)
 	var headers := [
 		"Content-Type: " + CONTENT_TYPE,
 		"Accept: " + CONTENT_TYPE,
@@ -161,6 +169,8 @@ func _request(http: HTTPRequest, method: String, path: String, token: String, bo
 	if err != OK:
 		return {"ok": false, "status_code": 0, "error": "request err %d" % err}
 	var res = await http.request_completed
+	if int(res[0]) != HTTPRequest.RESULT_SUCCESS:
+		return {"ok": false, "status_code": 0, "error": "request failed %d" % int(res[0])}
 	var status: int = res[1]
 	var resp_body: PackedByteArray = res[3]
 	if status == 200:
@@ -175,6 +185,10 @@ func _request(http: HTTPRequest, method: String, path: String, token: String, bo
 	if er.from_bytes(resp_body) == CommonProto.PB_ERR.NO_ERRORS:
 		ecode = er.get_code()
 	return {"ok": false, "status_code": status, "error_code": ecode}
+
+
+func _prepare_http(http: HTTPRequest) -> void:
+	http.timeout = request_timeout_s
 
 
 func _state_to_dict(es) -> Dictionary:
