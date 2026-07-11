@@ -1,13 +1,13 @@
 # 在线运行时契约
 
-状态：E0 目标契约（KAN-103）。本文件描述 Staging/Prod 必须达到的行为；不代表当前代码已经实现。
+状态：E0 目标契约（KAN-103）。E1（KAN-105）已落实唯一在线运行时、服务器配置 gate、经济写 fail-closed、Gateway/API 复合故障降级与自动恢复；WS ticket/首帧认证仍是 E2 目标，因此本文完整契约仍不代表当前代码已经全部实现。
 
 ## 1. 适用范围与真相源
 
 - 适用于 Godot 客户端、Go API、Gateway、PVE verifier，以及入口反向代理。
 - 账号、钱包、养成、关卡进度、挂机时间和运行时配置由服务端与 PostgreSQL 权威持有。
 - 战斗仍采用 10Hz 客户端确定性 lockstep；服务端权威分发输入、保存对局事实并执行校验。
-- 当前实现证据见 `net/session_conn.gd`、`view/game_state.gd`、`server/cmd/{api,gateway}/main.go`。上线门禁见 `docs/deployment/PRODUCTION_GATES.md`。
+- 当前实现证据见 `net/online_runtime.gd`、`net/session_conn.gd`、`view/game_state.gd`、`server/cmd/{api,gateway}/main.go`。上线门禁见 `docs/deployment/PRODUCTION_GATES.md`。
 
 ## 2. 生命周期状态机
 
@@ -47,6 +47,8 @@
 | 409 状态冲突 | 重新拉取权威快照，不做本地合并 | 返回当前版本/epoch |
 | 429 限流 | 尊重 `Retry-After`，抖动退避 | 按 IP、账号、设备和路由限流 |
 | 5xx/断线 | 进入 `DEGRADED`，有上限地重连 | 保持幂等；不得半提交经济事务 |
+
+E1 运行时补充：Gateway WS 在线只代表会话通道存活，不等于权威 API 可写。经济/PVE transport 失败或 5xx 必须把 Online 降为 `DEGRADED`；API 快照重新同步成功后才能恢复 `ONLINE_READY`。PVE 战后最终证据与 StageClear 均为 single-flight：失败留在原地重试，pending 只在服务器确认后清除；相同 battle claim 重试由服务端幂等返回且不重复发奖。
 
 ## 6. 可验证门禁
 

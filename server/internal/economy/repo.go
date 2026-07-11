@@ -189,9 +189,21 @@ func (r *Repo) StageClear(ctx context.Context, accountID int64, stageID string, 
 		return State{}, err
 	}
 
-	// KAN-78 防作弊：校验并消费 PVE 战斗会话（同事务锁行 → 防并发双花/重放）。
-	if err := consumePveBattle(ctx, tx, accountID, battleID, stageID, stars, sum, stage, cfg, time.Now()); err != nil {
+	// KAN-78 防作弊：校验并消费 PVE 战斗会话（同事务锁行 → 防并发双花）。
+	// 相同 claim 重试只返回当前状态，覆盖“服务端已提交但响应丢失”，不重复发奖。
+	alreadyConsumed, err := consumePveBattle(ctx, tx, accountID, battleID, stageID, stars, sum, stage, cfg, time.Now())
+	if err != nil {
 		return State{}, err
+	}
+	if alreadyConsumed {
+		st, err := readState(ctx, tx, accountID)
+		if err != nil {
+			return State{}, err
+		}
+		if err := tx.Commit(ctx); err != nil {
+			return State{}, err
+		}
+		return st, nil
 	}
 
 	// 锁住 stage 行 + state 行（FOR UPDATE）。

@@ -87,7 +87,7 @@ func poll(delta: float = 0.0) -> void:
 		if _reconnect_elapsed > RECONNECT_MAX:
 			_reconnecting = false
 			disconnected.emit()
-		elif _reconnect_accum >= RECONNECT_RETRY:
+		elif _reconnect_accum >= RECONNECT_RETRY and ws.can_connect():
 			_reconnect_accum = 0.0
 			ws.connect_to(_full_url())
 

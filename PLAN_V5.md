@@ -304,7 +304,7 @@
 | 步骤 | 范围 | 完成定义 | 状态 |
 |---|---|---|---|
 | **E0** | 工程契约与真相源 | 架构/安全/部署/runbook/ADR；AGENTS/CLAUDE 镜像门禁；明确 Current/Target/Gate | ✅ KAN-103 Done（2026-07-12） |
-| **E1** | 客户端在线主流程接线 | 唯一 SessionConn/OnlineGate；服务器配置成为主流程权威；断线只读且不可写 | 待办 |
+| **E1** | 客户端在线主流程接线 | 唯一 SessionConn/OnlineGate；服务器配置成为主流程权威；断线只读且不可写 | ✅ KAN-105 Done（2026-07-12）；合并基线 Godot 409/409，Gateway/API 慢恢复通过；PVP 真人验收挂账 |
 | **E2** | 公网认证与权限 | HTTPS/WSS；短 access + refresh rotation；WS 单次 ticket/首帧认证；Origin/限流；Prod 无 GM | 待办 |
 | **E3** | Gateway 正确性与资源边界 | ACK 有界重放；队列/房间/future tick/hash/映射上限；冲突 fail closed；持久化 deadline/幂等 | 待办 |
 | **E4** | 生命周期 | `/livez`/`/readyz`；SIGTERM drain；单 active Gateway 串行替换；故障演练 | 待办 |

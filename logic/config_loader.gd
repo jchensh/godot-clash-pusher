@@ -44,6 +44,57 @@ func load_all(config_dir: String = DEFAULT_CONFIG_DIR) -> bool:
 	_validate()
 	return errors.is_empty()
 
+
+# 从服务器 ConfigPush 的 {filename: Dictionary} 原子加载。
+# 先在候选实例完整校验，成功后才替换当前快照；坏包不会污染上一个可用版本。
+func load_from_files(files: Dictionary) -> bool:
+	var candidate := ConfigLoader.new()
+	candidate.errors.clear()
+	candidate.cards = candidate._bundle_dict(files, "cards.json")
+	candidate.units = candidate._bundle_dict(files, "units.json")
+	candidate.levels = candidate._bundle_dict(files, "levels.json")
+	candidate.arena = candidate._bundle_dict(files, "arena.json")
+	candidate.run = candidate._bundle_dict(files, "run.json")
+	candidate.relics = candidate._bundle_dict(files, "relics.json")
+	candidate.campaign = candidate._bundle_dict(files, "campaign.json")
+	candidate.tutorial = candidate._bundle_dict(files, "tutorial.json")
+	candidate.audio_assets = candidate._bundle_dict(files, "audio_assets.json")
+	candidate.stages = candidate._bundle_dict(files, "stages.json")
+	candidate.encounters = candidate._bundle_dict(files, "encounters.json")
+	candidate.economy = candidate._bundle_dict(files, "economy.json")
+	candidate.card_progression = candidate._bundle_dict(files, "card_progression.json")
+	candidate._validate()
+	if not candidate.errors.is_empty():
+		errors = candidate.errors.duplicate()
+		return false
+	_copy_from(candidate)
+	errors.clear()
+	return true
+
+
+func _bundle_dict(files: Dictionary, filename: String) -> Dictionary:
+	var value = files.get(filename)
+	if typeof(value) != TYPE_DICTIONARY:
+		errors.append("服务器配置缺少或类型错误: %s" % filename)
+		return {}
+	return (value as Dictionary).duplicate(true)
+
+
+func _copy_from(other: ConfigLoader) -> void:
+	cards = other.cards
+	units = other.units
+	levels = other.levels
+	arena = other.arena
+	run = other.run
+	relics = other.relics
+	campaign = other.campaign
+	tutorial = other.tutorial
+	audio_assets = other.audio_assets
+	stages = other.stages
+	encounters = other.encounters
+	economy = other.economy
+	card_progression = other.card_progression
+
 func _load_json_dict(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):
 		errors.append("配置文件不存在: %s" % path)

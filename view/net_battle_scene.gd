@@ -15,7 +15,6 @@ extends Node2D
 #
 # 单机训练营 battle_scene.gd 完全不受影响（这是独立新场景）。
 
-const ConfigLoaderScript := preload("res://logic/config_loader.gd")
 const GameStateScript := preload("res://view/game_state.gd")
 const BattleClientScript := preload("res://net/battle_client.gd")
 const BattleScript := preload("res://logic/battle.gd")
@@ -167,8 +166,7 @@ var _end_buttons_added := false
 
 func _ready() -> void:
 	_font = load("res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf")
-	_loader = ConfigLoaderScript.new()
-	_loader.load_all()
+	_loader = GameStateScript.config()
 	_http = HTTPRequest.new()
 	add_child(_http)
 	_build_result_panel()
@@ -282,6 +280,9 @@ func _on_reconnecting() -> void:
 func _process(delta: float) -> void:
 	if _client != null:
 		_client.poll(delta)
+	if not GameStateScript.is_online_ready() and not _ending:
+		_status = "在线会话中断，恢复中…"
+		_dragging = false
 	# 纯视觉顿帧：冻结 _elapsed 增量让 FX/演出定格（联机 sim 由 tick bundle 驱动，
 	# 不能像单机那样冻结 sim；这里只冻视觉时钟，不影响 lockstep 推进）。
 	if _hitstop_t > 0.0:
@@ -1030,7 +1031,7 @@ func _build_cards() -> void:
 	_sync_cards()
 
 func _on_card_down(i: int) -> void:
-	if _ending:
+	if _ending or not GameStateScript.is_online_ready():
 		return
 	_selected = i
 	_dragging = true
@@ -1042,7 +1043,7 @@ func _on_card_up(i: int) -> void:
 	var sc := _selected
 	_dragging = false
 	_selected = -1
-	if not was or sc != i or _client == null or _client.match_obj == null or _ending:
+	if not was or sc != i or _client == null or _client.match_obj == null or _ending or not GameStateScript.is_online_ready():
 		return
 	var screen: Vector2 = get_viewport().get_mouse_position()
 	if screen.y < TOPBAR_H or screen.y > _vh - HUD_BOTTOM_H:

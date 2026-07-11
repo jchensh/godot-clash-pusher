@@ -8,7 +8,6 @@ const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const HudWidgets := preload("res://view/ui/hud_widgets.gd")
 const DragScroll := preload("res://view/ui/drag_scroll.gd")
 const GameStateScript = preload("res://view/game_state.gd")
-const ConfigLoaderScript = preload("res://logic/config_loader.gd")
 const SpriteDB = preload("res://view/sprite_db.gd")
 const DECK_SIZE := 8
 
@@ -34,8 +33,7 @@ var _mode := ""                         # 组卡上下文：stage / edit / 其�
 var _pool_content: Control              # 卡池滚动内容层（48 卡超屏，ScrollContainer 拖动/滚轮滑动）
 
 func _ready() -> void:
-	_loader = ConfigLoaderScript.new()
-	_loader.load_all()
+	_loader = GameStateScript.config()
 	_mode = GameStateScript.deck_mode
 	var econ = GameStateScript.economy()
 	_cache = econ.get_cache() if econ.is_loaded else null

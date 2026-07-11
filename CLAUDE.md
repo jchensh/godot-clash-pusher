@@ -143,6 +143,7 @@ HTTPS_PROXY=http://127.0.0.1:7897 uv run --with "gdtoolkit==4.*" gdradon cc <路
 > 完整进度总览表 + 决策日志 + 当前阶段逐步见 [HISTORY.md](HISTORY.md)；V1/V2 详细历史归档于 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)；V3 详细历史归档于 [docs/HISTORY_V3_DETAILED.md](docs/HISTORY_V3_DETAILED.md)。这里只放一句话现状。
 
 - **上线工程线 E0 完成（KAN-103 Done）**：工程契约、ADR、部署门禁、runbook 与文档一致性校验已落地；运行时代码从 E1 起逐步落实。
+- **E1 在线主流程接线完成（KAN-105 Done）**：唯一 `Online` autoload、服务器 ConfigPush 原子配置、经济写 fail-closed、Gateway/API 复合降级恢复与 PVE 结算幂等已落地；合并基线 Godot **409/409**，PVE 真人验收通过，PVP 真人验收挂账。
 
 - **V1 / V2 / V3 全部完成**：V1 机制白膜 → V2 3-lane + 程序化换皮 + AI 难度 + 内容平衡 → V3 2D 战斗 reboot + 空军 + 新积木 + Roguelite 主轴 + 交互手感 + 精灵美术 + 音频骨架 + 难度 5 档 + 像素 UI 设计系统 + 新手战役 + 引导。客户端单测 **217/217**（V4 累加）。
 - **V4 进行中**（联网升级 + 实时对战，权威规划 [PLAN_V4.md](PLAN_V4.md)，方向锁定见决策 46）：

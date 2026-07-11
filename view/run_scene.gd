@@ -8,7 +8,6 @@ extends Control
 
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const GameStateScript = preload("res://view/game_state.gd")
-const ConfigLoaderScript = preload("res://logic/config_loader.gd")
 const RunMapScript = preload("res://logic/run_map.gd")
 const RunStateScript = preload("res://logic/run_state.gd")
 const RunRewardsScript = preload("res://logic/run_rewards.gd")
@@ -38,8 +37,7 @@ var _picking := false          # 正在播放选中演出，挡二次点击
 func _ready() -> void:
 	AudioManager.play_music("music_run_map")
 	AudioManager.play_ambience("amb_run_campfire")
-	_loader = ConfigLoaderScript.new()
-	_loader.load_all()
+	_loader = GameStateScript.config()
 	if GameStateScript.meta == null:
 		GameStateScript.meta = SaveScript.load_meta()
 	if GameStateScript.run == null:

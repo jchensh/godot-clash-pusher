@@ -127,3 +127,25 @@ func test_replay_reports_win_and_ticks() -> void:
 	assert_eq(String(v["status"]), "pass")
 	assert_eq(bool(v["win"]), bool(rec["win"]), "重放复算的胜负应与原局一致")
 	assert_eq(int(v["ticks"]), int(rec["ticks"]), "重放复算的时长应与原局一致")
+
+
+func test_failed_flush_requeues_evidence_and_reports_false() -> void:
+	var recorder = PveRecorderScript.new()
+	recorder._flushing = true
+	recorder.cmds = [{"t": 30}]
+	recorder.hashes = [{"t": 40}]
+	var ok := recorder._finish_flush([{"t": 10}, {"t": 20}], [{"t": 10}], {"ok": false, "status_code": 0})
+	assert_false(ok, "失败 flush 不得允许战后离场")
+	assert_false(recorder._flushing, "失败后释放 single-flight 供重试")
+	assert_eq(recorder.cmds.size(), 3, "发送失败的指令回队头")
+	assert_eq(int(recorder.cmds[0]["t"]), 10, "重排保持发送批次在前")
+	assert_eq(recorder.hashes.size(), 2, "发送失败的哈希回队头")
+
+
+func test_successful_flush_reports_true_without_requeue() -> void:
+	var recorder = PveRecorderScript.new()
+	recorder._flushing = true
+	var ok := recorder._finish_flush([{"t": 10}], [{"t": 10}], {"ok": true})
+	assert_true(ok, "成功 flush 才允许战后离场")
+	assert_false(recorder._flushing, "成功后释放 single-flight")
+	assert_true(recorder.cmds.is_empty() and recorder.hashes.is_empty(), "成功批次不回队")
