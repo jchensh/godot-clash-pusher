@@ -986,3 +986,17 @@
 - `PLAN_GRAND.md` / `PLAN_V5.md` 新增 E0→E9 上线工程线；E0 后按 E1 主流程接线 → E2 公网安全 → E3 Gateway 有界状态 → E4 排空探针 → E5 基建 → E6 verifier → E7 可观测 → E8 CI/CD，E9 HA 条件后置。
 
 **环境与边界**：本步未启动、探测或占用 Godot/Docker，未修改 Go/GDScript、配置、资源或数据库；保留用户已有未跟踪目录 `testAssets/newAssets/`。Jira **KAN-103** 按 `Idea → To Do → In Progress → In Review` 流转；`python tools/check_docs.py`（18 files）与 `git diff --check` 通过。用户于 2026-07-12 明确确认，随后转 Done 并执行本步 commit+push。
+
+---
+
+### V5 · 三国正式素材首张接入：骑士行走帧+单位阴影+战场整图背景（KAN-104，✅ 真人验收通过，2026-07-12）
+
+**做了什么（三国改版轨道A · A4 素材接入首批；素材源 = testAssets/newAssets/ 三张新图）**：
+- **素材加工（python 管线）**：骑士行走 10 帧原图 2列×5行（199×472，帧格不整除）→ alpha 包围盒精确切帧 + 重打包**单行 strip**（`SpriteDB.frame()` 只按单行取帧）：100×96/帧、bbox 水平居中、**脚底对齐**（防走路上下跳）；**帧序=行优先**，经「相邻帧循环像素差总分」算法验证（行优先 186 vs 列优先 261，分低=顺滑）。产出 `assets/units/sanguo_knight_walk.png`（1000×96）+ `unit_shadow.png`（46×39）+ `assets/map/battle_bg.png`（720×1400）。
+- **knight_body（虎贲校尉）换皮**（sprite_db「替换正式素材三步」首次实战）：新条目 fw100/fh96/cols10/n10/fps12；单方向素材无背面行（row_up 删）；**攻击帧未出 → 不配 "attack" 键**，frame() 缺省回退走帧（等美术补劈砍帧）。卡面肖像自动跟随（col0 帧）。
+- **新条目字段 ×2（正式素材通用，后续 38 张换皮全受益）**：`natural`=true → 战斗内**轻染 22% 队伍倾向**（同塔的画法；原「全强度乘队伍色」会把高饱和正式素材糊成黑剪影——首截图即中招）；`shadow`=true → battle_scene 画脚下椭圆影（贴图自带 30% alpha 单遍太淡且大半被人物盖住——先画成纯红定位确认「在画、位置对、纯粹太淡」，后叠两遍≈51% 黑 + 宽 0.9box 压脚线）。
+- **战场整图背景「特征对齐」接入**（`_draw_bg_image`，`BG_ENABLED=false` 可回退 tile 铺地）：直接拉伸会**竖向压扁 25% + 桥错位 ≤32px**（python 测图上河带中心 y=669.5/47.8%、双桥中心 x=171.5/528 vs 逻辑 50%/22.2%/77.8%）→ 改「**双桥中心定 x 缩放 + 河中心锚 y**、等比取源区域」贴 `_field_rect`，逻辑河/桥与图上河/桥重合（士兵过桥踩在画的桥上）；代价=图边装饰被裁（顶部小屋/右上湖/左右树带各半）。横版 = `draw_set_transform` 绕场心转 90° 复用同公式。竖/横截图验证均过。水动画 tile 在 BG 模式下不再画（静态河，试点可接受）。
+- **美术出图规格产出**：`docs/design/battle_bg_template_720x1050.png` 标注模板（画布 720×1050 可等比 2x/4x；河中心 y=50%、桥中心 x=22.2%/77.8% 宽 80px、六塔 footprint 框、18×32 参考网格；画布内=100% 可玩区禁边框装饰）——美术垫底作画，按此出图程序零裁切直接铺满。
+- **验收揪出 P1 显示 bug（组卡卡池骑士图标严重超框）+ 根因链**：`TextureRect` **expand_mode 必须先于 texture/size 赋值**——默认 EXPAND_KEEP_SIZE 下赋 texture 的瞬间 minimum size=帧尺寸，后设的 size 被 clamp 顶大（52×40 → 100×96）；旧 24×24 帧比框小故潜伏至今。headless probe 实测坐实（texture 先=顶成 100×96 / expand 先=正常 52×40；**决定性条件 = size 赋值时 expand_mode 已生效**）。修 `sprite_db.make_card_portrait`（组卡/养成/卡详情/创号全收口）+ `hud_widgets` 名片头像（同坑预防）；用户直觉正确——**养成图鉴 96×96 框实际也被撑到 100×96 溢 4px**，一并修复。回归测试 `test_make_card_portrait_size_not_inflated_by_large_frame` 锁死顺序，经「注入 bug 顺序→测试变红(报 100×96)→还原→绿」**真反证**验证有效（第一次反证只挪 texture 没挪 size=假阴性，教训：反证手术必须精确复现原 bug；顺带教训：临时实验文件还原**禁用 git checkout**——会把未提交改动一起丢，当场吃过一次被迫重建 sprite_db 全部改动并 diff 核对）。坑已入长期记忆（TextureRect expand 顺序，类比 set_anchors_preset 陷阱）。
+- **验证**：客户端单测 **393→394**（+1 回归）全过零回归；gdlint 全绿；截图自检（竖/横战场+阴影 zoom）+ **真人 worktree 实机验收通过（2026-07-12）**：战斗背景河桥对齐/骑士走路动画+阴影/横版一局/组卡·养成·卡详情图标复查。纯客户端，docker 零操作。`tests/_shot_harness.*`（临时截图 harness）随验收完成删除。
+- Jira：**KAN-104** 建单挂 Epic KAN-50 → Done（真人验收+用户拍板）。A4（KAN-93）素材接入自此开张：38 张单位换皮沿本步管线逐条替换（sprite_db 三步 + 帧序算法 + natural/shadow 字段现成）。

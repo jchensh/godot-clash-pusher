@@ -41,6 +41,17 @@ func test_card_portrait_tint_is_color() -> void:
 		var tint = SpriteDB.card_portrait_tint(str(cid), loader)
 		assert_true(typeof(tint) == TYPE_COLOR, "card %s portrait tint 为 Color" % cid)
 
+func test_make_card_portrait_size_not_inflated_by_large_frame() -> void:
+	# 回归（2026-07-12）：TextureRect 默认 EXPAND_KEEP_SIZE 下先赋 texture 会把 minimum size
+	# 撑到帧尺寸，后设的 size 被 clamp 顶大——100×96 三国骑士帧曾把组卡 52×40 卡池格撑爆超框。
+	# make_card_portrait 必须保持 expand_mode 先于 texture/size 赋值，此测锁住该顺序。
+	var port = SpriteDB.make_card_portrait("knight", _loaded(), Vector2.ZERO, Vector2(52, 40))
+	assert_not_null(port, "knight 卡应有肖像")
+	if port != null:
+		assert_true(port.size.x <= 52.0 and port.size.y <= 40.0,
+			"肖像应贴合请求尺寸而非被帧尺寸撑大: %s" % str(port.size))
+		port.free()
+
 func test_placeholder_inventory() -> void:
 	# 占位盘点：31 条 ph 标记（29 新单位 + golem/baby_dragon 旧暂替）。
 	# 正式三国素材替换一条就删一条 ph → 此断言同步减一（刻意的替换进度账本）。

@@ -108,13 +108,14 @@ static func nameplate(nickname: String, avatar_card_id: String, loader, trophies
 	var tex := SpriteDB.card_portrait_tex(avatar_card_id, loader)
 	if tex != null:
 		var pic := TextureRect.new()
+		# expand_mode 先于 texture/size（同 sprite_db.make_card_portrait 的坑：后设会被大帧撑爆）
+		pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		pic.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		pic.texture = tex
 		pic.modulate = SpriteDB.card_portrait_tint(avatar_card_id, loader)
 		pic.position = Vector2(fx + 7, 7)
 		pic.size = Vector2(av - 14, av - 14)
-		pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		pic.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		pic.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		root.add_child(pic)
 	# 昵称
