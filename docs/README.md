@@ -68,6 +68,7 @@
 
 | 文档 | 一句话 |
 |---|---|
+| [design/GDD.md](design/GDD.md) | **游戏策划总案（给人读）**：世界观/机制/系统/数值/路线图，测试·策划·程序·美术通读入口 |
 | [design/01_research.md](design/01_research.md) ~ [design/04_awakenings_meta.md](design/04_awakenings_meta.md) | 卡池 16→48 设计四部曲（调研/宪法/卡库/觉醒） |
 | [design/HANDOFF_next.md](design/HANDOFF_next.md) | 卡池扩充交接便签 |
 | design/card_art_spec_48cards.xlsx | 48 卡美术规格表（三国版，美术真相源） |
