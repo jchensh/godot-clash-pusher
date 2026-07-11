@@ -6,7 +6,7 @@
 
 竖屏「皇室战争式对推小游戏」，**Godot 4.6.3 / GDScript**（客户端）+ **Go**（服务端），**Windows 开发**（早期 V1/V2 历史在 macOS）。**当前定位（决策 48，2026-06-26 起）= 实时在线 F2P 商业手游**：进游戏强制登录 + 持久连接、**服务器唯一权威**（账号/钱包/养成/进度/配置全在服务器 + PG DB）、客户端为瘦表现层（UI + 客户端 lockstep 战斗 sim + 非权威缓存）、**断线即不可玩**。玩法：圣水 + 循环卡组、**2D 场地自由部署、绕桥推塔决胜**；PvE 在线闯关养成（100+ 关 + 货币经济 + 卡牌升级/升阶 + 挂机）+ PvP lockstep 联网对战。早期 V1~V3「买断/单机」与决策 47「单机本地」**已被决策 48 取代**。
 
-> **编码前必读**：[PLAN_GRAND.md](PLAN_GRAND.md)（全项目 roadmap）→ [PLAN_V5.md](PLAN_V5.md)（**当前阶段权威规划：实时在线 F2P 闯关养成**）；[PLAN_V4.md](PLAN_V4.md)（V4 联网线，S0~S4 完成、转 V5 主干）；[docs/PLAN_V3.md](docs/PLAN_V3.md) / [docs/PLAN_V2.md](docs/PLAN_V2.md) / [docs/PLAN_V1.md](docs/PLAN_V1.md) 是已完成阶段的规格（存档备查）。本文件只是操作手册，当前阶段规格以 PLAN_V5.md 为准。
+> **编码前必读**：[PLAN_GRAND.md](PLAN_GRAND.md)（全项目 roadmap）→ [PLAN_V5.md](PLAN_V5.md)（**当前阶段权威规划：实时在线 F2P 闯关养成**）；[PLAN_V4.md](docs/PLAN_V4.md)（V4 联网线，S0~S4 完成、转 V5 主干）；[docs/PLAN_V3.md](docs/PLAN_V3.md) / [docs/PLAN_V2.md](docs/PLAN_V2.md) / [docs/PLAN_V1.md](docs/PLAN_V1.md) 是已完成阶段的规格（存档备查）。本文件只是操作手册，当前阶段规格以 PLAN_V5.md 为准。
 
 ## 开发纪律（最高优先级）
 - **一步一确认**：严格按 PLAN_V5.md 的施工图步骤顺序；**每完成一步停下等用户确认**，再进下一步，不要一次做多步。
@@ -81,7 +81,7 @@ project.godot   Godot 工程入口（把工程根钉死在仓库根）
 /tools      配置/平衡脚本（build_config.py、build_stages.py、balance_probe.gd…）
 /scripts    环境脚本（setup-godot-ai.ps1）
 /testAssets 原始美术素材源（84 PNG，加工后进 /assets；非运行时引用）
-根 *.md     README / CLAUDE / AGENTS / PLAN_GRAND / PLAN_V5(+V4) / HISTORY（AI agent 真相源，刻意放根便于发现）
+根 *.md     README / CLAUDE / AGENTS / PLAN_GRAND / PLAN_V5 + 支线施工图 / HISTORY（AI agent 真相源，刻意放根便于发现）
 ```
 
 ## 工具链 / 常用命令
@@ -101,6 +101,8 @@ HTTPS_PROXY=http://127.0.0.1:7897 uv run --with "gdtoolkit==4.*" gdlint .       
 HTTPS_PROXY=http://127.0.0.1:7897 uv run --with "gdtoolkit==4.*" gdradon cc <路径>   # 圈复杂度报告（观测用）
 ```
 > `gdformat` 备而不用：全库重排会污染 blame；新建文件可单独 `gdformat <file>`。
+
+> ⚠️ 反作弊运维铁律：改 `logic/` 或 `config/` 后必须 `docker restart server-verifier-1`（重放验证器挂载工程代码跑重放）；**新增卡牌**还需重启 api 容器（`ensureSeeded` 播种 economy_cards）。
 
 ## godot-ai MCP（编辑器联动，**辅助工具**）
 `addons/godot_ai/` 在 **Godot 编辑器开着时**起本地 MCP server（`127.0.0.1:8000/mcp`），让 AI 读写引擎（场景树/节点/脚本/截图/跑测试，工具名 `mcp__godot-ai__*`）。
@@ -140,26 +142,10 @@ HTTPS_PROXY=http://127.0.0.1:7897 uv run --with "gdtoolkit==4.*" gdradon cc <路
 - **生命周期（主动维护，与「一步一确认」一致）**：①规划建单 → ②开工改 `In Progress` → ③完成 + 测过 + 用户同意 → 改 `Done`。改 `Done` 与 `git commit` 同属需用户拍板的收尾动作。
 
 ## 当前进度快照（非真相源；以 HISTORY.md + Jira 为准）
-> 完整进度总览表 + 决策日志 + 当前阶段逐步见 [HISTORY.md](HISTORY.md)；V1/V2 详细历史归档于 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)；V3 详细历史归档于 [docs/HISTORY_V3_DETAILED.md](docs/HISTORY_V3_DETAILED.md)。这里只放一句话现状。
+> 完整进度总览表 + 决策日志 + 当前阶段逐步见 [HISTORY.md](HISTORY.md)；全部文档索引见 [docs/README.md](docs/README.md)。这里只放一句话现状。
 
-- **上线工程线 E0 完成（KAN-103 Done）**：工程契约、ADR、部署门禁、runbook 与文档一致性校验已落地；运行时代码从 E1 起逐步落实。
-- **E1 在线主流程接线完成（KAN-105 Done）**：唯一 `Online` autoload、服务器 ConfigPush 原子配置、经济写 fail-closed、Gateway/API 复合降级恢复与 PVE 结算幂等已落地；合并基线 Godot **409/409**，PVE 真人验收通过，PVP 真人验收挂账。
-
-- **V1 / V2 / V3 全部完成**：V1 机制白膜 → V2 3-lane + 程序化换皮 + AI 难度 + 内容平衡 → V3 2D 战斗 reboot + 空军 + 新积木 + Roguelite 主轴 + 交互手感 + 精灵美术 + 音频骨架 + 难度 5 档 + 像素 UI 设计系统 + 新手战役 + 引导。客户端单测 **217/217**（V4 累加）。
-- **V4 进行中**（联网升级 + 实时对战，权威规划 [PLAN_V4.md](PLAN_V4.md)，方向锁定见决策 46）：
-  - **战斗权威 = lockstep + 状态哈希校验**（沿用现有 `logic/` 10Hz 确定性 tick，不重写 Go 战斗逻辑）。
-  - **服务端 Go / 协议 WS+protobuf / 库 PG+Redis / 认证 JWT+匿名 device_id**。
-  - **当前阶段 = 玩法验证**：S0 脚手架 → S1 匿名登录 → S2 档案云存档 → **S3 lockstep 实时对战（头号工程）** → S4 匹配 → S5 赛季+榜。
-  - **产品化推后**：S6 战绩回放 / S7 反作弊深化 / S8 部署上线 / S9 版本管理 / S10 IAP+养成 / S11 正式登录+合规 / S12 聊天好友。
-  - **V3 Roguelite + 短战役 + 平衡剩余子项**作为单人训练营保留不动；V3-9 平衡可与 V4-S0~S2 并行做。
-- **V4 完成线**：**V4-S0/S1/S2/S3 全部完成**。S0 脚手架 + 双端 protobuf；S1 匿名 device_id 登录；S2 玩家档案云存档（profile + decks + 乐观锁 + 离线缓存）；**S3 lockstep 实时对战（头号工程）整阶段收官**——确定性地基 + Go gateway/battle room + 客户端 net 层 + 联机对战场景 + 心跳/断线重连重放/超时认输，**两台 Windows 真机对战验收通过**（完整对局 + 实时同步 + 胜负入库）。客户端单测 **217/217**；Go battle 14 unit + auth/profile integration 全过。**V4-S0~S4 全部完成（KAN-36/37/38/39/40 Done）**。S4 匹配：profiles 加隐藏 MMR（ELO @1200，结算调分）+ 杯数（可见进度，主菜单显示）；Redis ZSET 队列（首次用 Redis）+ 窗口放宽匹配器 + Lobby 替代 Hub（FindMatch→配对→建房）；客户端匹配 UI（匹配中/取消）+ 会话自动登录。端到端真匹配 smoke + **两台 Windows 真机验收通过**（ELO 配对+对局+MMR/杯数入库）。客户端单测 **221/221**；Go unit + integration（含 Redis）全过。**V4-S5（赛季+排行榜）暂缓**（KAN-41 退回 To Do）。
-- **Now = V5 在线 F2P 闯关养成**（**决策 48 推翻 47**：服务器权威、实时在线；权威规划 [PLAN_V5.md](PLAN_V5.md)，Epic KAN-50）：100+ 关闯关（难度系数）+ 货币经济（金币/碎片/宝石）+ 卡牌升级/升阶（数值 + 技能解锁）+ 挂机，**全部服务器权威**（账号/钱包/养成/进度/配置在服务器 + PG），客户端瘦表现层 + 持久连接 + 断线不可玩。**本地原型 S0~S6 完成**（单测 **270/270**；逻辑算法将镜像进 Go 做权威结算，客户端那份保留 UI 预览 + 战斗内计算）：S0 配置骨架 / S1 出兵数值乘区 / S2 存档+战力 / S3 闯关+星级 / S4 升级 / S5 升阶+技能解锁 / S6 经济产出。**转向后施工**：在线地基 + 服务器经济 **N1~N7 整线收官**——N1/N2 持久会话+登录门 + 配置服务器化下发；N3/N4 服务器权威经济状态+DB / 升级升阶解锁结算（服务器算成本+校验+落库）；N5 通关发奖+sanity；N6 挂机服务器时钟结算（堵改时钟刷资源）；N7 瘦客户端化（养成数据服务器权威 + 本地档降为非权威缓存，堵改存档）。复用 V4 的 Go+PG+账号+WS+lockstep 作地基（V4 服务端线从"暂缓"转主干）。
-  - **S7 UI 整合完成（KAN-58 Done）**：基地 Hub + 闯关地图 + 领奖开箱 + 养成 collection/detail + 钱包/挂机/战力 + deck builder 接已解锁卡（接 EconomyStateCache + 服务器权威经济），真人全流程验收过；派生 **S7+ 养成卡多维排序（KAN-67 Done）** + **GM 作弊工具（KAN-68 Done，服务器权威改库；V5-S9/KAN-70 起去掉 `GM_ENABLED` 门控、所有部署含 prod 始终开放——用户决策）**。
-  - **🚧 Now = V5-S8 内容铺量 + 平衡（KAN-59 进行中）**：S8a 遭遇模板池→15 / S8b 平衡 probe harness（AIController 可选边）/ S8c stages 生成器铺 **100 关** / S8d 敌塔随 coef 平衡 pass——**代码均已完成并提交**，剩 **S8e 真人验收**（从第 1 章推进体验难度曲线，`docs/ACCEPTANCE_V5_S8.md`）未签收。**客户端单测 313/313**。
-  - **联机视觉对齐完成（KAN-49 Done，真人双机验收过——net_battle 满视觉 + 双方名片）**；V4-S5 赛季+榜暂缓（KAN-41）。
-  - **✅ V5-S9 账号+引导+菜单改版完成（KAN-70~75，真人验收过）**：账号身份系统（创号起名+选怪物头像，服务器权威 + migration 0007）+ 名片显示（主菜单/PVE/PVP 双方）+ 新手引导自动化（创号后强制一局→主菜单）+ 主菜单重构（天梯征途/闯关/养成/卡组/探险/设置，去退出+新手战役入口）+ 天梯先选卡组再匹配 + GM 解禁。施工图 [PLAN_V5_S9_ACCOUNT_UX.md](PLAN_V5_S9_ACCOUNT_UX.md)。客户端 **313/313** + Go 全过 + 真 docker migrate→schema v7。
-  - **🃏 卡池扩充线（KAN-80~89，独立于 S8/S9，2026-07-03 启动）**：16→48 卡三维体系设计（稀有度/流派/觉醒，[docs/design/01-04](docs/design/)）+ **三件套引擎(splash/building-target/status) + retrofit + KAN-85 铺 32 卡→48 + KAN-86 十六张 epic+legendary 觉醒**全完成（KAN-80~86/89 Done）；客户端 **353/353**。剩 KAN-87 probe 平衡 + KAN-88 延后件（**均挂起**，见三国化线）。⚠️ 反作弊运维铁律：改 logic/config→`docker restart server-verifier-1`；加卡→另重启 api（`ensureSeeded` 播种 economy_cards）。
-  - **🀄 三国题材改版（轨道A，2026-07-04 启动）**：世界观/画风全换三国（魏/蜀/吴/群雄，热血物语高清像素），**卡ID/数值/机制/结构冻结**；施工图 [PLAN_V5_SANGUO.md](PLAN_V5_SANGUO.md)，美术真相源 docs/design/card_art_spec_48cards.xlsx（三国版）。**A1 美术表口径对齐 + A2 文案层三国化已完成待真人验收**（48 卡名/39 单位名/22 觉醒名 + cards.json `faction` 字段 12×4 + 稀有度显示名 寻常/精良/非凡/无双 + i18n 补全 48 卡双语——顺带修复 32 新卡 UI 显示原始键名的断层）；**A3 场景/系统美术清单已产出待评审**（docs/design/scene_system_art_spec.xlsx，6 sheet：塔分阵营 5 套/FX 18 项/UI 中式小改/头像 16/音频方向；决策 7~10 入 PLAN_V5_SANGUO §0）；A4 素材接入+世界观文本+遭遇奖励回填待做。**真人验收台账 = docs/ACCEPTANCE_SANGUO.md**（A1A2=KAN-90/A2.5=KAN-91/A3=KAN-92 均 In Review 欠验收；A4=KAN-93 待办）。**数值线 KAN-87/88 挂起**（轨道A 后复盘）。48 卡机制层已全可玩（GM 解锁后）；**A2.5 占位精灵铺满完成待验收**（sprite_db 39/39 全覆盖：复用贴图+tint 阵营染色+scale 体型 + `ph` 占位标记与替换三步指引）。**四滚动界面（组卡/创号/图鉴/闯关）统一 `view/ui/drag_scroll.gd` 鼠标按住拖动**（真机触摸走引擎原生；发奖弹窗穿透已修，KAN-96 In Review）；**首批 BGM 已入库**（KAN-95：菜单 Oriental / 战斗 Ninja Theme，均 OpenGameArt CC0 可商用免署名，AudioManager 已补清单 loop 生效）。
-  - **🔄 横版战斗 H1+H2 完成（KAN-94 In Review，2026-07-05）**：变换层收敛（14 处方向手算收敛+基准锁定单测）+ 横版投影（我左敌右，letterbox 临时投影区）+ 设置页实验开关（仅 PvE；战役/新手/联机门控竖版），真人验收 E-2/E-3 过（横版完整一局）。施工图 [PLAN_V5_HBATTLE.md](PLAN_V5_HBATTLE.md)；H3 侧视帧约定/H4 横版 HUD/H5 切横屏/H6 联机横版未开工。客户端 **366/366**。
-  - **🧱 UI 体系改造进行中（KAN-97 In Progress，2026-07-05 拍板并开工）**：盘查结论=客户端只有样式库（PixelUI）没有层级骨架（0 CanvasLayer、树序当层级、三套输入系统并行）→ 穿透结构性复发（已撞 KAN-96/KAN-98）。施工图 [PLAN_V5_UIFRAME.md](PLAN_V5_UIFRAME.md)。**F1 层级骨架完成**：autoload `UI`（CanvasLayer 栈 MODAL=50<TOAST=90 + UI.modal/toast 入口）+ Modal 基类（幂等装配/暗幕/closed 信号/bg_click_cb）+ 双结算层迁入弹窗层（**KAN-98 net_battle 结算拦不住手牌已根治**，In Review）+ DragScroll 对 modal 让路。**F2 存量迁移完成**：reward_chest 继承 Modal + run_scene 弹层走 UI.modal（`_dim` 树序压层删除）+ 4×toast 转发 `UI.toast` + battle 教程覆盖补输入实体（tap 步 STOP/action 步 IGNORE，删前置 `_input` 手搓）。单测 374/374，真人验收 F 组 8 例欠。**规约：覆盖类 UI 一律走 `UI.modal`，禁手搓全屏 Control 靠树序压层**。**F3 规约固化完成**（本文件铁律第 4 条 + pixel_ui.gd 头，`cfc6d42`）——F1~F3 代码/文档全完，剩 F 组真人验收欠着。⚠️ 2026-07-06 KAN-99 验收揪出 **F1 潜伏 P0**：Modal 全屏矩形从未真生效（0×0 隐形），已随框架地基线修复+封禁（详见 HISTORY 踩坑②），F 组验收自此才真正有意义。
-  - **🧭 框架地基线开工（#1 SceneRouter 完成待验收，KAN-99 In Review，2026-07-06）**：开源框架调研结论=Godot 无大一统手游框架、社区上乘=外壳模板+领域积木+架构模式；我们强项（确定性战斗/lockstep/服务器权威经济）无现成替代不动，比对出**四缺口：①场景路由 ②事件总线 ③日志 ④lint 工具链**，逐个补。**#1 已落地**：autoload `Router`（`view/scene_router.gd`，抄 crystal-bit GGT 模式）= ROUTES 路由表（13 场景集中登记）+ `goto/reload` 唯一切场景入口 + 转场黑幕（100 层，转场期挡输入）+ params 传递（GameState 握手参数化铺路，本步未动握手）；收编 15 文件 43 处散装 `change_scene_to_file/reload_current_scene` 与各文件重复路径常量；新铁律（上方第 5 条）+ 规约扫描单测把关。客户端 **384/384**（+10 `test_scene_router`；真人验收连揪两 P0 均修：①转场中重定向 goto 被防连点误丢→改暂存接力；②**F1 潜伏缺陷**——Modal/暗幕/幕布 `set_anchors_preset` 只改锚点保留 0×0，弹窗层输入隔离从未真生效（教程提示窗点不动而手牌可拖的根因）→ 全 view 13 处换 `set_anchors_and_offsets_preset` + 裸调用源码封禁单测）。**#2 事件总线完成待验收（KAN-100 In Review）**：autoload `Events` + `economy_changed` 广播（发射端收口 EconomyStateCache._apply/seed）+ 三页订阅改造（基地领挂机/卡详情养成/设置 GM——动作 handler 手动重刷全删）+ 「logic 层禁用总线」入铁律第 6 条 + 封禁扫描；刻意不接无页内动作的 stage_map/图鉴（防双重刷新）。单测 **389/389**（+5 `test_events`）。**#3 日志完成待验收（KAN-101 In Review）**：`Log` 静态类（d/i/w/e 分级 + 相对时间戳 + release 构建剥离 d 级 + sink 可注入单测捕获）收编 view/net 60 处裸 print（15 文件，逐条定级：失败/掉线→w、高频噪声→d、里程碑→i；net/proto 生成物豁免）+ 「禁裸 print」入铁律第 7 条 + 规约扫描（logic 层本就零 print，纳入扫描面守住）。单测 **393/393**（+4 `test_log`）。**#4 lint 工具链完成（KAN-102 Done，`a87383d`，CI 首跑 19s 绿）——框架地基四缺口收官**：gdtoolkit（gdlint 4.5.0 经 uv）+ 根 `gdlintrc` 按房规调校（放行构造参尾下划线/私有 preload 前下划线；行宽 140 适配中文注释；禁 4 条纯 churn 风格规则并留痕）+ **全库 lint 清零**（首跑 2233→我方 426→修 36 处真问题：混缩进/未用参/局部命名/`sprite_db.DB` const 化/25 长行手工换行——其余为配置取舍；proto 生成物/addons 豁免）+ CI（`.github/workflows/lint.yml`，master 推送/PR 自动跑）+ gdradon 复杂度基线（我方 787A/69B/9C/**1F=config_loader._validate CC109**，巨石拆分立项的量化底数）。单测 **393/393** 零回归。
+- **V1~V4 全部完成**（V4-S5 赛季/榜暂缓 KAN-41）；详细历史按版本线归档于 docs/HISTORY_*.md。
+- **V5 = 实时在线 F2P 闯关养成（决策 48，服务器权威；[PLAN_V5.md](PLAN_V5.md)，Epic KAN-50）**：本地原型 S0~S8 + 在线化 N1~N7 + S9 账号/引导/菜单 + 卡池 16→48 + 框架地基（Router/Events/Log/lint）**代码全部完成**；S8e 难度手感等多组真人验收欠账，台账见 [docs/ACCEPTANCE_SANGUO.md](docs/ACCEPTANCE_SANGUO.md) 与各 ACCEPTANCE_* 文档。
+- **Now = 上线工程线 E0~E9（[PLAN_V5.md](PLAN_V5.md) §13）**：E0 契约 + E1 在线主流程接线（唯一 `Online` autoload、fail-closed、结算幂等）已 Done；**下一步 E2 公网安全**（Prod 去 GM / WS ticket / WSS）。E2 完成前不得上公网、不打正式联机包。
+- **内容支线**：三国改版轨道A（A1~A3 欠验收、A4 素材接入进行中，[PLAN_V5_SANGUO.md](PLAN_V5_SANGUO.md)）；横版战斗 H3~H6 未开工（[PLAN_V5_HBATTLE.md](PLAN_V5_HBATTLE.md)）；UI 骨架 F 组验收欠（[PLAN_V5_UIFRAME.md](PLAN_V5_UIFRAME.md)）；数值线 KAN-87/88 挂起。
+- 基线：客户端单测 **409/409**；Go unit+integration 全过；服务端 schema **v8**（0008_pve_battles）；docker **6 容器**（含 verifier）。

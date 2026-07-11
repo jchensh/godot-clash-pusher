@@ -12,7 +12,7 @@
 | **V1** | 机制验证：单 lane 白膜可玩 demo | ✅ 完成（2026-06-07） | [docs/PLAN_V1.md](docs/PLAN_V1.md) |
 | **V2** | 做深做像：3-lane + 换皮 + AI + 内容 | ✅ 完成（2026-06-10） | [docs/PLAN_V2.md](docs/PLAN_V2.md) |
 | **V3** | 战斗核心 2D 重构 + 买断制单机（短战役+Roguelite+精灵） | ✅ 完成（2026-06-22；V3-9 平衡剩余子项可继续并行做） | [docs/PLAN_V3.md](docs/PLAN_V3.md) |
-| **V4** | 联网地基：账号 + 档案云存 + lockstep 实时对战 + 匹配（S0~S4 完成；S5 赛季/榜暂缓） | ✅ S0~S4 完成 → 转 V5 在线主干 | [PLAN_V4.md](PLAN_V4.md) |
+| **V4** | 联网地基：账号 + 档案云存 + lockstep 实时对战 + 匹配（S0~S4 完成；S5 赛季/榜暂缓） | ✅ S0~S4 完成 → 转 V5 在线主干 | [PLAN_V4.md](docs/PLAN_V4.md) |
 | **V5** | **实时在线 F2P 闯关养成**（决策 48）：服务器权威经济/养成 + 100+ 关 + 上线工程化 | 🚧 进行中（N1~N7 已完成；E0~E8 上线工程线启动） | [PLAN_V5.md](PLAN_V5.md) |
 | **V6+** | 商业/运营扩展：IAP 支付 + 正式登录/合规 + 赛季/榜/社交 | ⬜ 远期 | — |
 
@@ -29,7 +29,7 @@
 **从「技术验证物」做成「买断制轻中度单机产品」**。完成内容：战斗核心 2D 重构（河+双桥+流场绕桥+软推挤+塔反击，彻底取代 lane）+ 空军（飞兵越河 + 对空克制）+ 新积木（亡语/治疗）+ Roguelite 主轴（连战链/draft/relic/boss/meta/存档）+ 交互手感（拖拽部署/移动插值/受击反馈/震屏/胜负演出）+ 精灵美术（单位/塔/FX/投射物/地形/卡面）+ 音频骨架（资源表 + AudioManager autoload，真实素材待补）+ 难度 5 档 + 像素 UI 设计系统 + 6 屏统一 + 新手战役（CampaignState + 6 教学关 + 引导覆盖层）。**V3-9 平衡剩余子项**（数值/节奏调优 + 设置/导出/上架打磨）与 V4 早期阶段可并行做。细节见 [docs/PLAN_V3.md](docs/PLAN_V3.md) / [docs/HISTORY_V3_DETAILED.md](docs/HISTORY_V3_DETAILED.md)。
 
 ## V4 — 联网地基（S0~S4 完成，转为 V5 在线主干）
-**联网升级 + 实时对战 + 服务端架构**，已完成 S0~S4：账号（匿名 device_id）+ 玩家档案云存档 + **lockstep 实时对战**（沿用 `logic/` 10Hz 确定性 tick，不重写 Go 战斗逻辑）+ 匹配（Redis ZSET + ELO）。S5 赛季/榜暂缓。服务端 = Go / 协议 WS + protobuf / 库 PG + Redis / 单仓 `/server` + `/proto`。**决策 48 起这套服务端从"玩法验证暂缓"转为 V5 在线游戏的主干地基**（账号/WS/PG/lockstep 复用）。细节见 [PLAN_V4.md](PLAN_V4.md)。
+**联网升级 + 实时对战 + 服务端架构**，已完成 S0~S4：账号（匿名 device_id）+ 玩家档案云存档 + **lockstep 实时对战**（沿用 `logic/` 10Hz 确定性 tick，不重写 Go 战斗逻辑）+ 匹配（Redis ZSET + ELO）。S5 赛季/榜暂缓。服务端 = Go / 协议 WS + protobuf / 库 PG + Redis / 单仓 `/server` + `/proto`。**决策 48 起这套服务端从"玩法验证暂缓"转为 V5 在线游戏的主干地基**（账号/WS/PG/lockstep 复用）。细节见 [PLAN_V4.md](docs/PLAN_V4.md)。
 
 ## V5 — 进行中（实时在线 F2P 闯关养成 · 决策 48）
 **项目转向：实时在线 F2P 商业手游、服务器权威**（推翻决策 47「单机本地」）。PvE 在线闯关养成：100+ 关（难度系数）+ 货币经济（金币/碎片/宝石）+ 卡牌升级/升阶（数值 + 技能解锁）+ 挂机。**全部服务器权威**（账号/钱包/养成/进度/配置在服务器 + PG），客户端瘦表现层 + 持久连接 + 断线不可玩；战斗仍客户端 lockstep（服务器下发权威输入）。N1~N7 在线功能已完成，现追加不含游戏内容的 **E0~E8 上线工程线**：契约 → 主流程接线 → 公网安全 → Gateway 有界状态 → 排空/探针 → Staging/Prod 基建 → verifier 工程化 → 可观测 → CI/CD。Gateway 多活 E9 只有在状态外置和容量证据成立后再做。细节见 [PLAN_V5.md](PLAN_V5.md)。

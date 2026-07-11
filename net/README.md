@@ -2,7 +2,7 @@
 
 V4 联网升级的客户端代码。**V4-S0f 阶段只有 `proto/` 子目录**（godobuf 生成的 GDScript pb 类）；真正的 WS 客户端 / token 存盘 / lockstep 收发逻辑从 V4-S1 起逐步加。
 
-权威规划见 [PLAN_V4.md](../PLAN_V4.md)。
+权威规划见 [PLAN_V4.md](../docs/PLAN_V4.md)。
 
 ## 目录结构
 

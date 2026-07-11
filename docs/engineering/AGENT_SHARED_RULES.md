@@ -34,4 +34,5 @@
 
 - 当前进度只在 `HISTORY.md` 与 Jira 维护；根级智能体手册只保留短摘要和链接，避免复制长时间线。
 - 新增架构决定用 ADR；部署操作用 runbook；上线条件用 gate checklist。
+- 文档纪律（2026-07-12 起）：单文档目标 ≤300 行，超限先拆分/归档再追加；版本线或子步收官后，其 HISTORY 详细段随该步搬入 `docs/HISTORY_*_DETAILED.md` 归档、已收官 PLAN 移入 `docs/`；新专题开新文件并在 `docs/README.md` 文档地图登记一行，不往既有长文件追加异质内容。
 - 修改 `AGENT-SHARED` 镜像块时必须同时修改 `AGENTS.md` 与 `CLAUDE.md`，并运行 `python tools/check_docs.py`。
