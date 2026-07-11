@@ -958,3 +958,31 @@
 - **验证**：`gdlint .` 全库绿 + 全量单测 **393/393** 零回归（改动含 logic 签名换行/更名与 sprite_db const 化，编译扫描+全逻辑单测背书）+ headless editor 导入干净。CLAUDE.md 工具链段收录本地命令（gdformat 备而不用：全库重排污染 blame，新文件可单用）。
 - **真人验收用例（KAN-102）**：X-1 提交推送后 GitHub → Actions 页看到 `lint` workflow 绿；X-2（可选）本地跑 `uv run --with "gdtoolkit==4.*" gdlint .` 自见 Success。
 - Jira：**KAN-102** 建单挂 Epic KAN-50 → 正在进行 → In Review → 提交 `a87383d` 推送后 **CI 首跑 19s 绿（gh 查证）→ Done**。**框架地基四缺口（KAN-99 路由/KAN-100 总线/KAN-101 日志/KAN-102 lint）全线收官**；KAN-99 尚欠联机/探险两条流真人验收（验过转 Done + 顺带可关 KAN-98）。
+
+---
+
+### V5 · 上线工程 E0 契约与文档真相源（KAN-103，✅ 用户确认完成，2026-07-12）
+
+**背景**：对前后端、网络和基建进行 Staging/Prod 架构审计后，确认“在线功能已完成”与“可安全上线”之间仍有工程化缺口。用户拍板先做 E0，只处理文档和代码工程规范，不碰游戏内容；继续一步一确认，Jira/文档齐备、用户确认后才 commit+push。
+
+**本步锁定的新工程决策**（目标契约，不伪装成当前代码已实现）：
+- **Prod 不离线降级**：登录失败/掉线只允许登录、重连、更新提示和当前页面只读；可选 `offline_training` 必须是显式非权威沙盒，结果永不写回在线进度。
+- **Prod 无 GM**：E0 安全基线收紧 V5-S9“所有部署常开 GM”的历史决定。GM 仅存在于 Staging 隔离制品/路由；Prod 制品与路由表必须不存在 `/v5/gm/*`。当前代码仍常开，留 E2 实做。
+- **Gateway 近期单活**：房间/连接/重连状态外置前只允许一个 active Gateway；API/verifier 可独立扩缩。多活 E9 只有在状态外置、跨实例重连/匹配一致性与负载证据齐备后立项。
+- **认证目标**：长期 JWT 只走 HTTPS Authorization；WS 改为短时单次 ticket + WSS 首帧认证，Origin allowlist，代理日志不记录 query/凭据。
+
+**新增工程文档**：
+- `docs/architecture/`：在线运行时状态机、Gateway 状态所有权/有界重连、服务器配置权威与版本绑定。
+- `docs/adr/0001~0003`：单活 Gateway、服务端配置权威、生产不离线降级。
+- `docs/security/`：威胁模型、access/refresh/WS ticket 生命周期与首帧认证契约。
+- `docs/deployment/`：Staging 私网+Caddy 基线、Production P0/P1 门禁和 E0 时点已知阻断。
+- `docs/runbooks/`：SIGTERM Gateway drain、不可变制品回滚、SEV 事件响应。
+- `docs/engineering/AGENT_SHARED_RULES.md`：Claude/Codex 共享真相源优先级、施工纪律、环境占用规则和上线边界。
+
+**规范与 CI**：
+- `AGENTS.md` / `CLAUDE.md` 增加逐字一致的 `AGENT-SHARED` 镜像块；当前进度标题明确降为快照，真实进度只看 HISTORY + Jira。
+- `tools/check_docs.py`（stdlib）校验 14 个 E0 必备文档、两根级镜像块和相对 Markdown 链接；顺带发现并修复 `PLAN_GRAND.md` 既有 V2 链接路径错误。
+- `.github/workflows/lint.yml` 扩为代码+文档静态门禁：Markdown/规则/校验脚本变化时运行 `gdlint .` + `python tools/check_docs.py`。
+- `PLAN_GRAND.md` / `PLAN_V5.md` 新增 E0→E9 上线工程线；E0 后按 E1 主流程接线 → E2 公网安全 → E3 Gateway 有界状态 → E4 排空探针 → E5 基建 → E6 verifier → E7 可观测 → E8 CI/CD，E9 HA 条件后置。
+
+**环境与边界**：本步未启动、探测或占用 Godot/Docker，未修改 Go/GDScript、配置、资源或数据库；保留用户已有未跟踪目录 `testAssets/newAssets/`。Jira **KAN-103** 按 `Idea → To Do → In Progress → In Review` 流转；`python tools/check_docs.py`（18 files）与 `git diff --check` 通过。用户于 2026-07-12 明确确认，随后转 Done 并执行本步 commit+push。

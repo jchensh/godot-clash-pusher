@@ -276,7 +276,7 @@
 
 **依赖顺序**：S8a → S8b → S8c → S8d → S8e。probe（S8b）先于铺量（S8c）= 先有量尺再铺量、避免拍脑袋；probe 可对**合成 stage**（coef × 我方乘区 × 模板 × AI档）扫描，不必等 100 关写完。
 
-**开发工具：GM 作弊面板**（KAN-68，决策48 服务器权威→真改 DB）：设置内「GM 工具」面板（加金币/宝石/碎片、解锁全部、满养成、通关到第N章、重置）→ `POST /v5/gm/apply`（JSON）→ 服务器事务改 `economy_*` 表。~~env `GM_ENABLED` 门控、prod 必关~~ → **V5-S9（KAN-70）起取消门控，所有部署（含 prod）始终开放——用户决策**；走会话鉴权只能改自己账号。便于跳关测难度（S8e 不必从头肝）/ 验养成经济。
+**开发工具：GM 作弊面板**（KAN-68，决策48 服务器权威→真改 DB）：设置内「GM 工具」面板（加金币/宝石/碎片、解锁全部、满养成、通关到第N章、重置）→ `POST /v5/gm/apply`（JSON）→ 服务器事务改 `economy_*` 表。V5-S9 曾决定所有部署常开；**E0（KAN-103，2026-07-11）按生产安全基线收紧：GM 仅存在于 Staging 隔离制品/路由，Prod 制品与路由表必须不存在 GM**。当前代码仍是常开现状，待 E2 落实，E0 不伪写为已完成。
 
 ---
 
@@ -293,4 +293,31 @@
 - **任务/成就系统的充实度**（V5-S6 先占位，后续可单独子步）。
 - ~~**联机养成同步**：若将来重启 V4 PvP，养成数据如何进 lockstep（V5 范围外）。~~ → **已做（KAN-76/77，2026-07-02）**：双方 level/rank 由服务端从 economy_cards 读出、经 `JoinRoomResp.side1/side2_progress` 权威下发，两端对称注入（复用 PlayerData 乘区 + CardProgression 技能解锁管线），state hash 对帐兜底；决策 = 养成完全生效 / 匹配暂不加战力维度 / 升阶技能生效。详见 HISTORY.md「PVP 养成同步」行。
 
-> V5 锁定范围如上。支付/IAP、正式登录、云部署、联机赛季——全部不在 V5，沿用 V4 的"产品化推后"。
+> V5 游戏内容锁定范围如上。支付/IAP、正式登录合规、联机赛季仍不在 V5；但支撑既有在线功能进入 Staging/Prod 的基础工程不能继续后移，按下节 E0~E8 执行。
+
+---
+
+## 13. 上线工程线 E0~E9（不含游戏内容，2026-07-11）
+
+> 原则：先把现有在线功能做成可部署、可排空、可观测、可回滚的系统，再扩玩法或多活。每个 E 步独立 Jira、HISTORY、验证、确认和 commit。
+
+| 步骤 | 范围 | 完成定义 | 状态 |
+|---|---|---|---|
+| **E0** | 工程契约与真相源 | 架构/安全/部署/runbook/ADR；AGENTS/CLAUDE 镜像门禁；明确 Current/Target/Gate | ✅ KAN-103 Done（2026-07-12） |
+| **E1** | 客户端在线主流程接线 | 唯一 SessionConn/OnlineGate；服务器配置成为主流程权威；断线只读且不可写 | 待办 |
+| **E2** | 公网认证与权限 | HTTPS/WSS；短 access + refresh rotation；WS 单次 ticket/首帧认证；Origin/限流；Prod 无 GM | 待办 |
+| **E3** | Gateway 正确性与资源边界 | ACK 有界重放；队列/房间/future tick/hash/映射上限；冲突 fail closed；持久化 deadline/幂等 | 待办 |
+| **E4** | 生命周期 | `/livez`/`/readyz`；SIGTERM drain；单 active Gateway 串行替换；故障演练 | 待办 |
+| **E5** | Staging/Prod 基建 | Caddy/私网/secret/migration job/不可变镜像/容器 hardening/回滚演练 | 待办 |
+| **E6** | PVE verifier 工程化 | 服务端权威输入与版本绑定；短事务；pending/rollback 账本；超时/TTL/幂等 | 待办 |
+| **E7** | 可观测与 SLO | 结构化脱敏日志、RED/USE/业务不变量、告警、事件响应证据链 | 待办 |
+| **E8** | CI/CD 门禁 | Go test/vet/race、Godot lint/单测、配置/文档、镜像/依赖/secret 扫描、同制品晋级 | 待办 |
+| **E9** | Gateway HA（条件项） | 只有状态外置、重连路由、分布式匹配和负载证据齐备后才立项 | Later |
+
+**E0 权威文档入口**：
+
+- 运行时/状态/配置：`docs/architecture/`
+- 安全认证：`docs/security/`
+- Staging 与生产门禁：`docs/deployment/`
+- 排空、回滚与事件响应：`docs/runbooks/`
+- 决策记录：`docs/adr/`

@@ -1,5 +1,9 @@
 # AGENTS.md
 
+<!-- AGENT-SHARED:BEGIN -->
+> **共享规范镜像**：Claude Code、Codex 及其他智能体必须先读 [docs/engineering/AGENT_SHARED_RULES.md](docs/engineering/AGENT_SHARED_RULES.md)。`HISTORY.md` + Jira 是当前进度真相源；Prod 无 GM、长期 JWT 不进 URL、Gateway 状态外置前单活、占用 Godot/Docker 前先查占用并获许可。修改本块必须同步另一根级智能体文件，并运行 `python tools/check_docs.py`。
+<!-- AGENT-SHARED:END -->
+
 竖屏「皇室战争式对推小游戏」，**Godot 4.6.3 / GDScript**（客户端）+ **Go**（服务端），**Windows 开发**（早期 V1/V2 历史在 macOS）。**当前定位（决策 48，2026-06-26 起）= 实时在线 F2P 商业手游**：进游戏强制登录 + 持久连接、**服务器唯一权威**（账号/钱包/养成/进度/配置全在服务器 + PG DB）、客户端为瘦表现层（UI + 客户端 lockstep 战斗 sim + 非权威缓存）、**断线即不可玩**。玩法：圣水 + 循环卡组、**2D 场地自由部署、绕桥推塔决胜**；PvE 在线闯关养成（100+ 关 + 货币经济 + 卡牌升级/升阶 + 挂机）+ PvP lockstep 联网对战。早期 V1~V3「买断/单机」与决策 47「单机本地」**已被决策 48 取代**。
 
 > **编码前必读**：[PLAN_GRAND.md](PLAN_GRAND.md)（全项目 roadmap）→ [PLAN_V5.md](PLAN_V5.md)（**当前阶段权威规划：实时在线 F2P 闯关养成**）；[PLAN_V4.md](PLAN_V4.md)（V4 联网线，S0~S4 完成、转 V5 主干）；[docs/PLAN_V3.md](docs/PLAN_V3.md) / [docs/PLAN_V2.md](docs/PLAN_V2.md) / [docs/PLAN_V1.md](docs/PLAN_V1.md) 是已完成阶段的规格（存档备查）。本文件只是操作手册，当前阶段规格以 PLAN_V5.md 为准。
@@ -118,8 +122,10 @@ godot --path . -e                                                               
 - **状态语义（按状态名理解，不看 Jira 内部 category）**：`Idea` = 构思中可能不做（建单默认）；`To Do` = 已明确排进计划、确定要做；`In Progress` = 正在开发中；`Done` = 做完且测过、**经用户同意**。
 - **生命周期（主动维护，与「一步一确认」一致）**：①规划建单 → ②开工改 `In Progress` → ③完成 + 测过 + 用户同意 → 改 `Done`。改 `Done` 与 `git commit` 同属需用户拍板的收尾动作。
 
-## 当前进度
+## 当前进度快照（非真相源；以 HISTORY.md + Jira 为准）
 > 完整进度总览表 + 决策日志 + 当前阶段逐步见 [HISTORY.md](HISTORY.md)；V1/V2 详细历史归档于 [docs/HISTORY_ARCHIVE.md](docs/HISTORY_ARCHIVE.md)；V3 详细历史归档于 [docs/HISTORY_V3_DETAILED.md](docs/HISTORY_V3_DETAILED.md)。这里只放一句话现状。
+
+- **上线工程线 E0 完成（KAN-103 Done）**：工程契约、ADR、部署门禁、runbook 与文档一致性校验已落地；运行时代码从 E1 起逐步落实。
 
 - **V1 / V2 / V3 全部完成**（机制白膜 → 程序化换皮 + AI 难度 → 2D 战斗 reboot + Roguelite + 精灵美术 + 像素 UI + 新手战役）。
 - **V4-S0~S4 全部完成**（KAN-36~40 Done）：S0 脚手架 + 双端 protobuf；S1 匿名 device_id 登录；S2 玩家档案云存档；**S3 lockstep 实时对战（头号工程）整阶段收官**（两台 Windows 真机对战验收过）；S4 匹配（ELO MMR + Redis ZSET 队列 + Lobby，真机验收过）。V4-S5 赛季/榜暂缓（KAN-41）。
