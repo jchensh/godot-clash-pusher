@@ -83,6 +83,17 @@ const PROJ_FB_FPX := 16
 const PROJ_SPEED := 16.0       # 投射物飞行速度 tile/s
 const PROJ_RANGED_MIN := 2.5   # attack_range ≥ 此值才出投射物（排除近战/短手）
 const PROJ_KIND := {"archer_body": "arrow", "musketeer_body": "bolt", "baby_dragon_body": "fireball"}
+# —— 战场整图背景（三国美术试点，2026-07-11；BG_ENABLED=false 回退 tile 铺地）——
+# 特征对齐：整图直接拉进场地会竖向压扁 25% 且桥错位 ≤32px，故以「双桥中心定 x 缩放 + 河中心锚 y」
+# 等比取源区域贴 _field_rect，逻辑河/桥与图上河/桥重合（单位过桥踩在画的桥上）。
+# 特征像素为 python 对 assets/map/battle_bg.png 的测量值（水带行/桥木色列质心）。
+const TEX_BATTLE_BG := preload("res://assets/map/battle_bg.png")
+const BG_ENABLED := true
+const BG_BRIDGE1_PX := 171.5   # 图上左桥中心 x（px）
+const BG_BRIDGE2_PX := 528.0   # 图上右桥中心 x（px）
+const BG_RIVER_PX := 669.5     # 图上河带中心 y（px）
+# 单位脚下阴影（正式素材配套；SpriteDB 条目带 "shadow": true 才画）
+const TEX_UNIT_SHADOW := preload("res://assets/units/unit_shadow.png")
 # —— 地形 tile（7b-4，Lonesome Summer；16px tile 逐逻辑格铺，与河行/桥列对齐）——
 const TEX_FLOOR := preload("res://assets/terrain/Lonesome_Forest_FLOOR.png")
 const TEX_WATER := preload("res://assets/terrain/simple_water_spritesheet.png")   # 河水动画 4×3=12 帧
@@ -349,19 +360,47 @@ func _draw() -> void:
 	_draw_tutorial()
 
 func _draw_terrain(a) -> void:
-	for ty in range(a.grid_h):
-		for tx in range(a.grid_w):
-			var t: int = a.tile_type(tx, ty)
-			var rect := _tile_rect(tx, ty)
-			rect.size += Vector2.ONE   # +1px 防瓦片间缝
-			if t == a.TILE_WATER:
-				_draw_water_tile(rect)
-			elif t != a.TILE_TOWER and ty >= a.river_y_min and ty < a.river_y_max:
-				_draw_bridge_tile(tx, ty, rect)   # 河行里的可走 = 桥
-			else:
-				_draw_ground_tile(tx, ty, rect, ty < a.grid_h / 2)   # 塔占位下也铺地（塔贴图透明盖上）
+	if BG_ENABLED:
+		_draw_bg_image(a)
+	else:
+		for ty in range(a.grid_h):
+			for tx in range(a.grid_w):
+				var t: int = a.tile_type(tx, ty)
+				var rect := _tile_rect(tx, ty)
+				rect.size += Vector2.ONE   # +1px 防瓦片间缝
+				if t == a.TILE_WATER:
+					_draw_water_tile(rect)
+				elif t != a.TILE_TOWER and ty >= a.river_y_min and ty < a.river_y_max:
+					_draw_bridge_tile(tx, ty, rect)   # 河行里的可走 = 桥
+				else:
+					_draw_ground_tile(tx, ty, rect, ty < a.grid_h / 2)   # 塔占位下也铺地（塔贴图透明盖上）
 	# 己方半场可部署区描边提示
 	draw_rect(_deploy_zone_rect(a), Color(0.4, 0.8, 0.5, 0.10))
+
+# 整图背景按特征对齐贴进场地：给定「屏幕上桥1/桥2中心 x 与河中心 y 应落的位置」，
+# 反解 BG 的源矩形（等比），使图上河/桥与逻辑河/桥重合。横版复用同一公式：
+# 先 draw_set_transform 绕场心转 90°（图上方=敌方 → 屏幕右），在局部竖版矩形里作画。
+func _draw_bg_image(a) -> void:
+	var fr := _field_rect()
+	var b1: float = (a.bridges[0]["x_min"] + a.bridges[0]["x_max"]) * 0.5 / float(a.grid_w)
+	var b2: float = (a.bridges[1]["x_min"] + a.bridges[1]["x_max"]) * 0.5 / float(a.grid_w)
+	var rv: float = (a.river_y_min + a.river_y_max) * 0.5 / float(a.grid_h)
+	if _landscape:
+		draw_set_transform(fr.get_center() + _shake, PI / 2)
+		var vfr := Rect2(-fr.size.y * 0.5, -fr.size.x * 0.5, fr.size.y, fr.size.x)   # 局部竖版画布
+		draw_texture_rect_region(TEX_BATTLE_BG, vfr, _bg_src(vfr, b1, b2, rv))
+		draw_set_transform(Vector2.ZERO)
+	else:
+		var dest := Rect2(fr.position + _shake, fr.size)
+		draw_texture_rect_region(TEX_BATTLE_BG, dest, _bg_src(fr, b1, b2, rv))
+
+func _bg_src(fr: Rect2, b1: float, b2: float, rv: float) -> Rect2:
+	var s1: float = b1 * fr.size.x                                   # 桥1中心相对场地左缘（px）
+	var s2: float = b2 * fr.size.x
+	var k: float = (s2 - s1) / (BG_BRIDGE2_PX - BG_BRIDGE1_PX)       # 屏幕px / 图px 缩放
+	var src_x: float = BG_BRIDGE1_PX - s1 / k
+	var src_y: float = BG_RIVER_PX - rv * fr.size.y / k
+	return Rect2(src_x, src_y, fr.size.x / k, fr.size.y / k)
 
 func _blit_tile(tex: Texture2D, cell: Vector2i, rect: Rect2, mod: Color) -> void:
 	draw_texture_rect_region(tex, rect, Rect2(cell.x * TILE_PX, cell.y * TILE_PX, TILE_PX, TILE_PX), mod)
@@ -445,8 +484,21 @@ func _draw_units(a) -> void:
 		var spr: Dictionary = SpriteDB.frame(u.unit_id, st, u.owner_id, _elapsed)
 		if not spr.is_empty():   # 精灵帧（modulate=fill 染队伍色+受击闪白，×占位 tint 区分共享贴图）
 			var box: float = rad * 2.0 * float(spr["scale"])
+			if spr.get("shadow", false) and not flying:   # 正式素材配套脚下椭圆影（贴地、不染队伍色）
+				# 贴图自带 30% alpha 纯黑椭圆，单遍太淡（大半又被人物盖住）→ 同 rect 叠两遍 ≈51% 黑；
+				# 宽取 0.9 box 超出身位、垂直中心压脚线，露出清楚的着地椭圆。
+				var sw: float = box * 0.9
+				var sh: float = sw * 0.4
+				var srect := Rect2(c + Vector2(-sw * 0.5, box * 0.5 - sh * 0.5), Vector2(sw, sh))
+				draw_texture_rect(TEX_UNIT_SHADOW, srect, false)
+				draw_texture_rect(TEX_UNIT_SHADOW, srect, false)
+			var spr_mod: Color = fill * spr.get("tint", Color.WHITE)
+			if spr.get("natural", false):   # 正式彩色素材：轻染队伍倾向（全乘会糊黑），闪白照旧
+				spr_mod = Color.WHITE.lerp(base, 0.22)
+				if fend > _elapsed:
+					spr_mod = spr_mod.lerp(Color.WHITE, ((fend - _elapsed) / FLASH_DUR) * 0.85)
 			draw_texture_rect_region(spr["tex"], Rect2(c - Vector2(box, box) * 0.5, Vector2(box, box)),
-					spr["src"], fill * spr.get("tint", Color.WHITE))
+					spr["src"], spr_mod)
 		else:                    # 无精灵 → 白膜回退
 			draw_circle(c, rad, fill)
 			draw_arc(c, rad, 0.0, TAU, 20, base.darkened(0.4), 2.0)

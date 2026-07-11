@@ -18,6 +18,9 @@ extends RefCounted
 
 const T_KNIGHT_NC := preload("res://assets/units/Heavy_Knight_Non-Combat_Animations.png")
 const T_KNIGHT_CB := preload("res://assets/units/Heavy_Knight_Combat_Animations.png")
+# 三国正式素材首张（2026-07-11）：testAssets/newAssets/knight_walk_1.png 经 python 切帧重打包成单行 10 帧
+# （100×96/帧，bbox 居中+脚底对齐；帧序=行优先，经循环平滑度验证）。frame() 只按单行取帧，故必须重排。
+const T_SANGUO_KNIGHT := preload("res://assets/units/sanguo_knight_walk.png")
 const T_ARCHER_NC := preload("res://assets/units/Archer_Non-Combat.png")
 const T_ARCHER_CB := preload("res://assets/units/Archer_Combat.png")
 const T_MAGE_NC := preload("res://assets/units/Mage_Hooded_BROWN.png")
@@ -52,13 +55,15 @@ const SPELL_ICON := {
 # scale = 屏幕渲染相对 body 半径的倍率（16px 帧字符偏小 → 倍率更大）。
 # 各状态：fw/fh 帧尺寸、cols 列数、row 朝下行、row_up 朝上行(可选)、n 帧数、fps、
 #   sc 该状态相对 scale 的补偿倍率(可选，补不同帧画布字符占比差)。
-# 条目级可选：tint（占位染色，Color）、ph（true=占位待正式素材）。
+# 条目级可选：tint（占位染色，Color）、ph（true=占位待正式素材）、shadow（true=正式素材带脚下阴影贴图，
+#   battle_scene 据此在地面单位脚下画 unit_shadow.png 椭圆影）、natural（true=正式彩色素材：战斗内不再
+#   全强度乘队伍色——高饱和贴图会被乘糊成黑剪影，改轻染 22% 队伍倾向，同塔的画法）。
 const DB := {
 	# ============ 已坐实素材（V3-7b 10 条，三国正式素材到位后同样逐条替换） ============
-	"knight_body": {  # 虎贲校尉：nc 24×24 4列(走) + cb 32×32 4列(劈砍)
-		"scale": 1.35,
-		"walk":   {"tex": T_KNIGHT_NC, "fw": 24, "fh": 24, "cols": 4, "row": 0, "row_up": 16, "n": 4, "fps": 8.0},
-		"attack": {"tex": T_KNIGHT_CB, "fw": 32, "fh": 32, "cols": 4, "row": 0, "row_up": 5, "n": 4, "fps": 10.0, "sc": 1.25},
+	"knight_body": {  # 虎贲校尉：三国正式行走帧（首张换皮试点）。单方向素材：无背面行；
+		# 攻击帧未出 → 不配 "attack" 键，frame() 缺省回退 walk，等美术补劈砍帧后再加。
+		"scale": 1.35, "shadow": true, "natural": true,
+		"walk":   {"tex": T_SANGUO_KNIGHT, "fw": 100, "fh": 96, "cols": 10, "row": 0, "n": 10, "fps": 12.0},
 	},
 	"archer_body": {  # 魏武强弩手：nc 16×16 4列(走) + cb 32×32 4列(射击)
 		"scale": 1.5,
@@ -287,7 +292,9 @@ static func frame(unit_id: String, state: String, owner_id: int, t: float) -> Di
 		row = int(s["row_up"])
 	var col: int = int(t * fps) % n
 	var sc: float = float(u.get("scale", 1.2)) * float(s.get("sc", 1.0))
-	return {"tex": s["tex"], "src": Rect2(col * fw, row * fh, fw, fh), "scale": sc, "tint": u.get("tint", Color.WHITE)}
+	return {"tex": s["tex"], "src": Rect2(col * fw, row * fh, fw, fh), "scale": sc,
+			"tint": u.get("tint", Color.WHITE), "shadow": bool(u.get("shadow", false)),
+			"natural": bool(u.get("natural", false))}
 
 # —— 卡片肖像（菜单/draft/组卡 用 TextureRect；7b-5b）——
 static func _atlas(tex: Texture2D, col: int, row: int, fw: int, fh: int) -> AtlasTexture:
@@ -330,12 +337,14 @@ static func make_card_portrait(card_id: String, loader, pos: Vector2, size: Vect
 	if tex == null:
 		return null
 	var t := TextureRect.new()
+	# ⚠️ expand_mode 必须先于 texture/size 赋值：默认 EXPAND_KEEP_SIZE 下贴图会把 minimum size
+	# 撑到帧尺寸，后设的 size 被 clamp 顶大（100×96 新帧曾把 52×40 的卡池格撑爆超框）。
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	t.texture = tex
 	t.modulate = card_portrait_tint(card_id, loader)
 	t.position = pos
 	t.size = size
-	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return t
