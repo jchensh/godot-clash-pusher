@@ -559,3 +559,14 @@
 - **规约固化**：AGENT_SHARED_RULES.md「共享文档维护」补文档纪律——单文档目标 ≤300 行、版本线/子步收官即归档详细段、新专题开新文件不追加旧文件。
 - **顺带收编**：testAssets/newAssets/ 三张 KAN-104 素材源图（BG/knight_walk_1/shawdowm + .import）入库跟踪（原始源图归 testAssets 惯例；加工成品已在 assets/）。
 - **验证**：`python tools/check_docs.py` 全过；纯文档 + 素材源收编、不涉代码与引擎单测。
+
+---
+
+### V5 · AI 生图管线首战：骑士攻击帧占位（✅ 完成·真人实机验收通过，2026-07-13）
+
+**背景**：knight 只有走帧、攻击缺省回退走路（KAN-104 遗留）。用户用 Nano Banana Pro（Gemini 3 Pro Image）按 agent 提供的参考图+prompt 出图，agent 做确定性后处理并接入——docs/NOTE_image_gen_mcp_pipeline.md §0 架构的首次实战（§7 全记录）。
+- **两轮试错**：v1 传原始扁条带 → 体型跑成写实比例/帧重复/拖影；v2 换「单帧×6放大白底比例参考+条带」双参考图 + 比例硬约束 + 降到 6 帧 2×3 网格 → 三头身锁住、姿势齐全带弧光火花。
+- **后处理管线**（uv+pillow+numpy，脚本可复放）：抠绿去 spill → 网格切帧 → 收势帧锚定统一缩放（对齐走帧 94px 身高）→ **身体密度窗口**定位（踩坑：底部质心会被落地剑尖+火花拉飞）→ 脚底对齐基线 → 100×96×6 单行条带。
+- **接线**：assets/units/sanguo_knight_attack.png + sprite_db.gd knight_body 加 attack 状态（cols 6/n 6/fps 12）+ headless 导入；view/logic 零改动（frame() 自动切换）。占位定位：正式美术到位整条替换。
+- **验证**：全量单测通过（exit 0 零回归）；gdlint 未涉及（仅数据条目）。**真人 F5 实机验收通过**（2026-07-13，PvE 实战骑士接敌挥剑）。banana 原图收编 testAssets/newAssets/knight_attack_1.png（对齐 knight_walk_1 命名惯例）。Jira：KAN-106（补单直 Done，用户指示）。
+- 顺带：修复 Docker 引擎重启后 api 容器崩溃循环（配置挂载空+postgres 时序，compose up -d api 恢复）；清理误跑散容器 focused_haibt。飞书规格文档新增第八章实物案例（走帧图集/单帧切图/程序化占位/AI 生成版对比）与第九章 AI 生图经验。Jira：暂记 A4 素材线名下（KAN-93 开工时并入），未单独建单。

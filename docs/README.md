@@ -84,5 +84,5 @@
 |---|---|
 | [ENVIRONMENT.md](ENVIRONMENT.md) | 环境搭建 + MCP 安装注册 + 画面验收协议 |
 | [V4_S3_g_real_machine_test.md](V4_S3_g_real_machine_test.md) | V4-S3g 两台真机对战测试记录（存档） |
-| [NOTE_image_gen_mcp_pipeline.md](NOTE_image_gen_mcp_pipeline.md) | 图片生成 MCP 管线笔记（存档） |
+| [NOTE_image_gen_mcp_pipeline.md](NOTE_image_gen_mcp_pipeline.md) | AI 生图素材管线（§7 已实战：骑士攻击帧 banana 出图+确定性后处理+入库全记录） |
 | [../net/README.md](../net/README.md) / [../server/README.md](../server/README.md) | net 层 / Go 服务端模块内说明 |

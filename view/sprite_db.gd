@@ -21,6 +21,9 @@ const T_KNIGHT_CB := preload("res://assets/units/Heavy_Knight_Combat_Animations.
 # 三国正式素材首张（2026-07-11）：testAssets/newAssets/knight_walk_1.png 经 python 切帧重打包成单行 10 帧
 # （100×96/帧，bbox 居中+脚底对齐；帧序=行优先，经循环平滑度验证）。frame() 只按单行取帧，故必须重排。
 const T_SANGUO_KNIGHT := preload("res://assets/units/sanguo_knight_walk.png")
+# 攻击帧 = AI 生成占位（Nano Banana Pro 参考图驱动 + 确定性后处理，2026-07-13；正式美术到位整条替换）：
+# 6 帧单行 100×96，蓄力2/劈砍弧光2/收势2，与走帧同 scale 同基线。管线见 docs/NOTE_image_gen_mcp_pipeline.md。
+const T_SANGUO_KNIGHT_ATK := preload("res://assets/units/sanguo_knight_attack.png")
 const T_ARCHER_NC := preload("res://assets/units/Archer_Non-Combat.png")
 const T_ARCHER_CB := preload("res://assets/units/Archer_Combat.png")
 const T_MAGE_NC := preload("res://assets/units/Mage_Hooded_BROWN.png")
@@ -61,9 +64,10 @@ const SPELL_ICON := {
 const DB := {
 	# ============ 已坐实素材（V3-7b 10 条，三国正式素材到位后同样逐条替换） ============
 	"knight_body": {  # 虎贲校尉：三国正式行走帧（首张换皮试点）。单方向素材：无背面行；
-		# 攻击帧未出 → 不配 "attack" 键，frame() 缺省回退 walk，等美术补劈砍帧后再加。
+		# 攻击帧 = AI 生成占位（banana+后处理，见 T_SANGUO_KNIGHT_ATK 注释），正式素材到位整条替换。
 		"scale": 1.35, "shadow": true, "natural": true,
 		"walk":   {"tex": T_SANGUO_KNIGHT, "fw": 100, "fh": 96, "cols": 10, "row": 0, "n": 10, "fps": 12.0},
+		"attack": {"tex": T_SANGUO_KNIGHT_ATK, "fw": 100, "fh": 96, "cols": 6, "row": 0, "n": 6, "fps": 12.0},
 	},
 	"archer_body": {  # 魏武强弩手：nc 16×16 4列(走) + cb 32×32 4列(射击)
 		"scale": 1.5,
