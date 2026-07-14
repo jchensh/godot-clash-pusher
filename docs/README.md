@@ -73,7 +73,7 @@
 | [design/HANDOFF_next.md](design/HANDOFF_next.md) | 卡池扩充交接便签 |
 | design/card_art_spec_48cards.xlsx | 48 卡美术规格表（三国版，美术真相源） |
 | design/scene_system_art_spec.xlsx | 场景/系统美术清单（A3 产出，待评审 KAN-92） |
-| design/battle_bg_template_720x1050.png | 战场背景出图规格模板（KAN-104 产出） |
+| design/battle_bg_template_576x1024.png | 战场背景出图规格模板（KAN-107 起 32×32 正方形格；完整规格书在飞书） |
 | [ART_ASSETS.md](ART_ASSETS.md) | 美术圣经（单位帧网格/塔/FX/地形 as-built，V3 定稿） |
 | [DESIGN_V5_S7_UI.md](DESIGN_V5_S7_UI.md) | S7 UI 整合设计稿（已施工完，存档） |
 | [BALANCE_V5_S8.md](BALANCE_V5_S8.md) | S8d 平衡报告（AI-vs-AI 局限 + 曲线形状验证） |

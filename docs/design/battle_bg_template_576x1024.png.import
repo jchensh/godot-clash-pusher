@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bxa3dh3k7wdkf"
-path="res://.godot/imported/battle_bg_template_720x1050.png-d0b3e53b0dcb9093844cba02eee1eecb.ctex"
+uid="uid://c0gcjqchkm6u"
+path="res://.godot/imported/battle_bg_template_576x1024.png-a0ddd85becea749e907ccb655fd352bf.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://docs/design/battle_bg_template_720x1050.png"
-dest_files=["res://.godot/imported/battle_bg_template_720x1050.png-d0b3e53b0dcb9093844cba02eee1eecb.ctex"]
+source_file="res://docs/design/battle_bg_template_576x1024.png"
+dest_files=["res://.godot/imported/battle_bg_template_576x1024.png-a0ddd85becea749e907ccb655fd352bf.ctex"]
 
 [params]
 

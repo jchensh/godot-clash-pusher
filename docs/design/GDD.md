@@ -244,4 +244,4 @@
 - **测试**：第 3/4/5/6 章是被测系统的行为预期；验收用例清单在 [ACCEPTANCE_SANGUO.md](../ACCEPTANCE_SANGUO.md) 等台账。
 - **策划**：卡牌/觉醒/平衡的强制框架在 [02_design_constitution.md](02_design_constitution.md)（宪法，改卡先读）；全卡库明细 [03_card_library.md](03_card_library.md)；难度曲线旋钮在 config/stages_spec.json。
 - **程序**：本案只讲"是什么"；"怎么实现"见 [PLAN_V5.md](../../PLAN_V5.md) 与 docs/architecture/ 契约。
-- **美术**：卡面规格 [card_art_spec_48cards.xlsx](card_art_spec_48cards.xlsx)；场景/UI/头像/音频清单 [scene_system_art_spec.xlsx](scene_system_art_spec.xlsx)；帧格式与出图模板见 [../ART_ASSETS.md](../ART_ASSETS.md) 与 battle_bg_template_720x1050.png。
+- **美术**：卡面规格 [card_art_spec_48cards.xlsx](card_art_spec_48cards.xlsx)；场景/UI/头像/音频清单 [scene_system_art_spec.xlsx](scene_system_art_spec.xlsx)；帧格式与出图模板见 [../ART_ASSETS.md](../ART_ASSETS.md) 与 battle_bg_template_576x1024.png（2026-07-13 起 1 格=32×32 正方形新规格，完整规格书在飞书《战场背景美术出图规格》）。

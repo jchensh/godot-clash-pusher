@@ -284,12 +284,17 @@ func _process(delta: float) -> void:
 # 「屏幕向上 / 部署半场 / footprint」等方向语义全在本区块内翻转，区块外零方向假设。
 func _field_rect() -> Rect2:
 	var zone := Rect2(0.0, TOPBAR_H, _vw, _vh - TOPBAR_H - HUD_BOTTOM_H)
+	var a = match_obj.battle.arena
 	if _landscape:
 		# H2 临时投影区（H5 切横屏窗口前）：竖屏场区内按 grid_h:grid_w 满宽 letterbox 垂直居中。
-		var a = match_obj.battle.arena
 		var h: float = zone.size.x * float(a.grid_w) / float(a.grid_h)
 		return Rect2(zone.position.x, zone.position.y + (zone.size.y - h) * 0.5, zone.size.x, h)
-	return zone
+	# 竖版 32×32 正方形屏幕格（KAN-107，2026-07-13）：格边长取整数、letterbox 居中——
+	# 720×1280 基准下 = 32px/格、场地 576×1024，两侧各 72px 装饰边栏（露 COL_BG 深底，边栏素材另出）。
+	# 逻辑 18×32 与 _t2s/_s2t 契约不变；美术出图画布随之改 576×1024（1 格=32×32 整除）。
+	var ts: float = floor(minf(zone.size.x / float(a.grid_w), zone.size.y / float(a.grid_h)))
+	var fs := Vector2(ts * float(a.grid_w), ts * float(a.grid_h))
+	return Rect2(zone.position + (zone.size - fs) * 0.5, fs)
 
 func _t2s(p: Vector2) -> Vector2:
 	var a = match_obj.battle.arena

@@ -570,3 +570,13 @@
 - **接线**：assets/units/sanguo_knight_attack.png + sprite_db.gd knight_body 加 attack 状态（cols 6/n 6/fps 12）+ headless 导入；view/logic 零改动（frame() 自动切换）。占位定位：正式美术到位整条替换。
 - **验证**：全量单测通过（exit 0 零回归）；gdlint 未涉及（仅数据条目）。**真人 F5 实机验收通过**（2026-07-13，PvE 实战骑士接敌挥剑）。banana 原图收编 testAssets/newAssets/knight_attack_1.png（对齐 knight_walk_1 命名惯例）。Jira：KAN-106（补单直 Done，用户指示）。
 - 顺带：修复 Docker 引擎重启后 api 容器崩溃循环（配置挂载空+postgres 时序，compose up -d api 恢复）；清理误跑散容器 focused_haibt。飞书规格文档新增第八章实物案例（走帧图集/单帧切图/程序化占位/AI 生成版对比）与第九章 AI 生图经验。Jira：暂记 A4 素材线名下（KAN-93 开工时并入），未单独建单。
+
+---
+
+### V5 · 战场屏幕格改 32×32 正方形（KAN-107，✅ 完成·真人实机验收通过，2026-07-13）
+
+**背景**：美术评审对 40×32.8 非正方形屏幕格提出维护顾虑；36×36 需 1152px 高、手牌区放不下 → 用户拍板 **32×32**（当前 HUD 下最大整数方格 + 行业标准砖尺寸）。
+- **view 一处函数收口**：`battle_scene._field_rect()` 竖版分支改「格边长取整数 letterbox 居中」→ 720×1280 基准下战场 **576×1024**、两侧各 72px 装饰边栏（露 COL_BG 深底，边栏素材另出）。横版 H2 分支不动；`_t2s/_s2t` 契约不变（H1 变换层收口红利：一处改全生效）。**logic/config 零改动**（确定性/联机/反作弊不受影响）。
+- **既有 battle_bg 自动兼容**：KAN-104 的特征对齐是"图内特征→field rect 比例"映射，field 缩放自动跟随，无需重出。单位渲染基准 `_ur()` 36.4→32px（缩 12%），sprite scale 先不动、待实机手感定。
+- **美术口径切换**：出图画布 720×1050 → **576×1024**（1 格=32×32 整除、全表整数；2x=1152×2048）；飞书规格书九章全量更新（正文/表格/FAQ 改版记录/三张画板重画）；模板图重出 docs/design/battle_bg_template_576x1024.png（旧 720×1050 版删除）；GDD 附录B/docs README 同步。
+- **测试**：`test_hbattle_transform` 竖版基线更新（field 72,67,576,1024 / tile 32×32 / ur 32 / footprint 128 / 部署区），全量 **409/409** 零回归；gdlint 绿。**真人 F5 验收通过**（2026-07-13：竖版居中+边栏观感/部署命中/单位手感/横版回归四项全过，sprite scale 未调）。
