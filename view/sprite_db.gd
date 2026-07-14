@@ -18,12 +18,19 @@ extends RefCounted
 
 const T_KNIGHT_NC := preload("res://assets/units/Heavy_Knight_Non-Combat_Animations.png")
 const T_KNIGHT_CB := preload("res://assets/units/Heavy_Knight_Combat_Animations.png")
-# 三国正式素材首张（2026-07-11）：testAssets/newAssets/knight_walk_1.png 经 python 切帧重打包成单行 10 帧
-# （100×96/帧，bbox 居中+脚底对齐；帧序=行优先，经循环平滑度验证）。frame() 只按单行取帧，故必须重排。
+# 三国正式素材全家桶（2026-07-15，testAssets/newAssets0715 经 python 切帧重打包，管线同 KAN-104）：
+# 走帧 10 帧单行 100×96（统一缩放 94px 峰值身高、bbox 居中、脚底对齐 y95）。
 const T_SANGUO_KNIGHT := preload("res://assets/units/sanguo_knight_walk.png")
-# 攻击帧 = AI 生成占位（Nano Banana Pro 参考图驱动 + 确定性后处理，2026-07-13；正式美术到位整条替换）：
-# 6 帧单行 100×96，蓄力2/劈砍弧光2/收势2，与走帧同 scale 同基线。管线见 docs/NOTE_image_gen_mcp_pipeline.md。
+# 攻击帧 8 帧单行 152×152（挥砍横扫宽 124px 装不进 100 格 → 大方格 + sc=152/96 补偿；
+# 基线 y123 由 sc 反解保证走↔攻切换脚底不跳；前冲下压位移全局锚定保留）。
 const T_SANGUO_KNIGHT_ATK := preload("res://assets/units/sanguo_knight_attack.png")
+# 立绘（322×346 原图）：卡面/图鉴/头像肖像优先用立绘，不再取走帧 col0。
+const T_SANGUO_KNIGHT_PORTRAIT := preload("res://assets/units/sanguo_knight_portrait.png")
+# 配套战斗特效条带（battle_scene 经 unit_fx() 取用；size=直径 tile 数）：
+# 攻击刀光 4×116×116 / 受击星芒 6×72×40（原图非均匀摆放经谷切重打包）/ 死亡白烟 8×200×150。
+const T_SANGUO_KNIGHT_FX_ATK := preload("res://assets/fx/sanguo_knight_attack_fx.png")
+const T_SANGUO_KNIGHT_FX_HIT := preload("res://assets/fx/sanguo_knight_hit_fx.png")
+const T_SANGUO_KNIGHT_FX_DEATH := preload("res://assets/fx/sanguo_knight_death_fx.png")
 const T_ARCHER_NC := preload("res://assets/units/Archer_Non-Combat.png")
 const T_ARCHER_CB := preload("res://assets/units/Archer_Combat.png")
 const T_MAGE_NC := preload("res://assets/units/Mage_Hooded_BROWN.png")
@@ -63,11 +70,18 @@ const SPELL_ICON := {
 #   全强度乘队伍色——高饱和贴图会被乘糊成黑剪影，改轻染 22% 队伍倾向，同塔的画法）。
 const DB := {
 	# ============ 已坐实素材（V3-7b 10 条，三国正式素材到位后同样逐条替换） ============
-	"knight_body": {  # 虎贲校尉：三国正式行走帧（首张换皮试点）。单方向素材：无背面行；
-		# 攻击帧 = AI 生成占位（banana+后处理，见 T_SANGUO_KNIGHT_ATK 注释），正式素材到位整条替换。
+	"knight_body": {  # 虎贲校尉：三国正式素材全家桶（0715 批次：走/攻/立绘/攻击刀光/受击星芒/死亡白烟）。
+		# 单方向素材：无背面行。攻击帧 152 方格见 T_SANGUO_KNIGHT_ATK 注释。
 		"scale": 1.35, "shadow": true, "natural": true,
+		"portrait": T_SANGUO_KNIGHT_PORTRAIT,
 		"walk":   {"tex": T_SANGUO_KNIGHT, "fw": 100, "fh": 96, "cols": 10, "row": 0, "n": 10, "fps": 12.0},
-		"attack": {"tex": T_SANGUO_KNIGHT_ATK, "fw": 100, "fh": 96, "cols": 6, "row": 0, "n": 6, "fps": 12.0},
+		"attack": {"tex": T_SANGUO_KNIGHT_ATK, "fw": 152, "fh": 152, "cols": 8, "row": 0, "n": 8,
+				"fps": 12.0, "sc": 1.583},
+		"fx": {
+			"attack": {"tex": T_SANGUO_KNIGHT_FX_ATK, "fw": 116, "fh": 116, "n": 4, "dur": 0.28, "size": 2.0},
+			"hit":    {"tex": T_SANGUO_KNIGHT_FX_HIT, "fw": 72, "fh": 40, "n": 6, "dur": 0.3, "size": 1.6},
+			"death":  {"tex": T_SANGUO_KNIGHT_FX_DEATH, "fw": 200, "fh": 150, "n": 8, "dur": 0.55, "size": 2.4},
+		},
 	},
 	"archer_body": {  # 魏武强弩手：nc 16×16 4列(走) + cb 32×32 4列(射击)
 		"scale": 1.5,
@@ -300,6 +314,14 @@ static func frame(unit_id: String, state: String, owner_id: int, t: float) -> Di
 			"tint": u.get("tint", Color.WHITE), "shadow": bool(u.get("shadow", false)),
 			"natural": bool(u.get("natural", false))}
 
+# 单位配套战斗特效（attack=攻击刀光/hit=受击星芒/death=死亡消散；无配套返回空字典）。
+# 返回 {tex, fw, fh, n, dur, size}；battle_scene 按 dur 推进度、size(直径 tile)×ur 定屏幕尺寸。
+static func unit_fx(unit_id: String, kind: String) -> Dictionary:
+	if not DB.has(unit_id):
+		return {}
+	var fx: Dictionary = (DB[unit_id] as Dictionary).get("fx", {})
+	return fx.get(kind, {})
+
 # —— 卡片肖像（菜单/draft/组卡 用 TextureRect；7b-5b）——
 static func _atlas(tex: Texture2D, col: int, row: int, fw: int, fh: int) -> AtlasTexture:
 	var at := AtlasTexture.new()
@@ -307,7 +329,8 @@ static func _atlas(tex: Texture2D, col: int, row: int, fw: int, fh: int) -> Atla
 	at.region = Rect2(col * fw, row * fh, fw, fh)
 	return at
 
-# 卡片肖像纹理：兵牌=单位正面静帧；法术=特效帧；其余(箭雨/滚石/治疗/落石)=null 回退文字。
+# 卡片肖像纹理：兵牌=正式立绘(有 portrait 字段) > 单位正面静帧；法术=特效帧；
+# 其余(箭雨/滚石/治疗/落石)=null 回退文字。
 static func card_portrait_tex(card_id: String, loader) -> Texture2D:
 	if loader == null or not loader.has_card(card_id):
 		return null
@@ -316,7 +339,10 @@ static func card_portrait_tex(card_id: String, loader) -> Texture2D:
 			var uid := str(sk.get("unit_id"))
 			if not DB.has(uid):
 				return null
-			var w: Dictionary = DB[uid]["walk"]
+			var u: Dictionary = DB[uid]
+			if u.has("portrait"):
+				return u["portrait"]
+			var w: Dictionary = u["walk"]
 			return _atlas(w["tex"], 0, int(w["row"]), int(w["fw"]), int(w["fh"]))   # col0,正面行
 	if SPELL_ICON.has(card_id):
 		var s: Dictionary = SPELL_ICON[card_id]
