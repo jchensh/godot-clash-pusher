@@ -67,12 +67,13 @@ const SPELL_ICON := {
 #   sc 该状态相对 scale 的补偿倍率(可选，补不同帧画布字符占比差)。
 # 条目级可选：tint（占位染色，Color）、ph（true=占位待正式素材）、shadow（true=正式素材带脚下阴影贴图，
 #   battle_scene 据此在地面单位脚下画 unit_shadow.png 椭圆影）、natural（true=正式彩色素材：战斗内不再
-#   全强度乘队伍色——高饱和贴图会被乘糊成黑剪影，改轻染 22% 队伍倾向，同塔的画法）。
+#   全强度乘队伍色——高饱和贴图会被乘糊成黑剪影，改轻染 22% 队伍倾向，同塔的画法）、
+#   mirror（true=单方向侧脸素材：battle_scene 按移动/攻击朝向水平镜像——素材默认朝左，向右走/砍时翻转）。
 const DB := {
 	# ============ 已坐实素材（V3-7b 10 条，三国正式素材到位后同样逐条替换） ============
 	"knight_body": {  # 虎贲校尉：三国正式素材全家桶（0715 批次：走/攻/立绘/攻击刀光/受击星芒/死亡白烟）。
 		# 单方向素材：无背面行。攻击帧 152 方格见 T_SANGUO_KNIGHT_ATK 注释。
-		"scale": 1.35, "shadow": true, "natural": true,
+		"scale": 1.35, "shadow": true, "natural": true, "mirror": true,
 		"portrait": T_SANGUO_KNIGHT_PORTRAIT,
 		"walk":   {"tex": T_SANGUO_KNIGHT, "fw": 100, "fh": 96, "cols": 10, "row": 0, "n": 10, "fps": 12.0},
 		"attack": {"tex": T_SANGUO_KNIGHT_ATK, "fw": 152, "fh": 152, "cols": 8, "row": 0, "n": 8,
@@ -310,7 +311,10 @@ static func frame(unit_id: String, state: String, owner_id: int, t: float) -> Di
 		row = int(s["row_up"])
 	var col: int = int(t * fps) % n
 	var sc: float = float(u.get("scale", 1.2)) * float(s.get("sc", 1.0))
+	# base_scale = 不含状态 sc 的条目倍率：阴影等"身体基准"元素用它，不随攻击大方格放大（0715 阴影偏离修复）。
 	return {"tex": s["tex"], "src": Rect2(col * fw, row * fh, fw, fh), "scale": sc,
+			"base_scale": float(u.get("scale", 1.2)),
+			"mirror": bool(u.get("mirror", false)),
 			"tint": u.get("tint", Color.WHITE), "shadow": bool(u.get("shadow", false)),
 			"natural": bool(u.get("natural", false))}
 

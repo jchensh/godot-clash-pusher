@@ -95,3 +95,6 @@ func test_knight_attack_cell_and_sc() -> void:
 		assert_true(src.end.x <= float(tex.get_width()), "末帧在条带内")
 		# scale = 条目 1.35 × sc 1.583（浮点近似）
 		assert_true(absf(float(spr["scale"]) - 1.35 * 1.583) < 0.01, "攻击态 scale 含 sc 补偿")
+		# 0715 验收反馈修复：base_scale 不含 sc（阴影身体基准）；mirror 单方向素材按朝向翻转
+		assert_true(absf(float(spr["base_scale"]) - 1.35) < 0.001, "base_scale 应为条目 scale（不含 sc）")
+		assert_true(bool(spr["mirror"]), "knight 为单方向素材应标 mirror")
