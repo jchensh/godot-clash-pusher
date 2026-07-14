@@ -39,6 +39,7 @@
 | 文档 | 一句话 |
 |---|---|
 | [engineering/AGENT_SHARED_RULES.md](engineering/AGENT_SHARED_RULES.md) | 智能体共享规则真相源（AGENTS/CLAUDE 镜像块的母本） |
+| [engineering/MEEGLE_WORKITEM_GUIDE.md](engineering/MEEGLE_WORKITEM_GUIDE.md) | 飞书项目(Meegle) CLI/MCP 建单通用避坑指南（必填角色卡点、模板ID查法、字段格式协议） |
 | [architecture/ONLINE_RUNTIME_CONTRACT.md](architecture/ONLINE_RUNTIME_CONTRACT.md) | 在线运行时边界（强制登录/断线行为/离线训练边界） |
 | [architecture/GATEWAY_STATE_MODEL.md](architecture/GATEWAY_STATE_MODEL.md) | Gateway 状态所有权表（外置前单活） |
 | [architecture/CONFIG_AUTHORITY.md](architecture/CONFIG_AUTHORITY.md) | 配置权威分层（服务端 bundle 为在线权威） |
@@ -74,6 +75,8 @@
 | design/card_art_spec_48cards.xlsx | 48 卡美术规格表（三国版，美术真相源） |
 | design/scene_system_art_spec.xlsx | 场景/系统美术清单（A3 产出，待评审 KAN-92） |
 | design/battle_bg_template_576x1024.png | 战场背景出图规格模板（KAN-107 起 32×32 正方形格；完整规格书在飞书） |
+| design/ui_mockups/ | UI 改版 HTML 示意图集（720×1560 画布+安全区线；配套飞书《UI 系统策划案》；预览 `.claude/launch.json` 的 ui-mockups 服务或直接开 html） |
+| design/card_progression_design_doc.html | 卡牌升级/升阶系统策划案（HTML 单页） |
 | [ART_ASSETS.md](ART_ASSETS.md) | 美术圣经（单位帧网格/塔/FX/地形 as-built，V3 定稿） |
 | [DESIGN_V5_S7_UI.md](DESIGN_V5_S7_UI.md) | S7 UI 整合设计稿（已施工完，存档） |
 | [BALANCE_V5_S8.md](BALANCE_V5_S8.md) | S8d 平衡报告（AI-vs-AI 局限 + 曲线形状验证） |

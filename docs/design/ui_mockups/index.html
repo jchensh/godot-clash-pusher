@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<!-- UI 示意图集目录：全部屏幕的 HTML 示意入口 + 全局规范摘要。配套飞书《UI 系统策划案》。 -->
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>UI 示意图集 · 目录</title>
+<link rel="stylesheet" href="ui_mock.css">
+<style>
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; max-width: 1100px; }
+  .item { background: #2b303b; border: 1px solid #3a4150; border-radius: 12px; padding: 16px 18px; }
+  .item a { color: #7fc0ff; font-size: 17px; font-weight: bold; text-decoration: none; }
+  .item p { color: #9aa3b2; font-size: 13px; margin-top: 6px; line-height: 1.6; }
+  .st { float: right; font-size: 12px; border-radius: 8px; padding: 1px 8px; }
+  .ok { background: #2f5d33; color: #9fe08a; } .todo { background: #5d552f; color: #ffe9a8; }
+  .rules { max-width: 1100px; margin-top: 26px; background: #2b303b; border: 1px solid #3a4150;
+           border-radius: 12px; padding: 18px 22px; font-size: 14px; line-height: 1.8; }
+  .rules h2 { color: #ffd75e; font-size: 16px; margin-bottom: 8px; }
+  .rules code { background: #1d2129; padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<h1>UI 示意图集 · 目录</h1>
+<div class="sub">三国对推手游 · UI 改版（卡通手绘风）结构示意。全部为占位配色/emoji，示意「结构、比例、信息层级」；最终视觉以主美 P0 mockup 为准。配套文档：飞书《UI 系统策划案》。</div>
+
+<div class="grid">
+  <div class="item"><span class="st ok">已评审 ✓</span><a href="main_menu_cr_style.html">01 · 主界面（对战页）</a>
+    <p>CR 式改版模板首屏：货币行 / 名片 / 活动轨 / 章节主视觉居中 / 对战大簇 / 五页签。全集的规格模板。</p></div>
+  <div class="item"><span class="st todo">待评审</span><a href="tab_cards.html">02 · 卡牌页</a>
+    <p>图鉴+组卡合一：出战卡组 8 张 + 战力 / 排序四键 / 收藏池三态卡格。</p></div>
+  <div class="item"><span class="st todo">待评审</span><a href="tab_stages.html">03 · 闯关页</a>
+    <p>100 关 10 章纵向列表：章节横幅 / 节点三态 / Boss 关 / 推荐战力着色。</p></div>
+  <div class="item"><span class="st todo">待评审</span><a href="battle_hud.html">04 · 战斗 HUD（P0 定调屏）</a>
+    <p>顶栏名片+王冠+倒计时 / 战场区不侵入 / 圣水条 10 格 / 手牌 4+下一张。</p></div>
+  <div class="item"><span class="st todo">待评审</span><a href="card_detail.html">05 · 卡详情弹窗</a>
+    <p>中窗口框首个用例：大卡 / 势力角标 / 阶 pip / 数值增量预览 / 升级升阶按钮态。</p></div>
+  <div class="item"><span class="st todo">待评审</span><a href="results.html">06 · 结算 + 开箱</a>
+    <p>双机：PVE 三星结算演出节奏 + 宝箱迸开奖励揭示；PVP 差异见图例。</p></div>
+  <div class="item"><span class="st todo">待评审</span><a href="misc_flows.html">07 · 创号 + 匹配中</a>
+    <p>双机：首启创号（昵称+头像网格）+ 天梯匹配等待与成功演出。</p></div>
+  <div class="item"><span class="st todo">待评审</span><a href="overlays.html">08 · 引导 / 设置 / 通用弹层</a>
+    <p>三机：新手引导挖洞层 / 设置弹窗（零专属资源）/ 确认框+Toast+断线规范。</p></div>
+</div>
+
+<div class="rules">
+  <h2>全局规范速查（详见飞书《UI 系统策划案》）</h2>
+  <p><b>画布</b>：逻辑宽 720 恒定；标准设计画布 <code>720×1560</code>；背景出血 <code>720×1600</code>；所有交互内容须在 <code>720×1280</code>（16:9 兜底）内放得下。交付切图 @2x。</p>
+  <p><b>安全区</b>：顶部 100px 内禁放交互与关键信息（灵动岛/刘海带）；底部 60px 手势条带内禁放交互；装饰与背景可自由穿越。每张示意图内红虚线即此两线，可按钮开关。</p>
+  <p><b>交互硬规矩</b>：热区 ≥88×88px；主操作放右手拇指区；按钮必有按下态（下沉+压暗）；列表一律滚动；弹窗压暗 55%~65%；Toast 不挡操作 2 秒自消；演出必可跳过。</p>
+  <p><b>导航架构</b>：五页签（商店灰·卡牌·对战·闯关·探险灰）+ 顶部齿轮设置；旧「六按钮主菜单」「基地页」废弃——挂机金库并入主界面活动轨，闯关进度并入章节主视觉。</p>
+  <p><b>预览方式</b>：直接双击打开任意 html，或跑 <code>.claude/launch.json</code> 里的 <code>ui-mockups</code> 静态服务（端口 8766）。新增示意图请复用 <code>ui_mock.css</code> 模板并在本页登记。</p>
+</div>
+</body>
+</html>

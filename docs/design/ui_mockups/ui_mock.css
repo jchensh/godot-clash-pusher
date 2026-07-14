@@ -1,0 +1,121 @@
+/* UI 示意图共享模板样式 —— 逻辑画布 720×1560（scale 显示），安全区 顶100/底60。
+   规则与首张 main_menu_cr_style.html 同源；配色/emoji 均为占位，示意结构与比例。 */
+:root { --s: 0.55; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #23262e; color: #dfe3ea; font-family: "Microsoft YaHei", sans-serif; padding: 24px; }
+h1 { font-size: 20px; margin-bottom: 4px; }
+.sub { color: #9aa3b2; font-size: 13px; margin-bottom: 18px; }
+.sub a { color: #7fc0ff; }
+.wrap { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
+
+/* ── 手机框 ── */
+.phone { width: calc(720px * var(--s)); height: calc(1560px * var(--s)); position: relative; flex: none;
+         border-radius: 28px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,.5); border: 6px solid #0b0d11; }
+.screen { width: 720px; height: 1560px; transform: scale(var(--s)); transform-origin: 0 0; position: relative;
+          background: linear-gradient(180deg, #2c4a6e 0%, #3e7a52 34%, #58a05e 62%, #3c6b45 100%); }
+.screen.page-bg { background: linear-gradient(180deg, #35302a 0%, #4a4238 40%, #3b352c 100%); } /* 非战场页的室内底 */
+.phone-cap { text-align: center; color: #9aa3b2; font-size: 13px; margin-top: 8px; }
+
+/* 真机件 + 安全区 */
+.island { position: absolute; top: 24px; left: 50%; transform: translateX(-50%); width: 220px; height: 58px;
+          border-radius: 30px; background: #000; z-index: 30; }
+.home { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); width: 240px; height: 9px;
+        border-radius: 5px; background: rgba(255,255,255,.85); z-index: 30; }
+.guide { position: absolute; left: 0; right: 0; z-index: 40; border-top: 3px dashed rgba(255, 70, 70, .9); }
+.guide small { position: absolute; right: 8px; top: 4px; color: #ff6b6b; font-size: 18px;
+               background: rgba(0,0,0,.55); padding: 2px 8px; border-radius: 8px; }
+.g-top { top: 100px; } .g-bottom { top: 1500px; }
+.hide-guides .guide { display: none; }
+
+/* ── 通用卡通件 ── */
+.pill, .btn, .panel { border: 3px solid #2b1e12; border-radius: 16px; }
+.gold { background: linear-gradient(180deg, #ffd75e, #f5a623 60%, #d4881c); color: #4a2c05; }
+.blue { background: linear-gradient(180deg, #7fc0ff, #3f8ede 60%, #2f6cb0); color: #fff; }
+.green { background: linear-gradient(180deg, #9fe08a, #57b354 60%, #3c8a3f); color: #fff; }
+.red { background: linear-gradient(180deg, #ff9a8a, #e5453a 60%, #b12f26); color: #fff; }
+.dark { background: rgba(24, 20, 16, .82); color: #fff; }
+.disabled { filter: grayscale(1) brightness(.72); }
+
+.row-currency { position: absolute; top: 108px; right: 20px; display: flex; gap: 14px; z-index: 5; }
+.pill.cur { height: 52px; min-width: 180px; display: flex; align-items: center; padding: 0 12px; gap: 8px;
+            background: rgba(20,16,12,.78); color: #fff; font-size: 26px; font-weight: bold; }
+.pill.cur .plus { margin-left: auto; width: 34px; height: 34px; border-radius: 10px; display: flex;
+                  align-items: center; justify-content: center; font-size: 24px; }
+
+/* 页头（全屏页标题栏：返回 + 标题） */
+.pagehead { position: absolute; top: 108px; left: 20px; display: flex; align-items: center; gap: 14px; z-index: 5; }
+.circ { width: 56px; height: 56px; border-radius: 50%; border: 3px solid #2b1e12; font-size: 26px;
+        display: flex; align-items: center; justify-content: center; }
+.pagehead .ttl { font-size: 34px; font-weight: 900; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.45); }
+
+/* 底部页签 */
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 150px;
+          background: linear-gradient(180deg, #241d15, #16110c); border-top: 4px solid #2b1e12;
+          display: flex; align-items: stretch; padding-bottom: 46px; z-index: 20; }
+.tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+       color: #b7a98f; font-size: 19px; position: relative; }
+.tab .ic { font-size: 44px; }
+.tab.center .ic { font-size: 62px; transform: translateY(-16px); filter: drop-shadow(0 4px 4px rgba(0,0,0,.5)); }
+.tab.center { flex: 1.35; }
+.tab.active { color: #ffd75e; font-weight: bold; }
+.tab.active::after { content: ""; position: absolute; top: 0; left: 12%; right: 12%; height: 6px;
+                     background: #ffd75e; border-radius: 3px; }
+
+/* 卡片（三档：手牌 140×172 / 卡格 96×120 用 1.35 倍显示为 130×162 便于示意 / 大卡另定义） */
+.card { border: 4px solid #6b7280; border-radius: 14px; background: linear-gradient(180deg, #4c545f, #333941);
+        position: relative; display: flex; align-items: center; justify-content: center; color: #fff; }
+.card.r-common { border-color: #9aa3ad; } .card.r-rare { border-color: #3f8ede; }
+.card.r-epic { border-color: #9b59d0; } .card.r-legend { border-color: #f0b427;
+        box-shadow: 0 0 12px rgba(240,180,39,.55); }
+.card .face { font-size: 52px; }
+.card .cost { position: absolute; top: -12px; left: -12px; width: 44px; height: 44px; border-radius: 50%;
+              background: radial-gradient(circle at 35% 30%, #d6a6ff, #8e44d0 70%); border: 3px solid #2b1e12;
+              color: #fff; font-size: 24px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+.card .lv { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(20,16,12,.8); font-size: 17px;
+            text-align: center; border-radius: 0 0 9px 9px; padding: 2px 0; }
+.card .dot { position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; border-radius: 50%;
+             background: #e5453a; border: 3px solid #2b1e12; }
+.card.locked { filter: grayscale(1) brightness(.6); }
+.card .lock { position: absolute; font-size: 40px; }
+.card .shard { position: absolute; bottom: 6px; left: 8px; right: 8px; height: 14px; border-radius: 7px;
+               background: #241c14; border: 2px solid #2b1e12; overflow: hidden; }
+.card .shard i { display: block; height: 100%; background: linear-gradient(180deg, #7fe0d0, #2fa89a); }
+
+/* 进度条 */
+.bar { height: 26px; border-radius: 13px; border: 3px solid #2b1e12; background: #241c14; overflow: hidden; }
+.bar .fill { height: 100%; background: linear-gradient(180deg, #8fd6ff, #3f8ede); }
+.bar .fill.g { background: linear-gradient(180deg, #9fe08a, #57b354); }
+
+/* 面板 */
+.panelbox { background: rgba(24,20,16,.66); border: 3px solid #2b1e12; border-radius: 20px; }
+
+/* 弹窗态 */
+.dim { position: absolute; inset: 0; background: rgba(0,0,0,.6); z-index: 8; }
+.modal { position: absolute; left: 50px; width: 620px; z-index: 10; background: linear-gradient(180deg, #efe3c8, #d9c49a);
+         border: 4px solid #2b1e12; border-radius: 24px; color: #3a2a16; }
+.modal .mhead { height: 84px; display: flex; align-items: center; justify-content: center; position: relative;
+                font-size: 32px; font-weight: 900; border-bottom: 3px solid rgba(43,30,18,.25); }
+.modal .mx { position: absolute; right: -20px; top: -20px; }
+.modal .mbody { padding: 24px 28px; font-size: 24px; }
+.modal .mbtns { display: flex; gap: 20px; justify-content: center; padding: 8px 28px 28px; }
+.btn.big { min-width: 220px; height: 72px; display: flex; align-items: center; justify-content: center;
+           font-size: 30px; font-weight: 900; border-radius: 18px; }
+.btn.mid { min-width: 170px; height: 60px; display: flex; align-items: center; justify-content: center;
+           font-size: 26px; font-weight: bold; border-radius: 16px; }
+
+/* Toast */
+.toast { position: absolute; top: 360px; left: 50%; transform: translateX(-50%); z-index: 12;
+         background: rgba(20,16,12,.88); color: #fff; border: 3px solid #2b1e12; border-radius: 16px;
+         font-size: 24px; padding: 12px 28px; }
+
+/* 图例 */
+.legend { max-width: 460px; font-size: 14px; line-height: 1.75; }
+.legend h2 { font-size: 16px; margin: 14px 0 6px; color: #ffd75e; }
+.legend li { margin-left: 18px; }
+.legend p { margin: 6px 0; }
+.tag { display: inline-block; background: #3f8ede; color: #fff; border-radius: 8px; padding: 0 8px;
+       font-size: 12px; margin-right: 6px; }
+button.toggle { margin-top: 14px; padding: 6px 14px; border-radius: 8px; border: 1px solid #556;
+                background: #2e3340; color: #dfe3ea; cursor: pointer; }
+.backlink { margin-top: 10px; font-size: 13px; }
+.backlink a { color: #7fc0ff; }

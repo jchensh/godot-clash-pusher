@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<!-- UI 示意图：创号页 + PVP 匹配中，双机并排。 -->
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>创号 + 匹配中示意</title>
+<link rel="stylesheet" href="ui_mock.css">
+<style>
+  .cc-title { position: absolute; top: 160px; left: 0; right: 0; text-align: center; color: #fff; }
+  .cc-title .t { font-size: 40px; font-weight: 900; }
+  .cc-title .s { font-size: 22px; color: #b7a98f; margin-top: 6px; }
+  .cc-input { position: absolute; top: 300px; left: 80px; right: 80px; height: 76px; border-radius: 16px;
+              background: rgba(255,255,255,.92); color: #3a2a16; font-size: 30px; display: flex;
+              align-items: center; padding: 0 22px; justify-content: space-between; }
+  .cc-input .cnt { font-size: 20px; color: #9aa3b2; }
+  .cc-grid { position: absolute; top: 430px; left: 60px; right: 60px; bottom: 360px; padding: 20px;
+             display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; align-content: start; }
+  .av-cell { aspect-ratio: 1; border-radius: 16px; border: 4px solid #6b7280; font-size: 52px;
+             display: flex; align-items: center; justify-content: center;
+             background: linear-gradient(180deg, #4c545f, #333941); }
+  .av-cell.sel { border-color: #ffd75e; box-shadow: 0 0 16px rgba(255,215,94,.7); }
+  .cc-btn { position: absolute; bottom: 220px; left: 0; right: 0; display: flex; justify-content: center; }
+
+  .vs-stage { position: absolute; top: 380px; left: 0; right: 0; text-align: center; }
+  .vs-word { font-size: 130px; font-weight: 900; color: #ffd75e; text-shadow: 0 8px 0 #8a5a10; }
+  .ring { width: 200px; height: 200px; margin: 30px auto 0; border-radius: 50%;
+          border: 10px dashed rgba(255,255,255,.55); display: flex; align-items: center;
+          justify-content: center; font-size: 34px; color: #fff; animation: spin 6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .np-slot { position: absolute; top: 700px; width: 300px; height: 110px; border-radius: 18px;
+             display: flex; align-items: center; gap: 12px; padding: 0 16px; color: #fff; }
+  .np-slot .av { width: 72px; height: 72px; border-radius: 12px; border: 3px solid #e9c675; font-size: 38px;
+                 display: flex; align-items: center; justify-content: center; background: #7c5a30; }
+  .np-slot.l { left: 34px; background: rgba(63,142,222,.4); border: 3px solid #2b1e12; }
+  .np-slot.r { right: 34px; background: rgba(229,69,58,.35); border: 3px solid #2b1e12;
+               justify-content: flex-end; text-align: right; }
+  .np-slot .q { font-size: 44px; opacity: .6; }
+  .searchtxt { position: absolute; top: 860px; left: 0; right: 0; text-align: center; color: #fff;
+               font-size: 26px; }
+  .cancel { position: absolute; bottom: 260px; left: 0; right: 0; display: flex; justify-content: center; }
+</style>
+</head>
+<body>
+<h1>创号页 + 匹配中示意</h1>
+<div class="sub">左=首启创号（一次性流程）；右=天梯匹配等待。<span class="backlink"><a href="index.html">← 返回目录</a></span></div>
+<div class="wrap">
+
+  <div>
+    <div class="phone"><div class="screen page-bg" id="s1">
+      <div class="cc-title"><div class="t">立名建号</div><div class="s">取个名号，选个脸谱，即刻出征</div></div>
+      <div class="cc-input pill">陈到·叔至<span class="cnt">6/10</span></div>
+      <div class="cc-grid panelbox">
+        <div class="av-cell sel">🗡️</div><div class="av-cell">🏹</div><div class="av-cell">🐗</div><div class="av-cell">💀</div>
+        <div class="av-cell">🪓</div><div class="av-cell">🗿</div><div class="av-cell">🧙</div><div class="av-cell">🐉</div>
+      </div>
+      <div class="cc-btn"><div class="btn big gold">启 程</div></div>
+      <div class="island"></div><div class="home"></div>
+      <div class="guide g-top"><small>y=100</small></div><div class="guide g-bottom"><small>y=1500</small></div>
+    </div></div>
+    <div class="phone-cap">① 创号：昵称（中文按 1、英数按 0.5 计宽，上限 10）+ 头像网格（武将立绘，可滚动）</div>
+  </div>
+
+  <div>
+    <div class="phone"><div class="screen" id="s2">
+      <div class="dim" style="background:rgba(10,8,20,.55)"></div>
+      <div class="vs-stage" style="z-index:9">
+        <div class="vs-word">VS</div>
+        <div class="ring">搜索中</div>
+      </div>
+      <div class="np-slot l" style="z-index:9"><div class="av">🗡️</div><div><div>陈到·叔至</div><div>🏆 1216</div></div></div>
+      <div class="np-slot r" style="z-index:9"><div><div>？？？</div><div>匹配中…</div></div><div class="av"><span class="q">?</span></div></div>
+      <div class="searchtxt" style="z-index:9">正在寻找旗鼓相当的对手… 0:07</div>
+      <div class="cancel" style="z-index:9"><div class="btn mid dark pill">取消</div></div>
+      <div class="island"></div><div class="home"></div>
+      <div class="guide g-top"><small>y=100</small></div><div class="guide g-bottom"><small>y=1500</small></div>
+    </div></div>
+    <div class="phone-cap">② 匹配：VS 徽标 + 旋转光环；成功后右侧名片翻出对手并撞击进战场</div>
+  </div>
+
+  <div class="legend">
+    <h2>结构说明</h2>
+    <ul>
+      <li><span class="tag">创号</span>服务器权威流程：昵称宽度计数实时显示（超限输入框描边变红）；头像=怪物卡立绘网格（选中金描边）；「启程」在名字合法+已选头像才亮</li>
+      <li><span class="tag">匹配</span>压暗主界面上的全屏等待层；VS 徽标一张 + 程序旋转的光环；计时文本；取消随时可点（次按钮）</li>
+      <li><span class="tag">匹配成功</span>右侧「？？？」翻转为对手名片（头像+昵称+杯数）→ 两名片向中间撞击 → 转场进战斗；这 1.5 秒是玩家读对手信息的窗口</li>
+    </ul>
+    <h2>给美术的资源点</h2>
+    <ul>
+      <li>创号：输入框（常态/聚焦/非法红边三态）、头像选中框；标题美术字可选</li>
+      <li>匹配：VS 徽标一张、光环一张（程序旋转）；名片框复用战斗 HUD 的蓝/红版</li>
+    </ul>
+    <button class="toggle" onclick="document.getElementById('s1').classList.toggle('hide-guides');document.getElementById('s2').classList.toggle('hide-guides')">显示/隐藏 安全区参考线</button>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<!-- UI 示意图：卡牌页（页签二级页）。原「养成图鉴」与「组卡」合并为一页（CR 同款）：上=当前卡组，下=收藏卡池。 -->
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>卡牌页示意（图鉴+卡组合一）</title>
+<link rel="stylesheet" href="ui_mock.css">
+<style>
+  .deckzone { position: absolute; top: 190px; left: 26px; right: 26px; height: 420px; padding: 18px 22px; }
+  .deckzone .cap { color: #ffd75e; font-size: 24px; font-weight: bold; margin-bottom: 12px; }
+  .deckgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .deckgrid .card { height: 150px; }
+  .deckmeta { display: flex; justify-content: space-between; margin-top: 14px; color: #fff; font-size: 22px; }
+  .deckmeta b { color: #9fe08a; }
+  .sortrow { position: absolute; top: 640px; left: 26px; right: 26px; display: flex; gap: 10px; }
+  .seg { flex: 1; height: 56px; display: flex; border: 3px solid #2b1e12; border-radius: 16px; overflow: hidden; }
+  .seg div { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 22px;
+             background: rgba(24,20,16,.7); color: #b7a98f; }
+  .seg div.on { background: linear-gradient(180deg, #ffd75e, #f5a623); color: #4a2c05; font-weight: 900; }
+  .dirbtn { width: 56px; height: 56px; flex: none; font-size: 26px; display: flex; align-items: center;
+            justify-content: center; }
+  .pool { position: absolute; top: 724px; left: 26px; right: 26px; bottom: 170px; padding: 20px 22px;
+          overflow: hidden; }
+  .pool .cap { color: #b7a98f; font-size: 20px; margin-bottom: 12px; }
+  .poolgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+  .poolgrid .card { height: 150px; }
+</style>
+</head>
+<body>
+<h1>卡牌页示意（页签：卡牌）</h1>
+<div class="sub">图鉴 + 卡组合并为一页（CR 同款交互）；画布 720×1560。<span class="backlink"><a href="index.html">← 返回目录</a></span></div>
+<div class="wrap">
+  <div class="phone"><div class="screen page-bg" id="screen">
+    <div class="pagehead"><div class="ttl">卡牌</div></div>
+    <div class="row-currency">
+      <div class="pill cur">🪙 12,480 <span class="plus gold pill">+</span></div>
+      <div class="pill cur">💎 335 <span class="plus gold pill">+</span></div>
+    </div>
+
+    <!-- 当前卡组 -->
+    <div class="deckzone panelbox">
+      <div class="cap">⚔️ 出战卡组（8）</div>
+      <div class="deckgrid">
+        <div class="card r-rare"><span class="cost">3</span><span class="face">🗡️</span><span class="lv">Lv 7</span></div>
+        <div class="card r-common"><span class="cost">2</span><span class="face">🏹</span><span class="lv">Lv 6</span></div>
+        <div class="card r-epic"><span class="cost">5</span><span class="face">🐗</span><span class="lv">Lv 5</span></div>
+        <div class="card r-common"><span class="cost">1</span><span class="face">💀</span><span class="lv">Lv 8</span></div>
+        <div class="card r-rare"><span class="cost">4</span><span class="face">🪓</span><span class="lv">Lv 6</span></div>
+        <div class="card r-legend"><span class="cost">6</span><span class="face">🗿</span><span class="lv">Lv 3</span></div>
+        <div class="card r-common"><span class="cost">3</span><span class="face">🔥</span><span class="lv">Lv 7</span></div>
+        <div class="card r-epic"><span class="cost">4</span><span class="face">⚡</span><span class="lv">Lv 4</span></div>
+      </div>
+      <div class="deckmeta"><span>平均费用 3.5</span><span>卡组战力 <b>1180</b>（下一关推荐 1100）</span></div>
+    </div>
+
+    <!-- 排序控件 -->
+    <div class="sortrow">
+      <div class="seg"><div class="on">稀有度</div><div>费用</div><div>等级</div><div>可养成</div></div>
+      <div class="dirbtn dark pill">↓</div>
+    </div>
+
+    <!-- 收藏卡池 -->
+    <div class="pool panelbox">
+      <div class="cap">收藏（34/48 已解锁）— 点选与卡组互换；长按看详情</div>
+      <div class="poolgrid">
+        <div class="card r-legend"><span class="cost">5</span><span class="face">🧙</span><span class="lv">Lv 4</span><span class="dot"></span></div>
+        <div class="card r-epic"><span class="cost">4</span><span class="face">🐉</span><span class="lv">Lv 5</span></div>
+        <div class="card r-rare"><span class="cost">3</span><span class="face">🛡️</span><span class="lv">Lv 6</span><span class="dot"></span></div>
+        <div class="card r-rare"><span class="cost">2</span><span class="face">🕷️</span><span class="lv">Lv 5</span></div>
+        <div class="card r-common"><span class="cost">2</span><span class="face">🏇</span><span class="lv">Lv 7</span></div>
+        <div class="card r-epic locked"><span class="cost">5</span><span class="lock">🔒</span><span class="shard"><i style="width:60%"></i></span></div>
+        <div class="card r-common locked"><span class="cost">3</span><span class="lock">🔒</span><span class="shard"><i style="width:25%"></i></span></div>
+        <div class="card r-legend locked"><span class="cost">7</span><span class="lock">🔒</span><span class="shard"><i style="width:10%"></i></span></div>
+      </div>
+    </div>
+
+    <!-- 页签 -->
+    <div class="tabbar">
+      <div class="tab disabled"><div class="ic">🏪</div>商店</div>
+      <div class="tab active"><div class="ic">🎴</div>卡牌</div>
+      <div class="tab center"><div class="ic">⚔️</div>对战</div>
+      <div class="tab"><div class="ic">🗺️</div>闯关</div>
+      <div class="tab disabled"><div class="ic">🧭</div>探险</div>
+    </div>
+
+    <div class="island"></div><div class="home"></div>
+    <div class="guide g-top"><small>顶部安全区 y=100</small></div>
+    <div class="guide g-bottom"><small>底部手势带 y=1500</small></div>
+  </div></div>
+
+  <div class="legend">
+    <h2>结构说明</h2>
+    <ul>
+      <li><span class="tag">合并</span>旧「养成图鉴」「组卡」两页合并成本页：上=出战卡组（PVE/PVP 共用槽1），下=收藏池；点收藏卡与卡组互换，无需再进独立组卡页</li>
+      <li><span class="tag">卡组区</span>2×4 八张 + 平均费用 + 卡组战力；战力对比下一关推荐值着绿/琥珀</li>
+      <li><span class="tag">排序</span>四键分段控件（稀有度/费用/等级/可养成）+ 升降序按钮，记忆上次选择</li>
+      <li><span class="tag">卡格三态</span>已解锁（等级条）/ 可升级（右上红点）/ 未解锁（灰+锁+碎片进度条青色）</li>
+      <li><span class="tag">稀有度</span>边框四色：灰银/蓝/紫/金，传说带外发光</li>
+    </ul>
+    <h2>给美术的资源点</h2>
+    <ul>
+      <li>卡格框 96×120 档四稀有度 × 三态；面板底、分段控件、排序方向钮</li>
+      <li>卡面立绘为程序放置（用单位立绘），美术只出框</li>
+      <li>长按弹出卡详情（见 card_detail.html）</li>
+    </ul>
+    <button class="toggle" onclick="document.getElementById('screen').classList.toggle('hide-guides')">显示/隐藏 安全区参考线</button>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>卡牌升级 / 升阶系统 · 系统策划案</title>
+<style>
+  :root{
+    --ink:#1b2130; --ink-soft:#3a4256; --muted:#6b7488; --line:#e6e9f0;
+    --bg:#f4f6fb; --card:#ffffff; --primary:#3b4aa0; --primary-soft:#eef0fb;
+    --gold:#b8860b; --gold-soft:#fbf3dd;
+    --ok:#2e9e6b; --ok-soft:#e5f6ee; --warn:#c9821b; --warn-soft:#fdf1de;
+    --danger:#c0392b; --danger-soft:#fbe9e7; --info:#2f6fb0; --info-soft:#e9f2fb;
+    --r-common:#7c8494; --r-rare:#2f7fd6; --r-epic:#8b5cf6; --r-legend:#d9982a;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:'PingFang SC','Microsoft YaHei','Segoe UI',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+       font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased;}
+  a{color:var(--primary);text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  code{font-family:var(--mono);font-size:.88em;background:#eef1f7;padding:1px 6px;
+       border-radius:4px;color:#334;}
+
+  /* ---------- layout ---------- */
+  .wrap{display:flex;max-width:1240px;margin:0 auto;gap:28px;padding:0 24px;}
+  nav.toc{position:sticky;top:0;align-self:flex-start;width:222px;flex:none;
+          height:100vh;overflow-y:auto;padding:26px 8px 40px 0;font-size:13px;}
+  nav.toc .brand{font-weight:800;color:var(--primary);font-size:15px;margin:0 0 4px;}
+  nav.toc .brand small{display:block;font-weight:500;color:var(--muted);font-size:11px;}
+  nav.toc a{display:block;color:var(--ink-soft);padding:5px 10px;border-radius:6px;
+            border-left:2px solid transparent;line-height:1.4;}
+  nav.toc a:hover{background:#fff;text-decoration:none;color:var(--primary);}
+  nav.toc a.sub{padding-left:22px;font-size:12px;color:var(--muted);}
+  main{flex:1;min-width:0;padding:26px 0 120px;}
+
+  /* ---------- cover ---------- */
+  .cover{background:linear-gradient(135deg,#2b3573 0%,#3b4aa0 55%,#5a4fb0 100%);
+         color:#fff;border-radius:16px;padding:34px 38px;margin-bottom:26px;
+         box-shadow:0 12px 30px -14px rgba(43,53,115,.6);position:relative;overflow:hidden;}
+  .cover::after{content:"";position:absolute;right:-40px;top:-40px;width:220px;height:220px;
+         background:radial-gradient(circle,rgba(255,255,255,.12),transparent 70%);}
+  .cover .eyebrow{letter-spacing:3px;font-size:12px;opacity:.8;text-transform:uppercase;}
+  .cover h1{margin:6px 0 10px;font-size:30px;font-weight:800;letter-spacing:1px;}
+  .cover .tagline{font-size:15px;opacity:.92;max-width:640px;line-height:1.7;}
+  .cover .meta{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:20px;font-size:13px;opacity:.9;}
+  .cover .meta b{opacity:.7;font-weight:500;margin-right:6px;}
+  .pill{display:inline-block;background:rgba(255,255,255,.18);padding:2px 11px;
+        border-radius:20px;font-size:12px;font-weight:600;}
+
+  /* ---------- sections ---------- */
+  section{background:var(--card);border:1px solid var(--line);border-radius:14px;
+          padding:26px 30px;margin-bottom:22px;scroll-margin-top:18px;}
+  h2{font-size:21px;margin:0 0 4px;color:var(--ink);display:flex;align-items:baseline;gap:10px;}
+  h2 .num{font-size:14px;font-weight:800;color:#fff;background:var(--primary);
+          border-radius:7px;padding:2px 9px;flex:none;line-height:1.5;}
+  h2 + .lead{color:var(--muted);margin:0 0 18px;font-size:13.5px;}
+  h3{font-size:16px;margin:26px 0 10px;color:var(--primary);
+     border-left:4px solid var(--primary);padding-left:10px;}
+  h4{font-size:14px;margin:18px 0 8px;color:var(--ink-soft);}
+  p{margin:10px 0;}
+  ul,ol{margin:10px 0;padding-left:22px;}
+  li{margin:5px 0;}
+  hr{border:0;border-top:1px dashed var(--line);margin:22px 0;}
+
+  /* ---------- tables ---------- */
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13px;}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top;}
+  th{background:#f3f5fb;font-weight:700;color:var(--ink-soft);}
+  tbody tr:nth-child(even){background:#fafbfe;}
+  tbody tr:hover{background:var(--primary-soft);}
+  td.num,th.num{text-align:right;font-family:var(--mono);}
+  caption{caption-side:bottom;color:var(--muted);font-size:12px;margin-top:6px;text-align:left;}
+
+  /* ---------- badges ---------- */
+  .rar{display:inline-block;padding:1px 9px;border-radius:20px;font-size:12px;
+       font-weight:700;color:#fff;}
+  .r-common{background:var(--r-common);}
+  .r-rare{background:var(--r-rare);}
+  .r-epic{background:var(--r-epic);}
+  .r-legend{background:var(--r-legend);}
+  .tag{display:inline-block;padding:1px 8px;border-radius:5px;font-size:11.5px;
+       font-weight:700;border:1px solid;}
+  .t-stat{color:var(--info);border-color:var(--info);background:var(--info-soft);}
+  .t-skill{color:var(--gold);border-color:var(--gold);background:var(--gold-soft);}
+
+  /* ---------- callouts ---------- */
+  .box{border-radius:10px;padding:13px 16px 13px 44px;margin:14px 0;position:relative;
+       font-size:13.5px;line-height:1.7;border:1px solid;}
+  .box::before{position:absolute;left:14px;top:12px;font-size:16px;}
+  .box b{font-weight:700;}
+  .box.intent{background:var(--primary-soft);border-color:#cfd5f2;}
+  .box.intent::before{content:"🎯";}
+  .box.law{background:var(--danger-soft);border-color:#f2cfc9;}
+  .box.law::before{content:"⛓️";}
+  .box.risk{background:var(--warn-soft);border-color:#f2ddba;}
+  .box.risk::before{content:"⚠️";}
+  .box.note{background:var(--ok-soft);border-color:#c6e8d6;}
+  .box.note::before{content:"💡";}
+
+  /* ---------- formula ---------- */
+  .formula{background:#1b2130;color:#e8ecf5;border-radius:10px;padding:16px 20px;
+           font-family:var(--mono);font-size:13.5px;margin:14px 0;overflow-x:auto;line-height:1.9;}
+  .formula .hl{color:#ffd479;}
+  .formula .cm{color:#7c8494;}
+  .formula .op{color:#6fd0c0;}
+
+  /* ---------- flow diagram ---------- */
+  .diagram{width:100%;height:auto;margin:8px 0 4px;}
+
+  /* ---------- resource loop cards ---------- */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0;}
+  .kpi{background:#fafbfe;border:1px solid var(--line);border-radius:10px;padding:12px 14px;}
+  .kpi .k{font-size:11.5px;color:var(--muted);letter-spacing:.5px;}
+  .kpi .v{font-size:22px;font-weight:800;color:var(--primary);font-family:var(--mono);}
+  .kpi .u{font-size:11px;color:var(--muted);}
+
+  /* ---------- wireframe ---------- */
+  .wire{border:2px dashed #b9c0d4;border-radius:12px;background:#fbfcfe;padding:14px;
+        max-width:300px;margin:12px 0;font-size:12px;color:var(--ink-soft);}
+  .wire .wf-hero{background:#e8ebf6;border-radius:8px;height:74px;display:flex;
+        align-items:center;justify-content:center;color:var(--muted);margin-bottom:8px;
+        border:1px solid var(--line);}
+  .wire .wf-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dotted var(--line);}
+  .wire .wf-bar{height:9px;background:#dfe4f2;border-radius:5px;overflow:hidden;margin:6px 0;}
+  .wire .wf-bar>i{display:block;height:100%;width:62%;background:linear-gradient(90deg,var(--primary),#6a5fc0);}
+  .wire .wf-btn{margin-top:9px;background:var(--primary);color:#fff;text-align:center;
+        border-radius:7px;padding:7px;font-weight:700;}
+  .wire .wf-btn.alt{background:var(--gold);}
+  .wire .wf-btn.dis{background:#c4cad8;}
+
+  /* ---------- checklist ---------- */
+  ul.check{list-style:none;padding-left:2px;}
+  ul.check li{padding-left:28px;position:relative;margin:8px 0;}
+  ul.check li::before{content:"☐";position:absolute;left:2px;top:-1px;font-size:16px;color:var(--primary);}
+
+  /* ---------- misc ---------- */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+  @media(max-width:920px){.grid2{grid-template-columns:1fr;}nav.toc{display:none;}.wrap{padding:0 16px;}main{padding-top:16px;}}
+  .footnote{font-size:12px;color:var(--muted);}
+  .src li{font-size:12.5px;margin:4px 0;}
+  .revtable td{font-size:12.5px;}
+  .chip{display:inline-block;background:#eef1f7;border-radius:5px;padding:1px 7px;font-size:11.5px;color:var(--ink-soft);margin:2px 3px 2px 0;font-family:var(--mono);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ============ TOC ============ -->
+<nav class="toc">
+  <p class="brand">卡牌升级/升阶<small>系统策划案 · v0.9 草案</small></p>
+  <a href="#s0">修订记录</a>
+  <a href="#s1">1 · 设计目标与定位</a>
+  <a href="#s2">2 · 名词定义</a>
+  <a href="#s3">3 · 系统总览与经济闭环</a>
+  <a href="#s4">4 · 核心规则</a>
+  <a href="#s4-1" class="sub">4.1 解锁</a>
+  <a href="#s4-2" class="sub">4.2 升级（等级线）</a>
+  <a href="#s4-3" class="sub">4.3 升阶（突破线）</a>
+  <a href="#s5">5 · 数值与公式</a>
+  <a href="#s6">6 · 数据结构与接口</a>
+  <a href="#s7">7 · 界面与交互</a>
+  <a href="#s8">8 · 边界与异常</a>
+  <a href="#s9">9 · 跨系统接口</a>
+  <a href="#s10">10 · 埋点与数据分析</a>
+  <a href="#s11">11 · 验收标准</a>
+  <a href="#s12">附录 · 引用与配置索引</a>
+</nav>
+
+<!-- ============ MAIN ============ -->
+<main>
+
+<!-- cover -->
+<header class="cover">
+  <div class="eyebrow">SYSTEM DESIGN DOC · 系统策划案</div>
+  <h1>卡牌升级 / 升阶系统</h1>
+  <p class="tagline">为「对推小游戏」提供贯穿全生命周期的单卡成长深度：以<b>金币</b>驱动高频升级、以<b>碎片</b>门控深度升阶，把关卡产出回收成战力增长，形成「打关 → 攒资源 → 变强 → 打更深的关」的核心养成闭环。</p>
+  <div class="meta">
+    <span><b>版本</b>v0.9 草案</span>
+    <span><b>状态</b><span class="pill">待评审 · 数值待平衡(V5-S8)</span></span>
+    <span><b>关联 Epic</b>KAN-50 (V5)</span>
+    <span><b>权威模型</b>服务器权威（决策 48）</span>
+    <span><b>阅读对象</b>程序 / 数值 / UI美术 / QA</span>
+  </div>
+</header>
+
+<!-- 0 修订记录 -->
+<section id="s0">
+  <h2><span class="num">0</span>修订记录</h2>
+  <table class="revtable">
+    <thead><tr><th style="width:70px">版本</th><th style="width:100px">日期</th><th>变更摘要</th><th style="width:80px">作者</th></tr></thead>
+    <tbody>
+      <tr><td>v0.9</td><td>2026-07-15</td><td>首版：对齐 <code>card_progression.json</code> / <code>economy.json</code> 现有实现，补全规则闭环、边界、验收</td><td>设计</td></tr>
+      <tr><td class="footnote" colspan="4">※ 后续每次数值/规则调整都应在此登记；数值最终值以 V5-S8 balance probe 结论为准。</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 1 设计目标 -->
+<section id="s1">
+  <h2><span class="num">1</span>设计目标与定位</h2>
+  <p class="lead">先回答"为什么要有这个系统"——它服务的玩家体验与商业目标，是后面所有数值与交互取舍的裁判。</p>
+
+  <h3>1.1 为什么存在</h3>
+  <ul>
+    <li><b>长期成长目标</b>：给玩家一条清晰、可预期、永远差一点点就能到手的变强路径，是 PvE 闯关与留存的主发动机。</li>
+    <li><b>货币回收池</b>：承接关卡/挂机产出的<b>金币</b>与定向掉落的<b>碎片</b>，让产出有去处，维持经济健康。</li>
+    <li><b>付费锚点</b>：养成深度=时间成本，为后续 IAP（金币礼包/碎片直购/加速）预留天然付费点（本案只做养成框架，具体商业化按上线节奏推后）。</li>
+    <li><b>Build 表达</b>：升阶解锁的技能积木（+数量 / 减速 / 亡语裂变…）让"练哪张卡"成为策略选择，而非纯数值堆叠。</li>
+  </ul>
+
+  <h3>1.2 三条养成线一览</h3>
+  <p>本系统由三条相互咬合的线组成，共享稀有度定价，但资源与手感各不相同：</p>
+  <table>
+    <thead><tr><th style="width:78px">线</th><th>做什么</th><th>消耗</th><th>收益</th><th>节奏</th></tr></thead>
+    <tbody>
+      <tr><td><b>解锁</b></td><td>攒够该卡碎片，把卡从"未拥有"变为"可用"</td><td>碎片（定向）</td><td>获得新卡 / 新 Build</td><td>里程碑</td></tr>
+      <tr><td><b>升级</b></td><td>在当前阶的上限内逐级提升等级</td><td>金币（通用）</td><td>全属性 +10%/级（线性）</td><td>高频、小额</td></tr>
+      <tr><td><b>升阶</b></td><td>突破，抬高等级上限 + 属性乘区 + 解锁技能</td><td>碎片 + 金币（大额）</td><td>×1.25 乘区 + 上限+3 + 技能积木</td><td>低频、里程碑</td></tr>
+    </tbody>
+  </table>
+
+  <div class="box intent"><b>设计意图 —— 双货币分工。</b>金币是<b>流量货币</b>（高频、小额、通用），负责让玩家几乎每天都能点到"变强"；碎片是<b>稀缺定向货币</b>（每卡独立），门控深度养成与解锁，制造"想练这张就得针对性攒"的取舍。二者叠加，既有即时反馈又有长期目标。</div>
+
+  <h3>1.3 设计原则（铁律）</h3>
+  <div class="box law"><b>服务器唯一权威（决策 48）。</b>等级/阶/碎片/金币/解锁状态全部由服务器计算并落 PG 库，客户端只是<b>瘦表现层 + 只读缓存</b>。所有升级/升阶/解锁/领取动作走服务器 API 校验，改本地存档或改客户端时钟一律无效；断线即不可养成（fail-closed）。</div>
+  <div class="box law"><b>配置化，不硬编码。</b>成长曲线、成本、上限、稀有度定价全部读 <code>config/economy.json</code> 与 <code>config/card_progression.json</code>，数值可由策划改表即调，程序不写死任何数字。</div>
+  <div class="box law"><b>稀有度 ≠ 强度。</b>稀有度只决定<b>养成成本与获取难度</b>（碎片/金币定价、掉率），不等于满养成后更强——低稀有度卡满养成同样应有一线之地，避免"高稀有度即答案"。</div>
+</section>
+
+<!-- 2 名词定义 -->
+<section id="s2">
+  <h2><span class="num">2</span>名词定义</h2>
+  <p class="lead">消除团队理解偏差——本案所有后文均按此定义使用。</p>
+  <table>
+    <thead><tr><th style="width:120px">名词</th><th style="width:120px">字段/代号</th><th>定义</th></tr></thead>
+    <tbody>
+      <tr><td>等级 Level</td><td><code>level</code> 1–10</td><td>单卡在<b>当前阶</b>内的成长档位，每级线性提升全属性。升级仅花金币。</td></tr>
+      <tr><td>阶 Rank</td><td><code>rank</code> 1–3</td><td>单卡的"突破段位"。升阶抬高等级上限、施加属性乘区、解锁一个技能/数值节点。</td></tr>
+      <tr><td>等级上限</td><td><code>level_cap_per_rank</code></td><td>由当前阶决定的可升级到的最高等级：阶1→10 无法直接达到，须先升阶。取值 <code>{1:4, 2:7, 3:10}</code>。</td></tr>
+      <tr><td>解锁 Unlock</td><td><code>unlocked</code> bool</td><td>该卡是否已被玩家拥有、可入卡组。未解锁的卡只能看、不能用。</td></tr>
+      <tr><td>金币 Gold</td><td>钱包 <code>gold</code></td><td>通用货币，全卡共享。来源：关卡首通/重复、挂机。主要用于升级、部分升阶。</td></tr>
+      <tr><td>碎片 Shard</td><td><code>shards[card_id]</code></td><td><b>每卡独立</b>的定向货币。攒够可解锁该卡；解锁后继续攒用于升阶。来源：关卡定向掉落 / 商店 / 活动。</td></tr>
+      <tr><td>base_power</td><td><code>base_power</code></td><td>该卡的战力基准值（common100/rare140/epic190/legendary260），用于队伍战力折算，不直接等于战斗属性。</td></tr>
+      <tr><td>技能积木</td><td><code>rank_unlocks.ops</code></td><td>升阶解锁的机制修改单元（count_add/num_add/num_mult/unit_field 等），由 <code>CardProgression.effective_skills</code> 应用到战斗单位。</td></tr>
+    </tbody>
+  </table>
+  <div class="box note"><b>碎片是"每卡独立"而非通用。</b>这是本系统与"通用升级材料"游戏的关键区别（对齐皇室战争的卡牌副本模型）：玩家想练某张卡，就必须定向获取<b>那张卡的碎片</b>，从而让掉落设计、卡池深度、付费直购都能精准落到单卡粒度。</div>
+</section>
+
+<!-- 3 系统总览 -->
+<section id="s3">
+  <h2><span class="num">3</span>系统总览与经济闭环</h2>
+  <p class="lead">一张图看清系统在整个游戏经济里的位置：它既是产出的<b>回收口</b>，又是战力的<b>生产口</b>。</p>
+
+  <svg class="diagram" viewBox="0 0 860 340" xmlns="http://www.w3.org/2000/svg" font-family="var(--sans)" font-size="13">
+    <defs>
+      <marker id="arw" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+        <path d="M0,0 L8,3 L0,6 Z" fill="#6b7488"/>
+      </marker>
+      <style>
+        .node{rx:12;ry:12;stroke-width:1.5;}
+        .lbl{fill:#1b2130;font-weight:700;}
+        .sub{fill:#6b7488;font-size:11px;}
+        .edge{stroke:#6b7488;stroke-width:1.6;fill:none;marker-end:url(#arw);}
+        .elabel{fill:#3a4256;font-size:11px;}
+      </style>
+    </defs>
+
+    <!-- 关卡 -->
+    <rect class="node" x="30" y="130" width="150" height="72" fill="#eef2fb" stroke="#c3ccec"/>
+    <text class="lbl" x="105" y="160" text-anchor="middle">PvE 关卡 / 挂机</text>
+    <text class="sub" x="105" y="180" text-anchor="middle">首通·重复·离线</text>
+
+    <!-- 金币 -->
+    <rect class="node" x="270" y="40" width="140" height="66" fill="#fbf3dd" stroke="#e6d09a"/>
+    <text class="lbl" x="340" y="68" text-anchor="middle">💰 金币</text>
+    <text class="sub" x="340" y="86" text-anchor="middle">通用 · 全卡共享</text>
+
+    <!-- 碎片 -->
+    <rect class="node" x="270" y="226" width="140" height="66" fill="#f0e9fb" stroke="#cdbcee"/>
+    <text class="lbl" x="340" y="254" text-anchor="middle">🧩 碎片</text>
+    <text class="sub" x="340" y="272" text-anchor="middle">每卡定向</text>
+
+    <!-- 养成动作 -->
+    <rect class="node" x="500" y="30" width="150" height="60" fill="#eaf6ef" stroke="#bfe3cf"/>
+    <text class="lbl" x="575" y="56" text-anchor="middle">升级（金币）</text>
+    <text class="sub" x="575" y="74" text-anchor="middle">+10%/级</text>
+
+    <rect class="node" x="500" y="140" width="150" height="60" fill="#eaf6ef" stroke="#bfe3cf"/>
+    <text class="lbl" x="575" y="166" text-anchor="middle">升阶（碎片+金币）</text>
+    <text class="sub" x="575" y="184" text-anchor="middle">上限+乘区+技能</text>
+
+    <rect class="node" x="500" y="250" width="150" height="60" fill="#eaf6ef" stroke="#bfe3cf"/>
+    <text class="lbl" x="575" y="276" text-anchor="middle">解锁（碎片）</text>
+    <text class="sub" x="575" y="294" text-anchor="middle">获得新卡</text>
+
+    <!-- 战力 -->
+    <rect class="node" x="710" y="130" width="120" height="72" fill="#eef2fb" stroke="#c3ccec"/>
+    <text class="lbl" x="770" y="160" text-anchor="middle">⚔️ 战力↑</text>
+    <text class="sub" x="770" y="180" text-anchor="middle">属性+技能</text>
+
+    <!-- edges out of 关卡 -->
+    <path class="edge" d="M180,150 C220,120 235,90 270,78"/>
+    <path class="edge" d="M180,182 C220,220 235,250 270,256"/>
+    <!-- gold to 升级/升阶 -->
+    <path class="edge" d="M410,66 C450,60 470,60 500,60"/>
+    <path class="edge" d="M410,86 C450,120 470,150 500,165"/>
+    <!-- shard to 升阶/解锁 -->
+    <path class="edge" d="M410,250 C450,215 470,185 500,175"/>
+    <path class="edge" d="M410,270 C450,278 470,280 500,280"/>
+    <!-- actions to 战力 -->
+    <path class="edge" d="M650,60 C685,90 700,120 715,148"/>
+    <path class="edge" d="M650,170 C675,168 690,166 710,166"/>
+    <path class="edge" d="M650,280 C685,250 700,220 715,186"/>
+    <!-- 战力 back to 关卡 (loop) -->
+    <path class="edge" d="M770,202 C770,325 105,325 105,204"/>
+    <text class="elabel" x="430" y="318" text-anchor="middle">变强后挑战更深关卡 → 更高产出（正循环）</text>
+  </svg>
+
+  <div class="box intent"><b>闭环健康度是本系统的第一 KPI。</b>产出（关卡+挂机）必须与消耗（升级+升阶+解锁）在目标付费/时长曲线上大致配平：产出过剩 → 玩家秒满、失去目标；产出不足 → 卡点劝退。配平参数与曲线在 <a href="#s5">§5</a>，最终值由 V5-S8 balance probe 标定。</div>
+</section>
+
+<!-- 4 核心规则 -->
+<section id="s4">
+  <h2><span class="num">4</span>核心规则</h2>
+  <p class="lead">系统主体。每条规则都写成"可翻译成 if…then… 和一条测试用例"的粒度。</p>
+
+  <!-- 4.1 -->
+  <h3 id="s4-1">4.1 解锁（Unlock）</h3>
+  <ul>
+    <li>每张未拥有的卡有一个<b>解锁碎片阈值</b> <code>unlock_shards[rarity]</code>：普通30 / 稀有50 / 史诗80 / 传说120。</li>
+    <li>玩家通过关卡定向掉落/商店/活动累积该卡碎片；当 <code>shards[card] ≥ 阈值</code> 时，"解锁"按钮可点。</li>
+    <li>点击解锁 → 服务器扣除该阈值数量碎片，置 <code>unlocked=true</code>，卡初始化为 <b>阶1 / 等级1</b>。</li>
+    <li>解锁后<b>剩余碎片保留</b>，可继续用于后续升阶。</li>
+    <li>starter 卡（<code>starter=true</code>，如 knight/archers/giant…）默认已解锁，跳过本步。</li>
+  </ul>
+  <div class="box note"><b>规则示例（可测）：</b><code>if 未解锁 and shards[card] ≥ unlock_shards[rarity] → 显示"解锁"按钮；点击后 shards -= 阈值，unlocked=true，level=1,rank=1</code>。测试用例见 <a href="#s11">§11</a>。</div>
+
+  <!-- 4.2 -->
+  <h3 id="s4-2">4.2 升级（等级线）</h3>
+  <ul>
+    <li>升级<b>只花金币</b>，一次 +1 级，无失败、无随机。</li>
+    <li>可升级的前提：<code>当前等级 &lt; 当前阶的等级上限</code>（见 <code>level_cap_per_rank</code>）。达到上限时升级按钮转为"需升阶"引导。</li>
+    <li>每级带来<b>线性属性增幅</b>：全属性（攻/血/等）× (1 + 0.10 × (等级-1))。第10级即基础的 1.9 倍。</li>
+    <li>升级金币成本随等级<b>线性递增</b>（非指数，刻意压平曲线，对齐皇室战争 2025 改版方向），公式与全表见 <a href="#s5">§5.2</a>。</li>
+  </ul>
+  <div class="box intent"><b>为什么升级只花金币、且成本线性。</b>升级是玩家的"日常爽点"，要高频、可预期、无挫败。金币来源稳定（关卡+挂机），线性成本让玩家清楚"再打几关就能升"，避免指数墙带来的劝退（这正是皇室战争把成本从指数改线性的动因）。</div>
+
+  <!-- 4.3 -->
+  <h3 id="s4-3">4.3 升阶（突破线）</h3>
+  <ul>
+    <li>升阶是里程碑动作，共 3 阶（初始阶1，可升到阶3，即两次升阶）。</li>
+    <li>升阶前提：<b>当前等级已达当前阶的上限</b>（阶1须到 Lv4、阶2须到 Lv7 才能升阶）——先满级、再突破，节奏张弛有度。</li>
+    <li>升阶消耗 <b>碎片 + 金币</b>（大额，见 <code>rank_up</code> 表）。</li>
+    <li>升阶带来三重收益：
+      <ol>
+        <li><b>抬高等级上限</b>：阶1→2 上限 4→7；阶2→3 上限 7→10（突破式解锁，对齐原神"突破抬上限"）。</li>
+        <li><b>属性乘区</b>：× 1.25 的整卡乘区，按 <code>1.25^(阶-1)</code> 叠乘（阶3 即 ×1.5625）。</li>
+        <li><b>解锁一个节点</b> <code>rank_unlocks[rank]</code>，二选一类型：</li>
+      </ol>
+    </li>
+  </ul>
+  <table>
+    <thead><tr><th style="width:120px">类型</th><th>含义</th><th>示例（真实配置）</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag t-stat">stat 数值跳</span></td><td>纯数值台阶，由属性乘区吸收，无机制变化（无 ops）</td><td>骑士 knight 阶2「数值跳」；步兵/枪兵多为此型</td></tr>
+      <tr><td><span class="tag t-skill">skill 技能积木</span></td><td>改/加战斗机制，带 <code>ops</code>，由 effective_skills 应用</td><td>弓手 archers 阶3「+1 弩手 (2→3)」<code>count_add:1</code>；火球阶3「伤害+60」；金身罗汉 golem 阶3「裂物变石心攻城兽」<code>unit_field</code></td></tr>
+    </tbody>
+  </table>
+  <div class="box risk"><b>已知实现边界（须在文案/UI 标注）。</b>部分"新机制"技能积木（on-hit 溅射/连锁/穿透/灼烧/护盾/DPS 递增等）当前战斗引擎尚未支持，配置里仅以 <code>note</code> 占位、留 V5-S8 / KAN-88 实装。这些卡的高阶节点在实装前应<b>降级为数值跳或标注"敬请期待"</b>，不可让玩家花了资源却无实际效果。逐条见 <code>card_progression.json</code> 的 note。</div>
+
+  <h4>4.4 属性最终计算（三线合成）</h4>
+  <div class="formula">
+<span class="cm"># 单卡某属性的最终值（战斗读取值）</span>
+最终属性 <span class="op">=</span> 基础属性
+        <span class="op">×</span> (1 <span class="op">+</span> <span class="hl">level_stat_per_level</span> <span class="op">×</span> (level <span class="op">-</span> 1))   <span class="cm"># 等级线：线性，0.10/级</span>
+        <span class="op">×</span> <span class="hl">rank_stat_mult</span> ^ (rank <span class="op">-</span> 1)               <span class="cm"># 升阶线：乘区，1.25^(阶-1)</span>
+        <span class="op">×</span> Π(技能积木 num_mult / +count / …)         <span class="cm"># 技能线：由 effective_skills 施加</span>
+  </div>
+  <p class="footnote">满养成（阶3·Lv10）纯数值倍率 = 1.90 × 1.5625 ≈ <b>2.97×</b> 基础（未计技能积木额外收益）。</p>
+</section>
+
+<!-- 5 数值与公式 -->
+<section id="s5">
+  <h2><span class="num">5</span>数值与公式</h2>
+  <p class="lead">全部数值来自 <code>config/economy.json</code>，<b>示意值·待 V5-S8 平衡</b>。此节是数值同学的填表依据，程序只读表。</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="k">升级增幅/级</div><div class="v">+10%</div><div class="u">line_stat_per_level 0.10</div></div>
+    <div class="kpi"><div class="k">升阶乘区</div><div class="v">×1.25</div><div class="u">rank_stat_mult</div></div>
+    <div class="kpi"><div class="k">等级上限</div><div class="v">4/7/10</div><div class="u">阶1/2/3</div></div>
+    <div class="kpi"><div class="k">升级成本增长</div><div class="v">+50%</div><div class="u">线性 growth 0.5</div></div>
+    <div class="kpi"><div class="k">满养成倍率</div><div class="v">≈2.97×</div><div class="u">阶3·Lv10 纯数值</div></div>
+  </div>
+
+  <h3>5.1 稀有度定价基准</h3>
+  <table>
+    <thead><tr><th>稀有度</th><th class="num">base_power</th><th class="num">解锁碎片</th><th class="num">升级基础金币</th><th class="num">阶1→2</th><th class="num">阶2→3</th></tr></thead>
+    <tbody>
+      <tr><td><span class="rar r-common">普通</span></td><td class="num">100</td><td class="num">30</td><td class="num">80</td><td class="num">20碎+2000金</td><td class="num">50碎+5000金</td></tr>
+      <tr><td><span class="rar r-rare">稀有</span></td><td class="num">140</td><td class="num">50</td><td class="num">160</td><td class="num">30碎+4000金</td><td class="num">80碎+10000金</td></tr>
+      <tr><td><span class="rar r-epic">史诗</span></td><td class="num">190</td><td class="num">80</td><td class="num">320</td><td class="num">40碎+8000金</td><td class="num">120碎+20000金</td></tr>
+      <tr><td><span class="rar r-legend">传说</span></td><td class="num">260</td><td class="num">120</td><td class="num">600</td><td class="num">60碎+15000金</td><td class="num">200碎+40000金</td></tr>
+    </tbody>
+    <caption>来源：<code>economy.json → unlock_shards / upgrade_cost_base / rank_up</code></caption>
+  </table>
+
+  <h3>5.2 升级金币成本公式与全表</h3>
+  <div class="formula">
+<span class="cm"># 从 level L 升到 L+1 的金币成本（线性递增）</span>
+cost(L → L+1) <span class="op">=</span> round( <span class="hl">upgrade_cost_base[rarity]</span> <span class="op">×</span> (1 <span class="op">+</span> <span class="hl">upgrade_cost_growth</span> <span class="op">×</span> (L <span class="op">-</span> 1)) )
+             <span class="cm"># upgrade_cost_growth = 0.5</span>
+  </div>
+  <table>
+    <thead><tr><th>Lv→Lv</th><th class="num">普通(80)</th><th class="num">稀有(160)</th><th class="num">史诗(320)</th><th class="num">传说(600)</th><th>门控</th></tr></thead>
+    <tbody>
+      <tr><td>1→2</td><td class="num">80</td><td class="num">160</td><td class="num">320</td><td class="num">600</td><td>阶1</td></tr>
+      <tr><td>2→3</td><td class="num">120</td><td class="num">240</td><td class="num">480</td><td class="num">900</td><td>阶1</td></tr>
+      <tr><td>3→4</td><td class="num">160</td><td class="num">320</td><td class="num">640</td><td class="num">1200</td><td>阶1（到顶,须升阶）</td></tr>
+      <tr><td>4→5</td><td class="num">200</td><td class="num">400</td><td class="num">800</td><td class="num">1500</td><td>阶2</td></tr>
+      <tr><td>5→6</td><td class="num">240</td><td class="num">480</td><td class="num">960</td><td class="num">1800</td><td>阶2</td></tr>
+      <tr><td>6→7</td><td class="num">280</td><td class="num">560</td><td class="num">1120</td><td class="num">2100</td><td>阶2（到顶,须升阶）</td></tr>
+      <tr><td>7→8</td><td class="num">320</td><td class="num">640</td><td class="num">1280</td><td class="num">2400</td><td>阶3</td></tr>
+      <tr><td>8→9</td><td class="num">360</td><td class="num">720</td><td class="num">1440</td><td class="num">2700</td><td>阶3</td></tr>
+      <tr><td>9→10</td><td class="num">400</td><td class="num">800</td><td class="num">1600</td><td class="num">3000</td><td>阶3（满级）</td></tr>
+      <tr style="font-weight:700;background:var(--gold-soft)"><td>升级合计</td><td class="num">2160</td><td class="num">4320</td><td class="num">8640</td><td class="num">16200</td><td>Lv1→10 累计</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.3 满养成总消耗（"练满一张要多少"）</h3>
+  <p>把解锁 + 全升级 + 全升阶加总——这是玩家心里的"终极目标价签"，也是经济配平的核心锚点（对标皇室战争"练满一张传说≈17.5万张卡"、原神"满级≈209万摩拉"的量级感）。</p>
+  <table>
+    <thead><tr><th>稀有度</th><th class="num">升级金币</th><th class="num">升阶金币</th><th class="num">金币合计</th><th class="num">解锁碎片</th><th class="num">升阶碎片</th><th class="num">碎片合计</th></tr></thead>
+    <tbody>
+      <tr><td><span class="rar r-common">普通</span></td><td class="num">2160</td><td class="num">7000</td><td class="num"><b>9160</b></td><td class="num">30</td><td class="num">70</td><td class="num"><b>100</b></td></tr>
+      <tr><td><span class="rar r-rare">稀有</span></td><td class="num">4320</td><td class="num">14000</td><td class="num"><b>18320</b></td><td class="num">50</td><td class="num">110</td><td class="num"><b>160</b></td></tr>
+      <tr><td><span class="rar r-epic">史诗</span></td><td class="num">8640</td><td class="num">28000</td><td class="num"><b>36640</b></td><td class="num">80</td><td class="num">160</td><td class="num"><b>240</b></td></tr>
+      <tr><td><span class="rar r-legend">传说</span></td><td class="num">16200</td><td class="num">55000</td><td class="num"><b>71200</b></td><td class="num">120</td><td class="num">260</td><td class="num"><b>380</b></td></tr>
+    </tbody>
+    <caption>观察：升阶金币占大头（约占总金币 68%–77%），是主回收阀门；碎片全程定向、总量可控。</caption>
+  </table>
+
+  <h3>5.4 产出侧与节奏参照</h3>
+  <table>
+    <thead><tr><th>来源</th><th>公式 / 参数</th><th>量级</th></tr></thead>
+    <tbody>
+      <tr><td>关卡首通</td><td><code>300 + 270 × 章节序号</code>（first_clear）</td><td>随进度递增</td></tr>
+      <tr><td>关卡重复</td><td>首通金币 × <code>0.10</code>（repeat_gold_ratio）</td><td>刷本补给</td></tr>
+      <tr><td>挂机收益</td><td><code>50 金/时/章 × 已解锁章数</code>，封顶 8 小时</td><td>如解锁5章 → 2000金/天</td></tr>
+      <tr><td>碎片</td><td>关卡定向掉落 / 商店 / 活动（详见掉落表·另案）</td><td>定向、稀缺</td></tr>
+    </tbody>
+    <caption>来源：<code>economy.json → rewards / idle</code>。据此可估"练满一张普通卡≈4~5天挂机金"量级；精确 pacing 由 V5-S8 probe 定。</caption>
+  </table>
+</section>
+
+<!-- 6 数据结构与接口 -->
+<section id="s6">
+  <h2><span class="num">6</span>数据结构与接口</h2>
+  <p class="lead">给程序：存哪些字段、谁是权威、API 长什么样。遵循决策48——权威态全在服务器 PG 库。</p>
+
+  <h3>6.1 服务器持久化（权威）</h3>
+  <table>
+    <thead><tr><th>表/字段</th><th>类型</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>wallet.gold</code></td><td>int64</td><td>玩家通用金币（全卡共享）</td></tr>
+      <tr><td><code>player_card_shards</code></td><td>map&lt;card_id,int&gt;</td><td>每卡碎片余额（定向）</td></tr>
+      <tr><td><code>player_cards.card_id</code></td><td>string</td><td>卡标识（与 cards.json 主键一致）</td></tr>
+      <tr><td><code>player_cards.unlocked</code></td><td>bool</td><td>是否已解锁</td></tr>
+      <tr><td><code>player_cards.level</code></td><td>int (1–10)</td><td>当前等级</td></tr>
+      <tr><td><code>player_cards.rank</code></td><td>int (1–3)</td><td>当前阶</td></tr>
+      <tr><td><code>player_cards.updated_at</code></td><td>ts</td><td>幂等/审计用</td></tr>
+    </tbody>
+  </table>
+  <div class="box law"><b>客户端只持有只读缓存。</b>经由 <code>EconomyStateCache</code> 内存持有、<code>Events.economy_changed</code> 驱动界面刷新；本地缓存仅供秒启动/展示，<b>永远以服务器下发覆盖</b>，绝不作为权威判定升级是否合法。</div>
+
+  <h3>6.2 配置源（服务器权威源，登录下发带版本配置包）</h3>
+  <p>
+    <span class="chip">config/economy.json</span> 成长曲线/成本/上限/挂机/奖励
+    <span class="chip">config/card_progression.json</span> 每卡稀有度/base_power/rank_unlocks(ops)
+    <span class="chip">config/cards.json</span> 卡基础定义
+    <span class="chip">config/units.json</span> 单位基础属性（技能积木作用对象）
+  </p>
+
+  <h3>6.3 API 契约（示意）</h3>
+  <table>
+    <thead><tr><th style="width:150px">接口</th><th>请求</th><th>服务器校验 & 结果</th></tr></thead>
+    <tbody>
+      <tr><td><code>POST /card/unlock</code></td><td>{card_id}</td><td>校验 shards≥阈值 → 扣碎片、置 unlocked、初始化 lv1/r1 → 返回新态 + 钱包</td></tr>
+      <tr><td><code>POST /card/upgrade</code></td><td>{card_id}</td><td>校验 已解锁 & lv&lt;当前阶上限 & gold≥cost(lv) → 扣金币、lv+1 → 返回新态</td></tr>
+      <tr><td><code>POST /card/rankup</code></td><td>{card_id}</td><td>校验 lv=当前阶上限 & rank&lt;3 & shards≥ & gold≥ → 扣碎片+金币、rank+1 → 返回新态 + 解锁节点</td></tr>
+    </tbody>
+    <caption>所有写接口须<b>幂等</b>（携带 client_op_id 去重）、<b>fail-closed</b>（校验不过原样驳回、不改态），响应统一带最新钱包与卡态，客户端据此刷新缓存。</caption>
+  </table>
+</section>
+
+<!-- 7 界面与交互 -->
+<section id="s7">
+  <h2><span class="num">7</span>界面与交互</h2>
+  <p class="lead">给 UI/美术：界面元素、状态机、反馈。覆盖类弹窗一律走项目 <code>UI.modal()</code>（骨架层，KAN-97），提示走 <code>UI.toast()</code>。</p>
+
+  <div class="grid2">
+    <div>
+      <h3>7.1 卡牌详情页布局</h3>
+      <div class="wire">
+        <div class="wf-hero">卡牌立绘 + 稀有度框 + ⭐阶星×N</div>
+        <div class="wf-row"><span>等级</span><span>Lv 6 / 上限 7</span></div>
+        <div class="wf-bar"><i></i></div>
+        <div class="wf-row"><span>攻击</span><span>142 <span style="color:var(--ok)">▲</span></span></div>
+        <div class="wf-row"><span>生命</span><span>980 <span style="color:var(--ok)">▲</span></span></div>
+        <div class="wf-row"><span>碎片</span><span>🧩 48 / 80</span></div>
+        <div class="wf-btn">升级　💰 280</div>
+        <div class="wf-btn alt">升阶　🧩80 + 💰10000</div>
+      </div>
+      <p class="footnote">升级/升阶双主按钮；属性行在数值将变化时用 ▲ 高亮"下一步收益预览"。</p>
+    </div>
+    <div>
+      <h3>7.2 主按钮状态机</h3>
+      <table>
+        <thead><tr><th>条件</th><th>升级按钮态</th></tr></thead>
+        <tbody>
+          <tr><td>金币足 & 未到上限</td><td>可点（高亮）</td></tr>
+          <tr><td>金币不足</td><td>灰置 + "金币不足"角标 + 跳转获取</td></tr>
+          <tr><td>已达当前阶上限</td><td>转为"去升阶"引导（指向升阶按钮）</td></tr>
+          <tr><td>阶3·Lv10</td><td>"已满级"（置灰,不可点）</td></tr>
+        </tbody>
+      </table>
+      <h4>升阶确认弹窗（UI.modal）</h4>
+      <ul>
+        <li>展示：消耗（碎片+金币，余额是否够）、上限变化 4→7、乘区 ×1.25、<b>本次解锁的技能节点图文</b>。</li>
+        <li>资源不足 → 确认键置灰 + 缺口提示。</li>
+        <li>确认 → 调 API → 成功后关闭弹窗 + 升阶动画 + 战力跳字。</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>7.3 反馈与红点</h3>
+  <ul>
+    <li><b>正反馈</b>：升级/升阶成功 → 数值绿色跳字 + 战力+X 飘字 + 音效；升阶额外播突破特效 + 阶星点亮。</li>
+    <li><b>红点规则</b>（红点是负反馈，只挂核心收益点）：某卡<b>金币&碎片均足够可升级/升阶/解锁</b>时，在卡入口挂红点；不满足则不挂。避免"永远有红点"的焦虑。</li>
+    <li><b>预览</b>：hover/选中升级按钮时，属性行实时预览升级后数值（▲差值），点前可见收益。</li>
+  </ul>
+  <div class="box note"><b>交互对齐项目框架：</b>升阶确认、资源不足提示等覆盖层必须经 <code>UI.modal()</code> 入弹窗层（CanvasLayer 50），跳字/toast 走 <code>UI.toast()</code>（90层不挡手）；切页走 <code>Router.goto()</code>；刷新订阅 <code>Events.economy_changed</code>，动作 handler 不手动重刷。</div>
+</section>
+
+<!-- 8 边界与异常 -->
+<section id="s8">
+  <h2><span class="num">8</span>边界与异常</h2>
+  <p class="lead">系统的专业度在边界。以下每条都须有明确处理，不能"看情况"。</p>
+  <table>
+    <thead><tr><th style="width:210px">情形</th><th>处理</th></tr></thead>
+    <tbody>
+      <tr><td>金币 / 碎片不足</td><td>按钮置灰 + 缺口数值提示 + 一键跳转获取途径；服务器兜底二次校验驳回</td></tr>
+      <tr><td>已达当前阶等级上限</td><td>升级按钮转"去升阶"引导；直接调 upgrade 接口须被服务器驳回</td></tr>
+      <tr><td>阶3 满级 / 阶3 再升阶</td><td>升级"已满级"置灰；升阶按钮隐藏或置灰，rankup 接口驳回</td></tr>
+      <tr><td>未解锁却尝试升级/升阶</td><td>接口驳回；UI 不应暴露入口</td></tr>
+      <tr><td>断线 / 请求超时</td><td>fail-closed：不本地假装成功，按钮回滚可点态，toast"网络异常,请重试"；重连后以服务器态为准覆盖</td></tr>
+      <tr><td>并发重复点击（连点两次升级）</td><td>接口幂等（client_op_id 去重）；客户端点击后锁按钮至响应返回</td></tr>
+      <tr><td>配置版本不匹配</td><td>登录下发配置版本；客户端缓存版本 ≠ 服务器 → 强制拉取新配置，禁止用旧曲线计算</td></tr>
+      <tr><td>技能节点引擎未支持</td><td>该阶节点在实装前降级为数值跳 / 标注"敬请期待"，不得扣资源却无效果（见 <a href="#s4-3">§4.3</a> 风险）</td></tr>
+      <tr><td>金币溢出上限</td><td>钱包设上限（如 int64 内的软上限）；达上限时挂机停止累积并提示"仓满"</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 9 跨系统接口 -->
+<section id="s9">
+  <h2><span class="num">9</span>跨系统接口</h2>
+  <table>
+    <thead><tr><th style="width:150px">系统</th><th>关系</th></tr></thead>
+    <tbody>
+      <tr><td>关卡 / 挂机</td><td><b>上游产出</b>：向钱包发金币、向 shards 发定向碎片（首通/重复/离线结算，服务器算）</td></tr>
+      <tr><td>战力系统</td><td><b>下游消费</b>：队伍战力 = Σ(base_power × 养成系数)，养成系数由 level/rank/技能折算；升级升阶后触发战力重算</td></tr>
+      <tr><td>战斗 / 卡组</td><td><b>下游消费</b>：出战时 <code>CardProgression.effective_skills</code> 把 rank_unlocks.ops 施加到 units.json 基础属性，得到本局单位实际数值/机制</td></tr>
+      <tr><td>事件总线</td><td>任何养成态变更 → 服务器返回新态 → <code>EconomyStateCache</code> 收口发 <code>Events.economy_changed</code> → 卡列表/详情/战力页统一刷新</td></tr>
+      <tr><td>商店 / 活动 / IAP</td><td><b>上游产出</b>：直购金币/碎片、碎片礼包（商业化按上线节奏，本案预留接口不实做）</td></tr>
+      <tr><td>反作弊</td><td>所有产出/扣费经服务器；PVE 结算受 <code>min_stage_duration_s / max_cmds_per_battle / 重放抽验</code> 约束（KAN-78/79）</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 10 埋点 -->
+<section id="s10">
+  <h2><span class="num">10</span>埋点与数据分析</h2>
+  <p class="lead">让系统可迭代——上线后靠这些数据判断配平健康、定位卡点。</p>
+  <h4>事件埋点</h4>
+  <ul>
+    <li><code>card_unlock</code>：card_id, rarity, 累计碎片耗时</li>
+    <li><code>card_upgrade</code>：card_id, from_lv→to_lv, gold_spent, 钱包余额</li>
+    <li><code>card_rankup</code>：card_id, from_rank→to_rank, shards_spent, gold_spent, 解锁节点</li>
+    <li><code>upgrade_blocked</code>：因金币/碎片/上限被挡的次数与情形（劝退信号）</li>
+  </ul>
+  <h4>健康度看板指标</h4>
+  <ul>
+    <li><b>卡点分布</b>：玩家最多停留在哪个稀有度/等级/阶（暴露成本墙）</li>
+    <li><b>金币/碎片盈余分布</b>：产出是否过剩或枯竭（配平第一信号）</li>
+    <li><b>各卡养成渗透率</b>：哪些卡被普遍练、哪些无人问津（掉落/强度问题）</li>
+    <li><b>首次升阶转化率</b>：新手是否顺利跨过第一次突破（教学/成本问题）</li>
+  </ul>
+</section>
+
+<!-- 11 验收标准 -->
+<section id="s11">
+  <h2><span class="num">11</span>验收标准</h2>
+  <p class="lead">一条条可勾选，QA 与策划共同据此判定"算不算做完"。</p>
+  <ul class="check">
+    <li>解锁：碎片达阈值前按钮不可点；达阈值点击后碎片正确扣减、卡初始化为阶1/Lv1、剩余碎片保留。</li>
+    <li>升级：金币足且未达上限时 +1 级；属性按 (1+0.10×(lv-1)) 正确变化；金币按 §5.2 表精确扣减。</li>
+    <li>上限门控：阶1 到 Lv4 后升级按钮转"去升阶"；直接请求 upgrade 被服务器驳回。</li>
+    <li>升阶：满足"满级+资源足"才可升；升阶后上限 4→7/7→10、乘区 ×1.25 生效、对应 rank_unlock 节点解锁。</li>
+    <li>技能积木：archers 阶3 战斗中弩手 2→3；火球阶3 伤害+60；引擎未支持节点按降级策略处理、不空扣资源。</li>
+    <li>权威性：改本地缓存/改客户端时钟均无法越权升级；断线时不产生本地假成功，重连以服务器态覆盖。</li>
+    <li>幂等：连点两次升级只生效一次，金币只扣一次。</li>
+    <li>反馈：升级/升阶成功有数值跳字+战力更新+音效；升阶播突破特效+阶星点亮。</li>
+    <li>红点：仅在"可升级/升阶/解锁且资源足"时出现，条件消失即消。</li>
+    <li>配置化：改 <code>economy.json</code> 任一数值后，无需改代码即在下次登录生效。</li>
+    <li>刷新：任一养成动作后，卡列表/详情/战力页经 <code>economy_changed</code> 自动一致刷新，无需手动重进。</li>
+  </ul>
+</section>
+
+<!-- 12 附录 -->
+<section id="s12">
+  <h2><span class="num">12</span>附录 · 引用与配置索引</h2>
+  <h4>本案关联配置文件</h4>
+  <p>
+    <span class="chip">config/economy.json</span>
+    <span class="chip">config/card_progression.json</span>
+    <span class="chip">config/cards.json</span>
+    <span class="chip">config/units.json</span>
+  </p>
+  <h4>业界参考案例（撰写时调研）</h4>
+  <ul class="src">
+    <li>皇室战争 · 卡牌升级经济（卡+金币按稀有度、每级约+10%、成本曲线由指数改线性）—— RoyaleAPI「Level 16 & Economy Changes」/ Supercell 官方 blog / Clash Royale Wiki</li>
+    <li>原神 · 角色突破（突破抬高等级上限、在特定阶解锁天赋/属性）—— Genshin Impact Wiki: Ascension Phase / game8</li>
+    <li>国内系统策划案范式（简介→流程→规则→前后端数据→全局功能→数值/关卡/文案→美术→原型）—— GameRes「如何写好游戏系统策划案」/ 奶牛关「国内手游系统策划大纲」/ 知乎</li>
+  </ul>
+  <p class="footnote">※ 本文所有数值均标注"示意·待平衡"，最终值以 V5-S8 balance probe 结论 + 用户验收为准；任何数值改动请在 §0 修订记录登记，并同步 <code>economy.json</code>。</p>
+</section>
+
+</main>
+</div>
+</body>
+</html>

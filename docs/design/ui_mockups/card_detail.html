@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<!-- UI 示意图：卡详情弹窗（中窗口框 620 档，压暗卡牌页之上）。 -->
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>卡详情弹窗示意</title>
+<link rel="stylesheet" href="ui_mock.css">
+<style>
+  .bigcard { width: 300px; height: 380px; margin: 0 auto; border-width: 6px; }
+  .bigcard .face { font-size: 130px; }
+  .bigcard .cost { width: 60px; height: 60px; font-size: 32px; }
+  .titlerow { text-align: center; margin: 14px 0 4px; }
+  .titlerow .n { font-size: 34px; font-weight: 900; }
+  .titlerow .t { font-size: 20px; color: #7a5c33; }
+  .fact { display: inline-block; background: #3f8ede; color: #fff; border-radius: 10px; font-size: 18px;
+          padding: 2px 12px; margin-left: 8px; vertical-align: middle; }
+  .lvrow { text-align: center; font-size: 24px; margin-bottom: 12px; }
+  .pip { display: inline-block; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #2b1e12;
+         background: #ffd75e; margin: 0 3px; }
+  .pip.off { background: #b9a888; }
+  .stats { width: 100%; border-collapse: collapse; font-size: 24px; margin-bottom: 8px; }
+  .stats td { padding: 8px 6px; border-bottom: 2px solid rgba(43,30,18,.15); }
+  .stats .up { color: #2f7a33; font-weight: bold; font-size: 20px; }
+  .costline { font-size: 20px; text-align: center; color: #7a5c33; margin-top: 6px; }
+  .shardbar { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 20px; }
+  .shardbar .bar { flex: 1; }
+</style>
+</head>
+<body>
+<h1>卡详情弹窗示意</h1>
+<div class="sub">从卡牌页长按/点详情弹出；中窗口框 620 档 + 背景压暗 60%。<span class="backlink"><a href="index.html">← 返回目录</a></span></div>
+<div class="wrap">
+  <div class="phone"><div class="screen page-bg" id="screen">
+    <div class="pagehead"><div class="ttl">卡牌</div></div>
+    <div class="dim"></div>
+
+    <div class="modal" style="top: 220px;">
+      <div class="mhead">虎贲校尉<div class="mx circ dark pill">✕</div></div>
+      <div class="mbody">
+        <div class="bigcard card r-rare"><span class="cost">3</span><span class="face">🗡️</span></div>
+        <div class="titlerow">
+          <div class="n">虎贲校尉 <span class="fact">魏</span></div>
+          <div class="t">「持巨剑者，破阵如裂帛。」</div>
+        </div>
+        <div class="lvrow">Lv 7 · 二阶
+          <span class="pip"></span><span class="pip"></span><span class="pip off"></span><span class="pip off"></span>
+        </div>
+        <table class="stats">
+          <tr><td>⚔️ 攻击</td><td>182</td><td class="up">+14 ↑</td></tr>
+          <tr><td>🛡️ 生命</td><td>1420</td><td class="up">+96 ↑</td></tr>
+          <tr><td>🐎 速度</td><td>中速</td><td></td></tr>
+          <tr><td>🏹 射程</td><td>近战</td><td></td></tr>
+        </table>
+        <div class="shardbar">升阶碎片 <div class="bar"><div class="fill g" style="width:64%"></div></div> 32/50</div>
+      </div>
+      <div class="mbtns">
+        <div class="btn big gold">升级 🪙 2,400</div>
+        <div class="btn big disabled gold">升阶 🧩 32/50</div>
+      </div>
+    </div>
+
+    <div class="island"></div><div class="home"></div>
+    <div class="guide g-top"><small>顶部安全区 y=100</small></div>
+    <div class="guide g-bottom"><small>底部手势带 y=1500</small></div>
+  </div></div>
+
+  <div class="legend">
+    <h2>结构说明</h2>
+    <ul>
+      <li><span class="tag">形态</span>弹窗（非全屏页）：卡牌页压暗 60% 上弹出中窗口框；右上 ✕ 关闭（无副作用操作允许 ✕）</li>
+      <li><span class="tag">大卡</span>320×400 档 + 稀有度框 + 立绘（程序放置）；名称 + 称号短句 + 势力角标（魏蓝/蜀绿/吴红/群雄黄）</li>
+      <li><span class="tag">等级与阶</span>Lv + 阶 pip（金=已达，灰=未达，最多 4 pip）；升阶解锁新技能积木时在 pip 旁加说明行</li>
+      <li><span class="tag">数值行</span>攻/血/速度/射程 四行，升级预览增量绿字「+N ↑」；速度/射程为档位文字不是数字</li>
+      <li><span class="tag">按钮态</span>升级可负担=金色可点；资源不足=禁用态+成本数字变红；点升级播放数值滚动+按钮脉冲</li>
+      <li><span class="tag">未解锁卡</span>同弹窗但大卡为剪影+锁，按钮区变「解锁条件说明」（碎片进度/章节奖励来源）</li>
+    </ul>
+    <h2>给美术的资源点</h2>
+    <ul>
+      <li>大卡框四稀有度、势力角标×4、阶 pip 两态、数值行图标×4（复用第五章图标）</li>
+      <li>中窗口框 620 档（9-slice）+ 标题栏 + ✕ 圆钮——全弹窗共用，本页是首个用例</li>
+    </ul>
+    <button class="toggle" onclick="document.getElementById('screen').classList.toggle('hide-guides')">显示/隐藏 安全区参考线</button>
+  </div>
+</div>
+</body>
+</html>
