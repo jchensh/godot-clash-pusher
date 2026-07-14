@@ -580,3 +580,16 @@
 - **既有 battle_bg 自动兼容**：KAN-104 的特征对齐是"图内特征→field rect 比例"映射，field 缩放自动跟随，无需重出。单位渲染基准 `_ur()` 36.4→32px（缩 12%），sprite scale 先不动、待实机手感定。
 - **美术口径切换**：出图画布 720×1050 → **576×1024**（1 格=32×32 整除、全表整数；2x=1152×2048）；飞书规格书九章全量更新（正文/表格/FAQ 改版记录/三张画板重画）；模板图重出 docs/design/battle_bg_template_576x1024.png（旧 720×1050 版删除）；GDD 附录B/docs README 同步。
 - **测试**：`test_hbattle_transform` 竖版基线更新（field 72,67,576,1024 / tile 32×32 / ur 32 / footprint 128 / 部署区），全量 **409/409** 零回归；gdlint 绿。**真人 F5 验收通过**（2026-07-13：竖版居中+边栏观感/部署命中/单位手感/横版回归四项全过，sprite scale 未调）。
+
+---
+
+### V5 · 三国 A4 首批正式素材：骑士全家桶 + 阵营分色塔 + 新战场 BG（KAN-93 开工，🚧 待真人验收，2026-07-15）
+
+**做了什么（素材源 = testAssets/newAssets0715/ 十一张图，美术命名+试图识别自动归位，worktree feat/assets-0715）**：
+- **虎贲校尉(knight_body) 正式全家桶**：走帧 10 帧重打包 100×96 单行（统一缩放 ×1.492 对齐 94px 峰值身高、bbox 居中、脚底 y95——KAN-104 管线复用）；**攻击帧 8 帧上 152×152 大方格**（挥砍横扫缩放后宽 124px 装不进 100 格）+ sprite_db 新用 `sc=1.583(=152/96)` 补偿——基线 y123 由 sc 反解（foot_frac=0.5+(95/96-0.5)/sc），保证走↔攻切换脚底不跳；**前冲下压位移全局锚定保留**（收势帧 f7 锚定，劈砍落点 129/134 不逐帧对齐——逐帧对齐会吃掉美术画的下压动作）。
+- **立绘卡面**：322×346 原图入库；sprite_db 条目新增 `portrait` 字段，`card_portrait_tex` 优先立绘（卡面/图鉴/卡详情/头像全自动跟随）。
+- **配套战斗特效三条带（view 新机制）**：sprite_db 条目新增 `fx` 字典（attack/hit/death → tex/fw/fh/n/dur/size）+ `unit_fx()` 访问器；battle_scene 新 `_ufx` 列表 + `_spawn_unit_fx/_draw_unit_fx`。攻击刀光=近战冷却上升沿触发（`_detect_attacks` 重构：ranged→投射物 / 有 fx 近战→刀光落目标身上，目标在右侧水平镜像 draw_set_transform）；受击星芒=`_on_hit` 加 unit_id 参数、有配套 fx 时替换程序化火花；死亡白烟=`_detect_events` 新 `_ulast` 记最后存活位置、消失即触发。**帧网格勘误**：death 原图=8 帧×200（非目测 10 帧，切缝 alpha 验证）；hit 原图非均匀摆放 → 按谷切 6 帧重打包 72×40；attack_ef 4×116×116 网格干净原样用。
+- **首套阵营分色塔**：我=蓝顶/敌=红顶中式塔楼 ×4（sanguo_tower_{king,arrow}_{blue,red}.png）；`_draw_towers` 按 owner 选贴图、队伍色乘法 0.5→natural 轻染 0.22（同单位正式素材画法）；中式塔纵向比例（王 130×169）→ 宽系数 1.35/1.05 压到 0.95/0.85 防塔身过高（验收可调）。废墟态/血条/王冠/闪白照旧。
+- **新战场 BG 特征对齐接入**：720×1502 卡通风整图（⚠️ 未按 KAN-107 576×1024 规格出图，特征对齐吸收）；python 精测 河带 y=648 / 桥质心 x=188.8·505.2 → battle_scene 三常量更新。**惊喜发现：图上黄土路正好绕六塔逻辑位画**（美术按真实塔位出图，塔落在路环节点上）。
+- **验证**：客户端单测 **412/412**（+3：立绘 override / unit_fx 边界合法 / 攻击帧 152+sc）；gdlint 绿；worktree headless 导入干净（8 新贴图 .import 生成）；python 合成自检图（BG 裁切+六塔逻辑位贴放）确认河桥塔对齐。纯 view/assets 改动，logic/config 零改（无需重启 docker；master 编辑器全程未碰）。
+- **待办**：真人 F5 验收（worktree 工程）→ 通过后合回 master 即"替换正式资源路径"；net_battle_scene（PVP）塔/FX 同步接入 = 验收通过后的后续小步；72px 边栏素材仍欠。Jira：KAN-93 转「正在进行」+ 批次评论。
