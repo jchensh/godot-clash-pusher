@@ -19,12 +19,13 @@
 }
 
 {$DOMAIN} {
-	@cors_preflight method OPTIONS
+	@cors_origin header Origin https://towerpush.web.app https://tower-push-godot.web.app https://toweroffense.jeffgame.tech
+	header @cors_origin Access-Control-Allow-Origin {header.Origin}
 	header {
-		Access-Control-Allow-Origin "https://towerpush.web.app"
 		Access-Control-Allow-Methods "GET, POST, OPTIONS"
 		Access-Control-Allow-Headers "Content-Type, Authorization"
 	}
+	@cors_preflight method OPTIONS
 	respond @cors_preflight 204
 
 	# —— WebSocket → gateway（路径精确匹配，先于兜底规则）——
