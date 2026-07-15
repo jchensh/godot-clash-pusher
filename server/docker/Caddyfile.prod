@@ -19,6 +19,14 @@
 }
 
 {$DOMAIN} {
+	@cors_preflight method OPTIONS
+	header {
+		Access-Control-Allow-Origin "https://towerpush.web.app"
+		Access-Control-Allow-Methods "GET, POST, OPTIONS"
+		Access-Control-Allow-Headers "Content-Type, Authorization"
+	}
+	respond @cors_preflight 204
+
 	# —— WebSocket → gateway（路径精确匹配，先于兜底规则）——
 	# /v4/battle/ws  战斗 lockstep WS；/v5/session/ws  持久会话 WS（登录后配置下发）
 	@ws path /v4/battle/ws /v5/session/ws

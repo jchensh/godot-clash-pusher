@@ -303,7 +303,34 @@ func save_deck(http: HTTPRequest, slot: int, cards: Array) -> bool:
 
 func _load_network() -> Dictionary:
 	var f := FileAccess.open("res://config/network.json", FileAccess.READ)
-	if f == null:
-		return {}
-	var data = JSON.parse_string(f.get_as_text())
-	return data if data is Dictionary else {}
+	var d = {}
+	if f != null:
+		var parsed = JSON.parse_string(f.get_as_text())
+		if parsed is Dictionary:
+			d = parsed
+	
+	# Web 平台动态 URL 注入支持 (环境无关性)
+	if OS.has_feature("web"):
+		var js_api = JavaScriptBridge.eval("window.GAME_API_URL")
+		var js_ws = JavaScriptBridge.eval("window.GAME_WS_URL")
+		var js_session_ws = JavaScriptBridge.eval("window.GAME_SESSION_WS_URL")
+		if js_api != null and str(js_api) != "":
+			d["api_url"] = str(js_api)
+		if js_ws != null and str(js_ws) != "":
+			var ws_str = str(js_ws)
+			if not ws_str.contains("/v4/"):
+				if ws_str.ends_with("/"):
+					ws_str = ws_str + "v4/battle/ws"
+				else:
+					ws_str = ws_str + "/v4/battle/ws"
+			d["ws_url"] = ws_str
+		if js_session_ws != null and str(js_session_ws) != "":
+			var sws_str = str(js_session_ws)
+			if not sws_str.contains("/v5/"):
+				if sws_str.ends_with("/"):
+					sws_str = sws_str + "v5/session/ws"
+				else:
+					sws_str = sws_str + "/v5/session/ws"
+			d["session_ws_url"] = sws_str
+			
+	return d

@@ -3,7 +3,8 @@
 
 param (
     [string]$ApiUrl = "",
-    [string]$WsUrl = ""
+    [string]$WsUrl = "",
+    [string]$SessionWsUrl = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -31,13 +32,14 @@ if ($HtmlFile -and (Test-Path $HtmlFile)) {
     <script>
       window.GAME_API_URL = "$ApiUrl";
       window.GAME_WS_URL = "$WsUrl";
+      window.GAME_SESSION_WS_URL = "$SessionWsUrl";
     </script>
 "@
     $Content = Get-Content -Raw -Path $HtmlFile -Encoding utf8
     if ($Content -match "</head>") {
         $Content = $Content -replace "</head>", "$InjectScript`n</head>"
         Set-Content -Path $HtmlFile -Value $Content -NoNewline -Encoding utf8
-        Write-Host "Successfully injected: API_URL='$ApiUrl', WS_URL='$WsUrl'" -ForegroundColor Green
+        Write-Host "Successfully injected: API_URL='$ApiUrl', WS_URL='$WsUrl', SESSION_WS_URL='$SessionWsUrl'" -ForegroundColor Green
     } else {
         Write-Warning "Could not find </head> tag in index.html to inject configuration."
     }
