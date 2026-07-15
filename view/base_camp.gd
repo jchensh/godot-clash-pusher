@@ -62,7 +62,7 @@ func _build_static() -> void:
 	btn_set.focus_mode = Control.FOCUS_NONE
 	PixelUI.style_button(btn_set, "stone", 40)
 	btn_set.pressed.connect(func():
-		get_tree().change_scene_to_file("res://view/settings.tscn")
+		Router.goto("settings")   # 规约（KAN-99）：切场景一律走 Router；本补丁早于规约，合并后按扫描修正
 	)
 	add_child(btn_set)
 
