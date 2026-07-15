@@ -30,6 +30,7 @@ const ROUTES := {
 	"base_camp": "res://view/base_camp.tscn",
 	"settings": "res://view/settings.tscn",
 	"account_create": "res://view/account_create.tscn",
+	"login": "res://view/login.tscn",
 }
 
 var _layer: CanvasLayer

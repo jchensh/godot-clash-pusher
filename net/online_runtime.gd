@@ -80,11 +80,16 @@ func _process(delta: float) -> void:
 
 
 ## 兼容既有 session.ensure(http) 调用；成功含义升级为“认证+持久连接+配置+经济均 ready”。
+## KAN-109：本地无记住的 username → 直接 SIGNED_OUT（调用方跳登录页），不再自动建号。
 func ensure(http: HTTPRequest) -> bool:
 	if is_online_ready():
 		return true
 	if _bootstrapping:
 		return await _wait_for_ready()
+	if _account.needs_login():
+		last_error = "needs login"
+		_set_state(State.SIGNED_OUT)
+		return false
 	_bootstrapping = true
 	last_error = ""
 	_set_state(State.AUTHENTICATING)
@@ -100,6 +105,49 @@ func ensure(http: HTTPRequest) -> bool:
 	var ok := await _wait_for_ready()
 	_bootstrapping = false
 	return ok
+
+
+# —— KAN-109 username 裸登录（登录页专用入口）——
+
+## 是否需要弹登录页。
+func needs_login() -> bool:
+	return _account.needs_login()
+
+
+## 查 username 注册状态（服务器权威判新老）。返回 {ok, valid, registered, error}。
+func check_name(http: HTTPRequest, p_username: String) -> Dictionary:
+	return await _account.check_name(http, p_username)
+
+
+## 老玩家登录 → 走完整在线引导（认证+连接+配置+经济）。
+func login_with_name(http: HTTPRequest, p_username: String) -> bool:
+	if not await _account.login_name(http, p_username):
+		last_error = "login-name failed"
+		_set_state(State.SIGNED_OUT)
+		return false
+	return await ensure(http)
+
+
+## 新玩家注册（username+头像）→ 走完整在线引导；后续路由由主菜单按 tutorial_done 判。
+func register_with_name(http: HTTPRequest, p_username: String, avatar: String) -> bool:
+	if not await _account.register_name(http, p_username, avatar):
+		last_error = "register failed"
+		_set_state(State.SIGNED_OUT)
+		return false
+	return await ensure(http)
+
+
+## 登出（设置页）：清凭据 + 断持久连接 + 状态回 SIGNED_OUT；跳登录页由调用方做。
+## 本地经济/存档缓存不清（非权威只读镜像，下个账号登录时被服务器快照整体覆盖）。
+func sign_out() -> void:
+	_account.sign_out()
+	if _started:
+		_connection.close()
+		_started = false
+	config_version = ""
+	last_error = "signed out"
+	_set_state(State.SIGNED_OUT)
+	Log.i("[V5][online] 已登出 → 登录页")
 
 
 func _wait_for_ready() -> bool:

@@ -31,13 +31,23 @@ func _build_bg() -> void:
 	_title("CLASH\nPUSHER", 96, 72)
 	_center_label(tr("app_subtitle"), 312, 26, PixelUI.COL_MUTED)
 
-# —— 登录 + 路由（V5-S9）——
+# —— 登录 + 路由（V5-S9；KAN-109 起先过登录页门）——
 func _bootstrap() -> void:
 	var http := HTTPRequest.new()
 	add_child(http)
 	var session = GameStateScript.session()
+	# KAN-109：本地无记住的 username → 登录页（服务器查库判新老，本地数据不作数）
+	if session.needs_login():
+		Log.i("[V5][menu] 无登录凭据 → login")
+		http.queue_free()
+		Router.goto("login")
+		return
 	var ok: bool = await session.ensure(http)
 	if not ok:
+		if session.needs_login():   # ensure 期间被登出/凭据失效
+			http.queue_free()
+			Router.goto("login")
+			return
 		Log.w("[V5][menu] 在线启动失败，停留重试门")
 		if _status != null:
 			_status.text = "未连接服务器，在线功能暂不可用"

@@ -23,15 +23,53 @@ func _init() -> void:
 
 
 ## 登录(若尚未)+拉档案。幂等。http 须已 add_child 到 SceneTree。返回是否成功。
+## KAN-109：无记住的 username → 直接失败（调用方引导去登录页）；有则静默重登。
+## V4-S1 匿名 device 登录保留注释（正式上线"新设备直进引导"体验时恢复）：
+##     var lr = await auth.login(http)   # device_id 匿名登录（服务端 /v4/auth/login 仍挂载）
 func ensure(http: HTTPRequest) -> bool:
 	if not logged_in:
-		var lr = await auth.login(http)
+		if not auth.has_credentials():
+			return false   # 需要登录页（needs_login()），不再本地生造账号
+		var lr = await auth.login_name(http, auth.username)
 		if not lr.ok:
 			return false
 		logged_in = true
 	var profile_result = await profile.get_profile(http, auth.access_token)
 	# 决策48/E1：离线 profile cache 只可只读展示，不算在线登录成功。
 	return profile_result.ok and not profile_result.offline
+
+
+# —— KAN-109 username 裸登录门面 ——
+
+## 是否需要弹登录页（本地无记住的 username）。
+func needs_login() -> bool:
+	return auth == null or not auth.has_credentials()
+
+
+## 查 username 是否已注册（服务器权威）。返回 {ok, valid, registered, error}。
+func check_name(http: HTTPRequest, p_username: String) -> Dictionary:
+	return await auth.check_name(http, p_username)
+
+
+## 老玩家登录（成功记住 username）。
+func login_name(http: HTTPRequest, p_username: String) -> bool:
+	var r = await auth.login_name(http, p_username)
+	logged_in = r.ok
+	return r.ok
+
+
+## 新玩家注册（username+头像；服务器建号，昵称=username）。
+func register_name(http: HTTPRequest, p_username: String, avatar: String) -> bool:
+	var r = await auth.register_name(http, p_username, avatar)
+	logged_in = r.ok
+	return r.ok
+
+
+## 登出：清 token+username（device_id 保留），回登录页由调用方跳转。
+func sign_out() -> void:
+	logged_in = false
+	if auth != null:
+		auth.logout()
 
 
 ## 重新拉档案(对局后刷新杯数等)。

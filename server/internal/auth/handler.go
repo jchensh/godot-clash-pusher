@@ -29,9 +29,11 @@ func NewHandler(repo *AccountRepo, iss *Issuer) *Handler {
 // Mount registers /v4/auth/login and /v4/auth/refresh on the given mux.
 // Uses Go 1.22+ method+pattern routing (POST /path); requires Go 1.22+.
 // These two routes are intentionally unauthenticated — they bootstrap the token.
+// KAN-109：顺带挂 /v5/auth/* username 裸登录三端点（见 name.go；device 登录保留）。
 func (h *Handler) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("POST /v4/auth/login", h.handleLogin)
 	mux.HandleFunc("POST /v4/auth/refresh", h.handleRefresh)
+	h.MountName(mux)
 }
 
 func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {

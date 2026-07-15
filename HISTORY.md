@@ -606,3 +606,17 @@
 - **HTML 示意图集**（docs/design/ui_mockups/，9 文件 + 共享 ui_mock.css 模板；launch.json 加 ui-mockups 静态服务端口 8766）：主界面 CR 式改版（参考真机截屏 testAssets/20260715-051059.jpg，**用户已评审通过**：结构/六入口收编/章节主视觉居中）+ 卡牌页(图鉴组卡合一)/闯关页/战斗HUD/卡详情/结算开箱/创号匹配/覆盖层三合一 + index 目录页；每图带安全区红线开关 + 结构说明 + 给美术的资源点。导航架构改版：五页签(商店灰·卡牌·对战·闯关·探险灰)+顶部齿轮，旧六按钮主菜单与基地页废弃（挂机并入活动轨、闯关进度并入章节主视觉）。浏览器几何探针自检（分区无重叠/顶栏贴安全线）；其余屏待用户评审。
 - **单位体型三档定稿**（与主美商定）：5 档→**3 档 中/大/超大**＝面积 1/2/4 格、直径 1.0/1.2~1.4/1.8~2.1 格、画布 100×96/128×128/**192×192**（密度统一≈96px/格）；用户原口径「中=直径0.5」经验算证伪（面积1格⇔直径1.0，差整 2 倍=半径口误）用户确认修正。飞书规格书第七章三处替换 + 比例画板 SVG 覆写重画（缩略图自检过）。**逻辑 body_radius 零改动**（确定性红线）；视觉三档映射建单 **KAN-108**（待办，宜随 A4 换皮一并做）。
 - 顺带收编他会话遗留：docs/engineering/MEEGLE_WORKITEM_GUIDE.md + docs/design/card_progression_design_doc.html（登记文档地图）；CR 参考截屏入 testAssets。
+
+---
+
+### V5 · username 登录机制改版：服务器判新老 + 登录页 + 登出（KAN-109，🚧 代码+测试完成待真人验收，2026-07-15）
+
+**需求与决策（用户拍板）**：玩家先输 username，**服务器查库**判新老（不再看客户端本地数据）——新玩家→选头像→新手引导，老玩家直进主界面；①开发阶段 username 裸登录不做凭证（顶号风险已知悉，E2 补）②username=游戏内昵称（全服唯一）③存量测试账号清空④V4-S1 device 匿名登录保留（客户端调用点注释、服务端 /v4/auth/login 仍挂载——正式上线"新设备直进引导"体验有意义）⑤设置加登出。
+
+**服务端（零 migration！）**：身份复用 accounts `(provider, external_id)` 复合唯一键 → provider='name'/external_id=username，schema 保持 v8。新 `internal/auth/name.go`：`NameExists/FindByName/CreateByName`（建号事务=accounts+profiles 原子落库，昵称=username、头像注册时定）+ 三端点 `/v5/auth/{check-name,register,login-name}`（**JSON 请求 + 复用 pb LoginResp**，GM 端点同款先例，免双端 proto 重生成）+ `validateUsername`（复刻 KAN-71 宽度规则：中1/英0.5≤10）。登录 404=未注册、注册 409=重名、封禁 403 照旧。**测试**：unit（宽度边界 10全角/20窄字符/控制字符）+ integration 真 PG（七步全链：check新→登录404→注册→profile对帐(昵称=名/头像/引导未做)→重名409→check老→登录 is_new=false + device 登录仍通）。docker 共享镜像重建、api/gateway/battle 重启、healthz 200；**存量数据已 TRUNCATE**（8 表 RESTART IDENTITY）。
+
+**客户端**：`net/auth.gd` 加 `username` 凭据（auth.cfg 记住我）+ `check_name/login_name/register_name`（`_post_json`→pb LoginResp 解析复用）+ `has_credentials`，logout 连 username 一起清（device_id 保留）；`net/session.gd.ensure` device 自动登录改为「无凭据即失败 + 有凭据静默 login_name 重登」（device 调用注释保留）+ 门面五件套；`net/online_runtime.gd.ensure` 加 needs_login 早退（SIGNED_OUT）+ `login_with_name/register_with_name/sign_out`（登出=清凭据+close 持久连接+状态复位；本地经济缓存不清，下账号登录被服务器快照整体覆盖）。**新场景 `view/login.tscn`**（Router 登记 "login"）：输名→宽度预检→check-name→老将直登/新名携参进创号页；`account_create` 双模式（注册模式=名号固定只选头像→`register_with_name`，旧起名+update_identity 模式保留兜底）；`main_menu._bootstrap` 无凭据→login 重定向；`settings` 登出按钮+Modal 确认框（UI.modal 层，KAN-97 规约）。
+
+**踩坑 P0（真人首验即中，2026-07-16）**：新流程创号页在**登录之前**打开，而卡牌配置是登录后才经会话 WS 下发（ConfigPush）→ 注册模式头像池空网格、确认永远禁用（"卡死"）。旧流程先登录后创号故从未暴露；网络层烟测/单测未覆盖"场景在无配置态的组合"是真空档。修复 = 创号页注册模式配置为空时回退**本地 cards.json 纯展示枚举**（决策48 双端同源镜像；头像值仍服务器落库，经济/玩法权威不动，E1 门禁扫描列表外的合规例外）+ 头像池抽纯函数 `avatar_pool_for` + 回归测试锁"空配置也必须有 30+ 头像"（416/416）。
+
+**验证**：Go build/vet + 全套 unit/integration（-p 1 真 PG）全过；客户端 **416/416**（+3：username 持久化/logout 清凭据/needs_login 门三态）；gdlint 绿；headless 导入 0 错；**客户端真代码烟测 PASS**（临时 harness 打真 docker：注册→判老→记住我重登→404 拒绝，用完即删；踩坑=SceneTree `_init` 期发 HTTP 必挂，须先 await process_frame，仅 harness 问题）。真人 F5 验收欠：全新进登录页/新名一条龙/登出换号/老名直进/记住我重启/非法名禁入。

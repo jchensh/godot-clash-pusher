@@ -60,3 +60,19 @@ func test_production_scenes_do_not_load_local_config_directly() -> void:
 	var clear_pos := stage_map.find("GameStateScript.stage_last_result = {}")
 	assert_true(report_pos >= 0 and clear_pos > report_pos, "pending 只能在服务器确认后清除")
 	assert_true(stage_map.contains("结算服务不可用 · 点击重试"), "结算失败必须提供原地重试")
+
+
+func test_account_create_avatar_pool_available_before_login() -> void:
+	# 回归（2026-07-16 P0，KAN-109 首验卡死）：注册模式在登录前进入创号页，服务器配置
+	# 尚未下发（ConfigPush 走登录后会话 WS）——头像池必须回退本地展示配置，不得为空网格。
+	var account_create = load("res://view/account_create.gd")
+	var loader_script = load("res://logic/config_loader.gd")
+	var empty_cfg = loader_script.new()   # 模拟 Online 未就绪的空配置
+	var pool: Array = account_create.avatar_pool_for(empty_cfg)
+	assert_true(pool.size() >= 30, "登录前头像池应回退本地展示配置（应有 30+ 兵牌，实得 %d）" % pool.size())
+	assert_true(pool.has("knight"), "头像池应含 knight")
+	# 有服务器配置时优先用之（不触发回退）。
+	var full_cfg = loader_script.new()
+	full_cfg.load_all()
+	var pool2: Array = account_create.avatar_pool_for(full_cfg)
+	assert_eq(pool.size(), pool2.size(), "回退池与正常池同源同大小")

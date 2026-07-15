@@ -1,19 +1,19 @@
 extends RefCounted
 ##
-## V4-S1 客户端身份层。三件事:
-##   1. device_id (UUID4) 持久化 user://device.cfg, 首次启动生成、设备换不变
-##   2. access/refresh token 存盘 user://auth.cfg
-##   3. login / refresh 调用封装 (POST + protobuf body, 异步 await)
+## 客户端身份层。
+## KAN-109（2026-07-15）起主路 = username 裸登录（开发/测试阶段，无凭证；服务器查库
+## 判新老玩家，客户端本地数据只当"记住我"）：check_name / login_name / register_name。
+## username 与游戏内昵称合一；user://auth.cfg 记 username + token 对。
+## V4-S1 匿名 device_id 登录（login()）**保留不删**——正式上线"新设备直进引导"的
+## 体验仍有意义，调用点（session.ensure）暂时注释停用，服务端 /v4/auth/login 仍挂载。
 ##
 ## 用法:
 ##   var auth = preload("res://net/auth.gd").new("http://localhost:8080")
 ##   var http := HTTPRequest.new()
 ##   add_child(http)                       # HTTPRequest 必须在 SceneTree 里
-##   var res = await auth.login(http)
+##   var res = await auth.login_name(http, "陈到叔至")
 ##   if res.ok:
 ##       Log.i("logged in, token=%s" % auth.access_token)
-##
-## 后续 V4-S2 起的 profile / V4-S3 起的 WS 会复用 auth.access_token 做鉴权。
 
 const _DEVICE_PATH := "user://device.cfg"
 const _AUTH_PATH := "user://auth.cfg"
@@ -22,6 +22,7 @@ const _AuthPb := preload("res://net/proto/auth.gd")
 
 var server_url: String = "http://localhost:8080"
 var device_id: String = ""
+var username: String = ""  # KAN-109：记住我（登录/注册成功后落盘；登出清空）
 var access_token: String = ""
 var refresh_token: String = ""
 var is_new: bool = false   # V5-S9：本次 login 是否首次建号（服务端 LoginResp.is_new）
@@ -87,25 +88,34 @@ func _load_tokens() -> void:
 		return
 	access_token = cfg.get_value("auth", "access", "")
 	refresh_token = cfg.get_value("auth", "refresh", "")
+	username = cfg.get_value("auth", "username", "")
 
 
 func _save_tokens() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("auth", "access", access_token)
 	cfg.set_value("auth", "refresh", refresh_token)
+	cfg.set_value("auth", "username", username)
 	cfg.save(_AUTH_PATH)
 
 
 func _clear_tokens() -> void:
 	access_token = ""
 	refresh_token = ""
+	username = ""
 	if FileAccess.file_exists(_AUTH_PATH):
 		DirAccess.remove_absolute(_AUTH_PATH)
 
 
-## Drop stored tokens (but keep device_id; logging back in re-uses it).
+## Drop stored tokens + username (but keep device_id; logging back in re-uses it).
 func logout() -> void:
 	_clear_tokens()
+
+
+## KAN-109：是否有可用于静默重登的凭据（记住的 username）。
+## 服务器权威判新老——这里只决定"要不要弹登录页"，不决定账号存在性。
+func has_credentials() -> bool:
+	return username != ""
 
 
 # ---------------- HTTP calls (await-based) ----------------
@@ -184,6 +194,57 @@ func refresh(http_req: HTTPRequest) -> Result:
 	return result
 
 
+# ---------------- KAN-109 username 裸登录（JSON 请求 + pb LoginResp 响应）----------------
+
+## 查询 username 是否已注册（服务器查库判新老玩家）。
+## 返回 {ok, valid, registered, error}；ok=false 表示网络/服务器错误。
+func check_name(http_req: HTTPRequest, p_username: String) -> Dictionary:
+	var resp := await _post_json(http_req, "/v5/auth/check-name", {"username": p_username})
+	if not resp.ok:
+		return {"ok": false, "valid": false, "registered": false, "error": resp.error}
+	var d = JSON.parse_string(resp.body.get_string_from_utf8())
+	if typeof(d) != TYPE_DICTIONARY:
+		return {"ok": false, "valid": false, "registered": false, "error": "bad check-name json"}
+	return {"ok": true, "valid": bool(d.get("valid", false)),
+			"registered": bool(d.get("registered", false)), "error": str(d.get("reason", ""))}
+
+
+## 老玩家按 username 登录。成功存 token+username（记住我）。
+func login_name(http_req: HTTPRequest, p_username: String) -> Result:
+	return await _name_auth(http_req, "/v5/auth/login-name", {"username": p_username}, p_username)
+
+
+## 新玩家注册（username+头像，服务器落 accounts+profiles，昵称=username）。
+func register_name(http_req: HTTPRequest, p_username: String, avatar_card_id: String) -> Result:
+	return await _name_auth(http_req, "/v5/auth/register",
+			{"username": p_username, "avatar_card_id": avatar_card_id}, p_username)
+
+
+## 共用：POST JSON → 解析 pb LoginResp（与 /v4/auth/login 同构复用解析）→ 存凭据。
+func _name_auth(http_req: HTTPRequest, path: String, payload: Dictionary, p_username: String) -> Result:
+	var resp := await _post_json(http_req, path, payload)
+	if not resp.ok:
+		var fail := Result.new()
+		fail.error = resp.error
+		fail.status_code = resp.status_code
+		return fail
+	var lr = _AuthPb.LoginResp.new()
+	if lr.from_bytes(resp.body) != _AuthPb.PB_ERR.NO_ERRORS:
+		var fail := Result.new()
+		fail.error = "decode LoginResp failed"
+		fail.status_code = resp.status_code
+		return fail
+	access_token = lr.get_token()
+	refresh_token = lr.get_refresh_token()
+	is_new = lr.get_is_new()
+	username = p_username.strip_edges()
+	_save_tokens()
+	var result := Result.new()
+	result.ok = true
+	result.status_code = resp.status_code
+	return result
+
+
 # ---------------- internal HTTP plumbing ----------------
 
 class _HttpResult extends RefCounted:
@@ -191,6 +252,29 @@ class _HttpResult extends RefCounted:
 	var error: String = ""
 	var status_code: int = 0
 	var body: PackedByteArray = PackedByteArray()
+
+
+## Internal: POSTs a JSON body（KAN-109 username 端点；响应可能是 JSON 或 pb 二进制）。
+func _post_json(http_req: HTTPRequest, path: String, payload: Dictionary) -> _HttpResult:
+	var url := server_url + path
+	var headers := PackedStringArray(["Content-Type: application/json"])
+	var err := http_req.request(url, headers, HTTPClient.METHOD_POST, JSON.stringify(payload))
+	if err != OK:
+		var r := _HttpResult.new()
+		r.error = "HTTPRequest.request err=%d" % err
+		return r
+	var args: Array = await http_req.request_completed
+	var hr := _HttpResult.new()
+	hr.status_code = args[1]
+	hr.body = args[3]
+	if args[0] != HTTPRequest.RESULT_SUCCESS:
+		hr.error = "HTTPRequest.result=%d" % args[0]
+		return hr
+	if args[1] != 200:
+		hr.error = "HTTP %d" % args[1]
+		return hr
+	hr.ok = true
+	return hr
 
 
 ## Internal: POSTs a binary protobuf body. Returns once HTTPRequest emits

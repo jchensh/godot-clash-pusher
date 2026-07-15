@@ -5,6 +5,7 @@ extends Control
 
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const GameStateScript := preload("res://view/game_state.gd")
+const ModalScript := preload("res://view/ui/modal.gd")   # KAN-109 登出确认框（走 UI.modal 层，KAN-97 规约）
 
 var _http: HTTPRequest
 var _gm_status: Label = null
@@ -30,7 +31,70 @@ func _build() -> void:
 	var cur := I18n.current_locale()
 	_lang_button(tr("lang_zh"), "zh", 150, 500, cur.begins_with("zh"))
 	_lang_button(tr("lang_en"), "en", 390, 500, cur.begins_with("en"))
+	_logout_button(1170)   # KAN-109：登出 → 回登录页换号/创新号
 	_back_button(1080)
+
+
+# —— KAN-109 登出（换号/创新账号；开发阶段 username 裸登录）——
+func _logout_button(y: float) -> void:
+	var bw := 240.0
+	var btn := Button.new()
+	btn.position = Vector2((720.0 - bw) / 2.0, y)
+	btn.size = Vector2(bw, 80)
+	btn.text = "登出账号"
+	btn.pivot_offset = Vector2(bw / 2.0, 40.0)
+	btn.focus_mode = Control.FOCUS_NONE
+	PixelUI.style_button(btn, "stone", 30)
+	btn.pressed.connect(_on_logout)
+	btn.button_down.connect(_scale_to.bind(btn, 0.96))
+	btn.button_up.connect(_scale_to.bind(btn, 1.0))
+	add_child(btn)
+
+func _on_logout() -> void:
+	AudioManager.play_sfx("ui_button_press")
+	var m: Control = ModalScript.new()
+	m.close_on_bg_click = true   # 点空白 = 取消
+	UI.modal(m)
+	var panel := Panel.new()
+	panel.position = Vector2(80, 480)
+	panel.size = Vector2(560, 330)
+	panel.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("241c30"), 4, PixelUI.COL_GOLD))
+	m.add_child(panel)
+	var t := Label.new()
+	t.text = "确定登出？"
+	t.position = Vector2(0, 30)
+	t.size = Vector2(560, 50)
+	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	t.add_theme_font_size_override("font_size", 38)
+	t.add_theme_color_override("font_color", PixelUI.COL_GOLD)
+	panel.add_child(t)
+	var d := Label.new()
+	d.text = "将退回登录页，可换账号或创新账号\n（进度都在服务器，随时回来）"
+	d.position = Vector2(0, 100)
+	d.size = Vector2(560, 80)
+	d.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	d.add_theme_font_size_override("font_size", 24)
+	d.add_theme_color_override("font_color", PixelUI.COL_MUTED)
+	panel.add_child(d)
+	_modal_btn(panel, "取消", 40, 210, "dark", func(): m.close())
+	_modal_btn(panel, "登出", 300, 210, "gold", func():
+		Log.i("[V5][settings] 用户登出 → login")
+		GameStateScript.session().sign_out()
+		m.close()
+		Router.goto("login"))
+
+func _modal_btn(parent: Control, text: String, x: float, y: float, kind: String, cb: Callable) -> void:
+	var btn := Button.new()
+	btn.text = text
+	btn.position = Vector2(x, y)
+	btn.size = Vector2(220, 84)
+	btn.pivot_offset = Vector2(110, 42)
+	btn.focus_mode = Control.FOCUS_NONE
+	PixelUI.style_button(btn, kind, 30)
+	btn.pressed.connect(cb)
+	btn.button_down.connect(_scale_to.bind(btn, 0.96))
+	btn.button_up.connect(_scale_to.bind(btn, 1.0))
+	parent.add_child(btn)
 
 func _layout_button(text: String, lay: String, x: float, y: float, active: bool) -> void:
 	var btn := Button.new()

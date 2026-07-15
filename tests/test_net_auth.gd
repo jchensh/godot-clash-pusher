@@ -106,3 +106,53 @@ func test_server_url_default_and_override() -> void:
 	var b = Auth.new("https://api.example.com")
 	assert_eq(b.server_url, "https://api.example.com")
 	_cleanup()
+
+
+# —— KAN-109 username 裸登录：凭据存储与登录门 ——
+
+const Session := preload("res://net/session.gd")
+
+
+func test_username_persists_and_has_credentials() -> void:
+	_cleanup()
+	var a = Auth.new()
+	assert_false(a.has_credentials(), "全新实例不应有登录凭据")
+	a.username = "陈到叔至"
+	a.access_token = "tokA"
+	a.refresh_token = "tokR"
+	a._save_tokens()
+	var b = Auth.new()
+	assert_eq(b.username, "陈到叔至", "username 应随 auth.cfg 持久化（记住我）")
+	assert_true(b.has_credentials(), "有记住的 username → 有凭据")
+	_cleanup()
+
+
+func test_logout_clears_username() -> void:
+	_cleanup()
+	var a = Auth.new()
+	a.username = "老将"
+	a.access_token = "X"
+	a._save_tokens()
+	a.logout()
+	assert_eq(a.username, "", "logout 应清 username（内存）")
+	var b = Auth.new()
+	assert_false(b.has_credentials(), "logout 后新实例不应有凭据 → 弹登录页")
+	_cleanup()
+
+
+func test_session_needs_login_gate() -> void:
+	# 无凭据 → needs_login=true（主菜单据此跳登录页，不再本地生造账号）。
+	_cleanup()
+	var s = Session.new()
+	assert_true(s.needs_login(), "无 auth.cfg 时应要求登录")
+	# 存了 username → 门放行（静默重登路径）。
+	s.auth.username = "老将"
+	s.auth.access_token = "X"
+	s.auth._save_tokens()
+	var s2 = Session.new()
+	assert_false(s2.needs_login(), "有记住的 username 时不应弹登录页")
+	# sign_out → 门重新关上。
+	s2.sign_out()
+	assert_true(s2.needs_login(), "登出后应回到需登录态")
+	assert_false(s2.logged_in, "登出后 logged_in 应复位")
+	_cleanup()
