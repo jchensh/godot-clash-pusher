@@ -620,3 +620,16 @@
 **踩坑 P0（真人首验即中，2026-07-16）**：新流程创号页在**登录之前**打开，而卡牌配置是登录后才经会话 WS 下发（ConfigPush）→ 注册模式头像池空网格、确认永远禁用（"卡死"）。旧流程先登录后创号故从未暴露；网络层烟测/单测未覆盖"场景在无配置态的组合"是真空档。修复 = 创号页注册模式配置为空时回退**本地 cards.json 纯展示枚举**（决策48 双端同源镜像；头像值仍服务器落库，经济/玩法权威不动，E1 门禁扫描列表外的合规例外）+ 头像池抽纯函数 `avatar_pool_for` + 回归测试锁"空配置也必须有 30+ 头像"（416/416）。
 
 **验证**：Go build/vet + 全套 unit/integration（-p 1 真 PG）全过；客户端 **416/416**（+3：username 持久化/logout 清凭据/needs_login 门三态）；gdlint 绿；headless 导入 0 错；**客户端真代码烟测 PASS**（临时 harness 打真 docker：注册→判老→记住我重登→404 拒绝，用完即删；踩坑=SceneTree `_init` 期发 HTTP 必挂，须先 await process_frame，仅 harness 问题）。真人 F5 验收欠：全新进登录页/新名一条龙/登出换号/老名直进/记住我重启/非法名禁入。
+
+---
+
+### V5 · E2-lite：HTTPS/WSS 加密模板 + secrets 模板化 + 发布手册（KAN-110，✅ 代码+冒烟完成，2026-07-16）
+
+**背景与拍板**：用户计划 master→release→Antigravity→GCP 公网发布（域名只发有限测试人员）。E2 五件套中 ①去GM/②登录凭证/⑤Origin限流 明确暂不做（风险接受）；③WS ticket 不做（TLS 后 token-in-URL 的暴露面只剩自家反代日志 → 以 Caddy query 脱敏替代，成本≈0）；**只做④加密**。架构决策：**基础设施代码进 master（模板化、零环境值），环境专属值到 release/部署侧 .env**——保住 release 单向跟随 master 的分支流。
+
+- **`server/docker/Caddyfile.prod`**：单域名单 443 反代模板——`/v4/battle/ws`+`/v5/session/ws`→gateway:8081、其余→api:8080（两服务路径不重叠）；Let's Encrypt 自动签续；访问日志 JSON + **query 整体脱敏为 REDACTED**（WS token 在 query，勿删此段）；DOMAIN/ACME_EMAIL 全环境变量占位，DOMAIN=localhost 自动降内部自签 CA（本地冒烟模式）。
+- **`server/docker-compose.prod.yml`** overlay：`-f -f` 叠加式启动，加 caddy 容器（证书卷持久化防续期风暴）+ 全员 restart:unless-stopped；不带 overlay = 原样开发环境零影响。基础 compose 发布的 8080/8081/5432/6379 靠 GCP 防火墙收口（只开 80/443）。
+- **`.env.example` 强化**：五处 ⚠️公网必改 标记（PG 密码/DB_URL/JWT_SECRET/DOMAIN/ACME_EMAIL）+ 生成命令；真值只存部署机 .env 永不进仓库。
+- **[docs/deployment/GCP_RELEASE_TLS.md](docs/deployment/GCP_RELEASE_TLS.md)**（详细手册，后续会话/Antigravity 免上下文可操作）：架构图/前置条件(域名A记录+防火墙清单)/部署步骤/部署后验证命令/**release 打包检查单**（network.json 三地址单域名规范、安卓免 cleartext=方式B兑现、Godot 对 LE 证书零配置）/日常运维速查/本地冒烟模式/**安全边界声明**（E2-lite≠完整E2，升级触发条件写明）。
+- **本地冒烟 4/4 过**（DOMAIN=localhost + 8443，不扰动开发 6 容器）：①`https://…/healthz` 200 ②WS 路径路由至 gateway（401=网关收到无 token 拒绝，路由正确）③check-name JSON 经 TLS 正常 ④URL 里塞假 token → 访问日志 grep 无原文、REDACTED 计数 1（脱敏实证）。冒烟容器即起即删。
+- 纯基建+文档，客户端零代码改动（Godot 原生 https/wss，release 只改 network.json）；服务端 Go 零改动。Jira KAN-110 In Progress → 待用户确认。

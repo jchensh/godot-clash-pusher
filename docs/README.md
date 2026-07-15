@@ -49,6 +49,7 @@
 | [security/THREAT_MODEL.md](security/THREAT_MODEL.md) | 威胁模型（客户端/网络/提交字段全不可信） |
 | [security/AUTH_AND_WS_TICKETS.md](security/AUTH_AND_WS_TICKETS.md) | 认证契约（短 access/refresh rotation/WS 单次 ticket——E2 目标态） |
 | [deployment/STAGING.md](deployment/STAGING.md) | Staging 目标拓扑（当前 compose 仅本地开发） |
+| [deployment/GCP_RELEASE_TLS.md](deployment/GCP_RELEASE_TLS.md) | **GCP 公网发布手册（E2-lite/KAN-110）**：Caddy TLS 部署步骤 + release 打包检查单 + 安全边界声明 |
 | [deployment/PRODUCTION_GATES.md](deployment/PRODUCTION_GATES.md) | **上线门禁清单**（P0/P1 未过不得发布；含当前已知阻断） |
 | [runbooks/GATEWAY_DRAIN.md](runbooks/GATEWAY_DRAIN.md) | Gateway 排空 runbook（drain 代码待 E4） |
 | [runbooks/ROLLBACK.md](runbooks/ROLLBACK.md) | 回滚 runbook |
