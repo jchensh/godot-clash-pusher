@@ -650,6 +650,27 @@
 
 > 以下为 release 分支（安卓/Web 打包）积累的记录，合并自 release。V3 详细开发历史见 [docs/HISTORY_V3_DETAILED.md](docs/HISTORY_V3_DETAILED.md)。
 
+### ✅ 首次公网部署：GCP 后端（Caddy TLS）+ Firebase Web 前端（2026-07-16）
+
+**背景**：master 43 个提交（0715 素材/Y-sort/32×32 屏幕格/KAN-109 username 登录/KAN-110 Caddy TLS 模板/首批 BGM）合入 release（`7ecaa20`）后，首次执行真正的公网发布——GCP 跑后端、Firebase Hosting 跑 Web 前端，域名向指定测试人员开放。部署由 Antigravity 执行，Claude（本会话）负责交接 prompt、release 合并、事后验证与本记录。
+
+**域名与部署形态**：
+- 后端 API+WS：`https://towerpushserver.jeffgame.tech`（GCE `e2-small` 虚拟机，docker compose + Caddy 反代，证书 Let's Encrypt 自动签发，对应 [docs/deployment/GCP_RELEASE_TLS.md](docs/deployment/GCP_RELEASE_TLS.md)）。
+- Web 前端：`https://towerpush.web.app`（Firebase Hosting，`tools/build_web.ps1` 打包注入生产地址）。
+
+**部署过程踩的坑与修法**（均已提交到 release，不进 master——环境/部署专属）：
+- **GCE `e2-small`（1.9GiB 内存、无 swap）编译 OOM**：Go 默认并行编译瞬间占满内存导致 VM 冻结。修法 = VM 上开 2GB swap 文件 + `server/Dockerfile` 加 `ENV GOMAXPROCS=1`（单线程编译，耗时拉长到 7~8 分钟但过程平稳、不再 OOM）。commit `d4f914a`。
+- **`.env` 数据库用户名与 `DB_URL` 不一致**：远端 `.env` 手改时 `POSTGRES_USER` 与 `DB_URL` 里的用户名对不上，SASL 认证失败 → api/gateway 容器反复重启（表现为 502）。修法 = 统一成 `app`/`gcp`，`docker compose down -v` 清卷后重新跑 8 个 migration。**排障提示**：以后见 api/gateway 反复重启，先看容器日志有没有 `password authentication failed`，再查 `.env` 而不是查代码。
+- **Web 前端跨域**：`server/docker/Caddyfile.prod` 补 CORS 头（Firebase 域名 origin 白名单）。commit `c80a3e0`。
+- **Web 端第三个 WS 地址遗漏**：`net/online_runtime.gd` 补 `window.GAME_SESSION_WS_URL` 动态注入（持久会话 WS，E1 新增，此前 Web 注入补丁只覆盖了旧的两个地址）。同 commit `c80a3e0`。
+
+**部署后验证（Claude 用 Browser 工具 + 用户真机双重验证，2026-07-16）**：
+- 自动化验证：页面加载 index.js/wasm/pck 全 200、控制台零错误、日志确认走新登录路由。
+- **用户真机端到端全链路通过**（完整控制台日志已存档于本次对话）：新玩家查名注册 → 头像页本地配置回退（KAN-109 P0 修复生产环境确认生效）→ 持久会话 WS 连接成功 → 强制新手引导战 → GM 面板改服务端 DB 成功 → 闯关选卡开战 → **PVE 反作弊报到/上报全链路跑通**（`battle_id` 开局登记 → 战后 `summary` 上报 → 服务器按摘要判星发奖，KAN-78/79 在公网环境首次验证）→ 经济发奖金额正确（首通 300 金+5 宝石+5 碎片）→ 挂机领取正确。**零 CORS/WS 错误**，唯一日志异常是浏览器标准 `AudioContext autoplay` 限制（非 bug，需一次用户手势解锁音频，Godot 通常自动处理）。
+- 遗留待确认：BGM 是否在真机上确实听到播放（AudioContext 解锁后的实际听感，用户尚未明确答复）。
+
+**安全边界提醒**（不因部署成功而改变）：域名仅发给指定测试人员，不公开张贴——username 裸登录 + GM 端点仍开放，是 [KAN-110](../PLAN_V5.md) 明确接受的 E2-lite 已知风险，见 GCP_RELEASE_TLS.md 第七章。
+
 ### ⚠️ 待办：安卓明文流量（cleartext）配置 —— 决策方式 B（HTTPS/WSS）
 
 **背景**：安卓 9 (API 28) 起默认禁止 App 发送明文（非 HTTPS）网络流量。`config/network.json` 当前是 `http://` + `ws://`（明文），真机上天梯联机功能会被系统拦截（单机模式不受影响）。
