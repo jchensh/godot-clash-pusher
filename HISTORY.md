@@ -942,3 +942,22 @@
   - **遗留风险提示**：当前 `gcloud compute ssh` 部署由于谷歌开发者控制台的 `compute.googleapis.com` API 权限受限，导致部署脚本无法直接连到云服务器，后续如果需要再重启容器，必须请拥有相关管理员权限的用户亲自执行部署脚本。
   - **文档沉淀**：今天所有查出的坑和解决方案，已经详细记录并保存于 `docs/DEPLOY_WEB_GOTCHAS.md`，后续开发者部署如果遇到网络不通或界面白屏，请务必先查阅该文档。
 
+
+### V5-E2 — Firebase Hosting 迁移至 tower-push-godot 与 Caddyfile CORS 匹配语法修复 (2026-07-16)
+- **Firebase Hosting 迁移**：
+  - 前端 Hosting 服务从独立的旧 Firebase 项目 `towerpush` 成功迁移至后端的统一 GCP 项目 `tower-push-godot` 下。
+  - 用户在 Firebase Console 导入该已有 GCP 项目后，本地通过 CLI 指向该项目并部署，新前端域名 `https://tower-push-godot.web.app` 正式上线。
+- **Caddyfile CORS 跨域多源匹配踩坑与修复**：
+  - **故障**：在 `Caddyfile.prod` 中配置跨域多源白名单时，错误地在 `header` 指令中使用了空格分隔的多个 Origin 域名，导致 Caddy 在启动时适配 Caddyfile 报错退出（`malformed header matcher`）。容器崩溃重启期间，由于服务不可用，导致浏览器跨域请求被拦截，控制台报 CORS Preflight 失败。
+  - **解决**：将跨域白名单匹配指令修改为 Caddy 规范的 `header_regexp` 规则匹配：
+    ```caddy
+    @cors_origin header_regexp Origin ^https:\/\/(towerpush\.web\.app|tower-push-godot\.web\.app|toweroffense\.jeffgame\.tech)$
+    header @cors_origin Access-Control-Allow-Origin {header.Origin}
+    ```
+  - **Docker 单文件挂载 Inode 坑**：在宿主机修改 `Caddyfile.prod` 后，由于 Docker 的 `-v` 挂载单个文件绑定的是 Inode。如果在宿主机通过 `mv` 或部分重写工具导致 Inode 改变，容器内的配置文件不会同步刷新。必须通过 `docker compose restart caddy` 重建容器挂载并重启服务，才能正确使新配置生效。
+- **结果**：
+  - 修改后 Caddy 启动状态正常（Healthy），CORS 响应与 API 服务接口全线打通。
+  - 静态资源成功推送至新 Hosting，人工端到端游戏登录与战斗功能验证 100% 通过。
+  - 修改后的 `Caddyfile.prod` 已经 Commit 并且 Push 到 `release` 分支（哈希 `9812f9e`）。
+
+
