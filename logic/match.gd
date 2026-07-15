@@ -26,6 +26,10 @@ var opponent          # Player（OWNER_OPPONENT）
 var opponent_controller = null   # 规则 AI（可空，鸭子类型）：每逻辑 tick 由 update 驱动
 var ai_difficulty := "normal"    # 关卡 AI 难度（V2-6）：供 AIController 读取分级行为
 var net_tick: int = 0            # V4-S3 lockstep：advance_tick 推进过的 tick 数（单机 update 不用）
+# —— KAN-79 PVE 录制锚点（update 路径专用；advance_tick 不动它们，联机零影响）——
+var pve_tick: int = 0            # update 已完成的逻辑 tick 数（出牌指令的 tick 戳 + 哈希锚点）
+var in_tick := false             # 正处于 tick 内部（AI 出牌相位=in；玩家在 tick 间隙出牌=gap）
+var tick_observer = null         # 每 tick 完成后回调 on_tick(pve_tick)（PVE 录制器挂；null=零副作用）
 
 func _init(config_ = null) -> void:
 	config = config_
@@ -36,7 +40,8 @@ func _init(config_ = null) -> void:
 # 不污染 ConfigLoader 基础配置。空数组 = 行为与改前一致（起手圣水仍 0）。
 # opponent_deck_override（V4-S3 lockstep）：联机时双方卡组都由服务端开局下发，
 # 故需能显式指定对手卡组（side2_deck）；单机不传 = 用关卡 ai_deck（行为不变）。
-func setup(level_id: String = "level_01", player_deck_override: Array = [], modifiers: Array = [], opponent_deck_override: Array = []) -> void:
+func setup(level_id: String = "level_01", player_deck_override: Array = [],
+		modifiers: Array = [], opponent_deck_override: Array = []) -> void:
 	var level: Dictionary = RunModifiersScript.effective_level(config.get_level(level_id), modifiers)
 	ai_difficulty = String(level.get("ai_difficulty", "normal"))
 	battle = BattleScript.new()
@@ -96,6 +101,9 @@ func set_opponent_controller(controller) -> void:
 	opponent_controller = controller
 
 # 显示层每帧调用：固定 tick 推进。对局已结束则不再推进。
+# KAN-79：pve_tick/in_tick/tick_observer 是 PVE 录制锚点——玩家出牌发生在两次 update
+# 之间（间隙，相位 gap）；AI 出牌发生在 in_tick=true 段内（相位 in）。重放器
+# （logic/pve_replay.gd）按同一顺序复现：gap 牌 → regen → in 牌 → step。
 func update(real_dt: float) -> void:
 	if battle == null or battle.is_over():
 		return
@@ -103,9 +111,14 @@ func update(real_dt: float) -> void:
 	for i in n:
 		player.regen(SimClockScript.TICK_DELTA)
 		opponent.regen(SimClockScript.TICK_DELTA)
+		in_tick = true
 		if opponent_controller != null:
 			opponent_controller.tick(SimClockScript.TICK_DELTA)
 		battle.step(SimClockScript.TICK_DELTA)
+		in_tick = false
+		pve_tick += 1
+		if tick_observer != null:
+			tick_observer.on_tick(pve_tick)
 		if battle.is_over():
 			break
 

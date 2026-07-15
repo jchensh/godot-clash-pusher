@@ -299,10 +299,15 @@ func (x *EconomyActionReq) GetCardId() string {
 
 // N5 通关上报：客户端把 (stage_id, stars) 报上来，服务器 sanity 校验（关卡存在/
 // stars≥1/stars≤配置上限/进度连续防跳关）+ 发首通/重复奖励 + 记进度，回新 EconomyState。
+// KAN-78 防作弊扩展：必须带本局 battle_id（PveStartResp 发的）+ 战报摘要；服务器校验
+// battle 属己/关匹配/未消费（防重放）、墙钟时长 ≥ 下限、声称 tick 与墙钟一致（无法时间
+// 压缩）、星数与摘要自洽（king_hp/time_under）。
 type StageClearReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	StageId       string                 `protobuf:"bytes,1,opt,name=stage_id,json=stageId,proto3" json:"stage_id,omitempty"`
-	Stars         int32                  `protobuf:"varint,2,opt,name=stars,proto3" json:"stars,omitempty"` // 0=未取胜（拒）；≥1=通关星数（不能超该关 stars 配置条数）
+	Stars         int32                  `protobuf:"varint,2,opt,name=stars,proto3" json:"stars,omitempty"`                       // 0=未取胜（拒）；≥1=通关星数（不能超该关 stars 配置条数）
+	BattleId      int64                  `protobuf:"varint,3,opt,name=battle_id,json=battleId,proto3" json:"battle_id,omitempty"` // KAN-78：本局 PVE 战斗会话 id（PveStart 下发）
+	Summary       *BattleSummary         `protobuf:"bytes,4,opt,name=summary,proto3" json:"summary,omitempty"`                    // KAN-78：战报摘要（与 stars 声明交叉校验）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -351,6 +356,421 @@ func (x *StageClearReq) GetStars() int32 {
 	return 0
 }
 
+func (x *StageClearReq) GetBattleId() int64 {
+	if x != nil {
+		return x.BattleId
+	}
+	return 0
+}
+
+func (x *StageClearReq) GetSummary() *BattleSummary {
+	if x != nil {
+		return x.Summary
+	}
+	return nil
+}
+
+type PveStartReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	StageId       string                 `protobuf:"bytes,1,opt,name=stage_id,json=stageId,proto3" json:"stage_id,omitempty"`
+	Deck          []string               `protobuf:"bytes,2,rep,name=deck,proto3" json:"deck,omitempty"` // 本局 8 张卡组（服务器校验全 unlocked，堵未解锁卡进战斗）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PveStartReq) Reset() {
+	*x = PveStartReq{}
+	mi := &file_economy_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PveStartReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PveStartReq) ProtoMessage() {}
+
+func (x *PveStartReq) ProtoReflect() protoreflect.Message {
+	mi := &file_economy_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PveStartReq.ProtoReflect.Descriptor instead.
+func (*PveStartReq) Descriptor() ([]byte, []int) {
+	return file_economy_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *PveStartReq) GetStageId() string {
+	if x != nil {
+		return x.StageId
+	}
+	return ""
+}
+
+func (x *PveStartReq) GetDeck() []string {
+	if x != nil {
+		return x.Deck
+	}
+	return nil
+}
+
+type PveStartResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BattleId      int64                  `protobuf:"varint,1,opt,name=battle_id,json=battleId,proto3" json:"battle_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PveStartResp) Reset() {
+	*x = PveStartResp{}
+	mi := &file_economy_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PveStartResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PveStartResp) ProtoMessage() {}
+
+func (x *PveStartResp) ProtoReflect() protoreflect.Message {
+	mi := &file_economy_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PveStartResp.ProtoReflect.Descriptor instead.
+func (*PveStartResp) Descriptor() ([]byte, []int) {
+	return file_economy_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *PveStartResp) GetBattleId() int64 {
+	if x != nil {
+		return x.BattleId
+	}
+	return 0
+}
+
+// 一条出牌指令（双方都录：玩家在 tick 间隙出牌 phase=0，AI 在 tick 内出牌 phase=1；
+// 相位区分让服务端重放器能逐 bit 复现原局时序——见 logic/pve_replay.gd）。
+type PveCmd struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Tick  int32                  `protobuf:"varint,1,opt,name=tick,proto3" json:"tick,omitempty"` // gap 牌=出牌时已完成的 tick 数 N（重放在第 N+1 tick regen 前应用）；
+	// in 牌=所在 tick 序号（重放在该 tick regen 后应用）
+	Phase         int32  `protobuf:"varint,2,opt,name=phase,proto3" json:"phase,omitempty"` // 0=gap（tick 间隙，玩家）/ 1=in（tick 内，AI）
+	Side          int32  `protobuf:"varint,3,opt,name=side,proto3" json:"side,omitempty"`   // 1=player / 2=opponent(AI)
+	CardId        string `protobuf:"bytes,4,opt,name=card_id,json=cardId,proto3" json:"card_id,omitempty"`
+	XMilli        int32  `protobuf:"varint,5,opt,name=x_milli,json=xMilli,proto3" json:"x_milli,omitempty"` // tile × 1000（与 battle.proto DeployCmd 同款量化）
+	YMilli        int32  `protobuf:"varint,6,opt,name=y_milli,json=yMilli,proto3" json:"y_milli,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PveCmd) Reset() {
+	*x = PveCmd{}
+	mi := &file_economy_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PveCmd) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PveCmd) ProtoMessage() {}
+
+func (x *PveCmd) ProtoReflect() protoreflect.Message {
+	mi := &file_economy_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PveCmd.ProtoReflect.Descriptor instead.
+func (*PveCmd) Descriptor() ([]byte, []int) {
+	return file_economy_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *PveCmd) GetTick() int32 {
+	if x != nil {
+		return x.Tick
+	}
+	return 0
+}
+
+func (x *PveCmd) GetPhase() int32 {
+	if x != nil {
+		return x.Phase
+	}
+	return 0
+}
+
+func (x *PveCmd) GetSide() int32 {
+	if x != nil {
+		return x.Side
+	}
+	return 0
+}
+
+func (x *PveCmd) GetCardId() string {
+	if x != nil {
+		return x.CardId
+	}
+	return ""
+}
+
+func (x *PveCmd) GetXMilli() int32 {
+	if x != nil {
+		return x.XMilli
+	}
+	return 0
+}
+
+func (x *PveCmd) GetYMilli() int32 {
+	if x != nil {
+		return x.YMilli
+	}
+	return 0
+}
+
+// 周期状态哈希（每 10 tick 一条，Match.state_hash()）。改内存改状态 → hash 与重放不符。
+type PveHashRec struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Tick          int32                  `protobuf:"varint,1,opt,name=tick,proto3" json:"tick,omitempty"`
+	Hash          []byte                 `protobuf:"bytes,2,opt,name=hash,proto3" json:"hash,omitempty"` // sha256, 32 bytes
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PveHashRec) Reset() {
+	*x = PveHashRec{}
+	mi := &file_economy_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PveHashRec) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PveHashRec) ProtoMessage() {}
+
+func (x *PveHashRec) ProtoReflect() protoreflect.Message {
+	mi := &file_economy_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PveHashRec.ProtoReflect.Descriptor instead.
+func (*PveHashRec) Descriptor() ([]byte, []int) {
+	return file_economy_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *PveHashRec) GetTick() int32 {
+	if x != nil {
+		return x.Tick
+	}
+	return 0
+}
+
+func (x *PveHashRec) GetHash() []byte {
+	if x != nil {
+		return x.Hash
+	}
+	return nil
+}
+
+type PveReportReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BattleId      int64                  `protobuf:"varint,1,opt,name=battle_id,json=battleId,proto3" json:"battle_id,omitempty"`
+	Cmds          []*PveCmd              `protobuf:"bytes,2,rep,name=cmds,proto3" json:"cmds,omitempty"`     // 自上一批以来新增的指令（追加式）
+	Hashes        []*PveHashRec          `protobuf:"bytes,3,rep,name=hashes,proto3" json:"hashes,omitempty"` // 自上一批以来新增的哈希
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PveReportReq) Reset() {
+	*x = PveReportReq{}
+	mi := &file_economy_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PveReportReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PveReportReq) ProtoMessage() {}
+
+func (x *PveReportReq) ProtoReflect() protoreflect.Message {
+	mi := &file_economy_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PveReportReq.ProtoReflect.Descriptor instead.
+func (*PveReportReq) Descriptor() ([]byte, []int) {
+	return file_economy_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *PveReportReq) GetBattleId() int64 {
+	if x != nil {
+		return x.BattleId
+	}
+	return 0
+}
+
+func (x *PveReportReq) GetCmds() []*PveCmd {
+	if x != nil {
+		return x.Cmds
+	}
+	return nil
+}
+
+func (x *PveReportReq) GetHashes() []*PveHashRec {
+	if x != nil {
+		return x.Hashes
+	}
+	return nil
+}
+
+type PveReportResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PveReportResp) Reset() {
+	*x = PveReportResp{}
+	mi := &file_economy_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PveReportResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PveReportResp) ProtoMessage() {}
+
+func (x *PveReportResp) ProtoReflect() protoreflect.Message {
+	mi := &file_economy_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PveReportResp.ProtoReflect.Descriptor instead.
+func (*PveReportResp) Descriptor() ([]byte, []int) {
+	return file_economy_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *PveReportResp) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
+// 战报摘要（StageClear 附带，层1 sanity；重放器复算值与之交叉验证）。
+type BattleSummary struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	DurationTicks  int32                  `protobuf:"varint,1,opt,name=duration_ticks,json=durationTicks,proto3" json:"duration_ticks,omitempty"`      // 本局逻辑 tick 总数（10Hz）
+	DeployCount    int32                  `protobuf:"varint,2,opt,name=deploy_count,json=deployCount,proto3" json:"deploy_count,omitempty"`            // 玩家出牌次数
+	KingHpPermille int32                  `protobuf:"varint,3,opt,name=king_hp_permille,json=kingHpPermille,proto3" json:"king_hp_permille,omitempty"` // 我方王塔血量千分比 0~1000（判 king_hp_pct 星用）
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *BattleSummary) Reset() {
+	*x = BattleSummary{}
+	mi := &file_economy_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BattleSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BattleSummary) ProtoMessage() {}
+
+func (x *BattleSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_economy_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BattleSummary.ProtoReflect.Descriptor instead.
+func (*BattleSummary) Descriptor() ([]byte, []int) {
+	return file_economy_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *BattleSummary) GetDurationTicks() int32 {
+	if x != nil {
+		return x.DurationTicks
+	}
+	return 0
+}
+
+func (x *BattleSummary) GetDeployCount() int32 {
+	if x != nil {
+		return x.DeployCount
+	}
+	return 0
+}
+
+func (x *BattleSummary) GetKingHpPermille() int32 {
+	if x != nil {
+		return x.KingHpPermille
+	}
+	return 0
+}
+
 // N6 挂机领取：无参（now 全服务器定，改本地时钟无效）。服务器按 (now − last_collect)
 // 算累计金币（rate × min(elapsed/cap_hours)，章节驱动）→ 发到 gold + last_collect=now。
 type CollectIdleReq struct {
@@ -361,7 +781,7 @@ type CollectIdleReq struct {
 
 func (x *CollectIdleReq) Reset() {
 	*x = CollectIdleReq{}
-	mi := &file_economy_proto_msgTypes[5]
+	mi := &file_economy_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -373,7 +793,7 @@ func (x *CollectIdleReq) String() string {
 func (*CollectIdleReq) ProtoMessage() {}
 
 func (x *CollectIdleReq) ProtoReflect() protoreflect.Message {
-	mi := &file_economy_proto_msgTypes[5]
+	mi := &file_economy_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -386,7 +806,7 @@ func (x *CollectIdleReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CollectIdleReq.ProtoReflect.Descriptor instead.
 func (*CollectIdleReq) Descriptor() ([]byte, []int) {
-	return file_economy_proto_rawDescGZIP(), []int{5}
+	return file_economy_proto_rawDescGZIP(), []int{12}
 }
 
 var File_economy_proto protoreflect.FileDescriptor
@@ -413,10 +833,38 @@ const file_economy_proto_rawDesc = "" +
 	"\x05cards\x18\x05 \x03(\v2\x12.game.v4.CardStateR\x05cards\x12+\n" +
 	"\x06stages\x18\x06 \x03(\v2\x13.game.v4.StageStateR\x06stages\"+\n" +
 	"\x10EconomyActionReq\x12\x17\n" +
-	"\acard_id\x18\x01 \x01(\tR\x06cardId\"@\n" +
+	"\acard_id\x18\x01 \x01(\tR\x06cardId\"\x8f\x01\n" +
 	"\rStageClearReq\x12\x19\n" +
 	"\bstage_id\x18\x01 \x01(\tR\astageId\x12\x14\n" +
-	"\x05stars\x18\x02 \x01(\x05R\x05stars\"\x10\n" +
+	"\x05stars\x18\x02 \x01(\x05R\x05stars\x12\x1b\n" +
+	"\tbattle_id\x18\x03 \x01(\x03R\bbattleId\x120\n" +
+	"\asummary\x18\x04 \x01(\v2\x16.game.v4.BattleSummaryR\asummary\"<\n" +
+	"\vPveStartReq\x12\x19\n" +
+	"\bstage_id\x18\x01 \x01(\tR\astageId\x12\x12\n" +
+	"\x04deck\x18\x02 \x03(\tR\x04deck\"+\n" +
+	"\fPveStartResp\x12\x1b\n" +
+	"\tbattle_id\x18\x01 \x01(\x03R\bbattleId\"\x91\x01\n" +
+	"\x06PveCmd\x12\x12\n" +
+	"\x04tick\x18\x01 \x01(\x05R\x04tick\x12\x14\n" +
+	"\x05phase\x18\x02 \x01(\x05R\x05phase\x12\x12\n" +
+	"\x04side\x18\x03 \x01(\x05R\x04side\x12\x17\n" +
+	"\acard_id\x18\x04 \x01(\tR\x06cardId\x12\x17\n" +
+	"\ax_milli\x18\x05 \x01(\x05R\x06xMilli\x12\x17\n" +
+	"\ay_milli\x18\x06 \x01(\x05R\x06yMilli\"4\n" +
+	"\n" +
+	"PveHashRec\x12\x12\n" +
+	"\x04tick\x18\x01 \x01(\x05R\x04tick\x12\x12\n" +
+	"\x04hash\x18\x02 \x01(\fR\x04hash\"}\n" +
+	"\fPveReportReq\x12\x1b\n" +
+	"\tbattle_id\x18\x01 \x01(\x03R\bbattleId\x12#\n" +
+	"\x04cmds\x18\x02 \x03(\v2\x0f.game.v4.PveCmdR\x04cmds\x12+\n" +
+	"\x06hashes\x18\x03 \x03(\v2\x13.game.v4.PveHashRecR\x06hashes\"\x1f\n" +
+	"\rPveReportResp\x12\x0e\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\"\x83\x01\n" +
+	"\rBattleSummary\x12%\n" +
+	"\x0eduration_ticks\x18\x01 \x01(\x05R\rdurationTicks\x12!\n" +
+	"\fdeploy_count\x18\x02 \x01(\x05R\vdeployCount\x12(\n" +
+	"\x10king_hp_permille\x18\x03 \x01(\x05R\x0ekingHpPermille\"\x10\n" +
 	"\x0eCollectIdleReqBBZ@github.com/jchensh/godot-clash-pusher/server/internal/pb/economyb\x06proto3"
 
 var (
@@ -431,23 +879,33 @@ func file_economy_proto_rawDescGZIP() []byte {
 	return file_economy_proto_rawDescData
 }
 
-var file_economy_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_economy_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_economy_proto_goTypes = []any{
 	(*CardState)(nil),        // 0: game.v4.CardState
 	(*StageState)(nil),       // 1: game.v4.StageState
 	(*EconomyState)(nil),     // 2: game.v4.EconomyState
 	(*EconomyActionReq)(nil), // 3: game.v4.EconomyActionReq
 	(*StageClearReq)(nil),    // 4: game.v4.StageClearReq
-	(*CollectIdleReq)(nil),   // 5: game.v4.CollectIdleReq
+	(*PveStartReq)(nil),      // 5: game.v4.PveStartReq
+	(*PveStartResp)(nil),     // 6: game.v4.PveStartResp
+	(*PveCmd)(nil),           // 7: game.v4.PveCmd
+	(*PveHashRec)(nil),       // 8: game.v4.PveHashRec
+	(*PveReportReq)(nil),     // 9: game.v4.PveReportReq
+	(*PveReportResp)(nil),    // 10: game.v4.PveReportResp
+	(*BattleSummary)(nil),    // 11: game.v4.BattleSummary
+	(*CollectIdleReq)(nil),   // 12: game.v4.CollectIdleReq
 }
 var file_economy_proto_depIdxs = []int32{
-	0, // 0: game.v4.EconomyState.cards:type_name -> game.v4.CardState
-	1, // 1: game.v4.EconomyState.stages:type_name -> game.v4.StageState
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	0,  // 0: game.v4.EconomyState.cards:type_name -> game.v4.CardState
+	1,  // 1: game.v4.EconomyState.stages:type_name -> game.v4.StageState
+	11, // 2: game.v4.StageClearReq.summary:type_name -> game.v4.BattleSummary
+	7,  // 3: game.v4.PveReportReq.cmds:type_name -> game.v4.PveCmd
+	8,  // 4: game.v4.PveReportReq.hashes:type_name -> game.v4.PveHashRec
+	5,  // [5:5] is the sub-list for method output_type
+	5,  // [5:5] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_economy_proto_init() }
@@ -461,7 +919,7 @@ func file_economy_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_economy_proto_rawDesc), len(file_economy_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -1,101 +1,49 @@
-# V5 服务端多容器生产编排 (GCE 部署)
-# 去除了数据库外部端口映射，通过 Nginx 暴露统一的 80/443 端口
+# 生产/公网 overlay（KAN-110 E2-lite，2026-07-16）—— 叠加在基础 compose 之上使用：
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# 只新增 Caddy TLS 反代 + 全员 restart 策略；不改基础编排（本地开发不受影响，
+# 不带本文件启动 = 原样纯 HTTP 开发环境）。环境值全部来自 .env（拷贝 .env.example 填写）。
+#
+# ⚠️ 公网机器防火墙只开 80/443（Caddy）；8080/8081/5432/6379 一律不开
+#    ——基础 compose 为开发便利仍把这些端口发布到宿主机，公网安全靠防火墙收口，
+#    完整清单见 docs/deployment/GCP_RELEASE_TLS.md。
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    restart: always
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-app}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-gcp}
-    volumes:
-      - pg_data:/var/lib/postgresql/data
-    # ⚠️ 去除生产环境的 5432 端口公网映射以提高安全性
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-gcp}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  redis:
-    image: redis:7-alpine
-    restart: always
-    volumes:
-      - redis_data:/data
-    # ⚠️ 去除生产环境的 6379 端口公网映射以提高安全性
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  gateway:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: gcp-server:prod
-    restart: always
-    command: ["/usr/local/bin/gateway"]
-    environment:
-      DB_URL: ${DB_URL}
-      REDIS_URL: ${REDIS_URL}
-      JWT_SECRET: ${JWT_SECRET}
-      CONFIG_DIR: /app/config
-      GM_ENABLED: 1
-    volumes:
-      - ../config:/app/config:ro   # 挂载共享的配置文件夹 (只读)
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  api:
-    image: gcp-server:prod
-    pull_policy: never
-    restart: always
-    command: ["/usr/local/bin/api"]
-    environment:
-      DB_URL: ${DB_URL}
-      REDIS_URL: ${REDIS_URL}
-      JWT_SECRET: ${JWT_SECRET}
-      CONFIG_DIR: /app/config
-      GM_ENABLED: 1
-    volumes:
-      - ../config:/app/config:ro
-    depends_on:
-      gateway:
-        condition: service_started
-
-  battle:
-    image: gcp-server:prod
-    pull_policy: never
-    restart: always
-    command: ["/usr/local/bin/battle"]
-    environment:
-      DB_URL: ${DB_URL}
-      REDIS_URL: ${REDIS_URL}
-    depends_on:
-      gateway:
-        condition: service_started
-
-  nginx:
-    image: nginx:1.25-alpine
-    restart: always
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - "${CADDY_HTTP_PORT:-80}:80"
+      - "${CADDY_HTTPS_PORT:-443}:443"
+      - "${CADDY_HTTPS_PORT:-443}:443/udp"   # HTTP/3
+    environment:
+      DOMAIN: ${DOMAIN:?请在 .env 设置 DOMAIN（本地冒烟用 localhost）}
+      ACME_EMAIL: ${ACME_EMAIL:-admin@example.com}
     volumes:
-      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
-      # SSL 证书挂载卷：生产部署时需要将 Let's Encrypt 等生成的证书路径映射到此
-      - ./certs:/etc/nginx/certs:ro
-      - certbot_webroot:/var/www/certbot:ro
+      - ./docker/Caddyfile.prod:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data        # 证书与 ACME 账号（务必持久化，防续期风暴）
+      - caddy_config:/config
+      - caddy_logs:/var/log/caddy
     depends_on:
       - api
       - gateway
 
+  # 公网机器上全员自动重启（开发机不带本 overlay 不受影响）
+  postgres:
+    restart: unless-stopped
+  redis:
+    restart: unless-stopped
+  gateway:
+    restart: unless-stopped
+  api:
+    restart: unless-stopped
+  battle:
+    restart: unless-stopped
+  verifier:
+    restart: unless-stopped
+
 volumes:
-  pg_data:
-  redis_data:
-  certbot_webroot:
+  caddy_data:
+  caddy_config:
+  caddy_logs:

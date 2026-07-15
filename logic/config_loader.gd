@@ -44,6 +44,57 @@ func load_all(config_dir: String = DEFAULT_CONFIG_DIR) -> bool:
 	_validate()
 	return errors.is_empty()
 
+
+# 从服务器 ConfigPush 的 {filename: Dictionary} 原子加载。
+# 先在候选实例完整校验，成功后才替换当前快照；坏包不会污染上一个可用版本。
+func load_from_files(files: Dictionary) -> bool:
+	var candidate := ConfigLoader.new()
+	candidate.errors.clear()
+	candidate.cards = candidate._bundle_dict(files, "cards.json")
+	candidate.units = candidate._bundle_dict(files, "units.json")
+	candidate.levels = candidate._bundle_dict(files, "levels.json")
+	candidate.arena = candidate._bundle_dict(files, "arena.json")
+	candidate.run = candidate._bundle_dict(files, "run.json")
+	candidate.relics = candidate._bundle_dict(files, "relics.json")
+	candidate.campaign = candidate._bundle_dict(files, "campaign.json")
+	candidate.tutorial = candidate._bundle_dict(files, "tutorial.json")
+	candidate.audio_assets = candidate._bundle_dict(files, "audio_assets.json")
+	candidate.stages = candidate._bundle_dict(files, "stages.json")
+	candidate.encounters = candidate._bundle_dict(files, "encounters.json")
+	candidate.economy = candidate._bundle_dict(files, "economy.json")
+	candidate.card_progression = candidate._bundle_dict(files, "card_progression.json")
+	candidate._validate()
+	if not candidate.errors.is_empty():
+		errors = candidate.errors.duplicate()
+		return false
+	_copy_from(candidate)
+	errors.clear()
+	return true
+
+
+func _bundle_dict(files: Dictionary, filename: String) -> Dictionary:
+	var value = files.get(filename)
+	if typeof(value) != TYPE_DICTIONARY:
+		errors.append("服务器配置缺少或类型错误: %s" % filename)
+		return {}
+	return (value as Dictionary).duplicate(true)
+
+
+func _copy_from(other: ConfigLoader) -> void:
+	cards = other.cards
+	units = other.units
+	levels = other.levels
+	arena = other.arena
+	run = other.run
+	relics = other.relics
+	campaign = other.campaign
+	tutorial = other.tutorial
+	audio_assets = other.audio_assets
+	stages = other.stages
+	encounters = other.encounters
+	economy = other.economy
+	card_progression = other.card_progression
+
 func _load_json_dict(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):
 		errors.append("配置文件不存在: %s" % path)
@@ -73,6 +124,9 @@ func _validate() -> void:
 			errors.append("card '%s' 缺少 elixir_cost" % id)
 		if not (card.has("skills") and typeof(card["skills"]) == TYPE_ARRAY):
 			errors.append("card '%s' 缺少 skills 数组" % id)
+		# 三国阵营（2026-07-04 改版，可选字段）：魏/蜀/吴/群雄，仅题材归属+羁绊预留。
+		if card.has("faction") and not ["wei", "shu", "wu", "qun"].has(str(card.get("faction"))):
+			errors.append("card '%s' 的 faction 应为 wei/shu/wu/qun" % id)
 
 	for id in units:
 		var u = units[id]
@@ -89,6 +143,20 @@ func _validate() -> void:
 				errors.append("unit '%s' 的 attack_range 应为数字" % id)
 			elif float(attack_range) < 0.0:
 				errors.append("unit '%s' 的 attack_range 应 ≥ 0" % id)
+		if u.has("splash_radius"):
+			var splash_radius = u.get("splash_radius")
+			if not _is_number(splash_radius):
+				errors.append("unit '%s' 的 splash_radius 应为数字" % id)
+			elif float(splash_radius) < 0.0:
+				errors.append("unit '%s' 的 splash_radius 应 ≥ 0" % id)
+		if u.has("target_priority") and not ["nearest", "buildings"].has(str(u.get("target_priority"))):
+			errors.append("unit '%s' 的 target_priority 应为 nearest 或 buildings" % id)
+		if u.has("on_hit_status"):
+			var ohs = u.get("on_hit_status")
+			if typeof(ohs) != TYPE_DICTIONARY:
+				errors.append("unit '%s' 的 on_hit_status 应为对象" % id)
+			elif (ohs as Dictionary).has("kind") and not ["slow", "stun", "freeze"].has(str((ohs as Dictionary).get("kind"))):
+				errors.append("unit '%s' 的 on_hit_status.kind 非法" % id)
 		if u.has("target_type") and not ["ground", "air"].has(str(u.get("target_type"))):
 			errors.append("unit '%s' 的 target_type 应为 ground 或 air" % id)
 
@@ -196,6 +264,12 @@ func _validate() -> void:
 				var uid = sk.get("unit_id", "")
 				if not units.has(uid):
 					errors.append("card '%s' 的 spawn_unit 引用了不存在的 unit '%s'" % [cid, str(uid)])
+			if typeof(sk) == TYPE_DICTIONARY and sk.has("status"):
+				var stt = sk.get("status")
+				if typeof(stt) != TYPE_DICTIONARY:
+					errors.append("card '%s' 的 skill status 应为对象" % cid)
+				elif (stt as Dictionary).has("kind") and not ["slow", "stun", "freeze"].has(str((stt as Dictionary).get("kind"))):
+					errors.append("card '%s' 的 skill status.kind 非法" % cid)
 
 	# 交叉引用：unit.death_spawn_unit（亡语召唤，V3-3）必须在 units 中。
 	for uid in units:
@@ -220,7 +294,7 @@ func _validate() -> void:
 	# —— V5（KAN-50）新表校验 ——
 	# card_progression.json：每卡为对象 + rarity 合法 + base_power 数字；id 须在 cards 中；
 	# 且 cards 每张卡都应有 progression 条目（双向覆盖，防漏配）。忽略 _ 开头元字段。
-	var _rarities := ["common", "rare", "epic", "legendary"]
+	var valid_rarities := ["common", "rare", "epic", "legendary"]
 	for cpid in card_progression:
 		if String(cpid).begins_with("_"):
 			continue
@@ -228,7 +302,7 @@ func _validate() -> void:
 		if typeof(cp) != TYPE_DICTIONARY:
 			errors.append("card_progression '%s' 应为对象" % str(cpid))
 			continue
-		if not _rarities.has(str(cp.get("rarity", ""))):
+		if not valid_rarities.has(str(cp.get("rarity", ""))):
 			errors.append("card_progression '%s' 的 rarity 非法" % str(cpid))
 		if not _is_number(cp.get("base_power")):
 			errors.append("card_progression '%s' 缺少数字 base_power" % str(cpid))
@@ -240,7 +314,7 @@ func _validate() -> void:
 
 	# encounters.json（V5-S8a 加固）：每模板 deck 正好 8 张【且互不重复】、卡须在 cards 中；
 	# archetype 须为已知原型枚举（铺量多样性 + 防笔误）。
-	var _archetypes := ["balanced", "tank", "swarm", "undead", "control", "air", "ranged", "siege", "boss"]
+	var valid_archetypes := ["balanced", "tank", "swarm", "undead", "control", "air", "ranged", "siege", "boss"]
 	for eid in encounters:
 		if String(eid).begins_with("_"):
 			continue
@@ -248,23 +322,23 @@ func _validate() -> void:
 		if typeof(enc) != TYPE_DICTIONARY:
 			errors.append("encounter '%s' 应为对象" % str(eid))
 			continue
-		if not _archetypes.has(str(enc.get("archetype", ""))):
+		if not valid_archetypes.has(str(enc.get("archetype", ""))):
 			errors.append("encounter '%s' 的 archetype 非法('%s')" % [str(eid), str(enc.get("archetype", ""))])
 		var edeck = enc.get("deck", [])
 		if typeof(edeck) != TYPE_ARRAY or (edeck as Array).size() != 8:
 			errors.append("encounter '%s' 的 deck 应为 8 张卡数组" % str(eid))
 		else:
-			var _seen := {}
+			var seen := {}
 			for cid in edeck:
 				if not cards.has(cid):
 					errors.append("encounter '%s' 的 deck 引用了不存在的 card '%s'" % [str(eid), str(cid)])
-				if _seen.has(str(cid)):
+				if seen.has(str(cid)):
 					errors.append("encounter '%s' 的 deck 含重复卡 '%s'" % [str(eid), str(cid)])
-				_seen[str(cid)] = true
+				seen[str(cid)] = true
 
 	# stages.json：含 chapter/index/encounter/difficulty_coef/ai_difficulty；encounter 须在
 	# encounters 中；ai_difficulty 合法；difficulty_coef ≥1.0；奖励/掉落 card 须在 cards 中。
-	var _diffs := ["rookie", "easy", "normal", "hard", "extreme"]
+	var valid_diffs := ["rookie", "easy", "normal", "hard", "extreme"]
 	for sid in stages:
 		if String(sid).begins_with("_"):
 			continue
@@ -277,7 +351,7 @@ func _validate() -> void:
 				errors.append("stage '%s' 缺少 %s" % [str(sid), sf])
 		if st.has("encounter") and not encounters.has(str(st.get("encounter"))):
 			errors.append("stage '%s' 引用了不存在的 encounter '%s'" % [str(sid), str(st.get("encounter"))])
-		if st.has("ai_difficulty") and not _diffs.has(str(st.get("ai_difficulty"))):
+		if st.has("ai_difficulty") and not valid_diffs.has(str(st.get("ai_difficulty"))):
 			errors.append("stage '%s' 的 ai_difficulty 非法" % str(sid))
 		if st.has("difficulty_coef") and (not _is_number(st.get("difficulty_coef")) or float(st.get("difficulty_coef")) < 1.0):
 			errors.append("stage '%s' 的 difficulty_coef 应为 ≥1.0 的数字" % str(sid))

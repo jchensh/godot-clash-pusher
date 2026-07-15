@@ -1,0 +1,19 @@
+# 代码 + 文档静态门禁（KAN-102 / KAN-103）。
+name: lint
+on:
+  push:
+    branches: [master]
+    paths: ['**.gd', '**.md', 'gdlintrc', 'tools/check_docs.py', '.github/workflows/lint.yml']
+  pull_request:
+    paths: ['**.gd', '**.md', 'gdlintrc', 'tools/check_docs.py', '.github/workflows/lint.yml']
+jobs:
+  gdlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install "gdtoolkit==4.*"
+      - run: gdlint .
+      - run: python tools/check_docs.py

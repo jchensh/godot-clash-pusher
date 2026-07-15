@@ -1,15 +1,18 @@
-# AccountCreate —— V5-S9 创号页（首次登录起名 + 选怪物头像）。
+# AccountCreate —— 创号页。
 #
-# 进入条件：登录后 session.needs_account_setup()（服务器 avatar_card_id 为空）。
-# 起名：中英文数字，显示宽度 ≤ 10（中文/全角=1、英数=0.5）；头像：全部怪物卡（有立绘的兵种卡）。
-# 确认 → session.update_identity（服务器权威落库）→ 回主菜单（由主菜单路由去新手引导）。
+# KAN-109 起主模式 = **注册模式**：登录页判定新名号后携带 username 进来（Router 参数），
+# 名号已定不可改、只选头像 → 确认 = 服务器注册建号（accounts+profiles，昵称=username）
+# → 回主菜单（路由自动进新手引导）。
+# V5-S9 旧模式（起名+选头像 → update_identity）**保留作兜底**：无 username 参数直入本页
+# 时走旧路（对应 device 匿名登录时代 needs_account_setup 的补创号；device 流恢复时即用）。
 extends Control
 
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const GameStateScript := preload("res://view/game_state.gd")
+const DragScroll := preload("res://view/ui/drag_scroll.gd")
 const SpriteDB := preload("res://view/sprite_db.gd")
+const ConfigLoaderScript := preload("res://logic/config_loader.gd")
 const BG_TEX := preload("res://assets/ui/menu_bg.png")
-const MENU_SCENE := "res://view/main_menu.tscn"
 
 const NAME_MAX_HALF := 20   # 宽度上限：中文/全角=2 半格、英数=1 半格 → 10 全角
 
@@ -19,13 +22,25 @@ var _counter: Label
 var _confirm_btn: Button
 var _selected_avatar := ""
 var _avatar_frames := {}     # card_id -> 选中金边 Panel
+var _av_content: Control     # 头像网格滚动内容层（48 卡后头像池 ~39 超屏，拖动/滚轮滑动）
 var _config
 var _busy := false
+var _reg_username := ""   # KAN-109 注册模式：登录页携带的已定名号；空=旧起名模式
 
 func _ready() -> void:
 	AudioManager.play_music("music_main_menu")
 	AudioManager.stop_ambience()
 	_config = GameStateScript.config()
+	_reg_username = str(Router.param("username", ""))
+	# KAN-109 P0 修复（2026-07-16 首验卡死）：注册模式发生在**登录之前**，服务器配置尚未下发
+	# （ConfigPush 走登录后的会话 WS）→ Online 配置为空卡池 → 头像网格空、确认永远禁用。
+	# 回退 = 本地 cards.json【纯展示】枚举头像（决策48 双端同源镜像；头像值最终由服务器落库，
+	# 经济/玩法仍以服务器为权威——本回退仅创号页头像枚举一处）。
+	if _config == null or _config.cards.is_empty():
+		var local = ConfigLoaderScript.new()
+		local.load_all()
+		_config = local
+		Log.i("[V5][account] 登录前无服务器配置 → 本地展示配置回退（%d 卡）" % _config.cards.size())
 	_http = HTTPRequest.new()
 	add_child(_http)
 	_build()
@@ -33,7 +48,7 @@ func _ready() -> void:
 func _build() -> void:
 	var bg := TextureRect.new()
 	bg.texture = BG_TEX
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
@@ -41,24 +56,30 @@ func _build() -> void:
 	_title("创建你的英雄", 116, 58)
 	_center_label("CREATE YOUR HERO", 190, 24, PixelUI.COL_MUTED)
 
-	# —— 名字 ——
-	_center_label("起个名字", 272, 26, PixelUI.COL_PARCHMENT)
-	_name_edit = LineEdit.new()
-	_name_edit.position = Vector2(110, 318)
-	_name_edit.size = Vector2(500, 78)
-	_name_edit.placeholder_text = "中英文数字皆可"
-	_name_edit.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_name_edit.max_length = 40   # 粗上限（真正限制走宽度校验）；防超长粘贴
-	_name_edit.add_theme_font_size_override("font_size", 36)
-	_name_edit.add_theme_color_override("font_color", Color(1, 1, 1))
-	_name_edit.add_theme_stylebox_override("normal", PixelUI.sbpixel(Color("1c1626"), 3, Color("4a3a14")))
-	_name_edit.add_theme_stylebox_override("focus", PixelUI.sbpixel(Color("241c30"), 3, PixelUI.COL_GOLD))
-	_name_edit.text_changed.connect(_on_name_changed)
-	add_child(_name_edit)
-	_counter = _center_label("0 / 10", 408, 22, PixelUI.COL_HINT)
-	_center_label("最多 10 个中文字（英文数字算半个）", 440, 18, PixelUI.COL_HINT)
+	if _reg_username != "":
+		# —— KAN-109 注册模式：名号已在登录页定下，不可改 ——
+		_center_label("名号已立", 272, 26, PixelUI.COL_PARCHMENT)
+		_title(_reg_username, 330, 44)
+		_center_label("选好头像即建号出征", 440, 18, PixelUI.COL_HINT)
+	else:
+		# —— 旧起名模式（device 匿名登录时代兜底；见文件头）——
+		_center_label("起个名字", 272, 26, PixelUI.COL_PARCHMENT)
+		_name_edit = LineEdit.new()
+		_name_edit.position = Vector2(110, 318)
+		_name_edit.size = Vector2(500, 78)
+		_name_edit.placeholder_text = "中英文数字皆可"
+		_name_edit.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_name_edit.max_length = 40   # 粗上限（真正限制走宽度校验）；防超长粘贴
+		_name_edit.add_theme_font_size_override("font_size", 36)
+		_name_edit.add_theme_color_override("font_color", Color(1, 1, 1))
+		_name_edit.add_theme_stylebox_override("normal", PixelUI.sbpixel(Color("1c1626"), 3, Color("4a3a14")))
+		_name_edit.add_theme_stylebox_override("focus", PixelUI.sbpixel(Color("241c30"), 3, PixelUI.COL_GOLD))
+		_name_edit.text_changed.connect(_on_name_changed)
+		add_child(_name_edit)
+		_counter = _center_label("0 / 10", 408, 22, PixelUI.COL_HINT)
+		_center_label("最多 10 个中文字（英文数字算半个）", 440, 18, PixelUI.COL_HINT)
 
-	# —— 头像网格（全部怪物卡）——
+	# —— 头像网格（全部怪物卡；ScrollContainer：头像池 ~39 超屏，滚轮 + 按住拖动滑动）——
 	_center_label("选择头像", 500, 26, PixelUI.COL_PARCHMENT)
 	var ids := _monster_cards()
 	var cols := 4
@@ -66,11 +87,23 @@ func _build() -> void:
 	var gap := 16.0
 	var grid_w: float = cols * cell + (cols - 1) * gap
 	var x0: float = (720.0 - grid_w) / 2.0
+	var rows_n: int = int(ceil(ids.size() / float(cols)))
+	var scroll := ScrollContainer.new()
+	scroll.position = Vector2(28, 538)
+	scroll.size = Vector2(664, 564)   # 到确认按钮(1150)上方；内容在此窗内滚动
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER   # 隐藏滚条不占列宽；拖动/滚轮仍可滚
+	scroll.scroll_deadzone = 16   # 真机触摸：阈值内=点选头像，超出=原生拖动滚动
+	add_child(scroll)
+	DragScroll.attach(scroll)   # 桌面鼠标按住拖动（触摸走原生）
+	_av_content = Control.new()
+	_av_content.custom_minimum_size = Vector2(664.0, ((rows_n - 1) * (cell + gap) + cell + 8.0) if rows_n > 0 else 0.0)
+	scroll.add_child(_av_content)
 	for i in ids.size():
 		var col := i % cols
 		var row := i / cols
-		var x: float = x0 + col * (cell + gap)
-		var y: float = 552.0 + row * (cell + gap)
+		var x: float = (x0 - 28.0) + col * (cell + gap)   # 内容层局部坐标
+		var y: float = 4.0 + row * (cell + gap)
 		_avatar_tile(ids[i], x, y, cell)
 
 	# —— 确认 ——
@@ -78,15 +111,24 @@ func _build() -> void:
 	_refresh_confirm()
 
 func _monster_cards() -> Array:
+	return avatar_pool_for(_config)
+
+# 头像池纯函数（供回归测试锁「登录前配置为空也必须有头像可选」）：
+# cfg 无卡时自动回退本地展示配置（同 _ready 注释）。
+static func avatar_pool_for(cfg) -> Array:
+	var use_cfg = cfg
+	if use_cfg == null or use_cfg.cards.is_empty():
+		use_cfg = ConfigLoaderScript.new()
+		use_cfg.load_all()
 	var out := []
-	for cid in _config.cards.keys():
+	for cid in use_cfg.cards.keys():
 		var id := str(cid)
-		if _is_troop(id) and SpriteDB.card_portrait_tex(id, _config) != null:
+		if _is_troop_in(use_cfg, id) and SpriteDB.card_portrait_tex(id, use_cfg) != null:
 			out.append(id)
 	return out
 
-func _is_troop(id: String) -> bool:
-	for sk in (_config.get_card(id).get("skills", []) as Array):
+static func _is_troop_in(cfg, id: String) -> bool:
+	for sk in (cfg.get_card(id).get("skills", []) as Array):
 		if typeof(sk) == TYPE_DICTIONARY and sk.get("type") == "spawn_unit":
 			return true
 	return false
@@ -100,10 +142,10 @@ func _avatar_tile(card_id: String, x: float, y: float, cell: float) -> void:
 	btn.add_theme_stylebox_override("hover", PixelUI.sbpixel(Color(0.26, 0.37, 0.50), 2, PixelUI.COL_GOLD))
 	btn.add_theme_stylebox_override("pressed", PixelUI.sbpixel(Color(0.16, 0.24, 0.34), 2, Color(0.45, 0.62, 0.85)))
 	btn.pressed.connect(_on_avatar.bind(card_id))
-	add_child(btn)
+	_av_content.add_child(btn)
 	var port := SpriteDB.make_card_portrait(card_id, _config, Vector2(x + 22, y + 12), Vector2(cell - 44, cell - 52))
 	if port != null:
-		add_child(port)
+		_av_content.add_child(port)
 	var lbl := Label.new()
 	lbl.text = tr("card_" + card_id)
 	lbl.position = Vector2(x, y + cell - 34)
@@ -112,14 +154,14 @@ func _avatar_tile(card_id: String, x: float, y: float, cell: float) -> void:
 	lbl.add_theme_font_size_override("font_size", 16)
 	lbl.add_theme_color_override("font_color", Color(1, 1, 1))
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(lbl)
+	_av_content.add_child(lbl)
 	var frame := Panel.new()
 	frame.position = Vector2(x - 2, y - 2)
 	frame.size = Vector2(cell + 4, cell + 4)
 	frame.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color(0, 0, 0, 0), 4, PixelUI.COL_GOLD))
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	frame.visible = false
-	add_child(frame)
+	_av_content.add_child(frame)
 	_avatar_frames[card_id] = frame
 
 func _on_avatar(card_id: String) -> void:
@@ -145,6 +187,8 @@ func _name_half_width(s: String) -> int:
 	return half
 
 func _name_valid() -> bool:
+	if _reg_username != "":   # 注册模式：名号在登录页已校验
+		return true
 	var n := _name_edit.text.strip_edges()
 	return n != "" and _name_half_width(n) <= NAME_MAX_HALF
 
@@ -158,9 +202,21 @@ func _on_confirm() -> void:
 	_busy = true
 	_refresh_confirm()
 	AudioManager.play_sfx("ui_button_press")
-	var nick := _name_edit.text.strip_edges()
-	print("[V5][account] 创号提交 name='%s' avatar=%s" % [nick, _selected_avatar])
 	var session = GameStateScript.session()
+	if _reg_username != "":
+		# —— KAN-109 注册模式：服务器建号（accounts+profiles 原子落库，昵称=username）——
+		Log.i("[V5][account] 注册提交 username='%s' avatar=%s" % [_reg_username, _selected_avatar])
+		if await session.register_with_name(_http, _reg_username, _selected_avatar):
+			Log.i("[V5][account] 注册成功 → 主菜单（路由进新手引导）")
+			Router.goto("main_menu")
+		else:
+			_toast("建号失败（名号可能刚被人抢注），回登录页重试")
+			await get_tree().create_timer(1.2).timeout
+			Router.goto("login")
+		return
+	# —— 旧起名模式（update_identity；device 匿名登录时代兜底）——
+	var nick := _name_edit.text.strip_edges()
+	Log.i("[V5][account] 创号提交 name='%s' avatar=%s" % [nick, _selected_avatar])
 	if not await session.ensure(_http):
 		_toast("登录失败，请检查网络")
 		_busy = false
@@ -168,8 +224,8 @@ func _on_confirm() -> void:
 		return
 	var ok: bool = await session.update_identity(_http, nick, _selected_avatar)
 	if ok:
-		print("[V5][account] 创号成功 → 回主菜单（路由进新手引导）")
-		get_tree().change_scene_to_file(MENU_SCENE)
+		Log.i("[V5][account] 创号成功 → 回主菜单（路由进新手引导）")
+		Router.goto("main_menu")
 	else:
 		_toast("起名被拒（可能太长），换一个试试")
 		_busy = false
@@ -214,16 +270,4 @@ func _scale_to(c: Control, s: float) -> void:
 	create_tween().tween_property(c, "scale", Vector2(s, s), 0.07)
 
 func _toast(msg: String) -> void:
-	var l := Label.new()
-	l.text = msg
-	l.position = Vector2(0, 1080)
-	l.size = Vector2(720, 40)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.add_theme_font_size_override("font_size", 24)
-	l.add_theme_color_override("font_color", PixelUI.COL_GOLD)
-	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(l)
-	var tw := create_tween()
-	tw.tween_interval(1.4)
-	tw.tween_property(l, "modulate:a", 0.0, 0.5)
-	tw.tween_callback(l.queue_free)
+	UI.toast(msg, PixelUI.COL_GOLD, 1080.0, 1.4)   # F2：统一走 toast 层（网络错误多看一会）

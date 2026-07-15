@@ -11,7 +11,6 @@ const GameStateScript := preload("res://view/game_state.gd")
 const SpriteDB := preload("res://view/sprite_db.gd")
 const BG_TEX := preload("res://assets/ui/menu_bg.png")
 
-const COLLECTION_SCENE := "res://view/card_collection.tscn"
 const RARITY_COL := {
 	"common": Color("9aa0ad"), "rare": Color("4a6db0"),
 	"epic": Color("7c5ea8"), "legendary": Color("d8a23a"),
@@ -30,6 +29,7 @@ func _ready() -> void:
 	AudioManager.play_music("music_main_menu")
 	_cid = GameStateScript.detail_card
 	_build_static()
+	Events.economy_changed.connect(_on_economy_changed)   # 框架地基#2：动作后的刷新统一走订阅
 	_http = HTTPRequest.new()
 	add_child(_http)
 	await _bootstrap()
@@ -37,7 +37,7 @@ func _ready() -> void:
 func _build_static() -> void:
 	var bg := TextureRect.new()
 	bg.texture = BG_TEX
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
@@ -47,7 +47,7 @@ func _build_static() -> void:
 	_wallet_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_wallet_holder)
 	_content = Control.new()
-	_content.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_content)
 	_back_button(1168)
@@ -63,6 +63,10 @@ func _bootstrap() -> void:
 	var econ = GameStateScript.economy()
 	if not econ.is_loaded:
 		await econ.refresh(_http, _token, _all_ids)
+	_populate()
+
+# 框架地基#2（KAN-100）：升级/升阶/解锁成功后的刷新统一走订阅。
+func _on_economy_changed(_cache) -> void:
 	_populate()
 
 func _populate() -> void:
@@ -182,20 +186,20 @@ func _do_action(op: String) -> void:
 		_: res = await econ.unlock(_http, _token, _cid, _all_ids)
 	_busy = false
 	if bool(res.get("ok", false)):
-		AudioManager.play_sfx("ui_card_drop_valid")
-		_populate()
+		AudioManager.play_sfx("ui_card_drop_valid")   # 刷新由 economy_changed 订阅负责
 	else:
 		_toast(_err_text(int(res.get("error_code", 0))))
 
-func _err_text(code: int) -> String:
+func _err_text(_code: int) -> String:
 	return "操作失败（服务器拒绝）"
 
 func _on_back() -> void:
 	AudioManager.play_sfx("ui_button_back")
-	get_tree().change_scene_to_file(COLLECTION_SCENE)
+	Router.goto("card_collection")
 
 # ---------- 小部件 ----------
-func _action_btn(label: String, kind: String, cost_icon: String, cost: int, ok: bool, pos: Vector2, w: float, cb: Callable, disabled_hint := "") -> void:
+func _action_btn(label: String, kind: String, cost_icon: String, cost: int, ok: bool,
+		pos: Vector2, w: float, cb: Callable, disabled_hint := "") -> void:
 	var btn := Button.new()
 	btn.position = pos
 	btn.size = Vector2(w, 84)
@@ -215,7 +219,7 @@ func _action_btn(label: String, kind: String, cost_icon: String, cost: int, ok: 
 	elif disabled_hint != "":
 		_label(disabled_hint, pos + Vector2(0, 48), 15, PixelUI.COL_HINT, w, HORIZONTAL_ALIGNMENT_CENTER)
 
-func _action_btn2(label: String, kind: String, shards: int, gold: int, ok: bool, pos: Vector2, w: float, cb: Callable) -> void:
+func _action_btn2(label: String, _kind: String, shards: int, gold: int, ok: bool, pos: Vector2, w: float, cb: Callable) -> void:
 	var btn := Button.new()
 	btn.position = pos
 	btn.size = Vector2(w, 84)
@@ -227,7 +231,8 @@ func _action_btn2(label: String, kind: String, shards: int, gold: int, ok: bool,
 		else: _toast("货币不足"))
 	_content.add_child(btn)
 	_label(label, pos + Vector2(0, 10), 22, PixelUI.COL_PARCHMENT, w, HORIZONTAL_ALIGNMENT_CENTER)
-	var p1 := HudWidgets.cost_pill("shard", shards, int(GameStateScript.economy().get_cache().card_state(_cid).get("shards", 0)) >= shards, 100.0)
+	var p1 := HudWidgets.cost_pill("shard", shards,
+			int(GameStateScript.economy().get_cache().card_state(_cid).get("shards", 0)) >= shards, 100.0)
 	p1.position = pos + Vector2(w / 2.0 - 108, 46.0)
 	_content.add_child(p1)
 	var p2 := HudWidgets.cost_pill("coin", gold, int(GameStateScript.economy().get_cache().gold) >= gold, 116.0)
@@ -284,10 +289,10 @@ func _unlock_need(rarity: String) -> int:
 
 func _rarity_zh(r: String) -> String:
 	match r:
-		"common": return "普通"
-		"rare": return "稀有"
-		"epic": return "史诗"
-		"legendary": return "传说"
+		"common": return "寻常"
+		"rare": return "精良"
+		"epic": return "非凡"
+		"legendary": return "无双"
 	return r
 
 func _set_wallet(gold: int, gems: int) -> void:
@@ -296,19 +301,7 @@ func _set_wallet(gold: int, gems: int) -> void:
 	_wallet_holder.add_child(HudWidgets.wallet_bar(gold, gems, 560.0))
 
 func _toast(msg: String) -> void:
-	var l := Label.new()
-	l.text = msg
-	l.position = Vector2(0, 760)
-	l.size = Vector2(720, 40)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.add_theme_font_size_override("font_size", 24)
-	l.add_theme_color_override("font_color", Color("e24b4a"))
-	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(l)
-	var tw := create_tween()
-	tw.tween_interval(1.0)
-	tw.tween_property(l, "modulate:a", 0.0, 0.5)
-	tw.tween_callback(l.queue_free)
+	UI.toast(msg, Color("e24b4a"), 760.0)   # F2：统一走 toast 层（错误红、升级按钮上方）
 
 func _label(text: String, pos: Vector2, fs: int, col: Color, w: float, align := HORIZONTAL_ALIGNMENT_LEFT) -> Label:
 	var l := Label.new()

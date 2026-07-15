@@ -1,19 +1,1020 @@
 {
   "_comment": "V5 卡牌养成元数据。rank_unlocks 的 type=stat 为纯数值跳变（由 card_stat_mult 阶乘吸收，无 ops）；type=skill 改/加 skills 积木，带 ops（V5-S5 CardProgression.effective_skills 应用）。ops: count_add(spawn 块 count+value) / num_add(块 field+value) / num_mult(块 field*value) / unit_field(spawn 块挂 _unit_override 改单位配置如 death_spawn)。部分'新机制'解锁(on-hit 溅射/连锁/穿透/灼烧/护盾)engine 未支持→仅 note 占位、留 V5-S8。base_power 用于队伍战力折算。数值〔示意·待平衡，V5-S8 定〕。",
-  "knight":      { "rarity": "common",    "starter": true,  "base_power": 100, "rank_unlocks": { "2": { "type": "stat", "note": "数值跳" }, "3": { "type": "skill", "note": "攻击附带小溅射(on-hit aoe)，engine 未支持·留 S8" } } },
-  "archers":     { "rarity": "common",    "starter": true,  "base_power": 100, "rank_unlocks": { "2": { "type": "stat", "note": "数值跳" }, "3": { "type": "skill", "note": "+1 弓手(2->3)", "ops": [ { "op": "count_add", "value": 1 } ] } } },
-  "giant":       { "rarity": "rare",      "starter": true,  "base_power": 140, "rank_unlocks": { "2": { "type": "stat", "note": "数值跳" }, "3": { "type": "skill", "note": "亡语小溅击(死亡 aoe)，engine 未支持·留 S8" } } },
-  "goblins":     { "rarity": "common",    "starter": true,  "base_power": 100, "rank_unlocks": { "2": { "type": "skill", "note": "+1 哥布林(3->4)", "ops": [ { "op": "count_add", "value": 1 } ] }, "3": { "type": "stat", "note": "数值跳" } } },
-  "minions":     { "rarity": "rare",      "starter": true,  "base_power": 140, "rank_unlocks": { "2": { "type": "skill", "note": "+1 怨灵(3->4)", "ops": [ { "op": "count_add", "value": 1 } ] }, "3": { "type": "stat", "note": "数值跳" } } },
-  "fireball":    { "rarity": "rare",      "starter": true,  "base_power": 140, "rank_unlocks": { "2": { "type": "skill", "note": "半径+0.5", "ops": [ { "op": "num_add", "field": "radius", "value": 0.5 } ] }, "3": { "type": "skill", "note": "伤害+60（灼烧 engine 未支持·留 S8）", "ops": [ { "op": "num_add", "field": "damage", "value": 60 } ] } } },
-  "arrows":      { "rarity": "common",    "starter": true,  "base_power": 100, "rank_unlocks": { "2": { "type": "skill", "note": "半径+0.5", "ops": [ { "op": "num_add", "field": "radius", "value": 0.5 } ] }, "3": { "type": "skill", "note": "伤害+40", "ops": [ { "op": "num_add", "field": "damage", "value": 40 } ] } } },
-  "zap":         { "rarity": "common",    "starter": true,  "base_power": 100, "rank_unlocks": { "2": { "type": "skill", "note": "伤害+25", "ops": [ { "op": "num_add", "field": "damage", "value": 25 } ] }, "3": { "type": "skill", "note": "命中范围+（zap 为点伤·改 aoe 留 S8）" } } },
-  "skeletons":   { "rarity": "common",    "starter": false, "base_power": 100, "rank_unlocks": { "2": { "type": "skill", "note": "+1 骷髅(4->5)", "ops": [ { "op": "count_add", "value": 1 } ] }, "3": { "type": "skill", "note": "+1 骷髅(5->6)", "ops": [ { "op": "count_add", "value": 1 } ] } } },
-  "mini_pekka":  { "rarity": "rare",      "starter": false, "base_power": 140, "rank_unlocks": { "2": { "type": "stat", "note": "数值跳" }, "3": { "type": "skill", "note": "对塔/建筑加伤，engine 未支持·留 S8" } } },
-  "musketeer":   { "rarity": "epic",      "starter": false, "base_power": 190, "rank_unlocks": { "2": { "type": "stat", "note": "数值跳" }, "3": { "type": "skill", "note": "射程+/穿透，engine 未支持·留 S8" } } },
-  "baby_dragon": { "rarity": "epic",      "starter": false, "base_power": 190, "rank_unlocks": { "2": { "type": "stat", "note": "数值跳" }, "3": { "type": "skill", "note": "溅射半径+，engine 未支持·留 S8" } } },
-  "lightning":   { "rarity": "epic",      "starter": false, "base_power": 190, "rank_unlocks": { "2": { "type": "skill", "note": "伤害+60", "ops": [ { "op": "num_add", "field": "damage", "value": 60 } ] }, "3": { "type": "skill", "note": "连锁第二目标，engine 未支持·留 S8" } } },
-  "log":         { "rarity": "rare",      "starter": false, "base_power": 140, "rank_unlocks": { "2": { "type": "skill", "note": "滚更远(半径+0.5)", "ops": [ { "op": "num_add", "field": "radius", "value": 0.5 } ] }, "3": { "type": "skill", "note": "伤害+40", "ops": [ { "op": "num_add", "field": "damage", "value": 40 } ] } } },
-  "golem":       { "rarity": "legendary", "starter": false, "base_power": 260, "rank_unlocks": { "2": { "type": "skill", "note": "强化亡语召唤(裂 3 哥布林)", "ops": [ { "op": "unit_field", "field": "death_spawn_count", "value": 3 } ] }, "3": { "type": "skill", "note": "强化亡语召唤(裂 4 哥布林)", "ops": [ { "op": "unit_field", "field": "death_spawn_count", "value": 4 } ] } } },
-  "heal":        { "rarity": "epic",      "starter": false, "base_power": 190, "rank_unlocks": { "2": { "type": "skill", "note": "治疗量+50", "ops": [ { "op": "num_add", "field": "damage", "value": 50 } ] }, "3": { "type": "skill", "note": "半径+0.5（护盾 engine 未支持·留 S8）", "ops": [ { "op": "num_add", "field": "radius", "value": 0.5 } ] } } }
+  "knight": {
+    "rarity": "common",
+    "starter": true,
+    "base_power": 100,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "skill",
+        "note": "攻击附带小溅射(on-hit aoe)，engine 未支持·留 S8"
+      }
+    }
+  },
+  "archers": {
+    "rarity": "common",
+    "starter": true,
+    "base_power": 100,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "skill",
+        "note": "+1 弩手(2->3)",
+        "ops": [
+          {
+            "op": "count_add",
+            "value": 1
+          }
+        ]
+      }
+    }
+  },
+  "giant": {
+    "rarity": "rare",
+    "starter": true,
+    "base_power": 140,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "skill",
+        "note": "亡语小溅击(死亡 aoe)，engine 未支持·留 S8"
+      }
+    }
+  },
+  "goblins": {
+    "rarity": "common",
+    "starter": true,
+    "base_power": 100,
+    "rank_unlocks": {
+      "2": {
+        "type": "skill",
+        "note": "+1 山越兵(3->4)",
+        "ops": [
+          {
+            "op": "count_add",
+            "value": 1
+          }
+        ]
+      },
+      "3": {
+        "type": "stat",
+        "note": "数值跳"
+      }
+    }
+  },
+  "minions": {
+    "rarity": "rare",
+    "starter": true,
+    "base_power": 140,
+    "rank_unlocks": {
+      "2": {
+        "type": "skill",
+        "note": "+1 魂鸦(3->4)",
+        "ops": [
+          {
+            "op": "count_add",
+            "value": 1
+          }
+        ]
+      },
+      "3": {
+        "type": "stat",
+        "note": "数值跳"
+      }
+    }
+  },
+  "fireball": {
+    "rarity": "rare",
+    "starter": true,
+    "base_power": 140,
+    "rank_unlocks": {
+      "2": {
+        "type": "skill",
+        "note": "半径+0.5",
+        "ops": [
+          {
+            "op": "num_add",
+            "field": "radius",
+            "value": 0.5
+          }
+        ]
+      },
+      "3": {
+        "type": "skill",
+        "note": "伤害+60（灼烧 engine 未支持·留 S8）",
+        "ops": [
+          {
+            "op": "num_add",
+            "field": "damage",
+            "value": 60
+          }
+        ]
+      }
+    }
+  },
+  "arrows": {
+    "rarity": "common",
+    "starter": true,
+    "base_power": 100,
+    "rank_unlocks": {
+      "2": {
+        "type": "skill",
+        "note": "半径+0.5",
+        "ops": [
+          {
+            "op": "num_add",
+            "field": "radius",
+            "value": 0.5
+          }
+        ]
+      },
+      "3": {
+        "type": "skill",
+        "note": "伤害+40",
+        "ops": [
+          {
+            "op": "num_add",
+            "field": "damage",
+            "value": 40
+          }
+        ]
+      }
+    }
+  },
+  "zap": {
+    "rarity": "common",
+    "starter": true,
+    "base_power": 100,
+    "rank_unlocks": {
+      "2": {
+        "type": "skill",
+        "note": "伤害+25",
+        "ops": [
+          {
+            "op": "num_add",
+            "field": "damage",
+            "value": 25
+          }
+        ]
+      },
+      "3": {
+        "type": "skill",
+        "note": "命中范围+（zap 为点伤·改 aoe 留 S8）"
+      }
+    }
+  },
+  "skeletons": {
+    "rarity": "common",
+    "starter": false,
+    "base_power": 100,
+    "rank_unlocks": {
+      "2": {
+        "type": "skill",
+        "note": "+1 阴兵(4->5)",
+        "ops": [
+          {
+            "op": "count_add",
+            "value": 1
+          }
+        ]
+      },
+      "3": {
+        "type": "skill",
+        "note": "+1 阴兵(5->6)",
+        "ops": [
+          {
+            "op": "count_add",
+            "value": 1
+          }
+        ]
+      }
+    }
+  },
+  "mini_pekka": {
+    "rarity": "rare",
+    "starter": false,
+    "base_power": 140,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "skill",
+        "note": "对塔/建筑加伤，engine 未支持·留 S8"
+      }
+    }
+  },
+  "musketeer": {
+    "rarity": "epic",
+    "starter": false,
+    "base_power": 190,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "skill",
+        "note": "破法箭：命中附带减速",
+        "ops": [
+          {
+            "op": "unit_field",
+            "field": "on_hit_status",
+            "value": {
+              "kind": "slow",
+              "dur": 1.0,
+              "mag": 0.2
+            }
+          }
+        ]
+      }
+    }
+  },
+  "baby_dragon": {
+    "rarity": "epic",
+    "starter": false,
+    "base_power": 190,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "skill",
+        "note": "烈焰吐息：溅射变大+命中减速",
+        "ops": [
+          {
+            "op": "unit_field",
+            "field": "splash_radius",
+            "value": 2.5
+          },
+          {
+            "op": "unit_field",
+            "field": "on_hit_status",
+            "value": {
+              "kind": "slow",
+              "dur": 1.2,
+              "mag": 0.25
+            }
+          }
+        ]
+      }
+    }
+  },
+  "lightning": {
+    "rarity": "epic",
+    "starter": false,
+    "base_power": 190,
+    "rank_unlocks": {
+      "2": {
+        "type": "skill",
+        "note": "伤害+60",
+        "ops": [
+          {
+            "op": "num_add",
+            "field": "damage",
+            "value": 60
+          }
+        ]
+      },
+      "3": {
+        "type": "skill",
+        "note": "雷暴：命中附带眩晕(单体)",
+        "ops": [
+          {
+            "op": "set_field",
+            "field": "status",
+            "value": {
+              "kind": "stun",
+              "dur": 0.5
+            }
+          }
+        ]
+      }
+    }
+  },
+  "log": {
+    "rarity": "rare",
+    "starter": false,
+    "base_power": 140,
+    "rank_unlocks": {
+      "2": {
+        "type": "skill",
+        "note": "滚更远(半径+0.5)",
+        "ops": [
+          {
+            "op": "num_add",
+            "field": "radius",
+            "value": 0.5
+          }
+        ]
+      },
+      "3": {
+        "type": "skill",
+        "note": "伤害+40",
+        "ops": [
+          {
+            "op": "num_add",
+            "field": "damage",
+            "value": 40
+          }
+        ]
+      }
+    }
+  },
+  "golem": {
+    "rarity": "legendary",
+    "starter": false,
+    "base_power": 260,
+    "rank_unlocks": {
+      "2": {
+        "type": "skill",
+        "note": "裂 3 山越兵",
+        "ops": [
+          {
+            "op": "unit_field",
+            "field": "death_spawn_count",
+            "value": 3
+          }
+        ]
+      },
+      "3": {
+        "type": "skill",
+        "note": "机关化生：裂物变石心攻城兽(只拆塔)",
+        "ops": [
+          {
+            "op": "unit_field",
+            "field": "death_spawn_unit",
+            "value": "golemite_body"
+          }
+        ]
+      }
+    }
+  },
+  "heal": {
+    "rarity": "epic",
+    "starter": false,
+    "base_power": 190,
+    "rank_unlocks": {
+      "2": {
+        "type": "skill",
+        "note": "治疗量+50",
+        "ops": [
+          {
+            "op": "num_add",
+            "field": "damage",
+            "value": 50
+          }
+        ]
+      },
+      "3": {
+        "type": "stat",
+        "note": "王佐军心(治疗+友军加速)——需 haste 正向状态，留 KAN-88"
+      }
+    }
+  },
+  "spear_goblins": {
+    "rarity": "common",
+    "starter": false,
+    "base_power": 100,
+    "rank_unlocks": {
+      "2": {
+        "type": "skill",
+        "note": "+1 数量",
+        "ops": [
+          {
+            "op": "count_add",
+            "value": 1
+          }
+        ]
+      },
+      "3": {
+        "type": "stat",
+        "note": "数值跳"
+      }
+    }
+  },
+  "bats": {
+    "rarity": "common",
+    "starter": false,
+    "base_power": 100,
+    "rank_unlocks": {
+      "2": {
+        "type": "skill",
+        "note": "+1 数量",
+        "ops": [
+          {
+            "op": "count_add",
+            "value": 1
+          }
+        ]
+      },
+      "3": {
+        "type": "stat",
+        "note": "数值跳"
+      }
+    }
+  },
+  "barbarians": {
+    "rarity": "common",
+    "starter": false,
+    "base_power": 100,
+    "rank_unlocks": {
+      "2": {
+        "type": "skill",
+        "note": "+1 数量",
+        "ops": [
+          {
+            "op": "count_add",
+            "value": 1
+          }
+        ]
+      },
+      "3": {
+        "type": "stat",
+        "note": "数值跳"
+      }
+    }
+  },
+  "minion_horde": {
+    "rarity": "common",
+    "starter": false,
+    "base_power": 100,
+    "rank_unlocks": {
+      "2": {
+        "type": "skill",
+        "note": "+1 数量",
+        "ops": [
+          {
+            "op": "count_add",
+            "value": 1
+          }
+        ]
+      },
+      "3": {
+        "type": "stat",
+        "note": "数值跳"
+      }
+    }
+  },
+  "ice_spirit": {
+    "rarity": "common",
+    "starter": false,
+    "base_power": 100,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "stat",
+        "note": "数值跳"
+      }
+    }
+  },
+  "fire_spirit": {
+    "rarity": "common",
+    "starter": false,
+    "base_power": 100,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "stat",
+        "note": "数值跳"
+      }
+    }
+  },
+  "electro_spirit": {
+    "rarity": "common",
+    "starter": false,
+    "base_power": 100,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "stat",
+        "note": "数值跳"
+      }
+    }
+  },
+  "squire": {
+    "rarity": "common",
+    "starter": false,
+    "base_power": 100,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "stat",
+        "note": "数值跳"
+      }
+    }
+  },
+  "axe_thrower": {
+    "rarity": "common",
+    "starter": false,
+    "base_power": 100,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "stat",
+        "note": "数值跳"
+      }
+    }
+  },
+  "cave_spiders": {
+    "rarity": "common",
+    "starter": false,
+    "base_power": 100,
+    "rank_unlocks": {
+      "2": {
+        "type": "skill",
+        "note": "+1 数量",
+        "ops": [
+          {
+            "op": "count_add",
+            "value": 1
+          }
+        ]
+      },
+      "3": {
+        "type": "stat",
+        "note": "数值跳"
+      }
+    }
+  },
+  "rock_shower": {
+    "rarity": "common",
+    "starter": false,
+    "base_power": 100,
+    "rank_unlocks": {
+      "2": {
+        "type": "skill",
+        "note": "radius+0.5",
+        "ops": [
+          {
+            "op": "num_add",
+            "field": "radius",
+            "value": 0.5
+          }
+        ]
+      },
+      "3": {
+        "type": "skill",
+        "note": "damage+40",
+        "ops": [
+          {
+            "op": "num_add",
+            "field": "damage",
+            "value": 40
+          }
+        ]
+      }
+    }
+  },
+  "bone_ram": {
+    "rarity": "common",
+    "starter": false,
+    "base_power": 100,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "stat",
+        "note": "数值跳"
+      }
+    }
+  },
+  "royal_giant": {
+    "rarity": "rare",
+    "starter": false,
+    "base_power": 140,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "stat",
+        "note": "数值跳"
+      }
+    }
+  },
+  "hog_rider": {
+    "rarity": "rare",
+    "starter": false,
+    "base_power": 140,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "stat",
+        "note": "数值跳"
+      }
+    }
+  },
+  "valkyrie": {
+    "rarity": "rare",
+    "starter": false,
+    "base_power": 140,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "stat",
+        "note": "数值跳"
+      }
+    }
+  },
+  "bomber": {
+    "rarity": "rare",
+    "starter": false,
+    "base_power": 140,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "stat",
+        "note": "数值跳"
+      }
+    }
+  },
+  "mega_minion": {
+    "rarity": "rare",
+    "starter": false,
+    "base_power": 140,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "stat",
+        "note": "数值跳"
+      }
+    }
+  },
+  "goblin_gang": {
+    "rarity": "rare",
+    "starter": false,
+    "base_power": 140,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "stat",
+        "note": "数值跳"
+      }
+    }
+  },
+  "battle_ram": {
+    "rarity": "rare",
+    "starter": false,
+    "base_power": 140,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "stat",
+        "note": "数值跳"
+      }
+    }
+  },
+  "giant_snowball": {
+    "rarity": "rare",
+    "starter": false,
+    "base_power": 140,
+    "rank_unlocks": {
+      "2": {
+        "type": "skill",
+        "note": "radius+0.5",
+        "ops": [
+          {
+            "op": "num_add",
+            "field": "radius",
+            "value": 0.5
+          }
+        ]
+      },
+      "3": {
+        "type": "skill",
+        "note": "damage+30",
+        "ops": [
+          {
+            "op": "num_add",
+            "field": "damage",
+            "value": 30
+          }
+        ]
+      }
+    }
+  },
+  "goblin_barrel": {
+    "rarity": "rare",
+    "starter": false,
+    "base_power": 140,
+    "rank_unlocks": {
+      "2": {
+        "type": "skill",
+        "note": "+1 数量",
+        "ops": [
+          {
+            "op": "count_add",
+            "value": 1
+          }
+        ]
+      },
+      "3": {
+        "type": "stat",
+        "note": "数值跳"
+      }
+    }
+  },
+  "wizard": {
+    "rarity": "epic",
+    "starter": false,
+    "base_power": 190,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "skill",
+        "note": "烈焰东风：溅射区减速",
+        "ops": [
+          {
+            "op": "unit_field",
+            "field": "on_hit_status",
+            "value": {
+              "kind": "slow",
+              "dur": 1.0,
+              "mag": 0.25
+            }
+          }
+        ]
+      }
+    }
+  },
+  "executioner": {
+    "rarity": "epic",
+    "starter": false,
+    "base_power": 190,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "skill",
+        "note": "古之恶来：大溅射+全体减速",
+        "ops": [
+          {
+            "op": "unit_field",
+            "field": "splash_radius",
+            "value": 3.5
+          },
+          {
+            "op": "unit_field",
+            "field": "on_hit_status",
+            "value": {
+              "kind": "slow",
+              "dur": 1.2,
+              "mag": 0.3
+            }
+          }
+        ]
+      }
+    }
+  },
+  "balloon": {
+    "rarity": "epic",
+    "starter": false,
+    "base_power": 190,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "stat",
+        "note": "临空火坛(死亡范围爆炸)——需 T6 death_aoe，留 KAN-88"
+      }
+    }
+  },
+  "skeleton_army": {
+    "rarity": "epic",
+    "starter": false,
+    "base_power": 190,
+    "rank_unlocks": {
+      "2": {
+        "type": "skill",
+        "note": "+2 阴兵(14→16)",
+        "ops": [
+          {
+            "op": "count_add",
+            "value": 2
+          }
+        ]
+      },
+      "3": {
+        "type": "skill",
+        "note": "阴兵如潮：再+2 阴兵(16→18)",
+        "ops": [
+          {
+            "op": "count_add",
+            "value": 2
+          }
+        ]
+      }
+    }
+  },
+  "phoenix": {
+    "rarity": "epic",
+    "starter": false,
+    "base_power": 190,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "skill",
+        "note": "凤火重启：重生为满配火鸾",
+        "ops": [
+          {
+            "op": "unit_field",
+            "field": "death_spawn_unit",
+            "value": "phoenix_body"
+          }
+        ]
+      }
+    }
+  },
+  "freeze": {
+    "rarity": "epic",
+    "starter": false,
+    "base_power": 190,
+    "rank_unlocks": {
+      "2": {
+        "type": "skill",
+        "note": "半径+0.5",
+        "ops": [
+          {
+            "op": "num_add",
+            "field": "radius",
+            "value": 0.5
+          }
+        ]
+      },
+      "3": {
+        "type": "skill",
+        "note": "寒江绝策：冻结附带伤害",
+        "ops": [
+          {
+            "op": "num_add",
+            "field": "damage",
+            "value": 200
+          }
+        ]
+      }
+    }
+  },
+  "lava_hound": {
+    "rarity": "legendary",
+    "starter": false,
+    "base_power": 260,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "skill",
+        "note": "火神降临：幼鸢升级为喷火小龙",
+        "ops": [
+          {
+            "op": "unit_field",
+            "field": "death_spawn_unit",
+            "value": "fire_pup_body"
+          }
+        ]
+      }
+    }
+  },
+  "ice_wizard": {
+    "rarity": "legendary",
+    "starter": false,
+    "base_power": 260,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "skill",
+        "note": "冢虎寒域：减速大幅加强",
+        "ops": [
+          {
+            "op": "unit_field",
+            "field": "on_hit_status",
+            "value": {
+              "kind": "slow",
+              "dur": 2.5,
+              "mag": 0.55
+            }
+          }
+        ]
+      }
+    }
+  },
+  "electro_wizard": {
+    "rarity": "legendary",
+    "starter": false,
+    "base_power": 260,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "stat",
+        "note": "黄天雷劫(连锁2目标)——需 chain 扩展，留 KAN-88"
+      }
+    }
+  },
+  "princess": {
+    "rarity": "legendary",
+    "starter": false,
+    "base_power": 260,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "skill",
+        "note": "枭姬火阵：命中附带减速",
+        "ops": [
+          {
+            "op": "unit_field",
+            "field": "on_hit_status",
+            "value": {
+              "kind": "slow",
+              "dur": 1.5,
+              "mag": 0.3
+            }
+          }
+        ]
+      }
+    }
+  },
+  "inferno_dragon": {
+    "rarity": "legendary",
+    "starter": false,
+    "base_power": 260,
+    "rank_unlocks": {
+      "2": {
+        "type": "stat",
+        "note": "数值跳"
+      },
+      "3": {
+        "type": "stat",
+        "note": "火脉过载(持续命中DPS递增)——需 T7 ramp，留 KAN-88"
+      }
+    }
+  }
 }

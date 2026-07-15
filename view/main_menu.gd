@@ -11,15 +11,8 @@ const BG_TEX := preload("res://assets/ui/menu_bg.png")
 const GameStateScript := preload("res://view/game_state.gd")
 const CampaignStateScript := preload("res://logic/campaign_state.gd")
 
-const ACCOUNT_CREATE_SCENE := "res://view/account_create.tscn"
-const BASE_CAMP_SCENE := "res://view/base_camp.tscn"          # 闯关 PVE 中枢
-const CARD_COLLECTION_SCENE := "res://view/card_collection.tscn"  # 养成
-const DECK_BUILDER_SCENE := "res://view/deck_builder.tscn"
-const RUN_SCENE := "res://view/run_scene.tscn"                # 探险 Roguelite
-const SETTINGS_SCENE := "res://view/settings.tscn"
-const BATTLE_SCENE := "res://view/battle_scene.tscn"          # 新手引导战
-
 var _status: Label
+var _retry_btn: Button
 
 func _ready() -> void:
 	AudioManager.play_music("music_main_menu")
@@ -31,40 +24,51 @@ func _ready() -> void:
 func _build_bg() -> void:
 	var bg := TextureRect.new()
 	bg.texture = BG_TEX
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
 	_title("CLASH\nPUSHER", 96, 72)
 	_center_label(tr("app_subtitle"), 312, 26, PixelUI.COL_MUTED)
 
-# —— 登录 + 路由（V5-S9）——
+# —— 登录 + 路由（V5-S9；KAN-109 起先过登录页门）——
 func _bootstrap() -> void:
 	var http := HTTPRequest.new()
 	add_child(http)
 	var session = GameStateScript.session()
+	# KAN-109：本地无记住的 username → 登录页（服务器查库判新老，本地数据不作数）
+	if session.needs_login():
+		Log.i("[V5][menu] 无登录凭据 → login")
+		http.queue_free()
+		Router.goto("login")
+		return
 	var ok: bool = await session.ensure(http)
 	if not ok:
-		print("[V5][menu] 登录失败 → 离线降级菜单")
+		if session.needs_login():   # ensure 期间被登出/凭据失效
+			http.queue_free()
+			Router.goto("login")
+			return
+		Log.w("[V5][menu] 在线启动失败，停留重试门")
 		if _status != null:
-			_status.text = "（离线）未连接服务器"
-		_build_menu(false)
+			_status.text = "未连接服务器，在线功能暂不可用"
+		_show_retry()
 		http.queue_free()
 		return
+	_clear_retry()
 	# 未创号（服务器 avatar_card_id 为空）→ 创号页。
 	if session.needs_account_setup():
-		print("[V5][menu] 新账号未创号 → account_create")
+		Log.i("[V5][menu] 新账号未创号 → account_create")
 		http.queue_free()
-		get_tree().change_scene_to_file(ACCOUNT_CREATE_SCENE)
+		Router.goto("account_create")
 		return
 	# 未完成新手引导 → 强制引导战（打完一局回菜单）。
 	if not session.tutorial_done():
-		print("[V5][menu] 新手引导未完成 → 强制引导战")
+		Log.i("[V5][menu] 新手引导未完成 → 强制引导战")
 		http.queue_free()
 		_start_tutorial()
 		return
 	http.queue_free()
-	_build_menu(true)
+	_build_menu()
 
 func _start_tutorial() -> void:
 	var config = GameStateScript.config()
@@ -74,50 +78,70 @@ func _start_tutorial() -> void:
 	GameStateScript.campaign_last_result = 0
 	GameStateScript.tutorial = true
 	GameStateScript.stage_id = ""
-	get_tree().change_scene_to_file(BATTLE_SCENE)
+	Router.goto("battle")
 
 # —— 菜单（路由放行后才建）——
-func _build_menu(online: bool) -> void:
+func _build_menu() -> void:
 	if _status != null:
 		_status.queue_free()
 		_status = null
-	if online:
-		var session = GameStateScript.session()
-		var np := HudWidgets.nameplate(session.nickname(), session.avatar_card_id(), GameStateScript.config(), session.trophies(), true)
-		np.position = Vector2(40, 36)
-		add_child(np)
+	var session = GameStateScript.session()
+	var np := HudWidgets.nameplate(session.nickname(), session.avatar_card_id(), GameStateScript.config(), session.trophies(), true)
+	np.position = Vector2(40, 36)
+	add_child(np)
 	_menu_button("天梯征途", 440, _on_ladder, "gold", 40)
 	_menu_button("闯关", 556, _on_stage, "stone", 34)
 	_menu_button("养成", 664, _on_progression, "stone", 34)
 	_menu_button("卡组", 772, _on_deck, "stone", 34)
-	_menu_button("探险", 880, _on_run, "stone", 34)
+	var run_btn := _menu_button("探险（离线原型·未开放）", 880, _on_run, "stone", 24)
+	run_btn.disabled = true   # E1：本地存档原型不得作为 Prod 在线进度入口
 	_menu_button(tr("btn_settings"), 988, _on_settings, "stone", 34)
 	_center_label(tr("app_footer"), 1208, 22, PixelUI.COL_HINT)
+
+
+func _show_retry() -> void:
+	if _retry_btn != null:
+		_retry_btn.disabled = false
+		return
+	_retry_btn = _menu_button("重试连接", 720, _on_retry, "gold", 30)
+
+
+func _clear_retry() -> void:
+	if _retry_btn != null:
+		_retry_btn.queue_free()
+		_retry_btn = null
+
+
+func _on_retry() -> void:
+	if _retry_btn != null:
+		_retry_btn.disabled = true
+	if _status != null:
+		_status.text = "重新连接中…"
+	_bootstrap()
 
 # ---------- handlers ----------
 func _on_ladder() -> void:
 	# V5-S9 改动5：天梯先选卡组（存槽1）再进匹配。
 	GameStateScript.deck_mode = "ladder"
 	GameStateScript.stage_id = ""
-	get_tree().change_scene_to_file(DECK_BUILDER_SCENE)
+	Router.goto("deck_builder")
 
 func _on_stage() -> void:
-	get_tree().change_scene_to_file(BASE_CAMP_SCENE)
+	Router.goto("base_camp")
 
 func _on_progression() -> void:
-	if ResourceLoader.exists(CARD_COLLECTION_SCENE):
-		get_tree().change_scene_to_file(CARD_COLLECTION_SCENE)
+	Router.goto("card_collection")
 
 func _on_deck() -> void:
 	GameStateScript.deck_mode = "edit"
 	GameStateScript.stage_id = ""
-	get_tree().change_scene_to_file(DECK_BUILDER_SCENE)
+	Router.goto("deck_builder")
 
 func _on_run() -> void:
-	get_tree().change_scene_to_file(RUN_SCENE)
+	Router.goto("run")
 
 func _on_settings() -> void:
-	get_tree().change_scene_to_file(SETTINGS_SCENE)
+	Router.goto("settings")
 
 # ---------- ui builders ----------
 func _title(text: String, y: float, font_size: int) -> void:

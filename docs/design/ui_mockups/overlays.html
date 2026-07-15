@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<!-- UI 示意图：覆盖层三兄弟——新手引导层 / 设置弹窗 / 通用弹层规范（确认框+Toast+断线）。 -->
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>引导层 / 设置 / 通用弹层示意</title>
+<link rel="stylesheet" href="ui_mock.css">
+<style>
+  /* 引导层 */
+  .holebg { position: absolute; inset: 0; z-index: 8;
+            background: radial-gradient(circle 130px at 50% 76%, transparent 0 96px, rgba(0,0,0,.72) 130px); }
+  .finger { position: absolute; left: 52%; top: 79%; font-size: 90px; z-index: 10;
+            animation: tap 1s ease-in-out infinite; }
+  @keyframes tap { 50% { transform: translate(-8px,-14px) scale(.9); } }
+  .bubble { position: absolute; left: 70px; right: 70px; top: 820px; z-index: 10;
+            background: #fdf6e3; color: #3a2a16; border: 4px solid #2b1e12; border-radius: 22px;
+            padding: 22px 26px; font-size: 26px; }
+  .bubble::after { content: ""; position: absolute; bottom: -22px; left: 54%; border: 12px solid transparent;
+                   border-top-color: #2b1e12; }
+  .npc { position: absolute; left: 40px; top: 700px; font-size: 100px; z-index: 10; }
+  .handcard { position: absolute; left: 44%; top: 82%; width: 130px; height: 160px; z-index: 9; }
+
+  /* 设置弹窗 */
+  .setrow { display: flex; align-items: center; justify-content: space-between; padding: 16px 4px;
+            border-bottom: 2px solid rgba(43,30,18,.15); font-size: 26px; }
+  .sw { width: 92px; height: 48px; border-radius: 24px; border: 3px solid #2b1e12; position: relative; }
+  .sw.on { background: #57b354; } .sw.off { background: #8b8b83; }
+  .sw i { position: absolute; top: 3px; width: 36px; height: 36px; border-radius: 50%; background: #fff; }
+  .sw.on i { right: 4px; } .sw.off i { left: 4px; }
+  .langseg { display: flex; border: 3px solid #2b1e12; border-radius: 14px; overflow: hidden; }
+  .langseg div { padding: 6px 18px; font-size: 22px; background: rgba(24,20,16,.15); }
+  .langseg div.on { background: #f5a623; color: #4a2c05; font-weight: 900; }
+
+  /* 通用弹层 */
+  .netbanner { position: absolute; top: 620px; left: 60px; right: 60px; z-index: 10; text-align: center; }
+</style>
+</head>
+<body>
+<h1>覆盖层示意：新手引导 / 设置 / 通用弹层</h1>
+<div class="sub">三类覆盖层的结构规范；层级与输入隔离由程序统一管理。<span class="backlink"><a href="index.html">← 返回目录</a></span></div>
+<div class="wrap">
+
+  <div>
+    <div class="phone"><div class="screen" id="s1">
+      <div class="holebg"></div>
+      <div class="handcard card r-rare"><span class="cost">3</span><span class="face">🗡️</span></div>
+      <div class="npc">🧙‍♂️</div>
+      <div class="bubble">拖动这张「虎贲校尉」到河这边的任意位置，放下你的第一支部队！</div>
+      <div class="finger">👆</div>
+      <div class="island"></div><div class="home"></div>
+      <div class="guide g-top"><small>y=100</small></div><div class="guide g-bottom"><small>y=1500</small></div>
+    </div></div>
+    <div class="phone-cap">① 新手引导：压暗 72% + 目标挖洞（软边）+ 手指点击动效 + 军师气泡</div>
+  </div>
+
+  <div>
+    <div class="phone"><div class="screen page-bg" id="s2">
+      <div class="dim"></div>
+      <div class="modal" style="top: 300px;">
+        <div class="mhead">设 置<div class="mx circ dark pill">✕</div></div>
+        <div class="mbody">
+          <div class="setrow"><span>🎵 音乐</span><div class="sw on"><i></i></div></div>
+          <div class="setrow"><span>🔔 音效</span><div class="sw on"><i></i></div></div>
+          <div class="setrow"><span>🌐 语言</span><div class="langseg"><div class="on">中文</div><div>EN</div></div></div>
+          <div class="setrow"><span>📱 战斗版式</span><div class="langseg"><div class="on">竖屏</div><div>横屏(实验)</div></div></div>
+          <div class="setrow" style="border:none"><span>👤 账号</span><span style="font-size:20px;color:#7a5c33">陈到·叔至 · ID 8f3a…</span></div>
+        </div>
+      </div>
+      <div class="island"></div><div class="home"></div>
+      <div class="guide g-top"><small>y=100</small></div><div class="guide g-bottom"><small>y=1500</small></div>
+    </div></div>
+    <div class="phone-cap">② 设置：中窗口框弹窗（不再是全屏页）；全部由组件库拼装，零专属资源</div>
+  </div>
+
+  <div>
+    <div class="phone"><div class="screen page-bg" id="s3">
+      <div class="dim"></div>
+      <div class="toast">⚔️ 卡组已保存</div>
+      <div class="modal" style="top: 480px; width: 560px; left: 80px;">
+        <div class="mhead">确认认输？</div>
+        <div class="mbody" style="text-align:center">本局将判负，杯数 -30</div>
+        <div class="mbtns">
+          <div class="btn mid dark pill">取消</div>
+          <div class="btn mid red">认输</div>
+        </div>
+      </div>
+      <div class="netbanner panelbox" style="padding:20px">
+        <div style="font-size:30px;color:#fff">📡 在线会话中断</div>
+        <div style="font-size:22px;color:#b7a98f;margin-top:8px">恢复中…（转圈）</div>
+      </div>
+      <div class="island"></div><div class="home"></div>
+      <div class="guide g-top"><small>y=100</small></div><div class="guide g-bottom"><small>y=1500</small></div>
+    </div></div>
+    <div class="phone-cap">③ 通用弹层合集：Toast（上 1/4 处）/ 小确认框 560 档 / 断线恢复条（实际不同时出现）</div>
+  </div>
+
+  <div class="legend">
+    <h2>规范要点</h2>
+    <ul>
+      <li><span class="tag">引导层</span>压暗 72% + 挖洞软边 8~12px 羽化（程序遮罩）；手指两帧点击动效；军师半身像（Q 版三头身，P2 可后补，先纯气泡）；气泡带朝向尾巴两版</li>
+      <li><span class="tag">设置</span>由全屏页改为弹窗（导航简化）；开关/分段控件/列表行全部组件库拼装——本屏是组件库完备性的验收用例</li>
+      <li><span class="tag">确认框</span>560 小档；「取消左、确认右」，危险操作确认用红色按钮；有后果的确认框不给右上 ✕</li>
+      <li><span class="tag">Toast</span>屏幕上 1/4 悬浮、2 秒自消、不响应点击、同屏仅一条；文案带小图标可选</li>
+      <li><span class="tag">断线层</span>战斗内=全屏压暗+中央面板（sim 冻结）；非战斗页=顶部横条不打断浏览；恢复后自动消失</li>
+    </ul>
+    <h2>给美术的资源点</h2>
+    <ul>
+      <li>手指图标两帧、气泡框（尾巴左/右两版 9-slice）、军师半身像（可选 P2）</li>
+      <li>开关（on/off）、断线图标；其余全复用窗口框/按钮/Toast 底</li>
+    </ul>
+    <button class="toggle" onclick="['s1','s2','s3'].forEach(i=>document.getElementById(i).classList.toggle('hide-guides'))">显示/隐藏 安全区参考线</button>
+  </div>
+</div>
+</body>
+</html>

@@ -23,6 +23,16 @@ message JoinRoomReq {
   repeated string deck = 2;     // 本方 8 张卡组（lockstep 要两端互知对方牌）
 }
 
+// 一张卡在本局的养成态（KAN-76：服务器建房时从 economy_cards 读出、权威下发）。
+// 只发 level/rank 原始值、不发算好的乘区：两端用同版本配置的 PlayerData/CardProgression
+// 各自换算（等价、确定性），且 rank 顺带驱动升阶技能积木解锁。
+// 本 message 仅在 battle.proto 内使用（无跨文件引用，避 godobuf 跨文件内联坑）。
+message CardProgress {
+  string card_id = 1;
+  int32  level   = 2;
+  int32  rank    = 3;
+}
+
 message JoinRoomResp {
   bool ok = 1;
   ProfileSummary opponent = 2;
@@ -32,6 +42,10 @@ message JoinRoomResp {
   repeated string side1_deck = 6;  // side 1 的卡组（两端都收，建同一初始态）
   repeated string side2_deck = 7;  // side 2 的卡组
   string level_id = 8;          // 天梯关卡配置 id（如 ladder_01），两端各自本地加载
+  // KAN-76：双方卡组每张卡的养成（按 card_id 与 sideN_deck 对应，顺序无关；两端都收，
+  // 对 side1/side2 对称注入 → 同一方在两端算出逐 bit 相同的数值）。空 = 白板局（向后兼容）。
+  repeated CardProgress side1_progress = 9;
+  repeated CardProgress side2_progress = 10;
 }
 
 // 客户端 -> 服务端：单条出兵/法术指令。

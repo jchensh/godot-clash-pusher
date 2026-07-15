@@ -135,6 +135,44 @@ func test_cross_reference_valid() -> void:
 	var loader = _make_loaded()
 	assert_true(loader.errors.is_empty(), "交叉引用应全部有效; errors=%s" % str(loader.errors))
 
+
+func _server_files(loader) -> Dictionary:
+	return {
+		"cards.json": loader.cards.duplicate(true),
+		"units.json": loader.units.duplicate(true),
+		"levels.json": loader.levels.duplicate(true),
+		"arena.json": loader.arena.duplicate(true),
+		"run.json": loader.run.duplicate(true),
+		"relics.json": loader.relics.duplicate(true),
+		"campaign.json": loader.campaign.duplicate(true),
+		"tutorial.json": loader.tutorial.duplicate(true),
+		"audio_assets.json": loader.audio_assets.duplicate(true),
+		"stages.json": loader.stages.duplicate(true),
+		"encounters.json": loader.encounters.duplicate(true),
+		"economy.json": loader.economy.duplicate(true),
+		"card_progression.json": loader.card_progression.duplicate(true),
+	}
+
+
+func test_server_bundle_loads_and_validates() -> void:
+	var disk = _make_loaded()
+	var server = ConfigLoaderScript.new()
+	assert_true(server.load_from_files(_server_files(disk)), "服务器 bundle 应通过完整校验: %s" % str(server.errors))
+	assert_eq(server.cards.size(), disk.cards.size(), "服务端 cards 全量应用")
+	assert_eq(server.get_card("knight").get("elixir_cost"), 3, "服务端配置可供战斗读取")
+
+
+func test_bad_server_bundle_does_not_pollute_previous_snapshot() -> void:
+	var disk = _make_loaded()
+	var target = ConfigLoaderScript.new()
+	assert_true(target.load_from_files(_server_files(disk)), "先装入有效快照")
+	var before: Dictionary = target.cards.duplicate(true)
+	var broken := _server_files(disk)
+	broken.erase("units.json")
+	assert_false(target.load_from_files(broken), "缺文件 bundle 必须拒绝")
+	assert_false(target.errors.is_empty(), "拒绝原因可诊断")
+	assert_eq(target.cards, before, "坏包不污染上一份可用快照")
+
 func test_print_loaded_summary() -> void:
 	# 满足验收「读入内存并打印验证」。
 	var loader = _make_loaded()

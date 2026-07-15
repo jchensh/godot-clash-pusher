@@ -43,11 +43,16 @@ UNIT_HEADERS = [
     "body_radius_tiles",
     "unit_type",
     "attack_targets",
+    "splash_radius",
+    "target_priority",
+    "on_hit_status_kind",
+    "on_hit_status_dur",
+    "on_hit_status_mag",
     "death_spawn_unit",
     "death_spawn_count",
     "notes",
 ]
-CARD_HEADERS = ["card_id", "name", "elixir_cost", "category", "enabled", "notes"]
+CARD_HEADERS = ["card_id", "name", "faction", "elixir_cost", "category", "enabled", "notes"]
 SKILL_HEADERS = [
     "card_id",
     "order",
@@ -57,6 +62,9 @@ SKILL_HEADERS = [
     "damage",
     "radius",
     "target",
+    "status_kind",
+    "status_dur",
+    "status_mag",
     "notes",
 ]
 LEVEL_HEADERS = [
@@ -87,6 +95,9 @@ DECK_HEADERS = [
 SKILL_TYPES = ["spawn_unit", "direct_damage", "aoe_damage", "aoe_heal"]
 UNIT_TYPES = ["ground", "air"]
 ATTACK_TARGETS = ["ground", "air", "both"]   # 该单位能攻击的目标类型（V3-2 对空克制）
+TARGET_PRIORITIES = ["nearest", "buildings"]  # 索敌优先级（T2 建筑索敌）：nearest 缺省 / buildings 只锁敌塔
+STATUS_KINDS = ["slow", "stun", "freeze"]  # 状态效果（T3）：slow 带 mag、stun/freeze 不带
+FACTIONS = ["wei", "shu", "wu", "qun"]  # 三国阵营（2026-07-04 改版）：魏/蜀/吴/群雄；仅题材归属+羁绊预留，不产生克制
 TARGETS = ["first_enemy_in_lane"]
 SIDES = ["player", "ai"]
 DIFFICULTIES = ["rookie", "easy", "normal", "hard", "extreme"]
@@ -209,6 +220,27 @@ def build_json_from_workbook(workbook_path: Path = WORKBOOK_PATH) -> tuple[dict[
             "target_type": unit_type,
             "attack_targets": attack_targets,
         }
+        # T1 溅射（可选）：仅当填了 splash_radius 且 >0 才写入（0/空=单体，不落 JSON 保持零回归）。
+        splash = row.get("splash_radius")
+        if not _is_blank(splash):
+            splash_radius = _number_float(splash, f"unit {unit_id}.splash_radius")
+            if splash_radius > 0.0:
+                units[unit_id]["splash_radius"] = splash_radius
+        # T2 建筑索敌（可选）：仅当填了非 nearest 才写入。
+        target_priority = _text(row.get("target_priority"))
+        if target_priority and target_priority != "nearest":
+            if target_priority not in TARGET_PRIORITIES:
+                raise ConfigError(f"unit {unit_id} target_priority must be one of {TARGET_PRIORITIES}")
+            units[unit_id]["target_priority"] = target_priority
+        # T3 命中状态（可选）：kind 非空才写入；slow 带 mag、stun/freeze 不带。
+        ohs_kind = _text(row.get("on_hit_status_kind"))
+        if ohs_kind:
+            if ohs_kind not in STATUS_KINDS:
+                raise ConfigError(f"unit {unit_id} on_hit_status_kind must be one of {STATUS_KINDS}")
+            ohs = {"kind": ohs_kind, "dur": _number_float(row.get("on_hit_status_dur"), f"unit {unit_id}.on_hit_status_dur")}
+            if not _is_blank(row.get("on_hit_status_mag")):
+                ohs["mag"] = _number_float(row.get("on_hit_status_mag"), f"unit {unit_id}.on_hit_status_mag")
+            units[unit_id]["on_hit_status"] = ohs
         # 亡语召唤（V3-3，可选）：仅当填了 death_spawn_unit 才写入。
         ds_unit = _text(row.get("death_spawn_unit"))
         if ds_unit:
@@ -225,11 +257,16 @@ def build_json_from_workbook(workbook_path: Path = WORKBOOK_PATH) -> tuple[dict[
         card_enabled[card_id] = enabled
         if not enabled:
             continue
-        cards[card_id] = {
-            "name": _text(row.get("name")),
-            "elixir_cost": _number(row.get("elixir_cost"), f"card {card_id}.elixir_cost"),
-            "skills": [],
-        }
+        card_obj: dict[str, Any] = {"name": _text(row.get("name"))}
+        # 三国阵营（可选）：非空才写入 JSON，保持无阵营卡零回归。
+        faction = _text(row.get("faction"))
+        if faction:
+            if faction not in FACTIONS:
+                raise ConfigError(f"card {card_id} faction must be one of {FACTIONS}")
+            card_obj["faction"] = faction
+        card_obj["elixir_cost"] = _number(row.get("elixir_cost"), f"card {card_id}.elixir_cost")
+        card_obj["skills"] = []
+        cards[card_id] = card_obj
 
     skills_by_card: dict[str, list[tuple[int, dict[str, Any]]]] = {}
     for row in skill_rows:
@@ -268,6 +305,16 @@ def build_json_from_workbook(workbook_path: Path = WORKBOOK_PATH) -> tuple[dict[
                 raise ConfigError(f"skill {card_id}.radius must be >= 0")
             block["radius"] = radius
             block["damage"] = _number(row.get("damage"), f"skill {card_id}.damage")   # damage 字段复用为治疗量
+
+        # T3 法术命中状态（可选）：aoe_damage/direct_damage 可带 status（freeze 术=damage 0+status）。
+        stt_kind = _text(row.get("status_kind"))
+        if stt_kind:
+            if stt_kind not in STATUS_KINDS:
+                raise ConfigError(f"skill {card_id} status_kind must be one of {STATUS_KINDS}")
+            stt = {"kind": stt_kind, "dur": _number_float(row.get("status_dur"), f"skill {card_id}.status_dur")}
+            if not _is_blank(row.get("status_mag")):
+                stt["mag"] = _number_float(row.get("status_mag"), f"skill {card_id}.status_mag")
+            block["status"] = stt
 
         skills_by_card.setdefault(card_id, []).append((order, block))
 
@@ -385,6 +432,11 @@ def workbook_from_json(workbook_path: Path = WORKBOOK_PATH) -> None:
                 unit.get("body_radius", ""),
                 unit.get("target_type", ""),
                 unit.get("attack_targets", ""),
+                unit.get("splash_radius", ""),
+                unit.get("target_priority", ""),
+                (unit.get("on_hit_status") or {}).get("kind", ""),
+                (unit.get("on_hit_status") or {}).get("dur", ""),
+                (unit.get("on_hit_status") or {}).get("mag", ""),
                 unit.get("death_spawn_unit", ""),
                 unit.get("death_spawn_count", ""),
                 "",
@@ -392,12 +444,15 @@ def workbook_from_json(workbook_path: Path = WORKBOOK_PATH) -> None:
         )
     _add_list_validation(ws_units, "unit_type", UNIT_TYPES)
     _add_list_validation(ws_units, "attack_targets", ATTACK_TARGETS)
+    _add_list_validation(ws_units, "target_priority", TARGET_PRIORITIES)
+    _add_list_validation(ws_units, "on_hit_status_kind", STATUS_KINDS)
 
     ws_cards = wb.create_sheet("Cards")
     _setup_sheet(ws_cards, CARD_HEADERS, {"card_id": 16, "name": 14, "category": 14, "notes": 26})
     for card_id, card in cards.items():
         category = "troop" if any(skill.get("type") == "spawn_unit" for skill in card.get("skills", [])) else "spell"
-        ws_cards.append([card_id, card.get("name", ""), card.get("elixir_cost", ""), category, True, ""])
+        ws_cards.append([card_id, card.get("name", ""), card.get("faction", ""), card.get("elixir_cost", ""), category, True, ""])
+    _add_list_validation(ws_cards, "faction", FACTIONS)
 
     ws_skills = wb.create_sheet("CardSkills")
     _setup_sheet(ws_skills, SKILL_HEADERS, {"card_id": 16, "skill_type": 16, "unit_id": 18, "target": 22, "notes": 26})
@@ -413,11 +468,15 @@ def workbook_from_json(workbook_path: Path = WORKBOOK_PATH) -> None:
                     skill.get("damage", ""),
                     skill.get("radius", ""),
                     skill.get("target", ""),
+                    (skill.get("status") or {}).get("kind", ""),
+                    (skill.get("status") or {}).get("dur", ""),
+                    (skill.get("status") or {}).get("mag", ""),
                     "",
                 ]
             )
     _add_list_validation(ws_skills, "skill_type", SKILL_TYPES)
     _add_list_validation(ws_skills, "target", TARGETS)
+    _add_list_validation(ws_skills, "status_kind", STATUS_KINDS)
 
     ws_levels = wb.create_sheet("Levels")
     _setup_sheet(ws_levels, LEVEL_HEADERS, {"level_id": 16, "name": 14, "ai_difficulty": 16, "notes": 26})

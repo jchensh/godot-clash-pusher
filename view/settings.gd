@@ -5,7 +5,7 @@ extends Control
 
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const GameStateScript := preload("res://view/game_state.gd")
-const MENU_SCENE := "res://view/main_menu.tscn"
+const ModalScript := preload("res://view/ui/modal.gd")   # KAN-109 登出确认框（走 UI.modal 层，KAN-97 规约）
 
 var _http: HTTPRequest
 var _gm_status: Label = null
@@ -16,16 +16,103 @@ func _ready() -> void:
 	_http = HTTPRequest.new()
 	add_child(_http)
 	_build_gm()       # GM 区骨架（标题+状态+按钮）
+	Events.economy_changed.connect(_on_economy_changed)   # 框架地基#2：GM 动作后的状态行刷新走订阅
 	_init_gm()        # async：登录 + 拉状态填充（fire-and-forget 协程）
 
 func _build() -> void:
 	PixelUI.add_background(self)
 	_title(tr("settings_title"), 150, 60)
+	# H2 横版战斗实验开关（PLAN_V5_HBATTLE；文案暂硬编码中文对齐 GM 区先例，H5 正式化再进 i18n）
+	_center_label("战斗版式（实验 · 仅 PvE）", 250, 28, PixelUI.COL_MUTED)
+	var lay := GameStateScript.battle_layout()
+	_layout_button("竖版（默认）", "portrait", 150, 296, lay != "landscape")
+	_layout_button("横版（实验）", "landscape", 390, 296, lay == "landscape")
 	_center_label(tr("settings_language"), 420, 34, PixelUI.COL_MUTED)
 	var cur := I18n.current_locale()
 	_lang_button(tr("lang_zh"), "zh", 150, 500, cur.begins_with("zh"))
 	_lang_button(tr("lang_en"), "en", 390, 500, cur.begins_with("en"))
+	_logout_button(1170)   # KAN-109：登出 → 回登录页换号/创新号
 	_back_button(1080)
+
+
+# —— KAN-109 登出（换号/创新账号；开发阶段 username 裸登录）——
+func _logout_button(y: float) -> void:
+	var bw := 240.0
+	var btn := Button.new()
+	btn.position = Vector2((720.0 - bw) / 2.0, y)
+	btn.size = Vector2(bw, 80)
+	btn.text = "登出账号"
+	btn.pivot_offset = Vector2(bw / 2.0, 40.0)
+	btn.focus_mode = Control.FOCUS_NONE
+	PixelUI.style_button(btn, "stone", 30)
+	btn.pressed.connect(_on_logout)
+	btn.button_down.connect(_scale_to.bind(btn, 0.96))
+	btn.button_up.connect(_scale_to.bind(btn, 1.0))
+	add_child(btn)
+
+func _on_logout() -> void:
+	AudioManager.play_sfx("ui_button_press")
+	var m: Control = ModalScript.new()
+	m.close_on_bg_click = true   # 点空白 = 取消
+	UI.modal(m)
+	var panel := Panel.new()
+	panel.position = Vector2(80, 480)
+	panel.size = Vector2(560, 330)
+	panel.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("241c30"), 4, PixelUI.COL_GOLD))
+	m.add_child(panel)
+	var t := Label.new()
+	t.text = "确定登出？"
+	t.position = Vector2(0, 30)
+	t.size = Vector2(560, 50)
+	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	t.add_theme_font_size_override("font_size", 38)
+	t.add_theme_color_override("font_color", PixelUI.COL_GOLD)
+	panel.add_child(t)
+	var d := Label.new()
+	d.text = "将退回登录页，可换账号或创新账号\n（进度都在服务器，随时回来）"
+	d.position = Vector2(0, 100)
+	d.size = Vector2(560, 80)
+	d.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	d.add_theme_font_size_override("font_size", 24)
+	d.add_theme_color_override("font_color", PixelUI.COL_MUTED)
+	panel.add_child(d)
+	_modal_btn(panel, "取消", 40, 210, "dark", func(): m.close())
+	_modal_btn(panel, "登出", 300, 210, "gold", func():
+		Log.i("[V5][settings] 用户登出 → login")
+		GameStateScript.session().sign_out()
+		m.close()
+		Router.goto("login"))
+
+func _modal_btn(parent: Control, text: String, x: float, y: float, kind: String, cb: Callable) -> void:
+	var btn := Button.new()
+	btn.text = text
+	btn.position = Vector2(x, y)
+	btn.size = Vector2(220, 84)
+	btn.pivot_offset = Vector2(110, 42)
+	btn.focus_mode = Control.FOCUS_NONE
+	PixelUI.style_button(btn, kind, 30)
+	btn.pressed.connect(cb)
+	btn.button_down.connect(_scale_to.bind(btn, 0.96))
+	btn.button_up.connect(_scale_to.bind(btn, 1.0))
+	parent.add_child(btn)
+
+func _layout_button(text: String, lay: String, x: float, y: float, active: bool) -> void:
+	var btn := Button.new()
+	btn.text = text
+	btn.position = Vector2(x, y)
+	btn.size = Vector2(180, 104)
+	btn.pivot_offset = Vector2(90, 52)
+	btn.focus_mode = Control.FOCUS_NONE
+	PixelUI.style_button(btn, "gold" if active else "stone", 24)
+	btn.pressed.connect(_set_layout.bind(lay))
+	btn.button_down.connect(_scale_to.bind(btn, 0.96))
+	btn.button_up.connect(_scale_to.bind(btn, 1.0))
+	add_child(btn)
+
+func _set_layout(lay: String) -> void:
+	AudioManager.play_sfx("ui_button_press")
+	GameStateScript.set_battle_layout(lay)
+	Router.reload()   # 重建本页刷新按钮态（对齐 _set_lang）
 
 func _lang_button(text: String, loc: String, x: float, y: float, active: bool) -> void:
 	var btn := Button.new()
@@ -42,7 +129,7 @@ func _lang_button(text: String, loc: String, x: float, y: float, active: bool) -
 
 func _set_lang(loc: String) -> void:
 	I18n.set_language(loc)
-	get_tree().reload_current_scene()   # 以新语言重建本页（即时见效）
+	Router.reload()   # 以新语言重建本页（即时见效）
 
 func _back_button(y: float) -> void:
 	var bw := 240.0
@@ -59,7 +146,7 @@ func _back_button(y: float) -> void:
 	add_child(btn)
 
 func _on_back() -> void:
-	get_tree().change_scene_to_file(MENU_SCENE)
+	Router.goto("main_menu")
 
 func _scale_to(c: Control, s: float) -> void:
 	create_tween().tween_property(c, "scale", Vector2(s, s), 0.07)
@@ -156,10 +243,13 @@ func _do_gm(ops: Dictionary) -> void:
 	var all_ids: Array = GameStateScript.config().cards.keys()
 	var res: Dictionary = await econ.gm_apply(_http, session.token(), ops, all_ids)
 	_set_gm_enabled(true)
-	if bool(res.get("ok", false)):
-		_refresh_gm_status()
-	elif _gm_status != null:
+	# 成功路径：economy_changed 订阅已在 await 期间刷新状态行（框架地基#2）
+	if not bool(res.get("ok", false)) and _gm_status != null:
 		_gm_status.text = "GM 失败 status=%d" % int(res.get("status_code", 0))
+
+# 框架地基#2（KAN-100）：GM 动作成功后的状态行刷新统一走订阅。
+func _on_economy_changed(_cache) -> void:
+	_refresh_gm_status()
 
 func _refresh_gm_status() -> void:
 	if _gm_status == null:

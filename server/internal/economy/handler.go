@@ -3,6 +3,7 @@ package economy
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -31,6 +32,9 @@ func (h *Handler) Mount(mux *http.ServeMux, mw *auth.Middleware) {
 	mux.HandleFunc("POST /v5/economy/unlock", mw.Require(h.unlock))
 	mux.HandleFunc("POST /v5/economy/stage-clear", mw.Require(h.stageClear))
 	mux.HandleFunc("POST /v5/economy/collect-idle", mw.Require(h.collectIdle))
+	// KAN-78/79 PVE 防作弊：开战报到 + 战斗中指令流/哈希批量上报。
+	mux.HandleFunc("POST /v5/pve/start", mw.Require(h.pveStart))
+	mux.HandleFunc("POST /v5/pve/report", mw.Require(h.pveReport))
 }
 
 func (h *Handler) getState(w http.ResponseWriter, r *http.Request) {
@@ -74,15 +78,83 @@ func (h *Handler) stageClear(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	st, err := h.repo.StageClear(ctx, accountID, req.GetStageId(), int(req.GetStars()), h.cfg)
+	sum := PveSummary{}
+	if s := req.GetSummary(); s != nil {
+		sum = PveSummary{
+			DurationTicks:  int(s.GetDurationTicks()),
+			DeployCount:    int(s.GetDeployCount()),
+			KingHpPermille: int(s.GetKingHpPermille()),
+		}
+	}
+	st, err := h.repo.StageClear(ctx, accountID, req.GetStageId(), int(req.GetStars()), req.GetBattleId(), sum, h.cfg)
 	if err != nil {
 		code, status := mapErr(err)
-		log.Printf("economy: acct=%d stage_clear stage=%q stars=%d rejected: %v", accountID, req.GetStageId(), req.GetStars(), err)
+		log.Printf("economy: acct=%d stage_clear stage=%q stars=%d battle=%d rejected: %v", accountID, req.GetStageId(), req.GetStars(), req.GetBattleId(), err)
 		httpx.WriteError(w, status, code, err.Error(), pbcommon.MsgId_ECONOMY_STAGE_CLEAR_REQ)
 		return
 	}
-	log.Printf("economy: acct=%d stage_clear stage=%q stars=%d ok -> gold=%d highest=%q", accountID, req.GetStageId(), req.GetStars(), st.Gold, st.HighestCleared)
+	log.Printf("economy: acct=%d stage_clear stage=%q stars=%d battle=%d ok -> gold=%d highest=%q", accountID, req.GetStageId(), req.GetStars(), req.GetBattleId(), st.Gold, st.HighestCleared)
 	httpx.WriteProto(w, http.StatusOK, toProto(st))
+}
+
+// pveStart (KAN-78)：开战报到。服务器时钟记 started_at + 从 economy_cards 读 deck 的
+// level/rank 权威快照 → 回 battle_id。校验：关存在/线性解锁/卡组 8 张全 unlocked。
+func (h *Handler) pveStart(w http.ResponseWriter, r *http.Request) {
+	accountID, ok := auth.AccountIDFromContext(r.Context())
+	if !ok {
+		httpx.WriteError(w, http.StatusUnauthorized, pbcommon.ErrorCode_ERR_UNAUTHORIZED, "no account in context", pbcommon.MsgId_PVE_START_REQ)
+		return
+	}
+	var req pbeconomy.PveStartReq
+	if err := httpx.ReadProto(r, &req); err != nil {
+		httpx.WriteError(w, http.StatusBadRequest, pbcommon.ErrorCode_ERR_INVALID_ARG, err.Error(), pbcommon.MsgId_PVE_START_REQ)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	battleID, err := h.repo.PveStart(ctx, accountID, req.GetStageId(), req.GetDeck(), h.cfg)
+	if err != nil {
+		code, status := mapErr(err)
+		log.Printf("economy: acct=%d pve_start stage=%q rejected: %v", accountID, req.GetStageId(), err)
+		httpx.WriteError(w, status, code, err.Error(), pbcommon.MsgId_PVE_START_REQ)
+		return
+	}
+	log.Printf("economy: acct=%d pve_start stage=%q -> battle=%d", accountID, req.GetStageId(), battleID)
+	httpx.WriteProto(w, http.StatusOK, &pbeconomy.PveStartResp{BattleId: battleID})
+}
+
+// pveReport (KAN-79)：战斗中周期批量追加指令流/哈希。服务器按到达时间记批次（时序真实性）。
+func (h *Handler) pveReport(w http.ResponseWriter, r *http.Request) {
+	accountID, ok := auth.AccountIDFromContext(r.Context())
+	if !ok {
+		httpx.WriteError(w, http.StatusUnauthorized, pbcommon.ErrorCode_ERR_UNAUTHORIZED, "no account in context", pbcommon.MsgId_PVE_REPORT_REQ)
+		return
+	}
+	var req pbeconomy.PveReportReq
+	if err := httpx.ReadProto(r, &req); err != nil {
+		httpx.WriteError(w, http.StatusBadRequest, pbcommon.ErrorCode_ERR_INVALID_ARG, err.Error(), pbcommon.MsgId_PVE_REPORT_REQ)
+		return
+	}
+	cmds := make([]PveCmd, 0, len(req.GetCmds()))
+	for _, c := range req.GetCmds() {
+		cmds = append(cmds, PveCmd{
+			Tick: int(c.GetTick()), Phase: int(c.GetPhase()), Side: int(c.GetSide()),
+			Card: c.GetCardId(), X: int(c.GetXMilli()), Y: int(c.GetYMilli()),
+		})
+	}
+	hashes := make([]PveHashRec, 0, len(req.GetHashes()))
+	for _, hr := range req.GetHashes() {
+		hashes = append(hashes, PveHashRec{Tick: int(hr.GetTick()), Hash: fmt.Sprintf("%x", hr.GetHash())})
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	if err := h.repo.PveReport(ctx, accountID, req.GetBattleId(), cmds, hashes, h.cfg); err != nil {
+		code, status := mapErr(err)
+		log.Printf("economy: acct=%d pve_report battle=%d rejected: %v", accountID, req.GetBattleId(), err)
+		httpx.WriteError(w, status, code, err.Error(), pbcommon.MsgId_PVE_REPORT_REQ)
+		return
+	}
+	httpx.WriteProto(w, http.StatusOK, &pbeconomy.PveReportResp{Ok: true})
 }
 
 // collectIdle (V5-N6)：挂机领取。无业务入参（CollectIdleReq 空），now 全服务器定
@@ -147,6 +219,8 @@ func mapErr(err error) (pbcommon.ErrorCode, int) {
 		return pbcommon.ErrorCode_ERR_ECONOMY_LOCKED, http.StatusConflict
 	case errors.Is(err, ErrStageLocked):
 		return pbcommon.ErrorCode_ERR_ECONOMY_STAGE_LOCKED, http.StatusConflict
+	case errors.Is(err, ErrPveBattleInvalid):
+		return pbcommon.ErrorCode_ERR_PVE_BATTLE_INVALID, http.StatusConflict
 	case errors.Is(err, ErrUnknownCard),
 		errors.Is(err, ErrInvalidStars),
 		errors.Is(err, ErrTooManyStars),

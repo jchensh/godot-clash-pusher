@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<!-- UI 示意图：结算屏（PVE 三星）+ 开箱屏，双机并排；PVP 结算差异见图例。 -->
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>结算 + 开箱示意</title>
+<link rel="stylesheet" href="ui_mock.css">
+<style>
+  .vic { position: absolute; top: 300px; left: 0; right: 0; text-align: center; z-index: 9; }
+  .vic .word { font-size: 96px; font-weight: 900; color: #ffd75e; letter-spacing: 14px;
+               text-shadow: 0 6px 0 #8a5a10, 0 0 40px rgba(255,215,94,.55); }
+  .vic .crowns { font-size: 68px; margin-top: 18px; letter-spacing: 12px; }
+  .vic .stars { font-size: 56px; margin-top: 8px; letter-spacing: 10px; }
+  .vic .score { color: #fff; font-size: 30px; margin-top: 14px; }
+  .vbtns { position: absolute; bottom: 240px; left: 0; right: 0; display: flex; gap: 24px;
+           justify-content: center; z-index: 9; }
+  .chest-stage { position: absolute; top: 260px; left: 0; right: 0; text-align: center; z-index: 9; }
+  .burst { width: 460px; height: 460px; margin: 0 auto; border-radius: 50%;
+           background: radial-gradient(circle, rgba(255,232,150,.75), rgba(255,232,150,0) 68%);
+           display: flex; align-items: center; justify-content: center; font-size: 170px; }
+  .rewards { position: absolute; top: 760px; left: 90px; right: 90px; z-index: 9; }
+  .rw { height: 84px; border-radius: 16px; margin-bottom: 14px; display: flex; align-items: center;
+        gap: 14px; padding: 0 22px; color: #fff; font-size: 28px; font-weight: bold; }
+  .rw .amt { margin-left: auto; color: #ffd75e; }
+  .tapnext { position: absolute; bottom: 250px; left: 0; right: 0; text-align: center; color: rgba(255,255,255,.7);
+             font-size: 22px; z-index: 9; }
+</style>
+</head>
+<body>
+<h1>结算屏 + 开箱屏示意</h1>
+<div class="sub">左=PVE 胜利结算（三星评定）；右=紧接着的开箱奖励揭示。PVP 差异见图例。<span class="backlink"><a href="index.html">← 返回目录</a></span></div>
+<div class="wrap">
+
+  <div>
+    <div class="phone"><div class="screen" id="s1">
+      <div class="dim" style="background:rgba(0,0,0,.55)"></div>
+      <div class="vic">
+        <div class="word">胜 利</div>
+        <div class="crowns">👑👑<span style="opacity:.25">👑</span></div>
+        <div class="stars">⭐⭐⭐</div>
+        <div class="score">王塔血量 87% · 用时 1:42</div>
+      </div>
+      <div class="vbtns">
+        <div class="btn big gold">领取奖励</div>
+        <div class="btn mid dark pill" style="align-self:center">返回</div>
+      </div>
+      <div class="island"></div><div class="home"></div>
+      <div class="guide g-top"><small>y=100</small></div>
+      <div class="guide g-bottom"><small>y=1500</small></div>
+    </div></div>
+    <div class="phone-cap">① 结算：压暗战场 → 大字砸落 → 王冠逐个落 → 星级逐个亮</div>
+  </div>
+
+  <div>
+    <div class="phone"><div class="screen page-bg" id="s2">
+      <div class="chest-stage">
+        <div class="burst">🧰</div>
+        <div style="color:#ffd75e;font-size:30px;font-weight:900">首次通关 3-3！</div>
+      </div>
+      <div class="rewards">
+        <div class="rw panelbox">🪙 金币<span class="amt">+300</span></div>
+        <div class="rw panelbox">💎 宝石<span class="amt">+5</span></div>
+        <div class="rw panelbox">🧩 「都督周瑜」碎片<span class="amt">+3</span></div>
+      </div>
+      <div class="tapnext">点击任意处继续</div>
+      <div class="island"></div><div class="home"></div>
+      <div class="guide g-top"><small>y=100</small></div>
+      <div class="guide g-bottom"><small>y=1500</small></div>
+    </div></div>
+    <div class="phone-cap">② 开箱：宝箱三帧迸开 → 奖励逐条弹入 → 点击跳过/继续</div>
+  </div>
+
+  <div class="legend">
+    <h2>演出节奏（程序实现，美术只出素材）</h2>
+    <ul>
+      <li><span class="tag">结算</span>战场压暗 55% → 「胜利/失败」美术字缩放砸落 → 王冠按拆塔数逐个落入(带震屏) → PVE 再逐星点亮 → 按钮延迟 0.85s 淡入（防误触）</li>
+      <li><span class="tag">开箱</span>宝箱闭合→开启中→迸开三帧 + 背后放射光旋转；奖励条逐条从箱口弹入；再点一下=全部瞬间揭示（可跳过是硬规矩）</li>
+      <li><span class="tag">PVP 差异</span>无星级行；比分=双方王冠数；按钮为「再来一局 / 返回」；失败字用冷色调「战 败」，演出收敛（不羞辱玩家）</li>
+    </ul>
+    <h2>给美术的资源点</h2>
+    <ul>
+      <li>胜利/战败两张大标题美术字、金王冠大号、大星（实/空）</li>
+      <li>宝箱三帧（普通木箱一款即可，后续稀有箱 P2）、放射光底图、奖励揭示条底</li>
+      <li>「首次通关」标签字样条；按钮全部复用组件库</li>
+    </ul>
+    <button class="toggle" onclick="document.getElementById('s1').classList.toggle('hide-guides');document.getElementById('s2').classList.toggle('hide-guides')">显示/隐藏 安全区参考线</button>
+  </div>
+</div>
+</body>
+</html>

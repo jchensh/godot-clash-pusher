@@ -25,7 +25,8 @@ func test_audio_assets_have_chinese_planning_notes() -> void:
 	for asset_id in loader.audio_assets:
 		var a: Dictionary = loader.get_audio_asset(asset_id)
 		assert_true(String(a.get("display_name_zh", "")).length() > 0, "audio asset %s should have Chinese display name" % asset_id)
-		assert_true(["planned", "sourced", "imported", "final"].has(String(a.get("asset_status", ""))), "audio asset %s should have valid status" % asset_id)
+		assert_true(["planned", "sourced", "imported", "final"].has(String(a.get("asset_status", ""))),
+				"audio asset %s should have valid status" % asset_id)
 		assert_true(String(a.get("effect_notes", "")).length() > 0, "audio asset %s should have Chinese effect notes" % asset_id)
 
 func test_audio_paths_are_under_sound_folder() -> void:
@@ -55,3 +56,27 @@ func test_p0_core_audio_plan_exists() -> void:
 	]
 	for asset_id in required:
 		assert_true(loader.has_audio_asset(asset_id), "P0 音频资源缺失: %s" % asset_id)
+
+
+# —— 0716 首批 BGM：轮播集与新曲目接线 ——
+
+func test_music_set_next_excludes_current() -> void:
+	# 轮播选曲纯函数：候选=集内除当前曲；单曲集退化为自身（不会空转）。
+	var am = load("res://view/audio_manager.gd")
+	assert_eq(am.next_in_set(["a", "b"], "a"), ["b"], "双曲集应换到另一首")
+	assert_eq(am.next_in_set(["a", "b"], "b"), ["a"], "反向同理")
+	var fresh: Array = am.next_in_set(["a", "b"], "")
+	assert_eq(fresh.size(), 2, "起播（无当前曲）时两首都是候选")
+	assert_eq(am.next_in_set(["a"], "a"), ["a"], "单曲集退化为自身")
+
+func test_bgm_0716_entries_wired() -> void:
+	# 四首正式曲：条目在、文件真实存在、循环语义正确（战斗双曲必须 loop=false 才会触发轮播）。
+	var a: Dictionary = loader.audio_assets
+	for want in [["music_main_menu", true], ["music_battle_normal", false],
+			["music_battle_hunt", false], ["music_deck_prep", true]]:
+		var id := String(want[0])
+		assert_true(a.has(id), "缺音频条目 %s" % id)
+		var def: Dictionary = a[id]
+		assert_true(ResourceLoader.exists(String(def.get("path", ""))), "%s 音频文件应真实存在" % id)
+		assert_eq(bool(def.get("loop", false)), bool(want[1]),
+			"%s loop 语义（战斗轮播曲必须 false，否则曲终不换曲）" % id)

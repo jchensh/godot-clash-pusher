@@ -1,0 +1,111 @@
+# PLAN_V5_SANGUO.md — 三国题材改版施工图（轨道A）
+
+> 2026-07-04 用户与美术设计师拍板：**世界观/画风全换三国题材**（魏/蜀/吴/群雄四阵营，热血物语方向的三头身高清像素风），**卡ID/费用/数值/机制/流派/结构全部冻结不动**。美术真相源 = [docs/design/card_art_spec_48cards.xlsx](docs/design/card_art_spec_48cards.xlsx)（三国版，含 48 卡×19 列 + 字段说明 + 设计备注三 sheet）。
+> 数值平衡线（KAN-87 probe / KAN-88 延后件）**挂起**，待轨道A 后复盘再启动。CV 审计的离群发现（inferno_dragon 超模等）不受换皮影响、结论保留。
+> docs/design/01~04 设计四部曲中的卡名为奇幻旧名（存档备查），**三国名以本表 + config 为准**，卡 ID 不变可逐一对照。
+
+## 0. 已拍板决策（2026-07-04）
+
+| # | 决策 | 说明 |
+|---|---|---|
+| 1 | **卡 ID / 机制 / 数值冻结** | ID 是 DB（economy_cards/decks）、重放、反作弊校验的主键；换皮压缩在显示层+素材层，服务端零改动 |
+| 2 | **觉醒口径以"已实现机制"为准** | 美术表觉醒列 5 处（阴兵王领队/司马懿叠层冻结/孙尚香燃烧地带/火鸾落地减速/于吉范围眩晕）按实现降级改写；增强版挪 KAN-88 当机制升级项 |
+| 3 | **阵营字段进 config** | `cards.json` 每卡加 `faction: wei/shu/wu/qun`（魏12/蜀12/吴12/群雄12）+ Excel Cards sheet 加列往返；当前仅题材归属+未来羁绊预留，**不产生克制** |
+| 4 | **稀有度显示名换** | 寻常(common)/精良(rare)/非凡(epic)/无双(legendary)；**内部枚举不动**（DB/配置/服务端在用） |
+| 5 | **羁绊预留规则**（收进宪法，未来做羁绊时生效） | ①召唤物/亡语裂兵/重生体继承来源卡阵营；②按"卡牌来源"计数、人海卡只算 1 个羁绊源；③法术按口径另定；④**羁绊只做机制/效用型加成、禁裸数值加成**（防"阵营=强度"重蹈"稀有度=强度"的坑） |
+| 6 | **顶级人物储备** | 曹操/刘备/孙权/关羽/张飞/赵云/吕布/马超等暂不出卡，留作未来内容（新传奇/Champion/赛季）；无合适机制不强行套人物；五虎将仅限史诗+ |
+| 7 | **塔分阵营皮肤**（A3，2026-07-04） | 我方=汉军套恒定；敌方按魏/蜀/吴/群雄四套随章节切换；P0 先出我方套+群雄(黄巾)套 |
+| 8 | **塔损毁态**（A3） | 保持现有语义=坍缩残骸图（低矮、不越基座、别挡兵路视觉）；现程序化压低染暗，正式图逐套替换 |
+| 9 | **UI 小改中式**（A3） | 本次保持像素风、配色纹样角饰走中式（可含和风笔触）、同尺寸同 9-slice 结构替换；**UI 整体大改版后续另立项** |
+| 10 | **头像首批 16**（A3） | 四阵营×4（名将 12+兵种 4），128×128 方形大头、识别优先、非卡面裁切 |
+
+## 1. 轨道A 步骤表
+
+| 步 | 内容 | 状态 |
+|---|---|---|
+| **A1** | 美术表口径对齐：觉醒列 5 处按实现降级 + 4 处 KAN-88 延后件标注"数值占位"，修订版入库 `docs/design/card_art_spec_48cards.xlsx`（覆盖奇幻旧版，git 留档） | ✅ 本次 |
+| **A2** | 文案层三国化：`cards.json` 48 卡名+faction / `units.json` ~39 单位名 / `card_progression.json` 觉醒 note 三国名 / `i18n.json` **补全 48 卡双语**（旧仅 16 卡，32 新卡 UI 一直显示原始键名——顺带修复）/ 稀有度显示名（view ×2 处）/ build_config.py faction 列往返 / config_loader faction 校验 | ✅ 本次 |
+| **A3** | 场景与系统美术清单（姊妹表，给美术）：[docs/design/scene_system_art_spec.xlsx](docs/design/scene_system_art_spec.xlsx)——塔与战场 14 项（塔分阵营 5 套+坍缩残骸+地形 3 主题+浮桥横版预留）/ 战斗FX 18 项（状态 5+法术落点 9+通用 4）/ UI 系统件 8 项（品质框/阵营徽记/中式小改，**UI 大改版后续另立项**）/ 头像 16（四阵营×4）/ 音频方向 6 / 设计备注 7（用户 4 决策入档） | ✅ 2026-07-04 待用户+美术评审 |
+| **A4** | 素材分批接入（按复用组：山越→阴兵→魂鸦→青州→机关兽…，旧素材顶位不断档）+ 世界观文本（游戏名/主菜单/教程/新手战役/章节名——100 关按 黄巾之乱→讨董→群雄→官渡→赤壁→三分 章节化）+ **遭遇模板扩容与奖励池回填**（15 模板全旧卡、100 关奖励仅覆盖 8 旧卡的断层，按章节×阵营铺新卡） | ⬜ 待做 |
+
+> **关联线**：①**A2.5 占位精灵铺满 ✅**（2026-07-04 完成待真人验收）——`view/sprite_db.gd` 39/39 单位全覆盖（新启用 7 张素材包贴图 + tint 染色/scale 体型 + `ph` 占位标记）；替换正式素材三步见 sprite_db.gd 文件头，`test_sprite_db` 占位账本断言=31 随替换递减。①b **首批占位 BGM ✅**（2026-07-04）——A3 音频方向先行两条：菜单=Oriental / 战斗=Ninja Theme（OpenGameArt CC0 可商用免署名，来源许可记 audio_assets.json source_notes）；正式定制曲仍按 A3 音频方向 sheet 排。②**横版战斗（表现层）**已立项未开工 → [PLAN_V5_HBATTLE.md](PLAN_V5_HBATTLE.md)：战场纵改横（我左敌右）方便侧视帧动画素材（一套侧视帧+镜像），logic 零改动、纵横共存；**建议排 A3 后**，让三国素材直接按"侧视帧"约定交付、避免返工。
+
+## 2. A2 影响面与运维
+
+- **UI 卡名真相源 = i18n**：`tr("card_"+id)`（deck_builder/collection/detail/battle HUD/account_create）；cards.json `name` 为配置层名称（两边同步改）。稀有度中文在 `view/card_collection.gd` + `view/card_detail.gd` 的 `_rarity_zh`（硬编码，非 i18n——沿用现状仅换词）。
+- **config 变更 → 版本 hash bump**：改完须 `docker restart` **api + gateway + verifier**（重放校验与配置下发需同版本；无加删卡，播种不变）。
+- **Excel 往返**：`build_config.py` Cards sheet +`faction` 列（枚举下拉 wei/shu/wu/qun）；改完跑 `--from-json` + `--check`。card_progression 不进 Excel（惯例）。
+- **英文名**：i18n en 表 48 卡给了英译（名将用拼音：Huang Zhong/Zhou Yu/Sima Yi…），初版待后续审校，不阻塞。
+
+## 3. 验收标准（A1+A2）
+
+- `build_config.py --check` 通过（faction 列往返一致）；客户端全量单测通过（353 基线零回归）。
+- 真人抽查：主菜单→养成图鉴/卡详情/卡组构建/战斗 HUD 卡名全为三国名（**含 32 张新卡不再显示 card_xxx 键名**）；稀有度显示 寻常/精良/非凡/无双。
+- 观察点（不阻塞）：7 字长名（归附山越短刀兵/蜀汉火脉机关龙）在 battle HUD 截 10 字/卡格宽度内是否溢出，溢出则 A3 一并调 UI。
+
+## 4. Jira 同步清单（✅ 已全部建单结清，2026-07-05 经 Atlassian MCP 代建）
+
+挂 Epic KAN-50 下（真人验收欠账台账 → [docs/ACCEPTANCE_SANGUO.md](docs/ACCEPTANCE_SANGUO.md)）：
+1. ✅ **KAN-90** Story「三国化-A1A2：美术表口径对齐入库 + 文案层三国化」→ In Review（等 A 组验收全过转 Done）。
+2. ✅ **KAN-91** Task「三国化-A2.5：占位精灵铺满 48 卡」→ In Review（等 B 组验收）。
+3. ✅ **KAN-92** Task「三国化-A3：场景与系统美术清单」→ In Review（等表评审）。
+4. ✅ **KAN-93** Story「三国化-A4：素材接入 + 世界观文本 + 遭遇/奖励回填」→ 待办。
+5. ✅ **KAN-94** Story「横版战斗（表现层）H1~H6」→ In Review（H1+H2 完成、E-2/E-3 验收过；施工图 [PLAN_V5_HBATTLE.md](PLAN_V5_HBATTLE.md)）。
+6. ✅ KAN-88 描述已追加 5 项增强觉醒升级项（左慈领队溅射/司马懿冻结/孙尚香燃烧地带/庞统落地减速/于吉范围眩晕）。
+7. ✅ KAN-87 已加挂起备注（轨道A 后复盘重启，CV 离群结论保留）。
+   另建：**KAN-95** 首批 BGM（In Review）/ **KAN-96** DragScroll 滚动+穿透修复（Bug，In Review）/ **KAN-97** UI 体系改造 F1~F3（待办，[PLAN_V5_UIFRAME.md](PLAN_V5_UIFRAME.md)）/ **KAN-98** net_battle 结算层树序 bug（待办，随 F1 修）。
+
+## 5. 48 卡三国命名对照（真相源=美术表与 config；此表便于人读）
+
+| 卡ID | 旧名 | 三国名 | 阵营 | 稀有度 |
+|---|---|---|---|---|
+| knight | 骑士 | 虎贲校尉 | 魏 | 寻常 |
+| archers | 弓箭手 | 魏武强弩手 | 魏 | 寻常 |
+| goblins | 哥布林 | 归附山越短刀兵 | 吴 | 寻常 |
+| spear_goblins | 长矛哥布林 | 归附山越投矛兵 | 吴 | 寻常 |
+| skeletons | 骷髅兵 | 黄巾阴兵 | 群雄 | 寻常 |
+| bats | 血蝠群 | 江东机关蜂 | 吴 | 寻常 |
+| minion_horde | 怨灵大军 | 魂鸦大军 | 群雄 | 寻常 |
+| barbarians | 蛮兵 | 青州悍卒 | 魏 | 寻常 |
+| squire | 见习骑士 | 虎贲新兵 | 魏 | 寻常 |
+| axe_thrower | 掷斧手 | 巴郡飞斧手 | 蜀 | 寻常 |
+| cave_spiders | 洞穴蛛群 | 巴蜀毒蛛 | 蜀 | 寻常 |
+| ice_spirit | 冰灵 | 寒山符童 | 蜀 | 寻常 |
+| fire_spirit | 火灵 | 赤焰符童 | 吴 | 寻常 |
+| electro_spirit | 电灵 | 雷符童子 | 群雄 | 寻常 |
+| bone_ram | 亡骨冲车 | 阴兵撞车 | 群雄 | 寻常 |
+| rock_shower | 石雨 | 剑阁落石阵 | 蜀 | 寻常 |
+| arrows | 箭雨 | 魏武箭阵 | 魏 | 寻常 |
+| zap | 电火花 | 掌心雷 | 群雄 | 寻常 |
+| giant | 食人魔 | 黄巾攻城力士 | 群雄 | 精良 |
+| minions | 怨灵 | 魂鸦 | 群雄 | 精良 |
+| fireball | 火球术 | 赤壁火攻 | 吴 | 精良 |
+| mini_pekka | 狂战士 | 黑甲周仓 | 蜀 | 精良 |
+| log | 滚石 | 剑阁滚木 | 蜀 | 精良 |
+| royal_giant | 皇家巨像 | 刘晔霹雳车 | 魏 | 精良 |
+| hog_rider | 野猪骑士 | 虎豹破城骑 | 魏 | 精良 |
+| valkyrie | 瓦尔基里 | 山越旋刃卫 | 吴 | 精良 |
+| bomber | 投弹亡灵 | 无当火油手 | 蜀 | 精良 |
+| mega_minion | 巨型怨灵 | 重甲机关隼 | 蜀 | 精良 |
+| goblin_gang | 哥布林帮 | 山越混编队 | 吴 | 精良 |
+| battle_ram | 战锤冲车 | 青州撞城队 | 魏 | 精良 |
+| giant_snowball | 寒冰球 | 北地霜石 | 群雄 | 精良 |
+| goblin_barrel | 哥布林桶 | 山越奇袭坛 | 吴 | 精良 |
+| musketeer | 女巫 | 神射黄忠 | 蜀 | 非凡 |
+| baby_dragon | 余烬火颅 | 黄盖火龙鸢 | 吴 | 非凡 |
+| lightning | 闪电术 | 于吉·五雷法 | 群雄 | 非凡 |
+| heal | 治愈术 | 荀彧·安军策 | 魏 | 非凡 |
+| wizard | 巫师 | 都督周瑜 | 吴 | 非凡 |
+| executioner | 行刑者 | 恶来典韦 | 魏 | 非凡 |
+| balloon | 地狱气球 | 孔明轰天灯 | 蜀 | 非凡 |
+| skeleton_army | 骷髅大军 | 左慈·阴兵阵 | 群雄 | 非凡 |
+| phoenix | 不死凤凰 | 庞统火鸾 | 蜀 | 非凡 |
+| freeze | 冰冻术 | 郭嘉·寒江计 | 魏 | 非凡 |
+| golem | 亡灵巨像 | 江东镇岳巨械 | 吴 | 无双 |
+| lava_hound | 熔岩魔像 | 南蛮火鸢母兽 | 群雄 | 无双 |
+| ice_wizard | 寒冰法师 | 冢虎司马懿 | 魏 | 无双 |
+| electro_wizard | 电法师 | 天公将军张角 | 群雄 | 无双 |
+| princess | 公主 | 枭姬孙尚香 | 吴 | 无双 |
+| inferno_dragon | 地狱飞龙 | 蜀汉火脉机关龙 | 蜀 | 无双 |
+
+衍生/觉醒单位：golemite_body 石心魔像→**石心攻城兽**、fire_pup_body 喷火火犬→**喷火小龙**、lava_pup_body 熔岩火犬→**南蛮幼鸢**、phoenix_reborn_body 凤凰(重生)→**火鸾·重启**；其余 body 随卡同名。

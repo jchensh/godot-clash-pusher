@@ -13,3 +13,6 @@
 
 # Go workspace files (per-machine)
 /go.sum.lock
+
+# KAN-79 verifier: Godot linux binary (~70MB, download per docker/README.md)
+docker/godot-linux.zip

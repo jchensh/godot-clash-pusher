@@ -8,13 +8,12 @@ extends Control
 
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const HudWidgets := preload("res://view/ui/hud_widgets.gd")
+const DragScroll := preload("res://view/ui/drag_scroll.gd")
 const GameStateScript := preload("res://view/game_state.gd")
 const StageProgressScript := preload("res://logic/stage_progress.gd")
 const RewardChestScript := preload("res://view/ui/reward_chest.gd")
 const BG_TEX := preload("res://assets/ui/menu_bg.png")
 
-const BASE_CAMP_SCENE := "res://view/base_camp.tscn"
-const DECK_BUILDER_SCENE := "res://view/deck_builder.tscn"
 
 const ROW_CLEARED_BG := Color("1f2a24"); const ROW_CLEARED_BD := Color("3b6d3a")
 const ROW_CURRENT_BG := Color("2a2110"); const ROW_CURRENT_BD := Color("ecb94e")
@@ -24,6 +23,8 @@ var _http: HTTPRequest
 var _wallet_holder: Control
 var _list: VBoxContainer
 var _status: Label
+var _retry_button: Button
+var _settling := false
 
 func _ready() -> void:
 	AudioManager.play_music("music_main_menu")
@@ -35,7 +36,7 @@ func _ready() -> void:
 func _build_static() -> void:
 	var bg := TextureRect.new()
 	bg.texture = BG_TEX
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
@@ -48,12 +49,22 @@ func _build_static() -> void:
 
 	_title("闯关", 84, 52)
 	_status = _center_label("连接中…", 150, 20, PixelUI.COL_HINT)
+	_retry_button = Button.new()
+	_retry_button.text = "结算服务不可用 · 点击重试"
+	_retry_button.position = Vector2(180, 142)
+	_retry_button.size = Vector2(360, 46)
+	_retry_button.visible = false
+	_retry_button.pressed.connect(_on_retry_settlement)
+	PixelUI.style_button(_retry_button, "gold", 18)
+	add_child(_retry_button)
 
 	var scroll := ScrollContainer.new()
 	scroll.position = Vector2(40, 196)
 	scroll.size = Vector2(640, 936)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.scroll_deadzone = 16
 	add_child(scroll)
+	DragScroll.attach(scroll)   # 桌面鼠标按住拖动（触摸走原生）
 	_list = VBoxContainer.new()
 	_list.add_theme_constant_override("separation", 12)
 	_list.custom_minimum_size = Vector2(640, 0)
@@ -62,9 +73,14 @@ func _build_static() -> void:
 	_back_button(1168)
 
 func _bootstrap() -> void:
+	if _settling:
+		return
+	_settling = true
+	_set_retry_visible(false)
 	var session = GameStateScript.session()
 	if not await session.ensure(_http):
-		_status.text = "（离线）未连接服务器"
+		_settling = false
+		_set_retry_visible(true)
 		return
 	var token: String = session.token()
 	var config = GameStateScript.config()
@@ -74,36 +90,47 @@ func _bootstrap() -> void:
 		await econ.refresh(_http, token, all_ids)
 	# 战后回流：上报 + 领奖
 	var reward = null
+	var settlement_failed := false
 	var pending = GameStateScript.stage_last_result
 	if typeof(pending) == TYPE_DICTIONARY and pending.has("stage_id"):
-		print("[V5][map] 收到战后结果 %s" % str(pending))
-		GameStateScript.stage_last_result = {}
-		reward = await _report_and_delta(pending, token, all_ids, econ, config)
-		print("[V5][map] 发奖结果 %s" % str(reward))
+		Log.i("[V5][map] 收到战后结果 %s" % str(pending))
+		var settlement: Dictionary = await _report_and_delta(pending, token, all_ids, econ, config)
+		if bool(settlement.get("ok", false)):
+			GameStateScript.stage_last_result = {}   # 仅服务器确认后清除，失败保留 battle_id/summary 重试
+			reward = settlement.get("reward")
+			Log.i("[V5][map] 发奖结果 %s" % str(reward))
+		else:
+			settlement_failed = true
+			Log.w("[V5][map] 结算未确认，保留战后结果等待重试")
 	_populate(econ.get_cache(), config)
-	if reward != null:
+	_settling = false
+	if settlement_failed:
+		_set_retry_visible(true)
+	elif reward != null:
 		_show_chest(reward)
 
-func _report_and_delta(pending: Dictionary, token: String, all_ids: Array, econ, config):
+func _report_and_delta(pending: Dictionary, token: String, all_ids: Array, econ, config) -> Dictionary:
 	var sid := String(pending.get("stage_id", ""))
 	var stars := int(pending.get("stars", 0))
 	if stars < 1 or sid == "":
-		print("[V5][map] %s 未通关(stars=%d) → 不上报、不发奖" % [sid, stars])
-		return null   # 未通关 = 不上报、不开箱
+		Log.i("[V5][map] %s 未通关(stars=%d) → 不上报、不发奖" % [sid, stars])
+		return {"ok": true, "reward": null}   # 未通关 = 本地消费 pending，不上报/不开箱
 	var cache = econ.get_cache()
 	var was_cleared := cache != null and bool((cache.stages.get(sid, {}) as Dictionary).get("cleared", false))
 	var bgold := int(cache.gold) if cache != null else 0
 	var bgems := int(cache.gems) if cache != null else 0
 	var bshards := _total_shards(cache)
-	var res: Dictionary = await econ.report_stage_clear(_http, token, sid, stars, all_ids)
+	# KAN-78：battle_id + 战报摘要随上报（服务器限速/时长/星数摘要交叉校验后才发奖）。
+	var res: Dictionary = await econ.report_stage_clear(_http, token, sid, stars, all_ids,
+		int(pending.get("battle_id", 0)), pending.get("summary", {}))
 	if not bool(res.get("ok", false)):
-		return null
+		return {"ok": false}
 	var after = econ.get_cache()
-	return {
+	return {"ok": true, "reward": {
 		"stars": stars, "cap": _star_cap(sid, config), "first": not was_cleared,
 		"gold": int(after.gold) - bgold, "gems": int(after.gems) - bgems,
 		"shards": _total_shards(after) - bshards,
-	}
+	}}
 
 func _populate(cache, config) -> void:
 	for c in _list.get_children():
@@ -197,21 +224,38 @@ func _stage_row(sid: String, st: Dictionary, state: String, cache) -> Control:
 
 # ---------- handlers ----------
 func _challenge(sid: String) -> void:
+	if typeof(GameStateScript.stage_last_result) == TYPE_DICTIONARY and GameStateScript.stage_last_result.has("stage_id"):
+		_set_retry_visible(true)
+		return
 	AudioManager.play_sfx("ui_button_press")
 	GameStateScript.stage_id = sid
 	GameStateScript.deck_mode = "stage"
-	print("[V5][map] 挑战 %s → 组卡(stage)" % sid)
-	get_tree().change_scene_to_file(DECK_BUILDER_SCENE)
+	Log.i("[V5][map] 挑战 %s → 组卡(stage)" % sid)
+	Router.goto("deck_builder")
+
+
+func _on_retry_settlement() -> void:
+	if _settling:
+		return
+	await _bootstrap()
+
+
+func _set_retry_visible(value: bool) -> void:
+	if _retry_button == null:
+		return
+	_retry_button.visible = value
+	_retry_button.disabled = _settling and value
+	_status.visible = not value
 
 func _on_back() -> void:
 	AudioManager.play_sfx("ui_button_back")
-	get_tree().change_scene_to_file(BASE_CAMP_SCENE)
+	Router.goto("base_camp")
 
 func _show_chest(reward: Dictionary) -> void:
 	var chest = RewardChestScript.new()
 	chest.setup(int(reward.get("stars", 0)), int(reward.get("cap", 3)),
 			int(reward.get("gold", 0)), int(reward.get("gems", 0)), int(reward.get("shards", 0)), bool(reward.get("first", false)))
-	add_child(chest)
+	UI.modal(chest)   # F2：弹窗层承载（恒高于场景层与滚动拦截，穿透从机制上绝迹）
 
 # ---------- helpers ----------
 func _stage_name(st: Dictionary) -> String:

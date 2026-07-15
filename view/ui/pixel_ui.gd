@@ -4,6 +4,15 @@
 # 各场景 `const PixelUI := preload(".../pixel_ui.gd")` 后调 PixelUI.style_button(btn, kind)
 # 复用统一像素风（主菜单标杆 → 选关/组卡/设置/run/结算/战斗 HUD 全复用同一套）。
 # 不用 class_name（经 preload 调静态方法/常量，避开全局注册预检）。
+#
+# ⚠️ UI 层级规约（PLAN_V5_UIFRAME F3，KAN-97——本文件只管「好看」，「谁在上面/谁收点击」归 UI 层级骨架）：
+# 1. 覆盖类 UI（弹窗/确认框/结算/教程覆盖）一律继承 view/ui/modal.gd 并经 `UI.modal()` 推入——
+#    禁止手搓全屏 Control 靠「后 add_child 的兄弟在上」树序潜规则压层（KAN-98 教训）。
+# 2. 提示/跳字走 `UI.toast()`（TOAST 层恒最顶且 IGNORE 不挡手），别在场景里手写 Label+tween。
+# 3. z_index 只影响绘制不影响 Control 点击命中——想挡输入必须配 mouse_filter，别指望 z_index。
+# 4. 想绕 GUI 做前置 `Node._input` 拦截（DragScroll 类）：必须先查 `UI.modal_open()` 让路弹窗层。
+# 5. 想铺满（全屏根/暗幕/幕布）必须 `set_anchors_and_offsets_preset`——裸 set_anchors_preset 只改
+#    锚点且保留当前矩形（新节点=0×0 隐形不拦输入，2026-07-06 P0 教训），view 层已单测封禁。
 extends RefCounted
 
 # —— 色板（黑暗中世纪夜色，权威常量；改色重跑 gen_ui_assets.py）——
@@ -63,7 +72,7 @@ static func sbpixel(bg: Color, border_w: int = 3, border_col: Color = Color(0, 0
 static func add_background(parent: Control) -> TextureRect:
 	var bg := TextureRect.new()
 	bg.texture = load("res://assets/ui/menu_bg.png")
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(bg)

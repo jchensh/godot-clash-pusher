@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<!-- UI 示意图：闯关页（页签二级页）。100 关 10 章纵向列表，三态节点 + Boss 关 + 章节星。 -->
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>闯关页示意（关卡地图）</title>
+<link rel="stylesheet" href="ui_mock.css">
+<style>
+  .chap { position: absolute; left: 26px; right: 26px; top: 190px; bottom: 170px; overflow: hidden; }
+  .chap-banner { height: 96px; border-radius: 18px; border: 3px solid #2b1e12; margin-bottom: 18px;
+                 background: linear-gradient(100deg, #7c3a2d, #43284d 85%); display: flex; align-items: center;
+                 justify-content: space-between; padding: 0 24px; color: #fff; }
+  .chap-banner .t { font-size: 30px; font-weight: 900; }
+  .chap-banner .s { font-size: 22px; color: #ffd75e; }
+  .node { height: 104px; border-radius: 18px; margin-bottom: 14px; display: flex; align-items: center;
+          padding: 0 20px; gap: 16px; color: #fff; font-size: 24px; }
+  .node .no { font-size: 28px; font-weight: 900; width: 90px; }
+  .node .stars { margin-left: auto; font-size: 26px; letter-spacing: 3px; }
+  .node.cur { outline: 5px solid #ffd75e; box-shadow: 0 0 22px rgba(255,215,94,.6); }
+  .node .go { margin-left: auto; }
+  .node .rec { font-size: 19px; color: #ffe9a8; }
+  .node.boss .no { color: #ff9a8a; }
+  .node .bosstag { background: #e5453a; border: 2px solid #2b1e12; border-radius: 10px; font-size: 18px;
+                   padding: 2px 10px; }
+  .fade { position: absolute; left: 0; right: 0; bottom: 0; height: 60px;
+          background: linear-gradient(180deg, transparent, rgba(35,32,26,.9)); }
+</style>
+</head>
+<body>
+<h1>闯关页示意（页签：闯关）</h1>
+<div class="sub">100 关 / 10 章，纵向滚动列表；三态节点 + Boss 关 + 章节星汇总。画布 720×1560。<span class="backlink"><a href="index.html">← 返回目录</a></span></div>
+<div class="wrap">
+  <div class="phone"><div class="screen page-bg" id="screen">
+    <div class="pagehead"><div class="ttl">闯关</div></div>
+    <div class="row-currency">
+      <div class="pill cur">🪙 12,480 <span class="plus gold pill">+</span></div>
+      <div class="pill cur">💎 335 <span class="plus gold pill">+</span></div>
+    </div>
+
+    <div class="chap">
+      <!-- 章节横幅 -->
+      <div class="chap-banner">
+        <div class="t">第三章 · 群雄割据</div>
+        <div class="s">⭐ 7/30 · 通关解锁「都督周瑜」</div>
+      </div>
+
+      <!-- 已通关 -->
+      <div class="node panelbox">
+        <div class="no">3-1</div><span>✅ 已通关</span>
+        <div class="stars">⭐⭐⭐</div>
+      </div>
+      <div class="node panelbox">
+        <div class="no">3-2</div><span>✅ 已通关</span>
+        <div class="stars">⭐⭐☆</div>
+      </div>
+      <!-- 当前关（呼吸高亮 + 进攻按钮） -->
+      <div class="node panelbox cur">
+        <div class="no">3-3</div>
+        <div><div>当前关卡</div><div class="rec">推荐战力 1100（你 1180 ✓）</div></div>
+        <div class="go btn mid gold">进 攻</div>
+      </div>
+      <!-- 锁定 -->
+      <div class="node panelbox disabled">
+        <div class="no">3-4</div><span>🔒 通关 3-3 解锁</span>
+      </div>
+      <div class="node panelbox disabled">
+        <div class="no">3-5</div><span>🔒</span>
+      </div>
+      <div class="node panelbox disabled">
+        <div class="no">3-6</div><span>🔒</span>
+      </div>
+      <!-- Boss 关特殊框 -->
+      <div class="node panelbox disabled boss">
+        <div class="no">3-10</div><span class="bosstag">BOSS · 袁本初</span><span>🔒</span>
+      </div>
+      <div class="fade"></div>
+    </div>
+
+    <div class="tabbar">
+      <div class="tab disabled"><div class="ic">🏪</div>商店</div>
+      <div class="tab"><div class="ic">🎴</div>卡牌</div>
+      <div class="tab center"><div class="ic">⚔️</div>对战</div>
+      <div class="tab active"><div class="ic">🗺️</div>闯关</div>
+      <div class="tab disabled"><div class="ic">🧭</div>探险</div>
+    </div>
+
+    <div class="island"></div><div class="home"></div>
+    <div class="guide g-top"><small>顶部安全区 y=100</small></div>
+    <div class="guide g-bottom"><small>底部手势带 y=1500</small></div>
+  </div></div>
+
+  <div class="legend">
+    <h2>结构说明</h2>
+    <ul>
+      <li><span class="tag">章节横幅</span>章名（黄巾之乱→讨董→群雄割据→官渡→赤壁→…）+ 本章星数汇总 + 章节奖励预告（解锁新卡铺垫）</li>
+      <li><span class="tag">节点三态</span>已通关（亮+实际星数）/ 当前（金色描边呼吸 + 进攻按钮 + 推荐战力对比着色）/ 锁定（灰+锁+解锁条件）</li>
+      <li><span class="tag">Boss 关</span>每章第 10 关，红色 BOSS 角标 + 关号变色；美术可给 Boss 头像位</li>
+      <li><span class="tag">滚动</span>整列可滚动直达第 1 关回看；默认定位到当前关；底部渐隐提示还有内容</li>
+      <li><span class="tag">进攻流程</span>点「进攻」→ 直接开战（卡组用出战卡组）；战后回本页并弹开箱（见 results.html）</li>
+    </ul>
+    <h2>给美术的资源点</h2>
+    <ul>
+      <li>节点条三态 + Boss 特殊框、章节横幅底、星（实/空）、进攻按钮（主按钮复用）</li>
+      <li>可选：每章横幅配一张窄幅章节题图（美术表现空间，P2）</li>
+    </ul>
+    <button class="toggle" onclick="document.getElementById('screen').classList.toggle('hide-guides')">显示/隐藏 安全区参考线</button>
+  </div>
+</div>
+</body>
+</html>

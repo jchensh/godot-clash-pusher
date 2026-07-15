@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<!-- UI 示意图：主界面（CR 式改版）— 结构/比例/安全区示意，配色与图形全部为占位，最终视觉以主美 mockup 为准。
+     画布口径：逻辑 720×1560（顶部安全区 100 / 底部手势带 60），出血 720×1600。
+     参考：CR 真机截屏 testAssets/20260715-051059.jpg；对应《UI 系统策划案》第六章 6.1。 -->
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>主界面示意 · CR式改版（720×1560）</title>
+<style>
+  :root { --s: 0.55; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #23262e; color: #dfe3ea; font-family: "Microsoft YaHei", sans-serif; padding: 24px; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .sub { color: #9aa3b2; font-size: 13px; margin-bottom: 18px; }
+  .wrap { display: flex; gap: 28px; align-items: flex-start; }
+
+  /* ── 手机框（逻辑 720×1560，scale 显示）── */
+  .phone { width: calc(720px * var(--s)); height: calc(1560px * var(--s)); position: relative; flex: none;
+           border-radius: 28px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,.5); border: 6px solid #0b0d11; }
+  .screen { width: 720px; height: 1560px; transform: scale(var(--s)); transform-origin: 0 0; position: relative;
+            background: linear-gradient(180deg, #2c4a6e 0%, #3e7a52 34%, #58a05e 62%, #3c6b45 100%); }
+
+  /* 主视觉占位（出血层） */
+  .keyart { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .keyart span { color: rgba(255,255,255,.35); font-size: 22px; border: 2px dashed rgba(255,255,255,.35);
+                 padding: 10px 18px; border-radius: 12px; transform: translateY(-330px); }
+
+  /* 通用卡通件 */
+  .pill, .btn, .panel { border: 3px solid #2b1e12; border-radius: 16px; }
+  .gold { background: linear-gradient(180deg, #ffd75e, #f5a623 60%, #d4881c); color: #4a2c05; }
+  .blue { background: linear-gradient(180deg, #7fc0ff, #3f8ede 60%, #2f6cb0); color: #fff; }
+  .dark { background: rgba(24, 20, 16, .82); color: #fff; }
+  .disabled { filter: grayscale(1) brightness(.72); }
+
+  /* 1 顶部货币行（安全区下缘 y=100 起） */
+  .row-currency { position: absolute; top: 108px; right: 20px; display: flex; gap: 14px; }
+  .pill.cur { height: 52px; min-width: 190px; display: flex; align-items: center; padding: 0 12px; gap: 8px;
+              background: rgba(20,16,12,.78); color: #fff; font-size: 26px; font-weight: bold; }
+  .pill.cur .plus { margin-left: auto; width: 34px; height: 34px; border-radius: 10px; display: flex;
+                    align-items: center; justify-content: center; font-size: 24px; }
+
+  /* 2 名片横幅 + 右上小钮 */
+  .banner { position: absolute; top: 108px; left: 20px; width: 330px; height: 118px; border-radius: 14px;
+            background: linear-gradient(100deg, #7c3a2d, #43284d 80%); border: 3px solid #2b1e12;
+            display: flex; align-items: center; gap: 12px; padding: 10px; }
+  .avatar { width: 84px; height: 84px; border-radius: 12px; border: 3px solid #e9c675;
+            background: radial-gradient(circle at 40% 35%, #f2d8a0, #b5793c); display: flex; align-items: center;
+            justify-content: center; font-size: 44px; flex: none; }
+  .banner .name { font-size: 28px; font-weight: bold; color: #fff; }
+  .banner .trophy { font-size: 24px; color: #ffd75e; margin-top: 6px; }
+  .top-btns { position: absolute; top: 182px; right: 20px; display: flex; gap: 12px; }
+  .sq { width: 72px; height: 72px; border-radius: 16px; font-size: 34px; display: flex; align-items: center;
+        justify-content: center; }
+
+  /* 3 左右活动图标轨 */
+  .rail { position: absolute; width: 118px; display: flex; flex-direction: column; gap: 26px; align-items: center; }
+  .rail.left { left: 22px; top: 320px; } .rail.right { right: 22px; top: 320px; }
+  .orb { width: 104px; height: 104px; border-radius: 50%; border: 4px solid #2b1e12; font-size: 46px;
+         display: flex; align-items: center; justify-content: center;
+         background: radial-gradient(circle at 35% 30%, #ffe9a8, #f0a83a 70%, #b8741e); }
+  .orb-label { margin-top: -18px; font-size: 18px; background: rgba(20,16,12,.85); color: #fff;
+               border-radius: 10px; padding: 3px 10px; border: 2px solid #2b1e12; }
+
+  /* 4 中央章节主视觉 + 闯关进度 */
+  .showpiece { position: absolute; left: 110px; right: 110px; top: 470px; height: 430px; text-align: center; }
+  .stage-art { height: 330px; border-radius: 22px; border: 3px dashed rgba(255,255,255,.5);
+               background: radial-gradient(circle at 50% 42%, rgba(255,232,160,.5), rgba(80,50,20,.25) 70%);
+               display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+               color: #fff8e0; }
+  .stage-art .big { font-size: 78px; } .stage-art .cap { font-size: 24px; font-weight: bold; }
+  .stage-art .hint { font-size: 17px; color: rgba(255,248,224,.75); }
+  .progress { margin: 16px auto 0; width: 78%; }
+  .progress .bar { height: 26px; border-radius: 13px; border: 3px solid #2b1e12; background: #241c14; overflow: hidden; }
+  .progress .fill { width: 24%; height: 100%; background: linear-gradient(180deg, #8fd6ff, #3f8ede); }
+  .progress .txt { font-size: 20px; color: #fff; margin-top: 6px; text-shadow: 0 2px 2px rgba(0,0,0,.6); }
+
+  /* 5 底部操作大簇 */
+  .cluster { position: absolute; left: 26px; right: 26px; bottom: 218px; height: 240px; border-radius: 120px;
+             background: rgba(24,20,16,.66); border: 3px solid #2b1e12;
+             display: flex; align-items: center; justify-content: space-between; padding: 0 34px; }
+  .side-btn { width: 150px; height: 168px; border-radius: 20px; display: flex; flex-direction: column;
+              align-items: center; justify-content: center; gap: 6px; font-size: 22px; font-weight: bold;
+              position: relative; }
+  .side-btn .ic { font-size: 56px; }
+  .badge { position: absolute; top: -12px; right: -10px; min-width: 40px; height: 40px; border-radius: 20px;
+           background: #e5453a; color: #fff; border: 3px solid #2b1e12; font-size: 22px;
+           display: flex; align-items: center; justify-content: center; padding: 0 8px; }
+  .battle { width: 300px; height: 190px; border-radius: 26px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 6px; box-shadow: 0 8px 0 #8a5a10; }
+  .battle .t { font-size: 52px; font-weight: 900; letter-spacing: 8px; }
+  .battle .st { font-size: 20px; background: rgba(43,30,18,.25); border-radius: 12px; padding: 3px 14px; }
+
+  /* 6 底部页签导航（下缘留 60px 手势带） */
+  .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 150px;
+            background: linear-gradient(180deg, #241d15, #16110c); border-top: 4px solid #2b1e12;
+            display: flex; align-items: stretch; padding-bottom: 46px; }
+  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+         color: #b7a98f; font-size: 19px; position: relative; }
+  .tab .ic { font-size: 44px; }
+  .tab.center { flex: 1.35; }
+  .tab.center .ic { font-size: 62px; transform: translateY(-16px); filter: drop-shadow(0 4px 4px rgba(0,0,0,.5)); }
+  .tab.center .lb { color: #ffd75e; font-weight: bold; transform: translateY(-14px); }
+
+  /* 安全区参考线 + 灵动岛 + 手势条 */
+  .island { position: absolute; top: 24px; left: 50%; transform: translateX(-50%); width: 220px; height: 58px;
+            border-radius: 30px; background: #000; z-index: 30; }
+  .home { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); width: 240px; height: 9px;
+          border-radius: 5px; background: rgba(255,255,255,.85); z-index: 30; }
+  .guide { position: absolute; left: 0; right: 0; z-index: 40; border-top: 3px dashed rgba(255, 70, 70, .9); }
+  .guide small { position: absolute; right: 8px; top: 4px; color: #ff6b6b; font-size: 18px;
+                 background: rgba(0,0,0,.55); padding: 2px 8px; border-radius: 8px; }
+  .g-top { top: 100px; } .g-bottom { top: 1500px; }
+  .hide-guides .guide { display: none; }
+
+  /* 右侧图例 */
+  .legend { max-width: 480px; font-size: 14px; line-height: 1.75; }
+  .legend h2 { font-size: 16px; margin: 14px 0 6px; color: #ffd75e; }
+  .legend li { margin-left: 18px; }
+  .tag { display: inline-block; background: #3f8ede; color: #fff; border-radius: 8px; padding: 0 8px;
+         font-size: 12px; margin-right: 6px; }
+  button.toggle { margin-top: 14px; padding: 6px 14px; border-radius: 8px; border: 1px solid #556;
+                  background: #2e3340; color: #dfe3ea; cursor: pointer; }
+</style>
+</head>
+<body>
+<h1>主界面示意 · CR 式改版（逻辑画布 720×1560）</h1>
+<div class="sub">结构与比例示意——所有配色/图形/emoji 均为占位，视觉以主美 P0 mockup 为准。对照参考：CR 真机截屏 testAssets/20260715-051059.jpg</div>
+<div class="wrap">
+  <div class="phone"><div class="screen" id="screen">
+    <div class="keyart"><span>主视觉：营地/战场场景美术（整屏出血 720×1600）</span></div>
+
+    <!-- 1 顶部货币行 -->
+    <div class="row-currency">
+      <div class="pill cur">🪙 12,480 <span class="plus gold pill">+</span></div>
+      <div class="pill cur">💎 335 <span class="plus gold pill">+</span></div>
+    </div>
+
+    <!-- 2 名片横幅 + 右上小钮 -->
+    <div class="banner">
+      <div class="avatar">🗡️</div>
+      <div><div class="name">陈到·叔至</div><div class="trophy">🏆 1216</div></div>
+    </div>
+    <div class="top-btns">
+      <div class="sq dark pill">📣</div>
+      <div class="sq dark pill">⚙️</div>
+    </div>
+
+    <!-- 3 左右活动轨 -->
+    <div class="rail left">
+      <div class="orb">⏳</div><div class="orb-label">挂机金库 · 6h</div>
+    </div>
+    <div class="rail right">
+      <div class="orb disabled">🧭</div><div class="orb-label">探险 · 敬请期待</div>
+    </div>
+
+    <!-- 4 中央章节主视觉 + 闯关进度 -->
+    <div class="showpiece">
+      <div class="stage-art">
+        <div class="big">🏯</div>
+        <div class="cap">第三章 · 群雄割据</div>
+        <div class="hint">章节主视觉美术位（随进度换章，类比 CR 竞技场展示）</div>
+      </div>
+      <div class="progress">
+        <div class="bar"><div class="fill"></div></div>
+        <div class="txt">闯关进度 24 / 100</div>
+      </div>
+    </div>
+
+    <!-- 5 底部操作大簇 -->
+    <div class="cluster">
+      <div class="side-btn blue pill">
+        <div class="ic">🎴</div>卡组<div class="badge">8</div>
+      </div>
+      <div class="battle gold pill">
+        <div class="t">对战</div>
+        <div class="st">天梯匹配 · 🏆1216</div>
+      </div>
+      <div class="side-btn blue pill">
+        <div class="ic">🗺️</div>闯关<div class="badge">3-1</div>
+      </div>
+    </div>
+
+    <!-- 6 底部页签 -->
+    <div class="tabbar">
+      <div class="tab disabled"><div class="ic">🏪</div>商店</div>
+      <div class="tab"><div class="ic">🎴</div>卡牌</div>
+      <div class="tab center"><div class="ic">⚔️</div><div class="lb">对战</div></div>
+      <div class="tab"><div class="ic">🗺️</div>闯关</div>
+      <div class="tab disabled"><div class="ic">🧭</div>探险</div>
+    </div>
+
+    <!-- 安全区与真机件 -->
+    <div class="island"></div>
+    <div class="home"></div>
+    <div class="guide g-top"><small>顶部安全区 y=100：其上禁放交互/关键信息</small></div>
+    <div class="guide g-bottom"><small>底部手势带 y=1500：其下禁放交互</small></div>
+  </div></div>
+
+  <div class="legend">
+    <h2>结构说明（与 CR 截屏对位）</h2>
+    <ul>
+      <li><span class="tag">1</span>货币行：金币/宝石药丸 + 「+」商城位（未开先留）↔ CR 顶部货币行</li>
+      <li><span class="tag">2</span>名片横幅：头像(武将立绘) + 昵称 + 杯数；右侧小钮=公告/设置 ↔ CR 玩家横幅+功能钮</li>
+      <li><span class="tag">3</span>活动轨：左=挂机金库(带计时)，右=探险占位(灰) ↔ CR 左右活动图标轨；后续活动/礼包都挂这里</li>
+      <li><span class="tag">4</span>章节主视觉：当前章节场景图+闯关总进度 ↔ CR 竞技场展示+奖杯路进度，「随进度换景」是留给美术的表现空间</li>
+      <li><span class="tag">5</span>操作大簇：卡组(角标=张数) | 大对战按钮(主 CTA，天梯) | 闯关(角标=当前关) ↔ CR 卡组/对战/奖杯之路三件套</li>
+      <li><span class="tag">6</span>页签导航：商店(灰) 卡牌 对战(中央放大) 闯关 探险(灰)；对战页即本屏 ↔ CR 五页签，支持左右滑切页</li>
+    </ul>
+    <h2>硬规矩</h2>
+    <ul>
+      <li>红虚线=安全区：顶 100px / 底 60px（详见《UI 系统策划案》第二章）</li>
+      <li>全部按钮需四态；页签切换带滑动动效；探险/商店灰态但占位</li>
+      <li>旧主菜单「六按钮列表」废弃，导航职责下沉到页签+大簇</li>
+    </ul>
+    <button class="toggle" onclick="document.getElementById('screen').classList.toggle('hide-guides')">显示/隐藏 安全区参考线</button>
+  </div>
+</div>
+</body>
+</html>

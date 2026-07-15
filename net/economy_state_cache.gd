@@ -13,6 +13,8 @@ var _client               # EconomyClient（HTTP + protobuf）
 var cache = null          # PlayerData：最近一次服务器快照（未加载则 null）
 var is_loaded: bool = false   # 是否成功拉过至少一次服务器状态
 var last_error: Dictionary = {}   # 最近一次 refresh 的失败信息（{ok:false,...}）
+var online_guard: Callable        # E1：写操作前由 OnlineRuntime 注入 fail-closed gate；纯逻辑测试可留空
+var transport_failure_reporter: Callable   # E1：API transport/5xx 反向驱动 Online → DEGRADED
 
 func _init(api_url: String = "") -> void:
 	_client = EconomyClient.new(api_url)
@@ -22,40 +24,52 @@ func _init(api_url: String = "") -> void:
 ## all_card_ids 用于 ensure 缺失卡（来自 config）。返回 {ok:true} 或 {ok:false,...}。
 func refresh(http, token: String, all_card_ids: Array) -> Dictionary:
 	var res: Dictionary = await _client.get_state(http, token)
+	_observe_result(res, "economy refresh")
 	if not bool(res.get("ok", false)):
 		last_error = res
-		print("[V5][econ] 拉状态失败 status=%d" % int(res.get("status_code", 0)))
+		Log.w("[V5][econ] 拉状态失败 status=%d" % int(res.get("status_code", 0)))
 		return res
-	# 服务器快照 → PlayerData（apply_server_state 用服务器 schema 重建）。
-	if cache == null:
-		cache = PlayerDataScript.new()
-	cache.apply_server_state(res["state"], all_card_ids)
-	is_loaded = true
-	last_error = {}
-	print("[V5][econ] 拉状态 ok gold=%d gems=%d 解锁=%d/%d highest=%s" % [cache.gold, cache.gems, cache.unlocked_card_ids().size(), cache.cards.size(), cache.highest_cleared])
+	# 服务器快照 → PlayerData（_apply 统一落地 + Events.economy_changed 广播，框架地基#2）。
+	_apply(res["state"], all_card_ids)
+	Log.i("[V5][econ] 拉状态 ok gold=%d gems=%d 解锁=%d/%d highest=%s"
+			% [cache.gold, cache.gems, cache.unlocked_card_ids().size(), cache.cards.size(), cache.highest_cleared])
 	return {"ok": true}
 
 
-## 把一次服务器返回的状态快照应用到缓存（refresh/动作共用）。
+## 把一次服务器返回的状态快照应用到缓存（refresh/动作共用），并广播变更。
 func _apply(state_dict: Dictionary, all_card_ids: Array) -> void:
 	if cache == null:
 		cache = PlayerDataScript.new()
 	cache.apply_server_state(state_dict, all_card_ids)
 	is_loaded = true
 	last_error = {}
+	_emit_changed()
+
+
+## 框架地基#2（KAN-100）：快照变更广播。总线是 autoload `Events`（offline 单测树没有），
+## 本类是 RefCounted 无法 get_node → 经 main_loop root 动态查找并判空（对齐 DragScroll 找 UI 方案）。
+func _emit_changed() -> void:
+	var ml := Engine.get_main_loop()
+	if ml is SceneTree:
+		var ev = (ml as SceneTree).root.get_node_or_null("Events")
+		if ev != null:
+			ev.economy_changed.emit(cache)
 
 
 ## V5-S7（决策48）动作门面：领取挂机金币。服务器算 (now−last_collect) 产出 + 落库，回新状态 → 更新缓存。
 ## 成功 → {ok:true}（缓存已刷新）；失败 → {ok:false,...}（缓存不变）。token=会话令牌；all_card_ids 来自 config。
 func collect_idle(http, token: String, all_card_ids: Array) -> Dictionary:
+	if not _can_write():
+		return _offline_error()
 	var before := int(cache.gold) if cache != null else 0
 	var res: Dictionary = await _client.collect_idle(http, token)
+	_observe_result(res, "collect idle")
 	if bool(res.get("ok", false)):
 		_apply(res["state"], all_card_ids)
-		print("[V5][econ] 领挂机 ok gold %d→%d" % [before, cache.gold])
+		Log.i("[V5][econ] 领挂机 ok gold %d→%d" % [before, cache.gold])
 	else:
 		last_error = res
-		print("[V5][econ] 领挂机失败 status=%d code=%d" % [int(res.get("status_code", 0)), int(res.get("error_code", 0))])
+		Log.w("[V5][econ] 领挂机失败 status=%d code=%d" % [int(res.get("status_code", 0)), int(res.get("error_code", 0))])
 	return res
 
 
@@ -70,42 +84,78 @@ func unlock(http, token: String, card_id: String, all_card_ids: Array) -> Dictio
 	return await _action(http, "unlock", token, card_id, all_card_ids)
 
 func _action(http, op: String, token: String, card_id: String, all_card_ids: Array) -> Dictionary:
+	if not _can_write():
+		return _offline_error()
 	var res: Dictionary
 	match op:
 		"upgrade": res = await _client.upgrade(http, token, card_id)
 		"rank_up": res = await _client.rank_up(http, token, card_id)
 		_: res = await _client.unlock(http, token, card_id)
+	_observe_result(res, op)
 	if bool(res.get("ok", false)):
 		_apply(res["state"], all_card_ids)
 		var cs: Dictionary = cache.card_state(card_id)
-		print("[V5][econ] %s %s ok → gold=%d level=%d rank=%d unlocked=%s" % [op, card_id, cache.gold, int(cs.get("level", 0)), int(cs.get("rank", 0)), str(cache.is_unlocked(card_id))])
+		Log.i("[V5][econ] %s %s ok → gold=%d level=%d rank=%d unlocked=%s"
+				% [op, card_id, cache.gold, int(cs.get("level", 0)), int(cs.get("rank", 0)), str(cache.is_unlocked(card_id))])
 	else:
 		last_error = res
-		print("[V5][econ] %s %s 失败 status=%d code=%d" % [op, card_id, int(res.get("status_code", 0)), int(res.get("error_code", 0))])
+		Log.w("[V5][econ] %s %s 失败 status=%d code=%d" % [op, card_id, int(res.get("status_code", 0)), int(res.get("error_code", 0))])
 	return res
 
 ## V5-S7c 闯关上报门面：报 (stage_id, stars)，服务器 sanity + 发奖 + 记进度 → 回新状态更新缓存。
-func report_stage_clear(http, token: String, stage_id: String, stars: int, all_card_ids: Array) -> Dictionary:
-	var res: Dictionary = await _client.report_stage_clear(http, token, stage_id, stars)
+## KAN-78：带 battle_id + summary（PVE 防作弊会话），服务器限速/摘要交叉校验后才发奖。
+func report_stage_clear(http, token: String, stage_id: String, stars: int, all_card_ids: Array,
+		battle_id: int = 0, summary: Dictionary = {}) -> Dictionary:
+	if not _can_write():
+		return _offline_error()
+	var res: Dictionary = await _client.report_stage_clear(http, token, stage_id, stars, battle_id, summary)
+	_observe_result(res, "stage clear")
 	if bool(res.get("ok", false)):
 		_apply(res["state"], all_card_ids)
-		print("[V5][econ] 上报通关 %s stars=%d ok → gold=%d highest=%s" % [stage_id, stars, cache.gold, cache.highest_cleared])
+		Log.i("[V5][econ] 上报通关 %s stars=%d battle=%d ok → gold=%d highest=%s" % [stage_id, stars, battle_id, cache.gold, cache.highest_cleared])
 	else:
 		last_error = res
-		print("[V5][econ] 上报通关 %s stars=%d 失败 status=%d code=%d" % [stage_id, stars, int(res.get("status_code", 0)), int(res.get("error_code", 0))])
+		Log.w("[V5][econ] 上报通关 %s stars=%d battle=%d 失败 status=%d code=%d"
+				% [stage_id, stars, battle_id, int(res.get("status_code", 0)), int(res.get("error_code", 0))])
+	return res
+
+
+## KAN-78：PVE 开战报到门面。成功 {ok, battle_id}；失败 {ok:false,...}（战斗不该开）。
+func pve_start(http, token: String, stage_id: String, deck: Array) -> Dictionary:
+	if not _can_write():
+		return _offline_error()
+	var res: Dictionary = await _client.pve_start(http, token, stage_id, deck)
+	_observe_result(res, "pve start")
+	if bool(res.get("ok", false)):
+		Log.i("[V5][pve] 开战报到 ok stage=%s battle_id=%d" % [stage_id, int(res.get("battle_id", 0))])
+	else:
+		Log.w("[V5][pve] 开战报到失败 stage=%s status=%d code=%d" % [stage_id, int(res.get("status_code", 0)), int(res.get("error_code", 0))])
+	return res
+
+
+## KAN-79：PVE 指令流批量上报门面（PveRecorder.flush 调）。
+func pve_report(http, token: String, battle_id: int, cmds: Array, hashes: Array) -> Dictionary:
+	if not _can_write():
+		return _offline_error()
+	var res: Dictionary = await _client.pve_report(http, token, battle_id, cmds, hashes)
+	_observe_result(res, "pve report")
 	return res
 
 
 ## V5 GM 工具门面（始终开放）：发 GM 操作改服务器 DB → 回新状态刷新缓存。
 ## ops 见 EconomyClient.gm_apply。成功 → {ok:true}（缓存已刷新）；失败 → {ok:false,...}。
 func gm_apply(http, token: String, ops: Dictionary, all_card_ids: Array) -> Dictionary:
+	if not _can_write():
+		return _offline_error()
 	var res: Dictionary = await _client.gm_apply(http, token, ops)
+	_observe_result(res, "gm apply")
 	if bool(res.get("ok", false)):
 		_apply(res["state"], all_card_ids)
-		print("[V5][GM] apply ok → gold=%d gems=%d 解锁=%d/%d highest=%s" % [cache.gold, cache.gems, cache.unlocked_card_ids().size(), cache.cards.size(), cache.highest_cleared])
+		Log.i("[V5][GM] apply ok → gold=%d gems=%d 解锁=%d/%d highest=%s"
+				% [cache.gold, cache.gems, cache.unlocked_card_ids().size(), cache.cards.size(), cache.highest_cleared])
 	else:
 		last_error = res
-		print("[V5][GM] apply 失败 status=%d code=%d" % [int(res.get("status_code", 0)), int(res.get("error_code", 0))])
+		Log.w("[V5][GM] apply 失败 status=%d code=%d" % [int(res.get("status_code", 0)), int(res.get("error_code", 0))])
 	return res
 
 
@@ -125,7 +175,26 @@ func get_cache():
 	return cache
 
 
+func _can_write() -> bool:
+	return not online_guard.is_valid() or bool(online_guard.call())
+
+
+func _offline_error() -> Dictionary:
+	last_error = {"ok": false, "status_code": 0, "error_code": 0, "error": "online session not ready"}
+	Log.w("[V5][econ] 在线会话未 ready，拒绝写操作")
+	return last_error
+
+
+func _observe_result(result: Dictionary, operation: String) -> void:
+	if bool(result.get("ok", false)):
+		return
+	var status := int(result.get("status_code", 0))
+	if (status == 0 or status >= 500) and transport_failure_reporter.is_valid():
+		transport_failure_reporter.call("%s unavailable (status=%d)" % [operation, status])
+
+
 ## 降级路径（离线/未登录）：用本地存档镜像初始化缓存（秒启动展示用；登录后被服务器覆盖）。
 ## 由 SaveSystem.load_player 读出的 player_data 传入。不改变 is_loaded（仍未从服务器确认）。
 func seed_from_local(player_data) -> void:
 	cache = player_data
+	_emit_changed()

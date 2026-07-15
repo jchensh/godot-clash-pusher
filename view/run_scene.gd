@@ -8,7 +8,6 @@ extends Control
 
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const GameStateScript = preload("res://view/game_state.gd")
-const ConfigLoaderScript = preload("res://logic/config_loader.gd")
 const RunMapScript = preload("res://logic/run_map.gd")
 const RunStateScript = preload("res://logic/run_state.gd")
 const RunRewardsScript = preload("res://logic/run_rewards.gd")
@@ -16,9 +15,8 @@ const MetaScript = preload("res://logic/meta_progress.gd")
 const SaveScript = preload("res://logic/save_system.gd")
 const BattleScript = preload("res://logic/battle.gd")
 const SpriteDB = preload("res://view/sprite_db.gd")
+const ModalScript = preload("res://view/ui/modal.gd")   # F2：奖励/结算覆盖层走 UI.modal 弹窗层
 
-const BATTLE_SCENE := "res://view/battle_scene.tscn"
-const MENU_SCENE := "res://view/main_menu.tscn"
 const OFFER_COUNT := 3
 
 const GOLD := Color(1.0, 0.84, 0.36)
@@ -29,7 +27,7 @@ const C_BOSS := Color(0.85, 0.35, 0.32)
 
 var _loader
 var _content: Control          # 地图/卡组/按钮层（状态变化时重建）
-var _overlay: Control          # 奖励/结算覆盖层
+var _overlay: Control          # 奖励/结算覆盖层：F2 起为 Modal 实例（UI.modal 弹窗层承载），mode=none 时为 null
 var _mode := "none"            # none / reward / summary
 var _reward_kind := "card"     # card / relic
 var _offers: Array = []        # 当前奖励候选 id
@@ -39,8 +37,7 @@ var _picking := false          # 正在播放选中演出，挡二次点击
 func _ready() -> void:
 	AudioManager.play_music("music_run_map")
 	AudioManager.play_ambience("amb_run_campfire")
-	_loader = ConfigLoaderScript.new()
-	_loader.load_all()
+	_loader = GameStateScript.config()
 	if GameStateScript.meta == null:
 		GameStateScript.meta = SaveScript.load_meta()
 	if GameStateScript.run == null:
@@ -49,7 +46,6 @@ func _ready() -> void:
 			_start_new_run()
 	_build_bg()
 	_content = _layer()
-	_overlay = _layer()
 	_process_pending_result()
 	_refresh_content()
 	_refresh_overlay()
@@ -126,7 +122,8 @@ func _refresh_content() -> void:
 		var border: Color = C_BOSS if ntype == RunMapScript.TYPE_BOSS else base.lightened(0.2)
 		var mark := "✓" if done else ("▶" if current else "·")
 		var txt := tr("run_node_row") % [mark, int(node.get("act", 0)) + 1, tr("node_" + ntype), String(node.get("level_id"))]
-		var row := _panel(_content, Vector2(40, y), Vector2(640, 52), base.darkened(0.35), border, 3 if (current or ntype == RunMapScript.TYPE_BOSS) else 1)
+		var row := _panel(_content, Vector2(40, y), Vector2(640, 52), base.darkened(0.35), border,
+				3 if (current or ntype == RunMapScript.TYPE_BOSS) else 1)
 		_label(row, txt, Vector2(16, 0), Vector2(610, 52), 20, Color.WHITE if not done else Color(0.7, 0.8, 0.7), HORIZONTAL_ALIGNMENT_LEFT)
 		y += 60.0
 
@@ -134,7 +131,8 @@ func _refresh_content() -> void:
 	var deck_names: Array = []
 	for cid in run.deck:
 		deck_names.append(tr("card_" + str(cid)))
-	_label(_content, tr("run_deck") % [run.deck.size(), ", ".join(deck_names)], Vector2(40, y + 6), Vector2(640, 48), 16, Color(0.80, 0.86, 0.92), HORIZONTAL_ALIGNMENT_LEFT)
+	_label(_content, tr("run_deck") % [run.deck.size(), ", ".join(deck_names)], Vector2(40, y + 6),
+			Vector2(640, 48), 16, Color(0.80, 0.86, 0.92), HORIZONTAL_ALIGNMENT_LEFT)
 	var relic_names: Array = []
 	for rid in run.relics:
 		relic_names.append(tr("relic_" + str(rid) + "_name"))
@@ -148,16 +146,24 @@ func _refresh_content() -> void:
 	_button(_content, tr("btn_new_run"), Vector2(360, 1090), Vector2(150, 84), "stone", _on_new_run)
 	_button(_content, tr("btn_menu"), Vector2(530, 1090), Vector2(150, 84), "dark", _on_menu)
 
-# ---------------- 奖励 / 结算覆盖层 ----------------
+# ---------------- 奖励 / 结算覆盖层（F2：Modal + UI.modal 弹窗层，替代场景内 _dim 树序压层）----------------
 func _refresh_overlay() -> void:
-	_clear(_overlay)
+	if _overlay != null and is_instance_valid(_overlay):
+		_overlay.queue_free()
+	_overlay = null
 	if _mode == "reward":
+		_overlay = _new_overlay()
 		_build_reward()
 	elif _mode == "summary":
+		_overlay = _new_overlay()
 		_build_summary()
 
+func _new_overlay() -> Control:
+	var m := ModalScript.new()   # 基类自带 0.72 暗幕 + 全屏 STOP（原 _dim 的职责）
+	UI.modal(m)
+	return m
+
 func _build_reward() -> void:
-	_dim(_overlay)
 	_offer_nodes = {}
 	var is_relic: bool = _reward_kind == "relic"
 	AudioManager.play_sfx("relic_reveal" if is_relic else "reward_panel_open")
@@ -190,10 +196,10 @@ func _build_reward() -> void:
 	_anim_pop(skip, 0.12 + idx * 0.10, 20.0)
 
 func _build_summary() -> void:
-	_dim(_overlay)
 	var run = GameStateScript.run
 	var won: bool = run.status == RunStateScript.RUN_WON
-	_anim_pop(_label(_overlay, tr("run_cleared") if won else tr("run_over"), Vector2(0, 360), Vector2(720, 70), 56, (C_CURRENT if won else C_BOSS), HORIZONTAL_ALIGNMENT_CENTER), 0.0, -30.0)
+	_anim_pop(_label(_overlay, tr("run_cleared") if won else tr("run_over"), Vector2(0, 360),
+			Vector2(720, 70), 56, (C_CURRENT if won else C_BOSS), HORIZONTAL_ALIGNMENT_CENTER), 0.0, -30.0)
 	var line := (tr("run_summary_win") % run.wins) if won else (tr("run_summary_lose") % run.wins)
 	_anim_pop(_label(_overlay, line, Vector2(0, 450), Vector2(720, 30), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER), 0.18, 20.0)
 	if GameStateScript.meta != null:
@@ -205,7 +211,8 @@ func _build_summary() -> void:
 			var names: Array = []
 			for rid in newly:
 				names.append(tr("relic_" + str(rid) + "_name"))
-			_anim_pop(_label(_overlay, tr("unlocked") % ", ".join(names), Vector2(0, 540), Vector2(720, 28), 18, GOLD, HORIZONTAL_ALIGNMENT_CENTER), 0.42, 20.0)
+			_anim_pop(_label(_overlay, tr("unlocked") % ", ".join(names), Vector2(0, 540),
+					Vector2(720, 28), 18, GOLD, HORIZONTAL_ALIGNMENT_CENTER), 0.42, 20.0)
 	_anim_pop(_button(_overlay, tr("btn_back_menu"), Vector2(210, 620), Vector2(300, 72), "dark", _on_summary_menu), 0.55, 20.0)
 
 # ---------------- 交互回调 ----------------
@@ -213,7 +220,7 @@ func _on_fight() -> void:
 	if _mode != "none" or GameStateScript.run.is_over():
 		return
 	AudioManager.play_sfx("run_node_select")
-	get_tree().change_scene_to_file(BATTLE_SCENE)   # battle_scene 读 GameState.run 自行建场
+	Router.goto("battle")   # battle_scene 读 GameState.run 自行建场
 
 func _on_pick(id) -> void:
 	if _picking:
@@ -276,12 +283,12 @@ func _on_new_run() -> void:
 
 func _on_menu() -> void:
 	AudioManager.play_sfx("ui_button_back")
-	get_tree().change_scene_to_file(MENU_SCENE)
+	Router.goto("main_menu")
 
 func _on_summary_menu() -> void:
 	AudioManager.play_sfx("ui_button_back")
 	GameStateScript.run = null          # run 已结束，清掉（meta 已存盘）
-	get_tree().change_scene_to_file(MENU_SCENE)
+	Router.goto("main_menu")
 
 # ---------------- 小工具 ----------------
 func _build_bg() -> void:
@@ -289,17 +296,10 @@ func _build_bg() -> void:
 
 func _layer() -> Control:
 	var c := Control.new()
-	c.set_anchors_preset(Control.PRESET_FULL_RECT)
+	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(c)
 	return c
-
-func _dim(parent: Control) -> void:
-	var d := ColorRect.new()
-	d.color = Color(0, 0, 0, 0.72)
-	d.set_anchors_preset(Control.PRESET_FULL_RECT)
-	d.mouse_filter = Control.MOUSE_FILTER_STOP
-	parent.add_child(d)
 
 func _clear(c: Control) -> void:
 	while c.get_child_count() > 0:

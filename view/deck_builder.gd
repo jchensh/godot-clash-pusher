@@ -6,15 +6,9 @@ extends Control
 
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const HudWidgets := preload("res://view/ui/hud_widgets.gd")
+const DragScroll := preload("res://view/ui/drag_scroll.gd")
 const GameStateScript = preload("res://view/game_state.gd")
-const ConfigLoaderScript = preload("res://logic/config_loader.gd")
 const SpriteDB = preload("res://view/sprite_db.gd")
-const BATTLE_SCENE := "res://view/battle_scene.tscn"
-const LEVEL_SELECT_SCENE := "res://view/level_select.tscn"
-const STAGE_MAP_SCENE := "res://view/stage_map.tscn"
-const BASE_CAMP_SCENE := "res://view/base_camp.tscn"
-const NET_BATTLE_SCENE := "res://view/net_battle_scene.tscn"   # V5-S9 天梯
-const MAIN_MENU_SCENE := "res://view/main_menu.tscn"
 const DECK_SIZE := 8
 
 const TROOP_BG := Color(0.20, 0.30, 0.42)
@@ -36,10 +30,11 @@ var _power_label: Label
 var _cache                              # EconomyStateCache 缓存的 PlayerData（服务器快照）；null=离线/自由对战
 var _recommended := 0                   # 闯关模式下本关推荐战力（着色基准）
 var _mode := ""                         # 组卡上下文：stage / edit / 其它(自由对战)
+var _pool_content: Control              # 卡池滚动内容层（48 卡超屏，ScrollContainer 拖动/滚轮滑动）
 
 func _ready() -> void:
-	_loader = ConfigLoaderScript.new()
-	_loader.load_all()
+	AudioManager.play_music("music_deck_prep")   # 0716 首批 BGM：战前选卡上阵曲（PVE 上阵/天梯选卡组共用）
+	_loader = GameStateScript.config()
 	_mode = GameStateScript.deck_mode
 	var econ = GameStateScript.economy()
 	_cache = econ.get_cache() if econ.is_loaded else null
@@ -126,17 +121,27 @@ func _build() -> void:
 
 	_count_label = _pin_label("", Vector2(400, 162), Vector2(290, 28), 24, GOLD, HORIZONTAL_ALIGNMENT_RIGHT)
 
-	# 分隔线 + 卡池
+	# 分隔线 + 卡池（ScrollContainer：滚轮 + 手指/鼠标按住拖动滑动——48 卡超屏必滚）
 	_rect(Color(0.30, 0.34, 0.30, 0.8), Vector2(30, 386), Vector2(660, 3))
 	_pin_label(tr("deck_pool"), Vector2(30, 398), Vector2(660, 26), 20, PixelUI.COL_MUTED, HORIZONTAL_ALIGNMENT_LEFT)
 	var ids: Array = _card_pool()
+	var rows: int = int(ceil(ids.size() / 4.0))
+	var scroll := ScrollContainer.new()
+	scroll.position = Vector2(28, 428)
+	scroll.size = Vector2(664, 548)   # 到底部按钮(988)上方留 12px；内容在此窗内滚动
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER   # 隐藏滚条不占列宽；拖动/滚轮仍可滚
+	scroll.scroll_deadzone = 16   # 真机触摸：阈值内=点选卡，超出=原生拖动滚动
+	add_child(scroll)
+	DragScroll.attach(scroll)   # 桌面鼠标按住拖动（触摸走原生，见 drag_scroll.gd）
+	_pool_content = Control.new()
+	_pool_content.custom_minimum_size = Vector2(664.0, ((rows - 1) * 100.0 + 96.0) if rows > 0 else 0.0)
+	scroll.add_child(_pool_content)
 	for i in ids.size():
 		var id = ids[i]
 		var col := i % 4
 		var row := i / 4
-		var x := 30.0 + col * 170.0
-		var y := 440.0 + row * 100.0
-		_pool_tile(id, x, y)
+		_pool_tile(id, 2.0 + col * 170.0, 4.0 + row * 100.0)   # 内容层局部坐标（+2/+4 给选中金边留描边位）
 
 	# 底部按钮
 	_action_button(tr("btn_back"), 70, 988, 240, "dark", _on_back)
@@ -158,13 +163,15 @@ func _pool_tile(id, x: float, y: float) -> void:
 	btn.add_theme_stylebox_override("hover", PixelUI.sbpixel(bg.lightened(0.15), 2, border))
 	btn.add_theme_stylebox_override("pressed", PixelUI.sbpixel(bg.darkened(0.12), 2, border))
 	btn.pressed.connect(_toggle.bind(id))
-	add_child(btn)
+	_pool_content.add_child(btn)
 	var port := SpriteDB.make_card_portrait(str(id), _loader, Vector2(x + 49, y + 3), Vector2(52, 40))
 	if port != null:   # 有肖像 → 图在上、名+费在下；无肖像(箭雨/滚石/治疗) → 名+费居中
-		add_child(port)
-		_pin_label("%s\n%d" % [_card_name(id), _cost(id)], Vector2(x, y + 42), Vector2(150, 40), 15, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER)
+		_pool_content.add_child(port)
+		_pin_label("%s\n%d" % [_card_name(id), _cost(id)], Vector2(x, y + 42), Vector2(150, 40),
+				15, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER, _pool_content)
 	else:
-		_pin_label("%s\n%d" % [_card_name(id), _cost(id)], Vector2(x, y), Vector2(150, 84), 21, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER)
+		_pin_label("%s\n%d" % [_card_name(id), _cost(id)], Vector2(x, y), Vector2(150, 84),
+				21, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER, _pool_content)
 	# 选中金边（默认隐藏，_refresh 控制 visible）
 	var frame := Panel.new()
 	frame.position = Vector2(x - 2, y - 2)
@@ -172,7 +179,7 @@ func _pool_tile(id, x: float, y: float) -> void:
 	frame.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color(0, 0, 0, 0), 4, GOLD))
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	frame.visible = false
-	add_child(frame)
+	_pool_content.add_child(frame)
 	_frames[id] = frame
 
 func _toggle(id) -> void:
@@ -197,6 +204,7 @@ func _refresh() -> void:
 			var id = _selected[i]
 			s.label.text = _card_name(id)
 			s.portrait.texture = SpriteDB.card_portrait_tex(str(id), _loader)
+			s.portrait.modulate = SpriteDB.card_portrait_tint(str(id), _loader)
 			s.portrait.visible = s.portrait.texture != null
 			s.btn.add_theme_stylebox_override("normal", PixelUI.sbpixel(SLOT_FILLED_BG, 2, Color(0.40, 0.55, 0.42)))
 		else:
@@ -227,22 +235,22 @@ func _on_battle() -> void:
 		return
 	# edit 模式（基地编辑）= 只存卡组回基地；其余 = 进战斗（battle 读 stage_id 选闯关/自由）。
 	if _mode == "edit":
-		print("[V5][deck] 保存卡组回基地 deck=%s" % str(_selected))
-		get_tree().change_scene_to_file(BASE_CAMP_SCENE)
+		Log.i("[V5][deck] 保存卡组回基地 deck=%s" % str(_selected))
+		Router.goto("base_camp")
 		return
 	# ★ 单人对战上下文互斥：清掉 roguelite/战役 静态状态，避免 battle 因 stale run/campaign
 	#   误判模式（战后弹去肉鸽/战役并推进）。battle 据 stage_id 选闯关 vs 自由。
 	GameStateScript.run = null
 	GameStateScript.campaign = null
-	print("[V5][deck] 出战 mode=%s stage_id='%s' deck=%s" % [_mode, GameStateScript.stage_id, str(_selected)])
-	get_tree().change_scene_to_file(BATTLE_SCENE)
+	Log.i("[V5][deck] 出战 mode=%s stage_id='%s' deck=%s" % [_mode, GameStateScript.stage_id, str(_selected)])
+	Router.goto("battle")
 
 func _on_back() -> void:
 	match _mode:
-		"stage": get_tree().change_scene_to_file(STAGE_MAP_SCENE)
-		"edit": get_tree().change_scene_to_file(BASE_CAMP_SCENE)
-		"ladder": get_tree().change_scene_to_file(MAIN_MENU_SCENE)
-		_: get_tree().change_scene_to_file(LEVEL_SELECT_SCENE)
+		"stage": Router.goto("stage_map")
+		"edit": Router.goto("base_camp")
+		"ladder": Router.goto("main_menu")
+		_: Router.goto("level_select")
 
 # V5-S9 天梯：把选好的卡组存到服务器槽1（lobby 按槽取卡组建房）→ 进 PVP 匹配。
 func _go_ladder() -> void:
@@ -260,8 +268,8 @@ func _go_ladder() -> void:
 	var ok: bool = await session.save_deck(http, 1, _selected.duplicate())
 	http.queue_free()
 	if ok:
-		print("[V5][deck] 天梯卡组已存槽1 → 进匹配 deck=%s" % str(_selected))
-		get_tree().change_scene_to_file(NET_BATTLE_SCENE)
+		Log.i("[V5][deck] 天梯卡组已存槽1 → 进匹配 deck=%s" % str(_selected))
+		Router.goto("net_battle")
 	else:
 		_ladder_toast("卡组保存失败，请重试")
 		_reset_ladder_btn()
@@ -272,19 +280,7 @@ func _reset_ladder_btn() -> void:
 		_battle_btn.text = "出征"
 
 func _ladder_toast(msg: String) -> void:
-	var l := Label.new()
-	l.text = msg
-	l.position = Vector2(0, 920)
-	l.size = Vector2(720, 36)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.add_theme_font_size_override("font_size", 22)
-	l.add_theme_color_override("font_color", GOLD)
-	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(l)
-	var tw := create_tween()
-	tw.tween_interval(1.4)
-	tw.tween_property(l, "modulate:a", 0.0, 0.5)
-	tw.tween_callback(l.queue_free)
+	UI.toast(msg, GOLD, 920.0, 1.4)   # F2：统一走 toast 层（字号随之 22→24 统一）
 
 # ---------- 小工具 ----------
 func _rect(color: Color, pos: Vector2, size: Vector2) -> ColorRect:
@@ -322,7 +318,7 @@ func _title(text: String, y: float, fs: int) -> void:
 func _center_label(text: String, y: float, font_size: int, color: Color) -> Label:
 	return _pin_label(text, Vector2(0, y), Vector2(720, float(font_size) + 16.0), font_size, color, HORIZONTAL_ALIGNMENT_CENTER)
 
-func _pin_label(text: String, pos: Vector2, size: Vector2, font_size: int, color: Color, align: int) -> Label:
+func _pin_label(text: String, pos: Vector2, size: Vector2, font_size: int, color: Color, align: int, parent: Control = null) -> Label:
 	var l := Label.new()
 	l.text = text
 	l.position = pos
@@ -332,5 +328,5 @@ func _pin_label(text: String, pos: Vector2, size: Vector2, font_size: int, color
 	l.add_theme_font_size_override("font_size", font_size)
 	l.add_theme_color_override("font_color", color)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(l)
+	(parent if parent != null else self).add_child(l)
 	return l

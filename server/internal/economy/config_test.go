@@ -101,8 +101,8 @@ func TestParse_RealConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(cfg.Cards) != 16 {
-		t.Fatalf("real config cards=%d (want 16)", len(cfg.Cards))
+	if len(cfg.Cards) != 48 {
+		t.Fatalf("real config cards=%d (want 48)", len(cfg.Cards))
 	}
 	if r, _ := cfg.Rarity("golem"); r != "legendary" {
 		t.Fatalf("golem rarity=%s", r)

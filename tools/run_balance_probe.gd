@@ -43,7 +43,8 @@ func _initialize() -> void:
 		return
 	var probe = BalanceProbeScript.new()
 	print("=== V5-S8b 平衡 probe：计划曲线预览（我方=ladder 默认 8 卡 / normal AI 双边）===")
-	print("跑批参数：扫我方乘区 %.1f→%.1f 步 %.1f，每局封顶 %ds。rec=round(%d×coef×%.2f)。" % [SWEEP_LO, SWEEP_HI, SWEEP_STEP, int(MAX_SECONDS), int(BASE_TEAM_POWER), REC_TIGHTNESS])
+	print("跑批参数：扫我方乘区 %.1f→%.1f 步 %.1f，每局封顶 %ds。rec=round(%d×coef×%.2f)。"
+			% [SWEEP_LO, SWEEP_HI, SWEEP_STEP, int(MAX_SECONDS), int(BASE_TEAM_POWER), REC_TIGHTNESS])
 	print("章 | 遭遇 | idx | coef | rec | 胜阈(乘区) | 胜阈战力 | 裕度 vs rec | 备注")
 	for row in PREVIEW:
 		var idx := int(row["idx"])

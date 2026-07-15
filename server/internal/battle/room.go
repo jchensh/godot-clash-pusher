@@ -45,6 +45,7 @@ type player struct {
 	accountID int64
 	side      int32 // 1 or 2
 	deck      []string
+	progress  []*pbbattle.CardProgress // per-card level/rank from economy_cards (KAN-76)
 	summary   *pbcommon.ProfileSummary
 	send      chan []byte
 	connected bool
@@ -166,6 +167,9 @@ func (r *Room) joinRespFor(p *player) *pbbattle.JoinRoomResp {
 	return &pbbattle.JoinRoomResp{
 		Ok: true, Opponent: opp, YourSide: p.side, StartTick: 0, Seed: r.seed,
 		Side1Deck: r.p1.deck, Side2Deck: r.p2.deck, LevelId: r.levelID,
+		// KAN-76: both sides receive BOTH progressions so the two clients build
+		// bit-identical Matches (lockstep). Reconnect replays this same resp.
+		Side1Progress: r.p1.progress, Side2Progress: r.p2.progress,
 	}
 }
 

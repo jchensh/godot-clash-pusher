@@ -11,7 +11,7 @@ extends RefCounted
 ##   var prof = preload("res://net/profile.gd").new("http://localhost:8080")
 ##   var http := HTTPRequest.new(); add_child(http)
 ##   var res = await prof.get_profile(http, auth.access_token)
-##   if res.ok: print(prof.nickname, prof.decks)
+##   if res.ok: Log.i("%s %s" % [prof.nickname, str(prof.decks)])
 ##
 ## 与 net/auth.gd 一样不耦合 SceneTree: HTTPRequest 由 caller add_child + 传入,
 ## 可在 headless 单测里 .new() (HTTP 部分走 V4-S2e 端到端验收).
@@ -90,7 +90,8 @@ func get_profile(http_req: HTTPRequest, access_token: String) -> Result:
 
 ## 推送某槽卡组. 200 -> 更新版本 + 本地卡组 + 落盘.
 ## 409 -> conflict=true 且自动重取最新档 (服务端版本胜出).
-func update_deck(http_req: HTTPRequest, access_token: String, slot: int, card_ids: Array, set_active: bool, expected_version: int) -> Result:
+func update_deck(http_req: HTTPRequest, access_token: String, slot: int, card_ids: Array,
+		set_active: bool, expected_version: int) -> Result:
 	var req = _ProfilePb.DeckUpdateReq.new()
 	req.set_slot(slot)
 	for c in card_ids:

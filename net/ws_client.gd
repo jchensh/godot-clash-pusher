@@ -21,7 +21,13 @@ var _was_open := false
 
 
 func connect_to(url: String) -> int:
+	# WebSocketPeer 在 CONNECTING/CLOSING 阶段拒绝再次 connect_to_url，并向编辑器
+	# 抛 ERR_ALREADY_IN_USE。重连调用方会周期探测，wrapper 必须先 fail-closed。
+	if not can_connect():
+		return ERR_BUSY
 	_was_open = false
+	# CLOSED 的 peer 虽可复用，但每次拨号换新实例可彻底丢弃上次连接的内部状态。
+	_ws = WebSocketPeer.new()
 	# 默认入站缓冲 64KB 装不下配置下发包（V5-N2 全量配置可达几十~上百 KB）→ 调大。
 	_ws.inbound_buffer_size = 1 << 21   # 2MB
 	return _ws.connect_to_url(url)
@@ -33,6 +39,10 @@ func close() -> void:
 
 func get_state() -> int:
 	return _ws.get_ready_state()
+
+
+func can_connect() -> bool:
+	return _ws.get_ready_state() == WebSocketPeer.STATE_CLOSED
 
 
 func is_open() -> bool:

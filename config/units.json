@@ -1,6 +1,6 @@
 {
   "knight_body": {
-    "name": "骑士",
+    "name": "虎贲校尉",
     "hp": 600,
     "damage": 75,
     "attack_speed": 1.2,
@@ -12,7 +12,7 @@
     "attack_targets": "ground"
   },
   "archer_body": {
-    "name": "弓箭手",
+    "name": "魏武强弩手",
     "hp": 120,
     "damage": 40,
     "attack_speed": 1.0,
@@ -24,7 +24,7 @@
     "attack_targets": "both"
   },
   "giant_body": {
-    "name": "巨人",
+    "name": "黄巾攻城力士",
     "hp": 2000,
     "damage": 120,
     "attack_speed": 1.5,
@@ -33,10 +33,11 @@
     "aggro_radius": 5.0,
     "body_radius": 0.8,
     "target_type": "ground",
-    "attack_targets": "ground"
+    "attack_targets": "ground",
+    "target_priority": "buildings"
   },
   "goblin_body": {
-    "name": "哥布林",
+    "name": "山越短刀兵",
     "hp": 80,
     "damage": 50,
     "attack_speed": 1.1,
@@ -48,7 +49,7 @@
     "attack_targets": "ground"
   },
   "minion_body": {
-    "name": "亡灵",
+    "name": "魂鸦",
     "hp": 90,
     "damage": 35,
     "attack_speed": 1.0,
@@ -60,7 +61,7 @@
     "attack_targets": "both"
   },
   "mini_pekka_body": {
-    "name": "迷你皮卡",
+    "name": "黑甲周仓",
     "hp": 700,
     "damage": 320,
     "attack_speed": 1.8,
@@ -72,7 +73,7 @@
     "attack_targets": "ground"
   },
   "musketeer_body": {
-    "name": "火枪手",
+    "name": "神射黄忠",
     "hp": 340,
     "damage": 110,
     "attack_speed": 1.1,
@@ -84,7 +85,7 @@
     "attack_targets": "both"
   },
   "skeleton_body": {
-    "name": "骷髅",
+    "name": "黄巾阴兵",
     "hp": 40,
     "damage": 40,
     "attack_speed": 1.0,
@@ -96,7 +97,7 @@
     "attack_targets": "ground"
   },
   "baby_dragon_body": {
-    "name": "小龙",
+    "name": "黄盖火龙鸢",
     "hp": 900,
     "damage": 80,
     "attack_speed": 1.3,
@@ -105,10 +106,11 @@
     "aggro_radius": 5.5,
     "body_radius": 0.7,
     "target_type": "air",
-    "attack_targets": "both"
+    "attack_targets": "both",
+    "splash_radius": 1.5
   },
   "golem_body": {
-    "name": "石头人",
+    "name": "江东镇岳巨械",
     "hp": 3000,
     "damage": 100,
     "attack_speed": 1.6,
@@ -118,7 +120,397 @@
     "body_radius": 0.85,
     "target_type": "ground",
     "attack_targets": "ground",
+    "target_priority": "buildings",
     "death_spawn_unit": "goblin_body",
     "death_spawn_count": 2
+  },
+  "spear_goblin_body": {
+    "name": "山越投矛兵",
+    "hp": 45,
+    "damage": 38,
+    "attack_speed": 1.0,
+    "move_speed": 1.6,
+    "attack_range": 4.0,
+    "aggro_radius": 5.5,
+    "body_radius": 0.35,
+    "target_type": "ground",
+    "attack_targets": "both"
+  },
+  "bat_body": {
+    "name": "江东机关蜂",
+    "hp": 35,
+    "damage": 32,
+    "attack_speed": 1.0,
+    "move_speed": 2.4,
+    "attack_range": 1.5,
+    "aggro_radius": 5.0,
+    "body_radius": 0.3,
+    "target_type": "air",
+    "attack_targets": "both"
+  },
+  "barbarian_body": {
+    "name": "青州悍卒",
+    "hp": 280,
+    "damage": 58,
+    "attack_speed": 1.3,
+    "move_speed": 1.5,
+    "attack_range": 1.2,
+    "aggro_radius": 5.0,
+    "body_radius": 0.5,
+    "target_type": "ground",
+    "attack_targets": "ground"
+  },
+  "ice_spirit_body": {
+    "name": "寒山符童",
+    "hp": 60,
+    "damage": 30,
+    "attack_speed": 1.0,
+    "move_speed": 2.6,
+    "attack_range": 1.5,
+    "aggro_radius": 5.0,
+    "body_radius": 0.35,
+    "target_type": "ground",
+    "attack_targets": "both",
+    "on_hit_status": {
+      "kind": "slow",
+      "dur": 1.0,
+      "mag": 0.5
+    }
+  },
+  "fire_spirit_body": {
+    "name": "赤焰符童",
+    "hp": 60,
+    "damage": 80,
+    "attack_speed": 1.0,
+    "move_speed": 2.6,
+    "attack_range": 1.5,
+    "aggro_radius": 5.0,
+    "body_radius": 0.35,
+    "target_type": "air",
+    "attack_targets": "both",
+    "splash_radius": 1.5
+  },
+  "electro_spirit_body": {
+    "name": "雷符童子",
+    "hp": 60,
+    "damage": 24,
+    "attack_speed": 1.0,
+    "move_speed": 2.6,
+    "attack_range": 2.0,
+    "aggro_radius": 5.0,
+    "body_radius": 0.35,
+    "target_type": "ground",
+    "attack_targets": "both",
+    "on_hit_status": {
+      "kind": "stun",
+      "dur": 0.5
+    }
+  },
+  "squire_body": {
+    "name": "虎贲新兵",
+    "hp": 340,
+    "damage": 50,
+    "attack_speed": 1.2,
+    "move_speed": 1.6,
+    "attack_range": 1.2,
+    "aggro_radius": 5.0,
+    "body_radius": 0.45,
+    "target_type": "ground",
+    "attack_targets": "ground"
+  },
+  "axe_thrower_body": {
+    "name": "巴郡飞斧手",
+    "hp": 160,
+    "damage": 70,
+    "attack_speed": 1.1,
+    "move_speed": 1.6,
+    "attack_range": 4.5,
+    "aggro_radius": 5.5,
+    "body_radius": 0.4,
+    "target_type": "ground",
+    "attack_targets": "ground"
+  },
+  "cave_spider_body": {
+    "name": "巴蜀毒蛛",
+    "hp": 70,
+    "damage": 40,
+    "attack_speed": 1.0,
+    "move_speed": 2.8,
+    "attack_range": 1.0,
+    "aggro_radius": 5.0,
+    "body_radius": 0.35,
+    "target_type": "ground",
+    "attack_targets": "ground"
+  },
+  "bone_ram_body": {
+    "name": "阴兵撞车",
+    "hp": 650,
+    "damage": 120,
+    "attack_speed": 1.5,
+    "move_speed": 2.2,
+    "attack_range": 1.2,
+    "aggro_radius": 5.0,
+    "body_radius": 0.6,
+    "target_type": "ground",
+    "attack_targets": "ground",
+    "target_priority": "buildings",
+    "death_spawn_unit": "skeleton_body",
+    "death_spawn_count": 2
+  },
+  "royal_giant_body": {
+    "name": "刘晔霹雳车",
+    "hp": 1800,
+    "damage": 150,
+    "attack_speed": 1.5,
+    "move_speed": 1.1,
+    "attack_range": 5.0,
+    "aggro_radius": 5.5,
+    "body_radius": 0.8,
+    "target_type": "ground",
+    "attack_targets": "ground",
+    "target_priority": "buildings"
+  },
+  "hog_rider_body": {
+    "name": "虎豹破城骑",
+    "hp": 1000,
+    "damage": 120,
+    "attack_speed": 1.6,
+    "move_speed": 2.6,
+    "attack_range": 1.2,
+    "aggro_radius": 5.0,
+    "body_radius": 0.55,
+    "target_type": "ground",
+    "attack_targets": "ground",
+    "target_priority": "buildings"
+  },
+  "valkyrie_body": {
+    "name": "山越旋刃卫",
+    "hp": 900,
+    "damage": 90,
+    "attack_speed": 1.5,
+    "move_speed": 1.5,
+    "attack_range": 1.2,
+    "aggro_radius": 5.0,
+    "body_radius": 0.55,
+    "target_type": "ground",
+    "attack_targets": "ground",
+    "splash_radius": 1.5
+  },
+  "bomber_body": {
+    "name": "无当火油手",
+    "hp": 130,
+    "damage": 80,
+    "attack_speed": 1.9,
+    "move_speed": 1.6,
+    "attack_range": 4.5,
+    "aggro_radius": 5.5,
+    "body_radius": 0.4,
+    "target_type": "ground",
+    "attack_targets": "ground",
+    "splash_radius": 1.5
+  },
+  "mega_minion_body": {
+    "name": "重甲机关隼",
+    "hp": 340,
+    "damage": 120,
+    "attack_speed": 1.5,
+    "move_speed": 1.8,
+    "attack_range": 2.0,
+    "aggro_radius": 5.5,
+    "body_radius": 0.45,
+    "target_type": "air",
+    "attack_targets": "both"
+  },
+  "battle_ram_body": {
+    "name": "青州撞城队",
+    "hp": 700,
+    "damage": 100,
+    "attack_speed": 1.5,
+    "move_speed": 2.4,
+    "attack_range": 1.2,
+    "aggro_radius": 5.0,
+    "body_radius": 0.6,
+    "target_type": "ground",
+    "attack_targets": "ground",
+    "target_priority": "buildings",
+    "death_spawn_unit": "barbarian_body",
+    "death_spawn_count": 2
+  },
+  "wizard_body": {
+    "name": "都督周瑜",
+    "hp": 340,
+    "damage": 130,
+    "attack_speed": 1.4,
+    "move_speed": 1.6,
+    "attack_range": 5.0,
+    "aggro_radius": 5.5,
+    "body_radius": 0.45,
+    "target_type": "ground",
+    "attack_targets": "both",
+    "splash_radius": 1.8
+  },
+  "executioner_body": {
+    "name": "恶来典韦",
+    "hp": 620,
+    "damage": 90,
+    "attack_speed": 1.6,
+    "move_speed": 1.5,
+    "attack_range": 4.5,
+    "aggro_radius": 5.5,
+    "body_radius": 0.5,
+    "target_type": "ground",
+    "attack_targets": "both",
+    "splash_radius": 2.5
+  },
+  "balloon_body": {
+    "name": "孔明轰天灯",
+    "hp": 1100,
+    "damage": 400,
+    "attack_speed": 2.5,
+    "move_speed": 1.8,
+    "attack_range": 1.5,
+    "aggro_radius": 5.0,
+    "body_radius": 0.6,
+    "target_type": "air",
+    "attack_targets": "ground",
+    "target_priority": "buildings"
+  },
+  "phoenix_body": {
+    "name": "庞统火鸾",
+    "hp": 600,
+    "damage": 90,
+    "attack_speed": 1.3,
+    "move_speed": 2.0,
+    "attack_range": 2.0,
+    "aggro_radius": 5.5,
+    "body_radius": 0.5,
+    "target_type": "air",
+    "attack_targets": "both",
+    "death_spawn_unit": "phoenix_reborn_body",
+    "death_spawn_count": 1
+  },
+  "phoenix_reborn_body": {
+    "name": "火鸾·重启",
+    "hp": 300,
+    "damage": 60,
+    "attack_speed": 1.3,
+    "move_speed": 2.0,
+    "attack_range": 2.0,
+    "aggro_radius": 5.5,
+    "body_radius": 0.45,
+    "target_type": "air",
+    "attack_targets": "both"
+  },
+  "lava_hound_body": {
+    "name": "南蛮火鸢母兽",
+    "hp": 3400,
+    "damage": 40,
+    "attack_speed": 1.3,
+    "move_speed": 1.0,
+    "attack_range": 2.0,
+    "aggro_radius": 5.0,
+    "body_radius": 0.8,
+    "target_type": "air",
+    "attack_targets": "ground",
+    "target_priority": "buildings",
+    "death_spawn_unit": "lava_pup_body",
+    "death_spawn_count": 6
+  },
+  "lava_pup_body": {
+    "name": "南蛮幼鸢",
+    "hp": 110,
+    "damage": 35,
+    "attack_speed": 1.0,
+    "move_speed": 2.2,
+    "attack_range": 1.5,
+    "aggro_radius": 5.0,
+    "body_radius": 0.35,
+    "target_type": "air",
+    "attack_targets": "both"
+  },
+  "ice_wizard_body": {
+    "name": "冢虎司马懿",
+    "hp": 240,
+    "damage": 30,
+    "attack_speed": 1.5,
+    "move_speed": 1.6,
+    "attack_range": 5.0,
+    "aggro_radius": 5.5,
+    "body_radius": 0.45,
+    "target_type": "ground",
+    "attack_targets": "both",
+    "splash_radius": 1.8,
+    "on_hit_status": {
+      "kind": "slow",
+      "dur": 1.5,
+      "mag": 0.35
+    }
+  },
+  "electro_wizard_body": {
+    "name": "天公将军张角",
+    "hp": 340,
+    "damage": 90,
+    "attack_speed": 1.8,
+    "move_speed": 1.6,
+    "attack_range": 4.5,
+    "aggro_radius": 5.5,
+    "body_radius": 0.45,
+    "target_type": "ground",
+    "attack_targets": "both",
+    "on_hit_status": {
+      "kind": "stun",
+      "dur": 0.5
+    }
+  },
+  "princess_body": {
+    "name": "枭姬孙尚香",
+    "hp": 220,
+    "damage": 120,
+    "attack_speed": 3.0,
+    "move_speed": 1.6,
+    "attack_range": 9.0,
+    "aggro_radius": 5.5,
+    "body_radius": 0.4,
+    "target_type": "ground",
+    "attack_targets": "both",
+    "splash_radius": 1.5
+  },
+  "inferno_dragon_body": {
+    "name": "蜀汉火脉机关龙",
+    "hp": 700,
+    "damage": 200,
+    "attack_speed": 1.0,
+    "move_speed": 1.9,
+    "attack_range": 3.5,
+    "aggro_radius": 5.5,
+    "body_radius": 0.5,
+    "target_type": "air",
+    "attack_targets": "both"
+  },
+  "golemite_body": {
+    "name": "石心攻城兽",
+    "hp": 400,
+    "damage": 40,
+    "attack_speed": 1.5,
+    "move_speed": 1.0,
+    "attack_range": 1.2,
+    "aggro_radius": 5.0,
+    "body_radius": 0.5,
+    "target_type": "ground",
+    "attack_targets": "ground",
+    "target_priority": "buildings"
+  },
+  "fire_pup_body": {
+    "name": "喷火小龙",
+    "hp": 110,
+    "damage": 40,
+    "attack_speed": 1.2,
+    "move_speed": 2.2,
+    "attack_range": 2.5,
+    "aggro_radius": 5.0,
+    "body_radius": 0.35,
+    "target_type": "air",
+    "attack_targets": "both",
+    "splash_radius": 1.2
   }
 }

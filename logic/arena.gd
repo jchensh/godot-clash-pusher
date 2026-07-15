@@ -168,6 +168,7 @@ func tick(dt: float) -> void:
 	if dt <= 0.0:
 		return
 	for u in units:
+		u.tick_status(dt)   # T3：状态计时衰减
 		u.tick_cooldown(dt)
 	for t in towers:
 		t.tick_cooldown(dt)
@@ -181,7 +182,7 @@ func tick(dt: float) -> void:
 			continue
 		if _in_attack_range(u, target):
 			continue   # 到达攻击距离 → 停下（交给攻击阶段）
-		_move_toward(u, target, dt)
+		_move_toward(u, target, dt * u.action_speed_mult())   # T3：slow 减速、stun/freeze 停步
 
 	_separate()
 
@@ -194,7 +195,9 @@ func tick(dt: float) -> void:
 		if not _target_alive(target):
 			continue
 		if _in_attack_range(u, target) and u.can_attack():
-			attacks.append({"target": target, "damage": float(u.damage)})
+			attacks.append({"target": target, "damage": float(u.damage), "status": u.on_hit_status})
+			if u.splash_radius > 0.0:
+				_collect_splash(attacks, u, target, float(u.damage), u.on_hit_status)
 			u.mark_attacked()
 	for t in towers:
 		if not t.is_alive() or t.damage <= 0.0:
@@ -205,6 +208,9 @@ func tick(dt: float) -> void:
 			t.mark_attacked()
 	for a in attacks:
 		a["target"].take_damage(a["damage"])
+		var st = a.get("status", {})   # T3：on-hit / 法术施加的状态
+		if typeof(st) == TYPE_DICTIONARY and not (st as Dictionary).is_empty() and a["target"] is Unit:
+			a["target"].apply_status(str(st.get("kind", "")), float(st.get("dur", 0.0)), float(st.get("mag", 0.0)))
 
 	_remove_dead()   # 塔的摧毁由 Battle._check_victory 处理；这里只清死亡单位
 
@@ -229,6 +235,20 @@ func _nearest_enemy_unit_to_tower(tower):
 			best = u
 	return best
 
+# T1 溅射：攻击命中后，对 target 周围 splash_radius 内的其他存活敌方【单位】同施伤。
+# 只打单位（不含塔）、尊重 can_hit_type（地面溅射不误伤空军）、排除主目标防双击；
+# 确定性（units 定序遍历 + 收集式统一施伤，与主攻击同批 apply）。
+func _collect_splash(attacks: Array, attacker, primary, damage: float, status: Dictionary = {}) -> void:
+	var center: Vector2 = primary.pos
+	var r: float = float(attacker.splash_radius) + _EPSILON
+	for o in units:
+		if o == primary or not o.is_alive() or o.owner_id == attacker.owner_id:
+			continue
+		if not attacker.can_hit_type(o.target_type):
+			continue
+		if (o.pos as Vector2).distance_to(center) <= r:
+			attacks.append({"target": o, "damage": damage, "status": status})
+
 # 用存活塔重建占位（死塔占位释放为地面，供流场绕行/通过）。
 func _rebuild_tower_rects() -> void:
 	_tower_rects.clear()
@@ -238,6 +258,10 @@ func _rebuild_tower_rects() -> void:
 
 # 索敌（V3-1c）：aggro_radius 内有敌方单位 → 最近者（分心）；否则默认锁最近敌塔。
 func _acquire_target(unit):
+	# T2 建筑索敌：target_priority=="buildings" 的单位无视敌方单位、直锁最近敌塔（不被 aggro 分心）。
+	# 反制不靠"分心拉扯"，而靠 body-block + 塔火 + 高单体 DPS（见 docs/design/04 隐患A）。
+	if unit.target_priority == "buildings":
+		return nearest_enemy_tower(unit)
 	var enemy_unit = _nearest_enemy_unit_in_aggro(unit)
 	if enemy_unit != null:
 		return enemy_unit

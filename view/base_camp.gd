@@ -12,8 +12,6 @@ const GameStateScript := preload("res://view/game_state.gd")
 const StageProgressScript := preload("res://logic/stage_progress.gd")
 const BG_TEX := preload("res://assets/ui/menu_bg.png")
 
-const MENU_SCENE := "res://view/main_menu.tscn"
-const STAGE_MAP_SCENE := "res://view/stage_map.tscn"          # S7c（未建则提示）
 
 var _http: HTTPRequest
 var _wallet_holder: Control
@@ -28,6 +26,7 @@ var _cta_btn: Button
 func _ready() -> void:
 	AudioManager.play_music("music_main_menu")
 	_build_static()
+	Events.economy_changed.connect(_on_economy_changed)   # 框架地基#2：动作后的刷新统一走订阅
 	_http = HTTPRequest.new()
 	add_child(_http)
 	await _bootstrap()
@@ -36,7 +35,7 @@ func _ready() -> void:
 func _build_static() -> void:
 	var bg := TextureRect.new()
 	bg.texture = BG_TEX
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
@@ -99,20 +98,23 @@ func _build_idle_card(y: float) -> void:
 
 # ---------- 数据 ----------
 func _bootstrap() -> void:
-	print("[V5][base] 进入基地 → 登录 + 拉经济状态")
+	Log.i("[V5][base] 进入基地 → 登录 + 拉经济状态")
 	var session = GameStateScript.session()
 	if not await session.ensure(_http):
-		print("[V5][base] 登录失败 → 离线展示")
+		Log.w("[V5][base] 登录失败 → 离线展示")
 		_set_offline()
 		return
 	var config = GameStateScript.config()
 	var all_ids: Array = config.cards.keys()
 	var econ = GameStateScript.economy()
 	var res: Dictionary = await econ.refresh(_http, session.token(), all_ids)
-	if bool(res.get("ok", false)):
-		_populate(econ.get_cache(), config)
-	else:
-		_set_offline()
+	if not bool(res.get("ok", false)):
+		_set_offline()   # 成功路径的展示由 economy_changed 订阅刷新（框架地基#2）
+
+# 框架地基#2（KAN-100）：经济快照变更订阅——本页动作（领挂机）或任何来源的变更统一在此刷新。
+func _on_economy_changed(cache) -> void:
+	if cache != null:
+		_populate(cache, GameStateScript.config())
 
 func _populate(cache, config) -> void:
 	_set_wallet(cache.gold, cache.gems)
@@ -173,21 +175,14 @@ func _on_collect_pressed() -> void:
 	_collect_btn.disabled = true
 	var session = GameStateScript.session()
 	var config = GameStateScript.config()
-	var res: Dictionary = await GameStateScript.economy().collect_idle(_http, session.token(), config.cards.keys())
-	if bool(res.get("ok", false)):
-		_populate(GameStateScript.economy().get_cache(), config)
+	await GameStateScript.economy().collect_idle(_http, session.token(), config.cards.keys())
+	# 成功 → economy_changed 订阅刷新界面；失败 → 维持原状（按钮保持禁用，与旧行为一致）
 
 func _on_stage_pressed() -> void:
-	_go(STAGE_MAP_SCENE, "闯关地图（S7c）即将上线")
+	Router.goto("stage_map")
 
 func _on_back_pressed() -> void:
-	get_tree().change_scene_to_file(MENU_SCENE)
-
-func _go(path: String, not_ready_hint: String) -> void:
-	if ResourceLoader.exists(path):
-		get_tree().change_scene_to_file(path)
-	else:
-		_toast(not_ready_hint)
+	Router.goto("main_menu")
 
 # ---------- ui builders（沿用 main_menu 范式）----------
 func _center_label(text: String, y: float, font_size: int, color: Color) -> Label:
@@ -234,16 +229,4 @@ func _scale_to(c: Control, s: float) -> void:
 	create_tween().tween_property(c, "scale", Vector2(s, s), 0.07)
 
 func _toast(msg: String) -> void:
-	var l := Label.new()
-	l.text = msg
-	l.position = Vector2(0, 1080)
-	l.size = Vector2(720, 40)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.add_theme_font_size_override("font_size", 24)
-	l.add_theme_color_override("font_color", PixelUI.COL_GOLD)
-	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(l)
-	var tw := create_tween()
-	tw.tween_interval(1.0)
-	tw.tween_property(l, "modulate:a", 0.0, 0.5)
-	tw.tween_callback(l.queue_free)
+	UI.toast(msg)   # F2：统一走 toast 层（顶层不挡手）

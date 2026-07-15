@@ -32,6 +32,14 @@ type ShardDrop struct {
 	Amount int
 }
 
+// StarGoal is one star's requirement (stages.json stars[i])。KAN-78 摘要 sanity 用：
+// 客户端声称的星数必须与战报摘要自洽（king_hp_pct → 王塔血 ≥ min；time_under → 时长 ≤ sec）。
+type StarGoal struct {
+	Goal string  // "win" / "king_hp_pct" / "time_under"
+	Min  float64 // king_hp_pct 的下限 0~1
+	Sec  float64 // time_under 的秒数上限
+}
+
 // Stage is one level's definition (parsed from stages.json). 镜像 player_data.grant_stage_reward.
 type Stage struct {
 	Chapter    int
@@ -40,7 +48,16 @@ type Stage struct {
 	FirstClear Reward
 	Repeat     Reward
 	ShardDrop  map[string]ShardDrop // card_id -> {chance, amount}
+	Stars      []StarGoal           // KAN-78：星级目标（摘要交叉校验）
 	starCap    int                  // len(stars)；缺省 3
+}
+
+// Anticheat is the PVE 防作弊配置 (economy.json anticheat 段，KAN-78/79)。
+// 缺段时取默认值（MinStageDurationS=15, VerifySampleRate=1.0）。
+type Anticheat struct {
+	MinStageDurationS int     // 通关墙钟时长下限（秒）——堵秒推
+	MaxCmdsPerBattle  int     // 单局指令流长度上限——堵灌爆
+	VerifySampleRate  float64 // 层2 重放验证抽样率 0~1
 }
 
 // CardMeta from card_progression.json.
@@ -71,7 +88,8 @@ type Config struct {
 	Cards             map[string]CardMeta
 	Stages            map[string]Stage
 	Idle              Idle
-	orderedStages     []string // stage_id 按 (chapter,index) 升序；线性解锁/防跳关用
+	Anticheat         Anticheat // KAN-78/79：PVE 防作弊参数
+	orderedStages     []string  // stage_id 按 (chapter,index) 升序；线性解锁/防跳关用
 	maxRank           int
 }
 
@@ -101,6 +119,11 @@ func ParseConfig(b *gameconfig.Bundle) (*Config, error) {
 			GoldPerHourPerChapter int `json:"gold_per_hour_per_chapter"`
 			CapHours              int `json:"cap_hours"`
 		} `json:"idle"`
+		Anticheat *struct {
+			MinStageDurationS int     `json:"min_stage_duration_s"`
+			MaxCmdsPerBattle  int     `json:"max_cmds_per_battle"`
+			VerifySampleRate  float64 `json:"verify_sample_rate"`
+		} `json:"anticheat"`
 	}
 	if err := json.Unmarshal(econRaw, &econ); err != nil {
 		return nil, fmt.Errorf("parse economy.json: %w", err)
@@ -116,6 +139,14 @@ func ParseConfig(b *gameconfig.Bundle) (*Config, error) {
 		UnlockShards:      econ.UnlockShards,
 		Cards:             map[string]CardMeta{},
 		Idle:              Idle{GoldPerHourPerChapter: econ.Idle.GoldPerHourPerChapter, CapHours: econ.Idle.CapHours},
+		Anticheat:         Anticheat{MinStageDurationS: 15, MaxCmdsPerBattle: 2000, VerifySampleRate: 1.0},
+	}
+	if econ.Anticheat != nil {
+		cfg.Anticheat = Anticheat{
+			MinStageDurationS: econ.Anticheat.MinStageDurationS,
+			MaxCmdsPerBattle:  econ.Anticheat.MaxCmdsPerBattle,
+			VerifySampleRate:  econ.Anticheat.VerifySampleRate,
+		}
 	}
 	for k, v := range econ.LevelCapPerRank {
 		r, err := strconv.Atoi(k)
@@ -174,7 +205,11 @@ func ParseConfig(b *gameconfig.Bundle) (*Config, error) {
 				Chapter int     `json:"chapter"`
 				Index   int     `json:"index"`
 				Coef    float64 `json:"difficulty_coef"`
-				Stars   []any   `json:"stars"`
+				Stars   []struct {
+					Goal string  `json:"goal"`
+					Min  float64 `json:"min"`
+					Sec  float64 `json:"sec"`
+				} `json:"stars"`
 				First   struct {
 					Gold   int            `json:"gold"`
 					Gems   int            `json:"gems"`
@@ -202,6 +237,9 @@ func ParseConfig(b *gameconfig.Bundle) (*Config, error) {
 			}
 			if len(s.Stars) > 0 {
 				st.starCap = len(s.Stars)
+				for _, g := range s.Stars {
+					st.Stars = append(st.Stars, StarGoal{Goal: g.Goal, Min: g.Min, Sec: g.Sec})
+				}
 			}
 			for cid, d := range s.Drop {
 				st.ShardDrop[cid] = ShardDrop{Chance: d.Chance, Amount: d.Amount}

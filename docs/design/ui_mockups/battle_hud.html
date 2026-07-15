@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<!-- UI 示意图：战斗 HUD（P0 定调屏）。战场区为非 UI（见战场规格书），本页只规格顶栏/底栏。 -->
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>战斗 HUD 示意</title>
+<link rel="stylesheet" href="ui_mock.css">
+<style>
+  .field { position: absolute; top: 210px; bottom: 320px; left: 40px; right: 40px; border-radius: 8px;
+           border: 3px dashed rgba(255,255,255,.4); display: flex; flex-direction: column; align-items: center;
+           justify-content: center; gap: 8px; color: rgba(255,255,255,.75); font-size: 22px;
+           background: linear-gradient(180deg, rgba(200,60,50,.12), rgba(80,140,220,.12)); }
+  .river { position: absolute; top: 50%; left: 0; right: 0; height: 34px; background: rgba(80,170,255,.35); }
+  .topbar { position: absolute; top: 100px; left: 0; right: 0; height: 104px; background: rgba(20,16,12,.85);
+            border-bottom: 4px solid #2b1e12; display: flex; align-items: center; padding: 0 16px; gap: 12px; z-index: 6; }
+  .np { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 14px; }
+  .np .av { width: 60px; height: 60px; border-radius: 10px; border: 3px solid #e9c675; font-size: 32px;
+            display: flex; align-items: center; justify-content: center; background: #7c5a30; }
+  .np .nm { font-size: 20px; font-weight: bold; color: #fff; }
+  .np .cr { font-size: 18px; letter-spacing: 2px; }
+  .np.me { background: rgba(63,142,222,.35); } .np.foe { background: rgba(229,69,58,.30); margin-left: auto; }
+  .clock { position: absolute; left: 50%; transform: translateX(-50%); text-align: center; }
+  .clock .t { font-size: 34px; font-weight: 900; color: #fff; }
+  .clock .lbl { font-size: 15px; color: #b7a98f; }
+  .bottom { position: absolute; left: 0; right: 0; bottom: 0; height: 320px;
+            background: linear-gradient(180deg, #241d15, #16110c); border-top: 4px solid #2b1e12;
+            padding: 14px 18px 60px; z-index: 6; }
+  .elixir { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .elixir .drop { font-size: 34px; }
+  .elixir .num { font-size: 30px; font-weight: 900; color: #d6a6ff; width: 46px; }
+  .cells { flex: 1; display: flex; gap: 5px; }
+  .cells i { flex: 1; height: 30px; border: 2px solid #2b1e12; border-radius: 8px; background: #241c14; }
+  .cells i.on { background: linear-gradient(180deg, #d6a6ff, #8e44d0); }
+  .cells i.full { box-shadow: 0 0 10px #d6a6ff; }
+  .hand { display: flex; gap: 14px; align-items: flex-end; }
+  .next { width: 96px; text-align: center; color: #b7a98f; font-size: 16px; }
+  .next .card { height: 112px; opacity: .85; }
+  .hand .main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .hand .main .card { height: 172px; }
+  .hand .main .card.sel { outline: 5px solid #ffd75e; transform: translateY(-10px); }
+  .surrender { position: absolute; top: 216px; right: 46px; z-index: 6; }
+</style>
+</head>
+<body>
+<h1>战斗 HUD 示意（P0 定调屏）</h1>
+<div class="sub">顶栏 + 底栏为 UI 资源；中间战场为游戏画面（另见战场美术规格书，576×1024 基准 + 全屏出血）。<span class="backlink"><a href="index.html">← 返回目录</a></span></div>
+<div class="wrap">
+  <div class="phone"><div class="screen" id="screen">
+
+    <!-- 顶栏 -->
+    <div class="topbar">
+      <div class="np me"><div class="av">🗡️</div><div><div class="nm">陈到·叔至</div><div class="cr">👑👑<span style="opacity:.3">👑</span></div></div></div>
+      <div class="clock"><div class="lbl">剩余时间</div><div class="t">1:58</div></div>
+      <div class="np foe"><div><div class="nm">曹孟德</div><div class="cr" style="text-align:right"><span style="opacity:.3">👑👑</span>👑</div></div><div class="av">🏹</div></div>
+    </div>
+
+    <!-- 战场占位 -->
+    <div class="field">
+      <div class="river"></div>
+      <span>战场（游戏画面，非 UI）</span>
+      <span style="font-size:17px">部署光圈 / 落点红绿 / 半场高亮 / 血条 = 程序绘制</span>
+    </div>
+    <div class="surrender circ dark pill">🏳️</div>
+
+    <!-- 底栏 -->
+    <div class="bottom">
+      <div class="elixir">
+        <span class="drop">🟣</span><span class="num">7</span>
+        <div class="cells">
+          <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i>
+          <i class="on"></i><i class="on"></i><i></i><i></i><i></i>
+        </div>
+      </div>
+      <div class="hand">
+        <div class="next"><div class="card r-common"><span class="cost">2</span><span class="face">💀</span></div>下一张</div>
+        <div class="main">
+          <div class="card r-rare sel"><span class="cost">3</span><span class="face">🗡️</span></div>
+          <div class="card r-common"><span class="cost">2</span><span class="face">🏹</span></div>
+          <div class="card r-epic"><span class="cost">5</span><span class="face">🐗</span></div>
+          <div class="card r-legend"><span class="cost">6</span><span class="face">🗿</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="island"></div><div class="home"></div>
+    <div class="guide g-top"><small>顶部安全区 y=100</small></div>
+    <div class="guide g-bottom"><small>底部手势带 y=1500</small></div>
+  </div></div>
+
+  <div class="legend">
+    <h2>结构说明</h2>
+    <ul>
+      <li><span class="tag">顶栏</span>高 104px 锚安全区下：我方名片（蓝底）+ 三王冠槽 | 中央倒计时（≤30 秒红色脉动+放大）| 敌方名片（红底，PVP 显示对手真名/头像，PVE 显示关卡 Boss 名）</li>
+      <li><span class="tag">战场</span>中区全部让给游戏画面；HUD 任何元素不得侵入战场纵向范围（部署、观察不被遮挡是铁律）</li>
+      <li><span class="tag">圣水条</span>10 格分段 + 当前数值 + 满槽发光脉动；紫色系与费用药丸同族</li>
+      <li><span class="tag">手牌</span>4 张（140×172 档）+ 左侧下一张预览（小号半透）；选中卡金描边上浮 10px；费用不足的卡整体压暗+费用数字变红</li>
+      <li><span class="tag">认输</span>白旗小圆钮挂战场右上角落（PVE=退出，PVP=认输二次确认）</li>
+    </ul>
+    <h2>给美术的资源点</h2>
+    <ul>
+      <li>顶栏底条、名片框蓝/红两版、王冠槽（亮/暗）、倒计时数字美术字</li>
+      <li>圣水条组件（底/格填充/满槽光）、圣水滴图标、手牌卡框四稀有度+选中态、下一张小框</li>
+      <li>伤害跳字数字美术字三色（白/暴击黄/治疗绿）——飘在战场层但属 UI 资源</li>
+    </ul>
+    <button class="toggle" onclick="document.getElementById('screen').classList.toggle('hide-guides')">显示/隐藏 安全区参考线</button>
+  </div>
+</div>
+</body>
+</html>

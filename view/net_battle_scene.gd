@@ -15,13 +15,12 @@ extends Node2D
 #
 # 单机训练营 battle_scene.gd 完全不受影响（这是独立新场景）。
 
-const ConfigLoaderScript := preload("res://logic/config_loader.gd")
 const GameStateScript := preload("res://view/game_state.gd")
 const BattleClientScript := preload("res://net/battle_client.gd")
 const BattleScript := preload("res://logic/battle.gd")
 const SpriteDB := preload("res://view/sprite_db.gd")
 const HudWidgets := preload("res://view/ui/hud_widgets.gd")   # V5-S9 双方名片
-const MainMenuScene := "res://view/main_menu.tscn"
+const ModalScript := preload("res://view/ui/modal.gd")        # F1 弹窗基类（结算层走 UI.modal，修 KAN-98）
 
 const TOPBAR_H := 54.0
 const HUD_BOTTOM_H := 176.0
@@ -95,7 +94,7 @@ const WATER_COLS := 4
 const WATER_N := 12
 const WATER_FPS := 5.0
 
-# 兵种白膜回退外形（无精灵时；按 owner 队伍色填）。
+# 兵种白膜回退外形（无精灵时；按 owner 队伍色填）。精灵渲染框也以 r 为基（×SpriteDB scale）。
 const UNIT_VIS := {
 	"giant_body":      {"r": 0.85},
 	"knight_body":     {"r": 0.55},
@@ -107,6 +106,17 @@ const UNIT_VIS := {
 	"goblin_body":     {"r": 0.4},
 	"skeleton_body":   {"r": 0.38},
 	"golem_body":      {"r": 0.85},
+	# A2.5 三国占位（2026-07-04）：新单位半径按体型档（极小0.35/小0.4/中0.5/大0.62/巨0.85）。与 battle_scene 同表。
+	"spear_goblin_body": {"r": 0.38}, "bat_body": {"r": 0.32}, "barbarian_body": {"r": 0.5},
+	"ice_spirit_body": {"r": 0.35}, "fire_spirit_body": {"r": 0.35}, "electro_spirit_body": {"r": 0.35},
+	"squire_body": {"r": 0.45}, "axe_thrower_body": {"r": 0.42}, "cave_spider_body": {"r": 0.35},
+	"bone_ram_body": {"r": 0.62}, "royal_giant_body": {"r": 0.8}, "hog_rider_body": {"r": 0.55},
+	"valkyrie_body": {"r": 0.55}, "bomber_body": {"r": 0.4}, "mega_minion_body": {"r": 0.48},
+	"battle_ram_body": {"r": 0.6}, "wizard_body": {"r": 0.48}, "executioner_body": {"r": 0.52},
+	"balloon_body": {"r": 0.65}, "phoenix_body": {"r": 0.5}, "phoenix_reborn_body": {"r": 0.45},
+	"lava_hound_body": {"r": 0.85}, "lava_pup_body": {"r": 0.35}, "ice_wizard_body": {"r": 0.45},
+	"electro_wizard_body": {"r": 0.48}, "princess_body": {"r": 0.42}, "inferno_dragon_body": {"r": 0.52},
+	"golemite_body": {"r": 0.5}, "fire_pup_body": {"r": 0.35},
 }
 
 var _loader
@@ -156,8 +166,7 @@ var _end_buttons_added := false
 
 func _ready() -> void:
 	_font = load("res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf")
-	_loader = ConfigLoaderScript.new()
-	_loader.load_all()
+	_loader = GameStateScript.config()
 	_http = HTTPRequest.new()
 	add_child(_http)
 	_build_result_panel()
@@ -170,9 +179,9 @@ func _connect_flow() -> void:
 	_status = "登录中…"
 	if not await _session.ensure(_http):
 		_status = "登录失败，请检查网络/服务器"
-		print("[net] 登录失败，无法进入 PVP 匹配")
+		Log.w("[net] 登录失败，无法进入 PVP 匹配")
 		return
-	print("[net] 登录成功，ws_url=%s (token length=%d)，进入 PVP 匹配" % [_session.ws_url, _session.token().length()])
+	Log.i("[net] 登录成功，ws=%s，进入 PVP 匹配" % _session.ws_url)
 	_matchmaking = true
 	_status = "匹配中…"
 	_show_cancel_button()
@@ -198,14 +207,14 @@ func _show_cancel_button() -> void:
 
 
 func _on_cancel_pressed() -> void:
-	print("[net] 用户取消匹配，返回主菜单")
+	Log.i("[net] 用户取消匹配，返回主菜单")
 	if _client != null:
 		_client.cancel_match()
-	get_tree().change_scene_to_file(MainMenuScene)
+	Router.goto("main_menu")
 
 
 func _on_matched(_your_side: int, opponent_name: String, _opponent_avatar: String) -> void:
-	print("[net] UI 收到匹配成功，对手=%s，等待进房建局" % opponent_name)
+	Log.i("[net] UI 收到匹配成功，对手=%s，等待进房建局" % opponent_name)
 	if opponent_name != "":
 		_status = "已匹配：%s，准备开战…" % opponent_name
 	else:
@@ -213,7 +222,7 @@ func _on_matched(_your_side: int, opponent_name: String, _opponent_avatar: Strin
 
 
 func _on_joined(your_side: int, opponent_name: String, opponent_avatar: String) -> void:
-	print("[net] UI 进房完成，我方 side=%d，视角翻转=%s，对手=%s，开始渲染战斗" % [your_side, str(your_side == 2), opponent_name])
+	Log.i("[net] UI 进房完成，我方 side=%d，视角翻转=%s，对手=%s，开始渲染战斗" % [your_side, str(your_side == 2), opponent_name])
 	_flip = your_side == 2
 	_matchmaking = false
 	_status = "对手：%s" % opponent_name if opponent_name != "" else ""
@@ -223,7 +232,8 @@ func _on_joined(your_side: int, opponent_name: String, opponent_avatar: String) 
 	_build_cards()
 	_build_nameplates(opponent_name, opponent_avatar)
 	# 联机对战音乐 + 战场环境音（AudioManager 全局 autoload，缺资源静默 no-op，与单机一致）。
-	AudioManager.play_music("music_battle_normal")
+	# 0716 首批 BGM：与单机同一套双曲轮播集（曲终随机换下一首）。
+	AudioManager.play_music_set(["music_battle_normal", "music_battle_hunt"])
 	AudioManager.play_ambience("amb_battle_wind")
 
 
@@ -248,7 +258,7 @@ func _build_nameplates(opp_name: String, opp_avatar: String) -> void:
 
 
 func _on_result(winner: int, _reason: int) -> void:
-	print("[net] UI 收到对局结算，winner=%d（1=我方/2=对方/0=平）" % winner)
+	Log.i("[net] UI 收到对局结算，winner=%d（1=我方/2=对方/0=平）" % winner)
 	_end_winner = winner
 	_start_ending()
 	# 刷新档案，回主菜单时杯数已更新。
@@ -257,13 +267,13 @@ func _on_result(winner: int, _reason: int) -> void:
 
 
 func _on_disconnected() -> void:
-	print("[net] UI 连接彻底断开（重连窗口耗尽或匹配前断开）")
+	Log.w("[net] UI 连接彻底断开（重连窗口耗尽或匹配前断开）")
 	if not _ending:
 		_status = "连接断开"
 
 
 func _on_reconnecting() -> void:
-	print("[net] UI 连接中断，重连中…")
+	Log.i("[net] UI 连接中断，重连中…")
 	if not _ending:
 		_status = "连接中断，重连中…"
 
@@ -271,6 +281,9 @@ func _on_reconnecting() -> void:
 func _process(delta: float) -> void:
 	if _client != null:
 		_client.poll(delta)
+	if not GameStateScript.is_online_ready() and not _ending:
+		_status = "在线会话中断，恢复中…"
+		_dragging = false
 	# 纯视觉顿帧：冻结 _elapsed 增量让 FX/演出定格（联机 sim 由 tick bundle 驱动，
 	# 不能像单机那样冻结 sim；这里只冻视觉时钟，不影响 lockstep 推进）。
 	if _hitstop_t > 0.0:
@@ -473,9 +486,10 @@ func _draw_units(a) -> void:
 		if _flip:
 			spr_owner = 0 if u.owner_id == 1 else 1
 		var spr: Dictionary = SpriteDB.frame(u.unit_id, st, spr_owner, _elapsed)
-		if not spr.is_empty():   # 精灵帧（modulate=fill 染队伍色+受击闪白）
+		if not spr.is_empty():   # 精灵帧（modulate=fill 染队伍色+受击闪白，×占位 tint 区分共享贴图）
 			var box: float = rad * 2.0 * float(spr["scale"])
-			draw_texture_rect_region(spr["tex"], Rect2(c - Vector2(box, box) * 0.5, Vector2(box, box)), spr["src"], fill)
+			draw_texture_rect_region(spr["tex"], Rect2(c - Vector2(box, box) * 0.5, Vector2(box, box)),
+					spr["src"], fill * spr.get("tint", Color.WHITE))
 		else:                    # 无精灵 → 白膜回退
 			draw_circle(c, rad, fill)
 			draw_arc(c, rad, 0.0, TAU, 20, base.darkened(0.4), 2.0)
@@ -927,7 +941,8 @@ func _draw_projectiles() -> void:
 			"fireball":
 				var fi: int = 1 + int(_elapsed * 14.0) % 7
 				var sz: float = ur * 1.0
-				draw_texture_rect_region(TEX_PROJ_FIREBALL, Rect2(pos - Vector2(sz, sz) * 0.5, Vector2(sz, sz)), Rect2(fi * PROJ_FB_FPX, 0, PROJ_FB_FPX, PROJ_FB_FPX))
+				draw_texture_rect_region(TEX_PROJ_FIREBALL, Rect2(pos - Vector2(sz, sz) * 0.5, Vector2(sz, sz)),
+						Rect2(fi * PROJ_FB_FPX, 0, PROJ_FB_FPX, PROJ_FB_FPX))
 
 func _play_projectile_audio(kind: String) -> void:
 	match kind:
@@ -1017,7 +1032,7 @@ func _build_cards() -> void:
 	_sync_cards()
 
 func _on_card_down(i: int) -> void:
-	if _ending:
+	if _ending or not GameStateScript.is_online_ready():
 		return
 	_selected = i
 	_dragging = true
@@ -1029,7 +1044,7 @@ func _on_card_up(i: int) -> void:
 	var sc := _selected
 	_dragging = false
 	_selected = -1
-	if not was or sc != i or _client == null or _client.match_obj == null or _ending:
+	if not was or sc != i or _client == null or _client.match_obj == null or _ending or not GameStateScript.is_online_ready():
 		return
 	var screen: Vector2 = get_viewport().get_mouse_position()
 	if screen.y < TOPBAR_H or screen.y > _vh - HUD_BOTTOM_H:
@@ -1111,7 +1126,7 @@ func _draw_card_art(cid: String, c: Vector2, box: float) -> void:
 	if info["spawn"]:
 		var spr: Dictionary = SpriteDB.frame(str(info["unit_id"]), "walk", 1, 0.0)   # owner=1→正面行
 		if not spr.is_empty():
-			draw_texture_rect_region(spr["tex"], Rect2(c - Vector2(box, box) * 0.5, Vector2(box, box)), spr["src"], Color.WHITE)
+			draw_texture_rect_region(spr["tex"], Rect2(c - Vector2(box, box) * 0.5, Vector2(box, box)), spr["src"], spr.get("tint", Color.WHITE))
 			return
 	_draw_card_spell_icon(cid, c, box)
 
@@ -1145,19 +1160,24 @@ func _short(s: String, n: int) -> String:
 
 
 # —— 胜负演出（全 _draw 驱动；由 _on_result 服务端信号触发，result 是 side 语义）——
+# F1 起结算层走 UI.modal 弹窗层（CanvasLayer 50）：根治 KAN-98——原先本层建于 _ready、
+# 手牌按钮建于进房后 _build_cards，Control 输入按树序命中 → 按钮压在结算层之上拦不住；
+# 弹窗层高于场景层，输入隔离由层级保证，与建立顺序无关。
 func _build_result_panel() -> void:
-	_end_result_layer = Control.new()
-	_end_result_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_end_result_layer.mouse_filter = Control.MOUSE_FILTER_STOP
-	_end_result_layer.visible = false
-	add_child(_end_result_layer)
+	_end_result_layer = ModalScript.new()
+	_end_result_layer.dim_alpha = 0.0   # 结算暗幕由 _draw_end_screen 渐入演出，本层只拦输入+装按钮
+
+func _exit_tree() -> void:
+	# 对局未结束就离场（结算层从未入树）时手动释放；入树后由 UI 层随场景切换清理。
+	if _end_result_layer != null and not _end_result_layer.is_inside_tree():
+		_end_result_layer.free()
 
 func _start_ending() -> void:
 	if _ending:
 		return
 	_ending = true
 	_end_t = 0.0
-	_end_result_layer.visible = true   # 透明全屏，拦截点击（演出期不能出牌）
+	UI.modal(_end_result_layer)   # 推入弹窗层：演出期不能出牌（场景切换时自动清）
 	# 服务端 winner: 0=平/1=side1/2=side2。本方胜利 = winner == my_side。
 	var mine := 1 if not _flip else 2
 	if _end_winner == 0:
@@ -1224,11 +1244,11 @@ func _result_btn(txt: String, y: float, cb: Callable) -> void:
 
 func _on_rematch() -> void:
 	AudioManager.play_sfx("ui_button_press")
-	get_tree().reload_current_scene()
+	Router.reload()
 
 func _on_menu() -> void:
 	AudioManager.play_sfx("ui_button_back")
-	get_tree().change_scene_to_file(MainMenuScene)
+	Router.goto("main_menu")
 
 
 func _unhandled_input(event: InputEvent) -> void:

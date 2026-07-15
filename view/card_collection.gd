@@ -7,13 +7,12 @@ extends Control
 
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const HudWidgets := preload("res://view/ui/hud_widgets.gd")
+const DragScroll := preload("res://view/ui/drag_scroll.gd")
 const CardSortScript := preload("res://logic/card_sort.gd")
 const GameStateScript := preload("res://view/game_state.gd")
 const SpriteDB := preload("res://view/sprite_db.gd")
 const BG_TEX := preload("res://assets/ui/menu_bg.png")
 
-const BASE_CAMP_SCENE := "res://view/base_camp.tscn"
-const CARD_DETAIL_SCENE := "res://view/card_detail.tscn"
 
 const RARITY_COL := {
 	"common": Color("9aa0ad"), "rare": Color("4a6db0"),
@@ -27,7 +26,7 @@ var _wallet_holder: Control
 var _grid: GridContainer
 var _status: Label
 var _sort_key := "rarity"
-var _sort_asc := true                 # 记忆上次选择；默认稀有度升序（普通→传说）
+var _sort_asc := true                 # 记忆上次选择；默认稀有度升序（寻常→无双）
 var _key_btns := {}
 var _dir_btn: Button
 
@@ -42,7 +41,7 @@ func _ready() -> void:
 func _build_static() -> void:
 	var bg := TextureRect.new()
 	bg.texture = BG_TEX
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
@@ -60,7 +59,9 @@ func _build_static() -> void:
 	scroll.position = Vector2(40, 212)
 	scroll.size = Vector2(640, 920)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.scroll_deadzone = 16
 	add_child(scroll)
+	DragScroll.attach(scroll)   # 桌面鼠标按住拖动（触摸走原生）
 	_grid = GridContainer.new()
 	_grid.columns = 2
 	_grid.add_theme_constant_override("h_separation", 16)
@@ -122,7 +123,7 @@ func _dir_label() -> String:
 # 切某键时套该键的自然默认方向（可再按升降序翻转）。
 func _default_asc(key: String) -> bool:
 	match key:
-		"cost", "rarity": return true    # 便宜在前 / 普通→传说
+		"cost", "rarity": return true    # 便宜在前 / 寻常→无双
 		_: return false                  # 等级高在前 / 可养成在前
 	return true
 
@@ -206,19 +207,19 @@ func _actionable(cache, config, cid: String) -> bool:
 func _open_detail(cid: String) -> void:
 	AudioManager.play_sfx("ui_button_press")
 	GameStateScript.detail_card = cid
-	get_tree().change_scene_to_file(CARD_DETAIL_SCENE)
+	Router.goto("card_detail")
 
 func _on_back() -> void:
 	AudioManager.play_sfx("ui_button_back")
-	get_tree().change_scene_to_file(BASE_CAMP_SCENE)
+	Router.goto("base_camp")
 
 # ---------- helpers ----------
 func _rarity_zh(r: String) -> String:
 	match r:
-		"common": return "普通"
-		"rare": return "稀有"
-		"epic": return "史诗"
-		"legendary": return "传说"
+		"common": return "寻常"
+		"rare": return "精良"
+		"epic": return "非凡"
+		"legendary": return "无双"
 	return r
 
 func _max_rank(config) -> int:
