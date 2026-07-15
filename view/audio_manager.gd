@@ -13,6 +13,7 @@ var _music_player: AudioStreamPlayer
 var _ambience_player: AudioStreamPlayer
 var _current_music_id := ""
 var _current_ambience_id := ""
+var _music_set: Array = []   # 轮播集（0716 战斗 BGM）：曲终随机换下一首（不重复当前）；play_music/stop_music 清空
 
 func _ready() -> void:
 	_music_player = AudioStreamPlayer.new()
@@ -42,6 +43,36 @@ func play(asset_id: String) -> bool:
 	return play_sfx(asset_id)
 
 func play_music(asset_id: String, fade_s: float = DEFAULT_FADE_S) -> bool:
+	_music_set = []   # 单曲模式：解除轮播
+	return _play_music_track(asset_id, fade_s)
+
+
+## 轮播集（0716 首批 BGM）：随机起播一首，曲终自动随机换下一首（不与当前重复）。
+## 集内曲目 loop 应为 false（否则 finished 不触发、永远单曲循环）。已在播集内曲目时幂等不打断。
+func play_music_set(asset_ids: Array, fade_s: float = DEFAULT_FADE_S) -> bool:
+	var playable: Array = []
+	for aid in asset_ids:
+		if assets.has(String(aid)):
+			playable.append(String(aid))
+	if playable.is_empty():
+		return false
+	if _music_player.playing and playable.has(_current_music_id) and _music_set == playable:
+		return true   # 场景重入（再来一局等）：同集在播不打断
+	_music_set = playable
+	var pick: Array = next_in_set(_music_set, _current_music_id)
+	return _play_music_track(pick[randi() % pick.size()], fade_s)
+
+
+## 纯函数：轮播候选 = 集内除当前曲外的曲目（仅一首时退化为其本身）。供单测锁行为。
+static func next_in_set(music_set: Array, current: String) -> Array:
+	var out: Array = []
+	for aid in music_set:
+		if String(aid) != current:
+			out.append(String(aid))
+	return out if not out.is_empty() else music_set.duplicate()
+
+
+func _play_music_track(asset_id: String, fade_s: float = DEFAULT_FADE_S) -> bool:
 	var def: Dictionary = assets.get(asset_id, {})
 	if def.is_empty():
 		return false
@@ -63,6 +94,7 @@ func play_music(asset_id: String, fade_s: float = DEFAULT_FADE_S) -> bool:
 	return true
 
 func stop_music(fade_s: float = DEFAULT_FADE_S) -> void:
+	_music_set = []
 	if _music_player == null or not _music_player.playing:
 		_current_music_id = ""
 		return
@@ -188,6 +220,10 @@ func _resolve_bus(bus_name: String) -> String:
 
 func _on_music_finished() -> void:
 	if _current_music_id.is_empty():
+		return
+	if _music_set.size() > 1:   # 轮播集：曲终随机换下一首（不重复当前）
+		var pick: Array = next_in_set(_music_set, _current_music_id)
+		_play_music_track(pick[randi() % pick.size()], 0.0)
 		return
 	var def: Dictionary = assets.get(_current_music_id, {})
 	if bool(def.get("loop", false)) and _music_player.stream != null:

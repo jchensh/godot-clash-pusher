@@ -244,7 +244,9 @@ func _ready() -> void:
 	var pve_free: bool = (campaign == null or campaign.is_over()) and not GameStateScript.tutorial
 	_landscape = pve_free and GameStateScript.battle_layout() == "landscape"
 	Log.i("[V5][battle] 版式=%s" % ("横版(实验·我左敌右)" if _landscape else "竖版"))
-	AudioManager.play_music(battle_music_id)
+	# 0716 首批 BGM：普通战斗 = 双曲轮播集（曲终随机换）；boss 关保留专属曲意图（素材未到位时自动落轮播）
+	if battle_music_id != "music_battle_boss" or not AudioManager.play_music(battle_music_id):
+		AudioManager.play_music_set(["music_battle_normal", "music_battle_hunt"])
 	AudioManager.play_ambience("amb_battle_wind")
 	match_obj.set_opponent_controller(AIControllerScript.new(match_obj, loader))
 	_build_cards()

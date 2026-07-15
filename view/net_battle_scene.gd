@@ -232,7 +232,8 @@ func _on_joined(your_side: int, opponent_name: String, opponent_avatar: String) 
 	_build_cards()
 	_build_nameplates(opponent_name, opponent_avatar)
 	# 联机对战音乐 + 战场环境音（AudioManager 全局 autoload，缺资源静默 no-op，与单机一致）。
-	AudioManager.play_music("music_battle_normal")
+	# 0716 首批 BGM：与单机同一套双曲轮播集（曲终随机换下一首）。
+	AudioManager.play_music_set(["music_battle_normal", "music_battle_hunt"])
 	AudioManager.play_ambience("amb_battle_wind")
 
 

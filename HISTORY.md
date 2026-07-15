@@ -633,3 +633,13 @@
 - **[docs/deployment/GCP_RELEASE_TLS.md](docs/deployment/GCP_RELEASE_TLS.md)**（详细手册，后续会话/Antigravity 免上下文可操作）：架构图/前置条件(域名A记录+防火墙清单)/部署步骤/部署后验证命令/**release 打包检查单**（network.json 三地址单域名规范、安卓免 cleartext=方式B兑现、Godot 对 LE 证书零配置）/日常运维速查/本地冒烟模式/**安全边界声明**（E2-lite≠完整E2，升级触发条件写明）。
 - **本地冒烟 4/4 过**（DOMAIN=localhost + 8443，不扰动开发 6 容器）：①`https://…/healthz` 200 ②WS 路径路由至 gateway（401=网关收到无 token 拒绝，路由正确）③check-name JSON 经 TLS 正常 ④URL 里塞假 token → 访问日志 grep 无原文、REDACTED 计数 1（脱敏实证）。冒烟容器即起即删。
 - 纯基建+文档，客户端零代码改动（Godot 原生 https/wss，release 只改 network.json）；服务端 Go 零改动。Jira KAN-110 In Progress → 待用户确认。
+
+---
+
+### V5 · 首批正式 BGM 接入：菜单/战斗轮播/选卡三组曲 + AudioManager 轮播集（🚧 代码完成待真人听验，2026-07-16）
+
+**素材（testAssets/audio 五首 mp3，用户 0716 提供）**：Snowland→主菜单默认曲（登录/创号/基地/图鉴/卡详情/闯关地图共用 music_main_menu）；Sauropod Spotting + Dentaneosuchus Hunt→战斗双曲**轮番随机播放**（music_battle_normal + 新 music_battle_hunt）；Heroic Demise (New)→战前选卡上阵曲（新 music_deck_prep，PVE 上阵/天梯选卡组共用）；**The Britons 未派用场留 testAssets**。四首改蛇形名入 sound/bgm/（mp3 原格式，Godot 原生支持）；旧两首占位曲（Oriental wav/battle ogg）删除。
+- **配置管线**：audio_assets.json 改 2 条 + 新增 2 条（79→81）；战斗双曲 **loop=false 刻意为之**（曲终触发轮播换曲，effect_notes 写明勿改回）→ `build_audio_config.py --from-json` 重建 xlsx + `--check` 一致。
+- **AudioManager 轮播集**：新 `play_music_set(ids)`（随机起播；同集在播幂等不打断——「再来一局」重入不断音乐）+ `_on_music_finished` 集内随机换下一首（不重复当前）+ `play_music/stop_music` 清集回单曲语义；选曲候选抽纯函数 `next_in_set`（静态，单测锁：排除当前曲/单曲集退化自身）。
+- **接线**：battle_scene 普通战→轮播集，boss 关保留专属曲意图（music_battle_boss 素材未到位时自动落轮播）；net_battle_scene 同轮播集；deck_builder `_ready` 起 music_deck_prep。
+- **验证**：客户端 **418/418**（+2：轮播纯函数 / 四曲条目-文件存在-loop 语义）；gdlint 绿；headless 导入 0 错。**真人听验欠**：菜单曲循环、进选卡切曲、开战切轮播曲、一曲放完自动随机换另一首（战斗曲 4~5 分钟/首，验换曲需挂机听完一首或临时拖进度）、boss 关不炸音、再来一局不断音。
