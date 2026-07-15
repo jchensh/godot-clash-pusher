@@ -6,6 +6,7 @@
 # go.mod's go directive may auto-bump to the latest installed toolchain
 # (e.g. 1.25 from `go mod tidy`); keep this image >= that.
 FROM golang:1.25-alpine AS builder
+ENV GOMAXPROCS=1
 
 WORKDIR /src
 

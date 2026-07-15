@@ -27,3 +27,7 @@ Thumbs.db
 
 # Office 临时锁文件（xlsx 开着时生成）
 **/~$*
+
+# Firebase Hosting 部署缓存 + Antigravity IDE 快照（本地产物，不进库）
+.firebase/
+.snapshots/
