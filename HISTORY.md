@@ -636,10 +636,10 @@
 
 ---
 
-### V5 · 首批正式 BGM 接入：菜单/战斗轮播/选卡三组曲 + AudioManager 轮播集（🚧 代码完成待真人听验，2026-07-16）
+### V5 · 首批正式 BGM 接入：菜单/战斗轮播/选卡三组曲 + AudioManager 轮播集（✅ 真人听验通过，2026-07-16）
 
 **素材（testAssets/audio 五首 mp3，用户 0716 提供）**：Snowland→主菜单默认曲（登录/创号/基地/图鉴/卡详情/闯关地图共用 music_main_menu）；Sauropod Spotting + Dentaneosuchus Hunt→战斗双曲**轮番随机播放**（music_battle_normal + 新 music_battle_hunt）；Heroic Demise (New)→战前选卡上阵曲（新 music_deck_prep，PVE 上阵/天梯选卡组共用）；**The Britons 未派用场留 testAssets**。四首改蛇形名入 sound/bgm/（mp3 原格式，Godot 原生支持）；旧两首占位曲（Oriental wav/battle ogg）删除。
 - **配置管线**：audio_assets.json 改 2 条 + 新增 2 条（79→81）；战斗双曲 **loop=false 刻意为之**（曲终触发轮播换曲，effect_notes 写明勿改回）→ `build_audio_config.py --from-json` 重建 xlsx + `--check` 一致。
 - **AudioManager 轮播集**：新 `play_music_set(ids)`（随机起播；同集在播幂等不打断——「再来一局」重入不断音乐）+ `_on_music_finished` 集内随机换下一首（不重复当前）+ `play_music/stop_music` 清集回单曲语义；选曲候选抽纯函数 `next_in_set`（静态，单测锁：排除当前曲/单曲集退化自身）。
 - **接线**：battle_scene 普通战→轮播集，boss 关保留专属曲意图（music_battle_boss 素材未到位时自动落轮播）；net_battle_scene 同轮播集；deck_builder `_ready` 起 music_deck_prep。
-- **验证**：客户端 **418/418**（+2：轮播纯函数 / 四曲条目-文件存在-loop 语义）；gdlint 绿；headless 导入 0 错。**真人听验欠**：菜单曲循环、进选卡切曲、开战切轮播曲、一曲放完自动随机换另一首（战斗曲 4~5 分钟/首，验换曲需挂机听完一首或临时拖进度）、boss 关不炸音、再来一局不断音。
+- **验证**：客户端 **418/418**（+2：轮播纯函数 / 四曲条目-文件存在-loop 语义）；gdlint 绿；headless 导入 0 错。**真人听验通过（2026-07-16）**：菜单/选卡/战斗三处切曲、轮播换曲、再来一局不断音全过。已提交（4a274d1）并按铁律 restart verifier（动了 config/）。
