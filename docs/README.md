@@ -87,6 +87,7 @@
 | 文档 | 一句话 |
 |---|---|
 | [ENVIRONMENT.md](ENVIRONMENT.md) | 环境搭建 + MCP 安装注册 + 画面验收协议 |
+| [HANDOFF_MAC_2026-07-16.md](HANDOFF_MAC_2026-07-16.md) | Windows→Mac 换机交接快照：环境搭建步骤 + 项目状态 + 已知欠账（写作当天快照，以 HISTORY.md 为准） |
 | [V4_S3_g_real_machine_test.md](V4_S3_g_real_machine_test.md) | V4-S3g 两台真机对战测试记录（存档） |
 | [NOTE_image_gen_mcp_pipeline.md](NOTE_image_gen_mcp_pipeline.md) | AI 生图素材管线（§7 已实战：骑士攻击帧 banana 出图+确定性后处理+入库全记录） |
 | [../net/README.md](../net/README.md) / [../server/README.md](../server/README.md) | net 层 / Go 服务端模块内说明 |
