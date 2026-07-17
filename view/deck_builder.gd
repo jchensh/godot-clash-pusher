@@ -235,8 +235,8 @@ func _on_battle() -> void:
 		return
 	# edit 模式（基地编辑）= 只存卡组回基地；其余 = 进战斗（battle 读 stage_id 选闯关/自由）。
 	if _mode == "edit":
-		Log.i("[V5][deck] 保存卡组回基地 deck=%s" % str(_selected))
-		Router.goto("base_camp")
+		Log.i("[V5][deck] 保存卡组回主菜单 deck=%s" % str(_selected))
+		Router.goto("main_menu")   # CR 改版：基地页废弃
 		return
 	# ★ 单人对战上下文互斥：清掉 roguelite/战役 静态状态，避免 battle 因 stale run/campaign
 	#   误判模式（战后弹去肉鸽/战役并推进）。battle 据 stage_id 选闯关 vs 自由。
@@ -248,7 +248,7 @@ func _on_battle() -> void:
 func _on_back() -> void:
 	match _mode:
 		"stage": Router.goto("stage_map")
-		"edit": Router.goto("base_camp")
+		"edit": Router.goto("main_menu")   # CR 改版：基地页废弃
 		"ladder": Router.goto("main_menu")
 		_: Router.goto("level_select")
 
