@@ -249,7 +249,7 @@ func _set_retry_visible(value: bool) -> void:
 
 func _on_back() -> void:
 	AudioManager.play_sfx("ui_button_back")
-	Router.goto("base_camp")
+	Router.goto("main_menu")   # CR 改版：基地页废弃，返回主菜单
 
 func _show_chest(reward: Dictionary) -> void:
 	var chest = RewardChestScript.new()
