@@ -17,6 +17,7 @@ const BG_TEX := preload("res://assets/ui/menu_bg.png")
 const GameStateScript := preload("res://view/game_state.gd")
 const CampaignStateScript := preload("res://logic/campaign_state.gd")
 const StageProgressScript := preload("res://logic/stage_progress.gd")
+const MenuIcons := preload("res://view/ui/menu_icons.gd")
 
 const COL_BADGE := Color("e5453a")
 
@@ -32,7 +33,7 @@ var _chapter_lbl: Label
 var _prog_fill: ColorRect
 var _prog_txt: Label
 var _deck_badge: Label
-var _stage_badge: Label
+var _stage_sub: Label
 var _battle_sub: Label
 
 func _ready() -> void:
@@ -200,14 +201,18 @@ func _build_cluster() -> void:
 			PixelUI.sbpixel(Color(0.09, 0.08, 0.06, 0.66), 3, Color("2b1e12")))
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(panel)
-	var deck := _pin_button("卡组", Vector2(58, 922), Vector2(150, 166), _on_deck, "stone", 30)
+	# 0718 用户定稿：布阵(原卡组) | 国王征途(原闯关，主 CTA) | 对战(天梯)。
+	var deck := _entry_button("布阵", "formation", Vector2(58, 922), Vector2(150, 166),
+			_on_deck, "stone", 28, 56.0)
 	_deck_badge = _badge(deck, "8")
-	var battle := _pin_button("对战", Vector2(226, 912), Vector2(268, 186), _on_ladder, "gold", 52)
-	_battle_sub = _child_label(battle, "天梯匹配", 132, 20, PixelUI.COL_GOLD_INK)
-	var stage := _pin_button("闯关", Vector2(512, 922), Vector2(150, 166), _on_stage, "stone", 30)
-	_stage_badge = _badge(stage, "—")
+	var stage := _entry_button("国王征途", "journey", Vector2(226, 912), Vector2(268, 186),
+			_on_stage, "gold", 40, 64.0)
+	_stage_sub = _child_label(stage, "下一关 —", 148, 20, PixelUI.COL_GOLD_INK)
+	var battle := _entry_button("对战", "battle", Vector2(512, 922), Vector2(150, 166),
+			_on_ladder, "stone", 28, 56.0)
+	_battle_sub = _child_label(battle, "— 杯", 128, 16, PixelUI.COL_MUTED)
 
-# ---------- 5 底部页签 ----------
+# ---------- 5 底部页签（0718 用户定稿：商店 卡牌 王国 宫廷 外交，后三者待开发灰态）----------
 func _build_tabbar() -> void:
 	var bar := Panel.new()
 	bar.position = Vector2(0, 1156)
@@ -215,19 +220,17 @@ func _build_tabbar() -> void:
 	bar.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("16110c"), 3, Color("2b1e12")))
 	add_child(bar)
 	var defs: Array = [
-		["商店", _noop, true], ["卡牌", _on_progression, false], ["对战", _noop, false],
-		["闯关", _on_stage, false], ["探险", _noop, true],
+		["商店", "shop", _noop, true], ["卡牌", "cards", _on_progression, false],
+		["王国", "kingdom", _noop, true], ["宫廷", "court", _noop, true],
+		["外交", "diplomacy", _noop, true],
 	]
-	var x := 0.0
 	for i in defs.size():
-		var center: bool = i == 2
-		var w: float = 168.0 if center else 138.0
 		var d: Array = defs[i]
-		var btn := _pin_button(String(d[0]), Vector2(x + 6.0, 1170.0 if center else 1178.0),
-				Vector2(w - 12.0, 100.0 if center else 88.0), d[1],
-				"gold" if center else "dark", 30 if center else 24)
-		btn.disabled = bool(d[2])
-		x += w
+		var btn := _entry_button(String(d[0]), String(d[1]), Vector2(i * 144.0 + 6.0, 1166.0),
+				Vector2(132.0, 104.0), d[2], "dark", 20, 40.0)
+		btn.disabled = bool(d[3])
+		if btn.disabled:   # 待开发灰态（贴图 disabled 态与 icon 一起压暗）
+			btn.modulate = Color(1, 1, 1, 0.55)
 
 # ---------- 数据回填（economy_changed 订阅，框架地基#2）----------
 func _on_economy_changed(cache) -> void:
@@ -254,14 +257,14 @@ func _populate(cache, config) -> void:
 	if next_id != "":
 		var st: Dictionary = config.get_stage(next_id)
 		_chapter_lbl.text = "第 %d 章" % int(st.get("chapter", 0))
-		_stage_badge.text = "%d-%d" % [int(st.get("chapter", 0)), int(st.get("index", 0))]
+		_stage_sub.text = "下一关 %d-%d" % [int(st.get("chapter", 0)), int(st.get("index", 0))]
 	else:
 		_chapter_lbl.text = "全部通关"
-		_stage_badge.text = "毕业"
-	# 卡组角标 = 当前卡组张数；对战副标 = 杯数
+		_stage_sub.text = "已全部通关"
+	# 布阵角标 = 当前卡组张数；对战副标 = 杯数
 	var deck_n: int = GameStateScript.player_deck.size()
 	_deck_badge.text = str(deck_n if deck_n > 0 else 8)
-	_battle_sub.text = "天梯匹配 · %d杯" % GameStateScript.session().trophies()
+	_battle_sub.text = "%d 杯" % GameStateScript.session().trophies()
 
 func _set_offline() -> void:
 	_idle_lbl.text = "离线"
@@ -324,6 +327,23 @@ func _on_collect_idle() -> void:
 	# 成功 → economy_changed 订阅刷新（挂机清零后按钮回禁用态）；失败维持禁用防连点
 
 # ---------- ui builders ----------
+# 入口按钮 = 空文本 _pin_button + 程序化 icon（MenuIcons 占位）+ 下方文字。
+func _entry_button(
+		label: String, icon_kind: String, pos: Vector2, sz: Vector2,
+		cb: Callable, kind: String, font_size: int, icon_px: float
+) -> Button:
+	var btn := _pin_button("", pos, sz, cb, kind, font_size)
+	var ink: Color = PixelUI.COL_GOLD_INK if kind == "gold" else PixelUI.COL_PARCHMENT
+	var ic: Control = MenuIcons.new()
+	ic.kind = icon_kind
+	ic.icon_color = ink
+	ic.position = Vector2((sz.x - icon_px) * 0.5, sz.y * 0.12)
+	ic.size = Vector2(icon_px, icon_px)
+	btn.add_child(ic)
+	var l := _child_label(btn, label, sz.y * 0.12 + icon_px + 6.0, font_size, ink)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return btn
+
 func _badge(host: Control, text: String) -> Label:
 	var p := Panel.new()
 	p.position = Vector2(host.size.x - 26, -14)
