@@ -643,3 +643,15 @@
 - **AudioManager 轮播集**：新 `play_music_set(ids)`（随机起播；同集在播幂等不打断——「再来一局」重入不断音乐）+ `_on_music_finished` 集内随机换下一首（不重复当前）+ `play_music/stop_music` 清集回单曲语义；选曲候选抽纯函数 `next_in_set`（静态，单测锁：排除当前曲/单曲集退化自身）。
 - **接线**：battle_scene 普通战→轮播集，boss 关保留专属曲意图（music_battle_boss 素材未到位时自动落轮播）；net_battle_scene 同轮播集；deck_builder `_ready` 起 music_deck_prep。
 - **验证**：客户端 **418/418**（+2：轮播纯函数 / 四曲条目-文件存在-loop 语义）；gdlint 绿；headless 导入 0 错。**真人听验通过（2026-07-16）**：菜单/选卡/战斗三处切曲、轮播换曲、再来一局不断音全过。已提交（4a274d1）并按铁律 restart verifier（动了 config/）。
+
+### V5 · PVP 场景视觉补课：三国塔/整图 BG/32×32 格/Y-sort 同步进 net_battle_scene（🚧 代码+测试完成待真人验收，2026-07-18）
+
+**背景**：0713~0716 的视觉改造（KAN-107 屏幕格 / KAN-93 三国正式素材 / Y-sort 伪深度 / 0715 单位特效）只进了单机 `battle_scene`，PVP `net_battle_scene` 还在用最老的贴图（building1/6 旧塔、16px 拼贴地形、无 Y-sort），「兵在河上走」观感即此。本步纯 view 层把差异全部移植，逻辑层/lockstep 零改动。改动仅 `view/net_battle_scene.gd` 单文件：
+
+- **KAN-107 屏幕格**：`_field_rect` 换 32×32 正方形格 letterbox 版（格边长取整、两侧装饰边栏露深底），与单机同款；`_t2s/_s2t` 契约不变。
+- **整图 BG**：`TEX_BATTLE_BG` 特征对齐（双桥中心定 x 缩放 + 河中心锚 y 反解源矩形 + 铺满全屏 `_bg_full`）移植竖版分支；**`_flip` 不参与 BG**（场地河/桥对称，双方视角贴同一张图）；旧逐格 tile 铺法保留为 `BG_ENABLED=false` 回退（`_draw_terrain_tiles`）。
+- **三国分色塔**：四张 sanguo_tower 贴图按**屏幕语义**选色——本方（恒下半场，`_flip` 已保证）= 蓝、敌方 = 红；`_tower_anchor` 视觉半格偏移换算成屏幕语义（下半场王塔/上半场箭塔各上移半格对齐 BG 路环）；natural 轻染 0.22 + 宽度系数 0.95/0.85 与单机同参。
+- **Y-sort 伪深度**：`_draw_towers`+`_draw_units` 合并为 `_draw_world` 单通道（塔+单位按接地线升序、空军恒最上层），与单机 0715 二验同款。
+- **0715 单位特效体系**：脚下椭圆影（×2 叠加、base_scale 基准）/ natural 轻染 / mirror 朝向（`_face/_facex`，判定全用屏幕 x → `_flip` 视角自动正确）/ 攻击刀光（近战冷却上升沿，镜像判定用屏幕 x）/ 受击星芒（`_on_hit` 加 unit_id 参数）/ 死亡白烟（`_ulast` 消失检测）。
+- **屏幕方向语义修正**：塔伤害数字锚点与塔箭口原来写死 `-y`（side2 翻转视角下会朝屏幕下方偏），统一改 `_screen_up_tiles()`（`_flip` 时逻辑 +y = 屏幕上）。
+- **验证**：客户端 **418/418** 零回归；gdlint 绿。**真人双端验收欠着**（需两浏览器/两机对局肉眼看：塔素材/BG 对齐/Y-sort 遮挡/side2 翻转视角下特效方向），验完随 KAN-76 验收一并处理。
