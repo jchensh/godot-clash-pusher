@@ -1238,6 +1238,16 @@ class PveStartResp:
 		service.field = __battle_id
 		data[__battle_id.tag] = service
 		
+		__tower_hp_pct = PBField.new("tower_hp_pct", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 2, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
+		service = PBServiceField.new()
+		service.field = __tower_hp_pct
+		data[__tower_hp_pct.tag] = service
+		
+		__tower_dmg_pct = PBField.new("tower_dmg_pct", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 3, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
+		service = PBServiceField.new()
+		service.field = __tower_dmg_pct
+		data[__tower_dmg_pct.tag] = service
+		
 	var data = {}
 	
 	var __battle_id: PBField
@@ -1252,6 +1262,32 @@ class PveStartResp:
 		__battle_id.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT64]
 	func set_battle_id(value : int) -> void:
 		__battle_id.value = value
+	
+	var __tower_hp_pct: PBField
+	func has_tower_hp_pct() -> bool:
+		if __tower_hp_pct.value != null:
+			return true
+		return false
+	func get_tower_hp_pct() -> int:
+		return __tower_hp_pct.value
+	func clear_tower_hp_pct() -> void:
+		data[2].state = PB_SERVICE_STATE.UNFILLED
+		__tower_hp_pct.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
+	func set_tower_hp_pct(value : int) -> void:
+		__tower_hp_pct.value = value
+	
+	var __tower_dmg_pct: PBField
+	func has_tower_dmg_pct() -> bool:
+		if __tower_dmg_pct.value != null:
+			return true
+		return false
+	func get_tower_dmg_pct() -> int:
+		return __tower_dmg_pct.value
+	func clear_tower_dmg_pct() -> void:
+		data[3].state = PB_SERVICE_STATE.UNFILLED
+		__tower_dmg_pct.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
+	func set_tower_dmg_pct(value : int) -> void:
+		__tower_dmg_pct.value = value
 	
 	func _to_string() -> String:
 		return PBPacker.message_to_string(data)

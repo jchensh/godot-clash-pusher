@@ -108,3 +108,35 @@ func test_every_stage_has_rewards_and_stars() -> void:
 		assert_eq((st["stars"] as Array).size(), 3, "%s 3 星目标" % sid)
 		assert_true(c.has_encounter(String(st["encounter"])), "%s encounter 存在" % sid)
 		assert_true(int(st["recommended_power"]) > 0, "%s rec>0" % sid)
+
+# A4(KAN-93)：全 48 卡在 100 关奖励里都有获取源（首通碎片 ∪ 概率掉落）——
+# 锁死「32 张新卡 PvE 零获取」断层不复发。
+func test_all_48_cards_obtainable_via_stage_rewards() -> void:
+	var c = _config()
+	var covered := {}
+	for sid in c.stages:
+		if String(sid).begins_with("_"):
+			continue
+		var st = c.stages[sid]
+		for cid in ((st["first_clear"] as Dictionary).get("shards", {}) as Dictionary):
+			covered[str(cid)] = true
+		for cid in (st.get("shard_drop", {}) as Dictionary):
+			covered[str(cid)] = true
+	for cid in c.cards:
+		assert_true(covered.has(str(cid)), "卡 %s 在 100 关奖励中有获取源" % str(cid))
+	assert_eq(covered.size(), c.cards.size(), "奖励覆盖数 == 卡池数（48）")
+
+# A4(KAN-93)：三国章节名——i18n zh/en 各有 chapter_1..10，且 zh 与 stages_spec 章名一致。
+func test_chapter_names_i18n_complete_and_consistent() -> void:
+	var i18n_raw = JSON.parse_string(FileAccess.get_file_as_string("res://config/i18n.json"))
+	var spec = JSON.parse_string(FileAccess.get_file_as_string("res://config/stages_spec.json"))
+	assert_true(typeof(i18n_raw) == TYPE_DICTIONARY and typeof(spec) == TYPE_DICTIONARY, "i18n/spec 可解析")
+	var spec_names := {}
+	for ch in (spec["chapters"] as Array):
+		spec_names[int(ch["chapter"])] = str(ch["name"])
+	for n in range(1, CHAPTERS + 1):
+		var key := "chapter_%d" % n
+		assert_true((i18n_raw["zh"] as Dictionary).has(key), "i18n zh 有 %s" % key)
+		assert_true((i18n_raw["en"] as Dictionary).has(key), "i18n en 有 %s" % key)
+		assert_eq(str((i18n_raw["zh"] as Dictionary)[key]), str(spec_names[n]),
+				"章 %d i18n zh 与 spec 章名一致" % n)

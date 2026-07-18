@@ -28,6 +28,7 @@ const ROUTES := {
 	"card_collection": "res://view/card_collection.tscn",
 	"card_detail": "res://view/card_detail.tscn",
 	"base_camp": "res://view/base_camp.tscn",
+	"kingdom": "res://view/kingdom.tscn",
 	"settings": "res://view/settings.tscn",
 	"account_create": "res://view/account_create.tscn",
 	"login": "res://view/login.tscn",

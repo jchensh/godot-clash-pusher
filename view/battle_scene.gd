@@ -231,8 +231,16 @@ func _ready() -> void:
 			return
 		_pve_battle_id = int(start_res.get("battle_id", 0))
 		var pdata = GameStateScript.economy().for_battle(loader.cards.keys())
-		Log.i("[V5][battle] 模式=闯关 stage=%s deck=%s battle_id=%d" % [GameStateScript.stage_id, str(GameStateScript.player_deck), _pve_battle_id])
-		match_obj.setup_stage(GameStateScript.stage_id, GameStateScript.player_deck, pdata)
+		# K4（DESIGN_KINGDOM）：王国城防 → 我方塔加成。服务器 PveStart 权威下发定值
+		# （同值写进重放快照），本地只注入不推导——重放验证器逐 bit 对上。
+		var towers := {
+			"hp_pct": int(start_res.get("tower_hp_pct", 0)),
+			"dmg_pct": int(start_res.get("tower_dmg_pct", 0)),
+		}
+		Log.i("[V5][battle] 模式=闯关 stage=%s deck=%s battle_id=%d 城防=+%d%%hp/+%d%%dmg"
+				% [GameStateScript.stage_id, str(GameStateScript.player_deck), _pve_battle_id,
+				int(towers["hp_pct"]), int(towers["dmg_pct"])])
+		match_obj.setup_stage(GameStateScript.stage_id, GameStateScript.player_deck, pdata, towers)
 		# KAN-79：录制器挂双方出牌 + 周期哈希，战斗中批量上报（重放验证的证据链）。
 		_pve_recorder = PveRecorderScript.new()
 		_pve_recorder.battle_id = _pve_battle_id

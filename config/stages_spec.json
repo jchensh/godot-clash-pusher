@@ -1,35 +1,17 @@
 {
-  "_comment": "V5-S8c 闯关章节紧凑 spec → tools/build_stages.py 生成 config/stages.json(100关)。改这里 + 跑生成器，勿手改 stages.json。数值〔示意·待 S8d probe 校准〕。曲线见 PLAN_V5 §4/§11.3；章节主题 §7。",
+  "_comment": "V5-S8c 闯关章节紧凑 spec → tools/build_stages.py 生成 config/stages.json(100关)。改这里 + 跑生成器，勿手改 stages.json。数值〔示意·待 S8d probe 校准〕。曲线见 PLAN_V5 §4/§11.3；章节主题 §7；A4(KAN-93) 三国化：10 章按 黄巾之乱→讨董→群雄→官渡→荆州→赤壁→汉中→荆襄→夷陵→三分 时间线命名（i18n chapter_N 同步），shard_cards=本章碎片轮转池(稀有度升序、非boss关按 index 轮转、boss关发最后一张)，10 章合计覆盖全 48 卡。",
   "stages_per_chapter": 10,
-  "curve": {
-    "coef_base": 1.0,
-    "coef_per_idx": 0.016,
-    "boss_coef_mult": 1.1,
-    "rec_team_power": 920,
-    "rec_tightness": 0.87,
-    "first_clear_gold_base": 300,
-    "first_clear_gold_per_chapter": 270,
-    "boss_gold_mult": 1.5,
-    "repeat_gold_ratio": 0.1,
-    "first_clear_gems": 5,
-    "boss_gems": 25,
-    "shards_per_first_clear": 4,
-    "boss_shard_mult": 2,
-    "shard_drop_chance": 0.34,
-    "shard_drop_amount": 1,
-    "stars_king_hp_pct": 0.5,
-    "stars_time_under_sec": 120
-  },
+  "curve": {"coef_base": 1.0, "coef_per_idx": 0.016, "boss_coef_mult": 1.1, "rec_team_power": 920, "rec_tightness": 0.87, "first_clear_gold_base": 300, "first_clear_gold_per_chapter": 270, "boss_gold_mult": 1.5, "repeat_gold_ratio": 0.1, "first_clear_gems": 5, "boss_gems": 25, "shards_per_first_clear": 4, "boss_shard_mult": 2, "shard_drop_chance": 0.34, "shard_drop_amount": 1, "stars_king_hp_pct": 0.5, "stars_time_under_sec": 120},
   "chapters": [
-    { "chapter": 1,  "name": "荒芜村庄",   "base_level": "ladder_01", "ai_base": "rookie",  "ai_boss": "easy",    "encounters": ["starter_easy", "swarm_rush_a"],        "boss_encounter": "tank_push_a",      "shard_card": "skeletons" },
-    { "chapter": 2,  "name": "幽暗墓园",   "base_level": "ladder_01", "ai_base": "easy",    "ai_boss": "normal",  "encounters": ["undead_horde", "graveyard_control"],   "boss_encounter": "graveyard_control","shard_card": "log" },
-    { "chapter": 3,  "name": "兽人营地",   "base_level": "ladder_01", "ai_base": "easy",    "ai_boss": "normal",  "encounters": ["orc_blitz", "swarm_rush_a"],           "boss_encounter": "orc_blitz",        "shard_card": "mini_pekka" },
-    { "chapter": 4,  "name": "食人魔沼泽", "base_level": "ladder_01", "ai_base": "normal",  "ai_boss": "hard",    "encounters": ["tank_push_a", "double_tank"],          "boss_encounter": "double_tank",      "shard_card": "musketeer" },
-    { "chapter": 5,  "name": "巫妖回廊",   "base_level": "ladder_01", "ai_base": "normal",  "ai_boss": "hard",    "encounters": ["spell_siege", "lich_control"],         "boss_encounter": "lich_control",     "shard_card": "baby_dragon" },
-    { "chapter": 6,  "name": "吸血鬼城堡", "base_level": "ladder_01", "ai_base": "normal",  "ai_boss": "hard",    "encounters": ["vampire_balanced", "graveyard_control"],"boss_encounter": "vampire_balanced","shard_card": "lightning" },
-    { "chapter": 7,  "name": "龙脊山道",   "base_level": "ladder_01", "ai_base": "hard",    "ai_boss": "hard",    "encounters": ["air_raid", "ranged_kite"],             "boss_encounter": "air_raid",         "shard_card": "heal" },
-    { "chapter": 8,  "name": "亡者王座",   "base_level": "ladder_01", "ai_base": "hard",    "ai_boss": "extreme", "encounters": ["throne_combined", "ranged_kite"],      "boss_encounter": "throne_combined",  "shard_card": "golem" },
-    { "chapter": 9,  "name": "深渊裂隙",   "base_level": "ladder_01", "ai_base": "hard",    "ai_boss": "extreme", "encounters": ["abyss_overload", "throne_combined"],   "boss_encounter": "abyss_overload",   "shard_card": "golem" },
-    { "chapter": 10, "name": "终末战场",   "base_level": "ladder_01", "ai_base": "extreme", "ai_boss": "extreme", "encounters": ["throne_combined", "abyss_overload"],   "boss_encounter": "final_boss",       "shard_card": "golem" }
+    {"chapter": 1, "name": "黄巾之乱", "base_level": "ladder_01", "ai_base": "rookie", "ai_boss": "easy", "encounters": ["starter_easy", "yellow_turban_swarm"], "boss_encounter": "tank_push_a", "shard_cards": ["skeletons", "electro_spirit", "bone_ram", "minion_horde"]},
+    {"chapter": 2, "name": "虎牢讨董", "base_level": "ladder_01", "ai_base": "easy", "ai_boss": "normal", "encounters": ["yellow_turban_swarm", "undead_horde"], "boss_encounter": "sorcerer_qun", "shard_cards": ["squire", "barbarians", "arrows", "log"]},
+    {"chapter": 3, "name": "群雄割据", "base_level": "ladder_01", "ai_base": "easy", "ai_boss": "normal", "encounters": ["orc_blitz", "wu_river_raiders"], "boss_encounter": "wu_river_raiders", "shard_cards": ["spear_goblins", "bats", "fire_spirit", "goblin_gang", "mini_pekka"]},
+    {"chapter": 4, "name": "官渡之战", "base_level": "ladder_01", "ai_base": "normal", "ai_boss": "hard", "encounters": ["wei_iron_wall", "double_tank"], "boss_encounter": "wei_cold_council", "shard_cards": ["giant_snowball", "battle_ram", "hog_rider", "royal_giant", "heal"]},
+    {"chapter": 5, "name": "荆州风云", "base_level": "ladder_01", "ai_base": "normal", "ai_boss": "hard", "encounters": ["shu_mountain_ambush", "ranged_kite"], "boss_encounter": "shu_sky_lantern", "shard_cards": ["axe_thrower", "cave_spiders", "ice_spirit", "rock_shower", "musketeer"]},
+    {"chapter": 6, "name": "赤壁之战", "base_level": "ladder_01", "ai_base": "normal", "ai_boss": "hard", "encounters": ["air_raid", "wu_fire_fleet"], "boss_encounter": "wu_fire_fleet", "shard_cards": ["fireball", "valkyrie", "goblin_barrel", "baby_dragon", "wizard"]},
+    {"chapter": 7, "name": "汉中争锋", "base_level": "ladder_01", "ai_base": "hard", "ai_boss": "hard", "encounters": ["wei_hanzhong_vanguard", "spell_siege"], "boss_encounter": "wei_cold_council", "shard_cards": ["bomber", "mega_minion", "executioner", "freeze", "balloon"]},
+    {"chapter": 8, "name": "荆襄烽火", "base_level": "ladder_01", "ai_base": "hard", "ai_boss": "extreme", "encounters": ["wu_tide_guard", "lich_control"], "boss_encounter": "throne_combined", "shard_cards": ["knight", "archers", "skeleton_army", "lightning", "phoenix"]},
+    {"chapter": 9, "name": "夷陵之火", "base_level": "ladder_01", "ai_base": "hard", "ai_boss": "extreme", "encounters": ["nanman_firebrood", "abyss_overload"], "boss_encounter": "nanman_firebrood", "shard_cards": ["goblins", "minions", "golem", "lava_hound", "princess"]},
+    {"chapter": 10, "name": "三分天下", "base_level": "ladder_01", "ai_base": "extreme", "ai_boss": "extreme", "encounters": ["throne_combined", "abyss_overload"], "boss_encounter": "three_kingdoms_final", "shard_cards": ["zap", "giant", "ice_wizard", "electro_wizard", "inferno_dragon"]}
   ]
 }

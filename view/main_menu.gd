@@ -57,7 +57,7 @@ func _build_boot_ui() -> void:
 	_boot_ui = Control.new()
 	_boot_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_boot_ui)
-	_title("CLASH\nPUSHER", 96, 72)
+	_title(tr("app_title"), 96, 72)   # A4：游戏名定「乱世推塔」（i18n，2026-07-19 用户拍板）
 	_center_label(tr("app_subtitle"), 312, 26, PixelUI.COL_MUTED)
 	_status = _center_label("登录中…", 620, 26, PixelUI.COL_MUTED)
 
@@ -110,6 +110,7 @@ func _build_menu() -> void:
 		_boot_ui = null
 		_status = null
 	Events.economy_changed.connect(_on_economy_changed)
+	Events.kingdom_changed.connect(_on_kingdom_changed)   # K3：挂机金库数值源 = 王国铸币坊
 	_build_top_row()
 	_build_rails()
 	_build_showpiece()
@@ -124,6 +125,9 @@ func _refresh_economy() -> void:
 	if not bool(res.get("ok", false)):
 		Log.w("[V5][menu] 经济状态拉取失败 → 离线降级展示")
 		_set_offline()
+		return
+	# K3：挂机金库（铸币坊）待领随经济一起拉（kingdom_changed 回填活动轨）。
+	await GameStateScript.kingdom().refresh(_http, session.token())
 
 # ---------- 1 顶部：名片 + 货币 + 小钮 ----------
 func _build_top_row() -> void:
@@ -221,7 +225,7 @@ func _build_tabbar() -> void:
 	add_child(bar)
 	var defs: Array = [
 		["商店", "shop", _noop, true], ["卡牌", "cards", _on_progression, false],
-		["王国", "kingdom", _noop, true], ["宫廷", "court", _noop, true],
+		["王国", "kingdom", _on_kingdom, false], ["宫廷", "court", _noop, true],
 		["外交", "diplomacy", _noop, true],
 	]
 	for i in defs.size():
@@ -239,12 +243,7 @@ func _on_economy_changed(cache) -> void:
 
 func _populate(cache, config) -> void:
 	_set_wallet(cache.gold, cache.gems)
-	# 挂机（活动轨）
-	var now_ts := int(Time.get_unix_time_from_system())
-	var pending: int = cache.idle_pending(now_ts, config)
-	_idle_lbl.text = ("+%s 金币" % HudWidgets.format_int(pending)) if pending > 0 else "产出中…"
-	_idle_btn.disabled = pending <= 0
-	# 闯关进度 + 章节 + 下一关角标
+	# 闯关进度 + 章节 + 下一关角标（挂机活动轨改由 kingdom_changed 回填，K3）
 	var sp = StageProgressScript.new(config.stages)
 	var total: int = sp.ordered_ids().size()
 	var cleared := 0
@@ -256,8 +255,9 @@ func _populate(cache, config) -> void:
 	var next_id: String = sp.next_stage(cache)
 	if next_id != "":
 		var st: Dictionary = config.get_stage(next_id)
-		_chapter_lbl.text = "第 %d 章" % int(st.get("chapter", 0))
-		_stage_sub.text = "下一关 %d-%d" % [int(st.get("chapter", 0)), int(st.get("index", 0))]
+		var chn := int(st.get("chapter", 0))
+		_chapter_lbl.text = "第%d章 · %s" % [chn, tr("chapter_%d" % chn)]   # A4：三国章节名（i18n）
+		_stage_sub.text = "下一关 %d-%d" % [chn, int(st.get("index", 0))]
 	else:
 		_chapter_lbl.text = "全部通关"
 		_stage_sub.text = "已全部通关"
@@ -311,6 +311,9 @@ func _on_stage() -> void:
 func _on_progression() -> void:
 	Router.goto("card_collection")
 
+func _on_kingdom() -> void:
+	Router.goto("kingdom")   # K2（DESIGN_KINGDOM）：王国页签点亮
+
 func _on_deck() -> void:
 	GameStateScript.deck_mode = "edit"
 	GameStateScript.stage_id = ""
@@ -319,12 +322,23 @@ func _on_deck() -> void:
 func _on_settings() -> void:
 	Router.goto("settings")
 
+# K3：挂机金库数值源 = 王国铸币坊（服务器 idle 章节曲线 × 铸币坊等级系数）。
+func _on_kingdom_changed(kd) -> void:
+	if kd == null or not kd.is_loaded or _idle_lbl == null:
+		return
+	var pending := int(kd.cache.get("pending_gold", 0))
+	_idle_lbl.text = ("+%s 金币" % HudWidgets.format_int(pending)) if pending > 0 else "产出中…"
+	_idle_btn.disabled = pending <= 0
+
 func _on_collect_idle() -> void:
 	_idle_btn.disabled = true
 	var session = GameStateScript.session()
 	var config = GameStateScript.config()
-	await GameStateScript.economy().collect_idle(_http, session.token(), config.cards.keys())
-	# 成功 → economy_changed 订阅刷新（挂机清零后按钮回禁用态）；失败维持禁用防连点
+	var res: Dictionary = await GameStateScript.kingdom().collect(_http, session.token())
+	if bool(res.get("ok", false)):
+		# 金币入主钱包 → 重拉经济刷新钱包条（kingdom_changed 已把挂机口清零）。
+		await GameStateScript.economy().refresh(_http, session.token(), config.cards.keys())
+	# 失败维持禁用防连点；下次 kingdom_changed 会按真实待领恢复按钮态
 
 # ---------- ui builders ----------
 # 入口按钮 = 空文本 _pin_button + 程序化 icon（MenuIcons 占位）+ 下方文字。

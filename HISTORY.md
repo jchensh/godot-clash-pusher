@@ -666,3 +666,40 @@
 - **基地页(base_camp)废弃下线**（策划定论：挂机并入活动轨、进度并入章节主视觉）：主菜单不再有入口；`stage_map`/`card_collection`/`deck_builder(edit)` 的返回键从 base_camp 改道 main_menu。场景与路由保留未删（回滚成本低，待新版稳定后再清理）。
 - **登录期 UI 收进 `_boot_ui` 容器**：标题/状态文案在菜单建成时整体移除（新版主界面无大标题，导航职责在页签+大簇）。
 - **验证**：客户端 **418/418** 零回归（含 test_online_runtime 服务器配置规约/test_scene_router 路由规约）；gdlint 绿。**真人实机验收通过（2026-07-18）**：五区布局/挂机领取/各入口跳转与返回/离线降级/入口改名+icon 全过。正式卡通 UI 资源仍欠账（占位 → 换皮，随主美 P0 mockup）。
+
+### V5 三国改版 · A4 世界观文本 + 遭遇扩容/奖励回填（🚧 代码+配置+测试完成待真人验收，2026-07-19，KAN-93）
+
+A4 三块中的两块（素材分批接入等美术图，另行推进）。修掉「32 张新卡 PvE 零曝光零获取」断层 + 100 关三国时间线章节化：
+
+- **章节三国化**：`stages_spec.json` 10 章改名 黄巾之乱→虎牢讨董→群雄割据→官渡之战→荆州风云→赤壁之战→汉中争锋→荆襄烽火→夷陵之火→三分天下；`i18n.json` 新增 `chapter_1..10`（zh/en），主菜单章节主视觉与闯关地图章头显示「第N章 · 章节名」。教程 4 条文案三国化叙事（**「圣水」术语保持不动**——改术语是全 UI 级决策另议）。
+- **遭遇模板扩容 15→27**（`encounters.json` +12 个阵营主题模板）：黄巾人海/张角术法（群雄）、铁壁·寒计·汉中先锋（魏）、山道伏兵·孔明天灯（蜀）、水寨·火船·守御（吴）、南蛮火鸢巢、终章三家无双合流；10 章 encounters/boss 全部按时间线×阵营重排（32 张新卡全部进入敌方卡组曝光）。
+- **奖励池回填全 48 卡**：spec 每章 `shard_card` 单卡 → `shard_cards` 轮转池（4~5 张/章，稀有度升序；非 boss 关按 index 轮转、boss 关发池尾压轴卡），`build_stages.py` 生成器同步改 + 校验；10 章合计**覆盖全 48 卡**（旧口径仅 8 张旧卡）。`--check` 过、重生成 `stages.json`。
+- **回归锁 +2**（`test_v5_stages_content`）：①100 关奖励并集 == 48 卡全池（断层不复发）②i18n chapter_1..10 zh/en 齐全且 zh 与 spec 章名一致。
+- **验证**：客户端 **420/420**；gdlint 绿；Go economy/gameconfig `-count=1` 过；按铁律 restart api+gateway+verifier、healthz ok。**真人验收欠**：闯关地图章名/新遭遇对局/新卡碎片掉落入账；游戏名 2026-07-19 用户拍板 = **《乱世推塔》**（en: Warring Towers）：i18n app_title/app_subtitle（副标「三国乱世 · 推塔对战」）+ project.godot 窗口名 + 主菜单登录页大标题改走 tr("app_title")，全库无 CLASH PUSHER 残留。
+
+### V5 · 王国领地系统 K0~K2：城建经营 + 城防养成新维度（🚧 代码+双端测试完成待真人验收，2026-07-19）
+
+**设计**：[docs/DESIGN_KINGDOM.md](docs/DESIGN_KINGDOM.md)（用户已拍板四原则：①对战维度=塔 ②金币不可买城建资源 ③卖时间不卖上限·上限全服统一·节奏运营/策划控 ④**服务器权威为永久原则**，客户端只收发+表现）。K0~K2 一次交付，K3 挂机整合/K4 PVE 塔加成/K5 PVP 下发/K6 IAP 后续分期。
+
+- **K0 配置**：`config/kingdom.json`——7 建筑（王城/农田/工坊/粮仓/城墙/箭楼/铸币坊）逐级显式数值表（等级/成本/时长/产出/城防 pct，全〔示意〕；策划直接改表控节奏）；王城 10 级绑章节门（LvN 需通关第 N-1 章）、非王城上限=王城×2；**成本禁 gold**（商业化铁门：城防只能时间或宝石）。gameconfig bundle 自动收录 → 服务器结算与客户端下发同源（17 文件，版本 hash 自动 bump）。
+- **K1a proto**：`proto/kingdom.proto`（ResourceAmount KV 避 map/跨文件坑，新资源零 proto 改动）+ common.proto MsgId 70~74；本机补装 protoc/protoc-gen-go，双端重生成（Go pb + godobuf .gd），Makefile PROTO_NAMES 收录 kingdom。
+- **K1b 服务端**：migration `0009_kingdom`（kingdom_state.resources **JSONB 可扩展** + kingdom_buildings 配置键文本主键——用户要求的养成/货币经济扩展性）；`internal/kingdom/`：config 解析校验（keep 必在/等级表连续/成本禁 gold）+ repo（事务骨架=播种→锁读→**到点懒完级**→动作→落库；服务器时钟结算产出；升级=资源扣减+计时，王城章节门查 economy highest_cleared，加速=宝石定价 ceil(剩余×费率)，收取=入仓封顶+铸币金进主钱包）+ handler `/v5/kingdom/{state,upgrade,collect,speedup}`（错误码复用 economy 族）。**Go 测试**：纯函数单测（产出封顶/加速定价/仓库封顶）+ 真 PG 集成测试（播种/升级/加速/王城门/章节门/收取）全过；全服务端 suite 零回归。
+- **K2 客户端**：`net/kingdom_client.gd`（pb HTTP）+ `net/kingdom_state_cache.gd`（EconomyStateCache 同款范式：非权威缓存 + `Events.kingdom_changed` 收口广播 + E1 fail-closed guard 接线进 OnlineRuntime）；ConfigLoader 收录 kingdom.json（镜像服务端校验规则）；`view/kingdom.tscn/gd` 王国页；Router 登记 `kingdom` 路由、主界面「王国」页签点亮。**同日按用户反馈场景化重做**（验收 1 过后拍板：要 SLG/4X 式主城，不要按钮列表）：battle_scene 同款纯 `_draw` 即时渲染——Lonesome 地形铺底 + L 型石板路网 + 老中世纪 building1~8 建筑组落图（空地=虚线地皮/施工=半透明+倒计时牌/待收取=金色脉动气泡）+ **SpriteDB 走路小人 5 个巡游**（广场↔建筑门口随机漫步、方向定帧行+镜像、脚下影）+ 建筑/小人 Y-sort 伪深度；点建筑 → `view/ui/kingdom_building_modal.gd`（F1 规约经 UI.modal 推入：等级/效果/成本/倒计时 + 建造/升级/加速）；HUD（资源/钱包/城防/收取/返回）Control 浮层。正式三国城建美术后整体换皮。
+- **验证**：客户端 **425/425**（+5：配置校验/建筑齐全/gold 禁门/城防曲线 60%·40% 回归锁/pb 回环）；gdlint 绿；Go 全过（含真 PG 集成）；docker 重建+0009 迁移+healthz ok、gateway bundle 17 文件。**真人验收欠**：王国页建造/升级/倒计时/加速/收取/王城门禁提示、主菜单页签跳转。**K4 前城防只显示不进战斗**。
+
+### V5 · 王国 K3+K4：铸币坊接管挂机金库 + PVE 城防塔加成接线（🚧 代码+双端测试完成待真人验收，2026-07-19）
+
+- **K3 挂机整合（单一产出源）**：铸币坊产率 = `economy.json idle` 章节曲线 × 铸币坊 `idle_mult_pct`（Lv1=100% 基线 → Lv20=290%，封顶沿用 `idle.cap_hours`）；mint 入初始建筑（新号挂机体验不变）。kingdom repo 事务内统一读 `highest_cleared` → 章节（王城门/铸币产率共用）。**economy `CollectIdle` 弃用去积累**（只刷新基准不发金，堵「王国+旧挂机」双份领取；集成测试改为弃用回归锁）。客户端主界面挂机金库活动轨切 kingdom 源（`kingdom_changed` 回填 pending_gold、领取走 `/v5/kingdom/collect` + 经济重拉同步钱包）。
+- **K4 PVE 塔加成（对战维度首次生效）**：`PveStartResp` 新增 `tower_hp_pct/tower_dmg_pct`（服务器权威定值：`kingdom.TowerBonus` 读城墙/箭楼累计，含到点未懒结转的施工）；同值写进 `pve_battles.progress` 的 **`_towers` 保留键**（复用现有列零 migration）→ 重放验证器 progress 透传 → `pve_replay` 同源注入。`match.setup_stage` 加 `tower_bonus` 参数 + `scale_player_towers`（整数百分比乘法，只动我方三塔、敌塔照旧走关卡 coef；0=no-op 零回归）。economy↔kingdom 循环依赖用 main.go 注入回调解开。战斗日志打 `城防=+X%hp/+Y%dmg` 观察口。
+- **测试**：客户端 **427/427**（+2：塔加成只作用我方/0 加成零回归；`_towers` 重放全等+缺键必分叉——实证塔数值进 state_hash 反作弊闭环）；Go 全量含真 PG 集成过（+3：mint 挂机曲线纯函数 / PveStart 写 `_towers`+零加成不写键 / CollectIdle 弃用回归）；**顺带修 A4 遗留**：ShardDrop 集成测试钉死 skeletons → 改配置驱动（A4 后 stage_1_2 掉轮转池新卡）。gdlint/gofmt 绿；docker 重建+verifier 重启。**真人验收欠**（随 K2 场景化一并）：铸币坊挂机领取入账、修城墙后打 PVE 我方塔变硬、验证器对带城防的对局 verdict=pass。
+
+### V5 · 🐞 事故：集成测试清空开发库账号 + 重试门死角修复（✅ 已恢复+防再犯，2026-07-19）
+
+**事故**：跑 Go 全量集成测试时 `INTEGRATION_DB_URL` 误指开发对局库 `gcp`——auth/profile/economy/kingdom 的 integration test 在 setup 里 `DELETE FROM accounts/profiles/economy_*`，把用户实机账号清掉 → 客户端 login-name 查无此人、卡重试门（用户验收时发现「连不上服务器」；服务端六容器实际全健康）。
+- **防再犯**：建独立测试库 `gcp_test`（同 PG 容器，migrate 到 v9），集成测试改指 gcp_test 验证全绿；写入 agent 长期记忆（memory/integration-test-db.md）。
+- **顺带修 UX 死角**：本地记着 username 但服务器查无此人时，客户端会永远卡重试门（重试门无登出口）。`session.ensure` 改：login-name 被服务器 4xx 明确拒绝 → 清本地凭据 → 路由回登录页重注册；5xx/超时保留凭据只重试。客户端 427/427。
+- **用户恢复路径**：重进游戏 → 自动跳登录页 → 重新注册（进度已被清库丢失，GM 面板可快速刷回金币/宝石/章节进度）。
+
+### V5 · 王国 GM 命令扩容（✅ 2026-07-19，随 K 线；用户无资源验收诉求）
+
+设置页 GM 区扩 12 键三列布局：新增 **粮草 +5000 / 木石 +5000 / 完成王国施工（加速类总开关）/ 重置王国**（宝石沿用既有 economy GM）。服务端新 `POST /v5/kingdom/gm`（`internal/kingdom/gm.go`，镜像 economy GM 纪律：JSON 入/KingdomState proto 出、会话鉴权只改自己、`add_resources` 直加不走仓库封顶）；客户端 `kingdom_client/cache.gm_apply` + settings `__kingdom` 路由分支（成功后 kingdom_changed 广播，王国页/挂机口自动刷）。客户端 427/427、gdlint 绿、api 重建 healthz ok。

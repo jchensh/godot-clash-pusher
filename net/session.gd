@@ -32,6 +32,12 @@ func ensure(http: HTTPRequest) -> bool:
 			return false   # 需要登录页（needs_login()），不再本地生造账号
 		var lr = await auth.login_name(http, auth.username)
 		if not lr.ok:
+			# 服务器明确拒绝（4xx=账号不存在/凭据无效，非网络故障）→ 清本地记住的
+			# username，让 needs_login() 路由去登录页重注册；否则会永远卡在重试门
+			# （2026-07-19 测试清库事故实锤的死角）。5xx/超时保留凭据只重试。
+			if lr.status_code >= 400 and lr.status_code < 500:
+				Log.w("[V5][session] login-name 被服务器拒绝(status=%d) → 清凭据回登录页" % lr.status_code)
+				sign_out()
 			return false
 		logged_in = true
 	var profile_result = await profile.get_profile(http, auth.access_token)

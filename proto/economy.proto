@@ -69,6 +69,10 @@ message PveStartReq {
 
 message PveStartResp {
   int64 battle_id = 1;
+  // K4（DESIGN_KINGDOM）：王国城防 → 我方三塔加成（整数百分比，服务器权威定值下发；
+  // 同值写进 pve_battles.progress 的 "_towers" 保留键 → 重放验证器逐 bit 复现）。
+  int32 tower_hp_pct = 2;
+  int32 tower_dmg_pct = 3;
 }
 
 // 一条出牌指令（双方都录：玩家在 tick 间隙出牌 phase=0，AI 在 tick 内出牌 phase=1；

@@ -7,7 +7,8 @@
   - 推荐战力 rec = round(rec_team_power * coef * rec_tightness)。
   - 首通金 = (base + per_chapter*(章-1)) ×(boss 时 ×boss_gold_mult)；重复金 = 首通 ×repeat_gold_ratio。
   - 首通宝石 = first_clear_gems（boss = boss_gems）。
-  - 碎片：每关首通发 shards_per_first_clear 张本章 shard_card（boss ×boss_shard_mult）+ shard_drop 概率掉落。
+  - 碎片：每关首通发 shards_per_first_clear 张（boss ×boss_shard_mult）+ shard_drop 概率掉落；
+    发哪张卡 = 本章 shard_cards 轮转池按 (index-1)%len 轮转、boss 关发池尾压轴卡（A4/KAN-93，全 48 卡有源）。
   - 星级目标统一 [win / 保王塔≥pct / 限时 sec]。
   - encounter：非 boss 关在本章 encounters 池按 (index-1)%len 轮转；boss 关用 boss_encounter。
   - ai：非 boss 用 ai_base，boss 用 ai_boss。
@@ -49,13 +50,19 @@ def build(spec, encounters, cards):
         c = int(ch["chapter"])
         pool = ch["encounters"]
         boss_enc = ch["boss_encounter"]
-        shard_card = ch["shard_card"]
+        # A4(KAN-93)：shard_card 单卡 → shard_cards 轮转池（稀有度升序；非 boss 关按 index 轮转、
+        # boss 关发最后一张压轴卡）。10 章合计覆盖全 48 卡，修「32 张新卡 PvE 零获取」断层。
+        shard_cards = ch["shard_cards"]
         # 引用校验（早抓 spec 笔误）。
         for e in list(pool) + [boss_enc]:
             if e not in encounters:
                 errors.append("chapter %d 引用了不存在的 encounter '%s'" % (c, e))
-        if shard_card not in cards:
-            errors.append("chapter %d 的 shard_card '%s' 不在 cards 中" % (c, shard_card))
+        for sc in shard_cards:
+            if sc not in cards:
+                errors.append("chapter %d 的 shard_cards '%s' 不在 cards 中" % (c, sc))
+        if not shard_cards:
+            errors.append("chapter %d 的 shard_cards 池为空" % c)
+            continue
         if not pool:
             errors.append("chapter %d 的 encounters 池为空" % c)
             continue
@@ -74,6 +81,7 @@ def build(spec, encounters, cards):
                 * (curve["boss_gold_mult"] if is_boss else 1.0)))
             fc_gems = int(curve["boss_gems"] if is_boss else curve["first_clear_gems"])
             shard_n = int(curve["shards_per_first_clear"] * (curve["boss_shard_mult"] if is_boss else 1))
+            shard_card = shard_cards[-1] if is_boss else shard_cards[(i - 1) % len(shard_cards)]
             repeat_gold = max(1, int(round(fc_gold * curve["repeat_gold_ratio"])))
 
             out["stage_%d_%d" % (c, i)] = {

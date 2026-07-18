@@ -166,7 +166,8 @@ func _chapter_header(chapter: int, sp, cache) -> Control:
 			total += _star_cap(String(it.get("id", "")), GameStateScript.config())
 	var h := Control.new()
 	h.custom_minimum_size = Vector2(620, 40)
-	var l := _row_label("第%d章" % chapter, Vector2(6, 6), 26, PixelUI.COL_GOLD, HORIZONTAL_ALIGNMENT_LEFT, 300)
+	var l := _row_label("第%d章 · %s" % [chapter, tr("chapter_%d" % chapter)],
+			Vector2(6, 6), 26, PixelUI.COL_GOLD, HORIZONTAL_ALIGNMENT_LEFT, 300)
 	h.add_child(l)
 	var sr := _row_label("星 %d/%d" % [got, total], Vector2(320, 8), 22, PixelUI.COL_MUTED, HORIZONTAL_ALIGNMENT_RIGHT, 294)
 	h.add_child(sr)

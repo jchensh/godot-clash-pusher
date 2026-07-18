@@ -174,6 +174,7 @@ func _center_label(text: String, y: float, font_size: int, color: Color) -> Labe
 func _build_gm() -> void:
 	_center_label("GM 工具（开发）", 630, 30, PixelUI.COL_GOLD)
 	_gm_status = _center_label("连接服务器中…", 680, 22, PixelUI.COL_MUTED)
+	# 王国 GM（__kingdom 标记 → /v5/kingdom/gm）：粮草/木石/完成施工（加速类总开关）。
 	var defs := [
 		["金币 +10000", {"add_gold": 10000}],
 		["宝石 +1000", {"add_gems": 1000}],
@@ -183,13 +184,17 @@ func _build_gm() -> void:
 		["通关全部(ch10)", {"clear_through_chapter": 10}],
 		["推进 1 章", {"__advance": true}],
 		["重置账号", {"reset": true}],
+		["粮草 +5000", {"__kingdom": {"add_resources": {"food": 5000}}}],
+		["木石 +5000", {"__kingdom": {"add_resources": {"wood": 5000}}}],
+		["完成王国施工", {"__kingdom": {"finish_builds": true}}],
+		["重置王国", {"__kingdom": {"reset": true}}],
 	]
-	var col_w := 330.0
+	var col_w := 216.0
 	var bh := 68.0
 	for i in defs.size():
-		var col: int = i % 2
-		var row: int = i / 2
-		var x := 20.0 + float(col) * (col_w + 20.0)
+		var col: int = i % 3
+		var row: int = i / 3
+		var x := 20.0 + float(col) * (col_w + 16.0)
 		var y := 720.0 + float(row) * (bh + 10.0)
 		_gm_button(String(defs[i][0]), defs[i][1], x, y, col_w, bh)
 
@@ -200,7 +205,7 @@ func _gm_button(text: String, ops: Dictionary, x: float, y: float, w: float, h: 
 	btn.size = Vector2(w, h)
 	btn.pivot_offset = Vector2(w / 2.0, h / 2.0)
 	btn.focus_mode = Control.FOCUS_NONE
-	PixelUI.style_button(btn, "stone", 26)
+	PixelUI.style_button(btn, "stone", 22)   # 三列布局（王国 GM 扩容）字号压小防溢出
 	btn.pressed.connect(_on_gm.bind(ops))
 	btn.button_down.connect(_scale_to.bind(btn, 0.96))
 	btn.button_up.connect(_scale_to.bind(btn, 1.0))
@@ -220,6 +225,9 @@ func _init_gm() -> void:
 
 func _on_gm(ops: Dictionary) -> void:
 	var real_ops: Dictionary = ops.duplicate()
+	if real_ops.has("__kingdom"):   # 王国 GM：走 /v5/kingdom/gm（kingdom_changed 广播刷新王国页/挂机口）
+		await _do_kingdom_gm(real_ops["__kingdom"])
+		return
 	if real_ops.has("__advance"):
 		real_ops.erase("__advance")
 		var c = GameStateScript.economy().get_cache()
@@ -228,6 +236,27 @@ func _on_gm(ops: Dictionary) -> void:
 			cur_ch = int(GameStateScript.config().get_stage(String(c.highest_cleared)).get("chapter", 0))
 		real_ops["clear_through_chapter"] = mini(cur_ch + 1, 10)
 	await _do_gm(real_ops)
+
+# 王国 GM 分支：登录门/按钮态与经济 GM 同款；成功后 kingdom_changed 已广播（王国页/挂机口自动刷）。
+func _do_kingdom_gm(ops: Dictionary) -> void:
+	if _gm_status != null:
+		_gm_status.text = "执行中…"
+	_set_gm_enabled(false)
+	var session = GameStateScript.session()
+	if not await session.ensure(_http):
+		if _gm_status != null:
+			_gm_status.text = "GM：登录失败"
+		_set_gm_enabled(true)
+		return
+	var res: Dictionary = await GameStateScript.kingdom().gm_apply(_http, session.token(), ops)
+	_set_gm_enabled(true)
+	if _gm_status != null:
+		if bool(res.get("ok", false)):
+			var kd = GameStateScript.kingdom()
+			var r: Dictionary = kd.cache.get("resources", {})
+			_gm_status.text = "王国 GM ok：粮%d 木%d" % [int(r.get("food", 0)), int(r.get("wood", 0))]
+		else:
+			_gm_status.text = "王国 GM 失败 status=%d" % int(res.get("status_code", 0))
 
 func _do_gm(ops: Dictionary) -> void:
 	if _gm_status != null:

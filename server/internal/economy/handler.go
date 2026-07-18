@@ -19,6 +19,9 @@ import (
 type Handler struct {
 	repo *Repo
 	cfg  *Config
+	// TowerBonus（K4，DESIGN_KINGDOM）：开战时查王国城防 → 我方塔 (hp_pct, dmg_pct)。
+	// 由 main.go 注入 kingdom 实现（避免 economy↔kingdom 循环依赖）；nil = 无加成（0,0）。
+	TowerBonus func(ctx context.Context, accountID int64) (int, int, error)
 }
 
 func NewHandler(repo *Repo, cfg *Config) *Handler {
@@ -112,15 +115,27 @@ func (h *Handler) pveStart(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	battleID, err := h.repo.PveStart(ctx, accountID, req.GetStageId(), req.GetDeck(), h.cfg)
+	hpPct, dmgPct := 0, 0
+	if h.TowerBonus != nil {
+		var tbErr error
+		hpPct, dmgPct, tbErr = h.TowerBonus(ctx, accountID)
+		if tbErr != nil {
+			// 城防查询失败按 0 加成放行（不阻断开战），但记日志观察。
+			log.Printf("economy: acct=%d pve_start tower bonus lookup failed: %v", accountID, tbErr)
+			hpPct, dmgPct = 0, 0
+		}
+	}
+	battleID, err := h.repo.PveStart(ctx, accountID, req.GetStageId(), req.GetDeck(), h.cfg, hpPct, dmgPct)
 	if err != nil {
 		code, status := mapErr(err)
 		log.Printf("economy: acct=%d pve_start stage=%q rejected: %v", accountID, req.GetStageId(), err)
 		httpx.WriteError(w, status, code, err.Error(), pbcommon.MsgId_PVE_START_REQ)
 		return
 	}
-	log.Printf("economy: acct=%d pve_start stage=%q -> battle=%d", accountID, req.GetStageId(), battleID)
-	httpx.WriteProto(w, http.StatusOK, &pbeconomy.PveStartResp{BattleId: battleID})
+	log.Printf("economy: acct=%d pve_start stage=%q -> battle=%d towers=+%d%%hp/+%d%%dmg",
+		accountID, req.GetStageId(), battleID, hpPct, dmgPct)
+	httpx.WriteProto(w, http.StatusOK, &pbeconomy.PveStartResp{
+		BattleId: battleID, TowerHpPct: int32(hpPct), TowerDmgPct: int32(dmgPct)})
 }
 
 // pveReport (KAN-79)：战斗中周期批量追加指令流/哈希。服务器按到达时间记批次（时序真实性）。

@@ -23,6 +23,7 @@ import (
 	"github.com/jchensh/godot-clash-pusher/server/internal/auth"
 	"github.com/jchensh/godot-clash-pusher/server/internal/economy"
 	"github.com/jchensh/godot-clash-pusher/server/internal/gameconfig"
+	"github.com/jchensh/godot-clash-pusher/server/internal/kingdom"
 	"github.com/jchensh/godot-clash-pusher/server/internal/profile"
 	"github.com/jchensh/godot-clash-pusher/server/internal/store"
 	"github.com/jchensh/godot-clash-pusher/server/internal/version"
@@ -79,15 +80,30 @@ func main() {
 	economyH := economy.NewHandler(econRepo, econCfg)
 	log.Printf("api: economy config loaded (%d cards, cfg ver=%s)", len(econCfg.Cards), bundle.Version)
 
+	// K1 (DESIGN_KINGDOM)：王国领地——服务器权威城建经营（配置同 bundle 下发同源）。
+	kingdomCfg, err := kingdom.ParseConfig(bundle)
+	if err != nil {
+		log.Fatalf("api: parse kingdom config: %v", err)
+	}
+	kingdomRepo := kingdom.NewRepo(db)
+	kingdomH := kingdom.NewHandler(kingdomRepo, kingdomCfg, econCfg)
+	// K4：PVE 开战时把王国城防换算成我方塔加成（注入回调避免 economy↔kingdom 循环依赖）。
+	economyH.TowerBonus = func(ctx context.Context, accountID int64) (int, int, error) {
+		return kingdomRepo.TowerBonus(ctx, accountID, kingdomCfg)
+	}
+	log.Printf("api: kingdom config loaded (%d buildings), tower bonus wired into pve_start", len(kingdomCfg.Buildings))
+
 	mux := http.NewServeMux()
 	authH.Mount(mux)
 	profileH.Mount(mux, authMW)
 	economyH.Mount(mux, authMW)
+	kingdomH.Mount(mux, authMW)
 
 	// GM / 开发作弊工具（V5-S9 改动3，用户决策）：始终挂 /v5/gm/*（直接改本账号经济 DB）。
 	// 取消了原 GM_ENABLED 环境门控——所有部署（含 prod）都开放 GM。仍走会话鉴权（只能改自己账号）。
 	// ⚠️ 取舍：线上任意玩家可自助刷资源、经济不防作弊（用户明确要求，当前阶段定位）。
 	economy.NewGMHandler(econRepo, econCfg).Mount(mux, authMW)
+	kingdom.NewGMHandler(kingdomRepo, kingdomCfg, econCfg).Mount(mux, authMW)   // 王国 GM（粮木/完成施工/重置）
 	log.Printf("api: GM endpoints mounted (/v5/gm/*) — always on (GM_ENABLED gate removed, V5-S9)")
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		if err := db.Ping(r.Context()); err != nil {

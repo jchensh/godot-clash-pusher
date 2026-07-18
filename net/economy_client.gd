@@ -61,7 +61,13 @@ func pve_start(http: HTTPRequest, token: String, stage_id: String, deck: Array) 
 	var resp = EconomyProto.PveStartResp.new()
 	if resp.from_bytes(res["body"]) != EconomyProto.PB_ERR.NO_ERRORS:
 		return {"ok": false, "status_code": 200, "error": "decode fail"}
-	return {"ok": true, "battle_id": int(resp.get_battle_id())}
+	return {
+		"ok": true,
+		"battle_id": int(resp.get_battle_id()),
+		# K4：王国城防 → 我方塔加成（服务器权威定值；battle_scene 注入 setup_stage）。
+		"tower_hp_pct": int(resp.get_tower_hp_pct()),
+		"tower_dmg_pct": int(resp.get_tower_dmg_pct()),
+	}
 
 
 ## KAN-79：PVE 战斗中批量上报指令流/哈希（追加式）。cmds=[{t,ph,s,c,x,y}]，

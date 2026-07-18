@@ -35,10 +35,10 @@ func _pd_from(progress: Dictionary):
 
 # 跑一局真实 PVE（AI 驱动敌方 + 玩家周期在间隙出牌），录制并返回
 # {cmds, hashes(hex 化), win, ticks, recorder}。ticks_budget 控制局长。
-func _play_recorded(ticks_budget: int) -> Dictionary:
+func _play_recorded(ticks_budget: int, towers: Dictionary = {}) -> Dictionary:
 	var config = _loader_ready()
 	var m = MatchScript.new(config)
-	m.setup_stage(STAGE, DECK, _pd_from(_progress()))
+	m.setup_stage(STAGE, DECK, _pd_from(_progress()), towers)
 	m.set_opponent_controller(AIControllerScript.new(m, config, m.ai_difficulty))
 	var rec = PveRecorderScript.new()
 	rec.attach(m)
@@ -149,3 +149,17 @@ func test_successful_flush_reports_true_without_requeue() -> void:
 	assert_true(ok, "成功 flush 才允许战后离场")
 	assert_false(recorder._flushing, "成功后释放 single-flight")
 	assert_true(recorder.cmds.is_empty() and recorder.hashes.is_empty(), "成功批次不回队")
+
+
+# K4：城防塔加成进重放证据链——录制端注入 (hp/dmg pct)、progress 带 "_towers" 保留键
+# → 重放同源注入逐 hash 全等；缺键（伪造无加成快照）→ 必分叉（塔数值进 state_hash）。
+func test_tower_bonus_replay_roundtrip_and_forks() -> void:
+	var towers := {"hp_pct": 30, "dmg_pct": 20}
+	var rec := _play_recorded(300, towers)
+	assert_true((rec["hashes"] as Array).size() >= 2, "应录到周期哈希")
+	var prog: Dictionary = _progress().duplicate(true)
+	prog["_towers"] = {"hp_pct": 30, "dmg_pct": 20}
+	var v: Dictionary = PveReplayScript.replay(_loader_ready(), STAGE, DECK, prog, rec["cmds"], rec["hashes"])
+	assert_eq(String(v["status"]), "pass", "带 _towers 重放应全等: %s" % String(v.get("reason", "")))
+	var v2: Dictionary = PveReplayScript.replay(_loader_ready(), STAGE, DECK, _progress(), rec["cmds"], rec["hashes"])
+	assert_eq(String(v2["status"]), "mismatch", "缺 _towers 重放应分叉（塔数值进 hash）")

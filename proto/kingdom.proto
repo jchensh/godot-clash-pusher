@@ -1,0 +1,41 @@
+// kingdom.proto — 王国领地系统（K1，DESIGN_KINGDOM.md；决策 48 服务器权威）。
+//
+// HTTP（api:8080，Bearer 会话令牌）：
+//   GET  /v5/kingdom/state     → KingdomState
+//   POST /v5/kingdom/upgrade   KingdomActionReq{building} → KingdomState（Lv0→1 即建造，统一动作）
+//   POST /v5/kingdom/collect   KingdomActionReq{}         → KingdomState（收取全部产出）
+//   POST /v5/kingdom/speedup   KingdomActionReq{building} → KingdomState（宝石加速完成施工）
+// 成本/上限/产出/计时全在服务器用服务器侧配置 + 服务器时钟算（改本地无效）；
+// 客户端只收发数据 + 展示（用户拍板 2026-07-19：服务器权威为永久原则）。
+// 扩展性：资源用 repeated KV（不用 map——godobuf 兼容性保守），新资源/新建筑 = 配置扩展零 proto 改动。
+
+syntax = "proto3";
+
+package game.v4;
+
+option go_package = "github.com/jchensh/godot-clash-pusher/server/internal/pb/kingdom";
+
+// 通用资源量 KV（food/wood/... 未来新货币直接复用）。
+message ResourceAmount {
+  string resource = 1;
+  int64 amount = 2;
+}
+
+message KingdomBuilding {
+  string building = 1;       // 配置键：keep/farm/workshop/granary/wall/watchtower/mint/...
+  int32 level = 2;           // 0 = 未建造
+  int64 upgrade_end_ts = 3;  // >0 = 施工中，服务器时钟到点后任意读写自动完级
+}
+
+message KingdomState {
+  repeated ResourceAmount resources = 1;   // 王国仓内资源现量
+  repeated KingdomBuilding buildings = 2;
+  int64 server_now_ts = 3;                 // 客户端倒计时/产量预估的唯一时间基准
+  repeated ResourceAmount pending = 4;     // 各资源可收取量（服务器算好，client 只显示）
+  int64 pending_gold = 5;                  // 铸币坊可收金币（进主钱包，单列便于展示）
+}
+
+// upgrade / speedup 用 building；collect 忽略该字段（收取全部）。
+message KingdomActionReq {
+  string building = 1;
+}

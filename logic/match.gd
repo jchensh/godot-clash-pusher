@@ -74,7 +74,13 @@ func set_stat_mults(player_mult: float = 1.0, opponent_mult: float = 1.0) -> voi
 # ai_difficulty→AI 行为档；其余对局参数（圣水/塔血/时长）走 base_level（默认 ladder_01）。
 # 敌塔 HP 随 coef 放大（V5-S8d，scale_opponent_towers）；我方塔不缩放。player_data 非空 → 我方按本卡
 # level/rank 养成乘区（V5-S4，per-card）；敌方按 coef flat 乘区。
-func setup_stage(stage_id: String, player_deck_override: Array = [], player_data = null) -> void:
+# K4（DESIGN_KINGDOM）：tower_bonus = {"hp_pct": int, "dmg_pct": int} 王国城防 → 我方三塔加成。
+# 值由服务器权威下发（PveStartResp / pve_battles.progress "_towers" 保留键），两端不各自推导；
+# 应用为整数百分比乘法（单次 IEEE 乘除，确定性同源），客户端 sim 与重放验证器逐 bit 一致。
+func setup_stage(
+		stage_id: String, player_deck_override: Array = [], player_data = null,
+		tower_bonus: Dictionary = {}
+) -> void:
 	var stage: Dictionary = config.get_stage(stage_id)
 	var coef := float(stage.get("difficulty_coef", 1.0))
 	var enc: Dictionary = config.get_encounter(String(stage.get("encounter", "")))
@@ -84,8 +90,20 @@ func setup_stage(stage_id: String, player_deck_override: Array = [], player_data
 	ai_difficulty = String(stage.get("ai_difficulty", ai_difficulty))
 	set_stat_mults(1.0, coef)        # 敌方 coef；我方 flat 1.0（养成走 player_data per-card）
 	scale_opponent_towers(coef)      # V5-S8d：敌塔 HP 也随 coef 放大（我方塔不动）→ 高系数关推塔更难
+	scale_player_towers(int(tower_bonus.get("hp_pct", 0)), int(tower_bonus.get("dmg_pct", 0)))
 	if player_data != null:
 		player.player_data = player_data
+
+# K4：我方(OWNER_PLAYER)三塔按王国城防加成（hp_pct=城墙累计、dmg_pct=箭楼累计；0 = no-op 零回归）。
+func scale_player_towers(hp_pct: int, dmg_pct: int) -> void:
+	if battle == null or (hp_pct <= 0 and dmg_pct <= 0):
+		return
+	for t in battle.player_towers:
+		if hp_pct > 0:
+			t.max_hp = t.max_hp * float(100 + hp_pct) / 100.0
+			t.hp = t.max_hp
+		if dmg_pct > 0:
+			t.damage = t.damage * float(100 + dmg_pct) / 100.0
 
 # V5-S8d：把敌方(OWNER_OPPONENT)三塔 HP 乘 mult（满血开局）。我方塔不动 → 高 coef 关推塔更难、
 # 防守相对更易（吻合「战力为底」：需养成才推得动）。mult≈1.0 时 no-op（零回归）。
