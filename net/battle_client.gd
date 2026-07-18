@@ -184,6 +184,10 @@ func _handle_join_resp(payload: PackedByteArray) -> void:
 	_inject_progress(match_obj.opponent, resp.get_side2_progress())
 	Log.i("[net][KAN-76] 养成注入: side1[%s] side2[%s]" % [
 		_progress_summary(resp.get_side1_progress()), _progress_summary(resp.get_side2_progress())])
+	# K5：双方王国城防对称注入（服务器权威下发定值；缺省 = 白板向后兼容）。
+	match_obj.scale_side_towers(_tower_dict(resp.get_side1_towers()), _tower_dict(resp.get_side2_towers()))
+	Log.i("[net][K5] 城防注入: side1[%s] side2[%s]" % [
+		_tower_summary(resp.get_side1_towers()), _tower_summary(resp.get_side2_towers())])
 	_playing = true
 	_end_reported = false
 	_started = true
@@ -225,6 +229,17 @@ func _progress_summary(progress: Array) -> String:
 		lv += int(cp.get_level())
 		rk += int(cp.get_rank())
 	return "lvlsum=%d ranksum=%d" % [lv, rk]
+
+# K5：pb TowerBonus（可为 null=缺省无加成）→ scale_side_towers 的入参字典。
+func _tower_dict(tb) -> Dictionary:
+	if tb == null:
+		return {"hp_pct": 0, "dmg_pct": 0}
+	return {"hp_pct": int(tb.get_hp_pct()), "dmg_pct": int(tb.get_dmg_pct())}
+
+func _tower_summary(tb) -> String:
+	if tb == null:
+		return "无"
+	return "+%d%%hp/+%d%%dmg" % [int(tb.get_hp_pct()), int(tb.get_dmg_pct())]
 
 
 func _handle_tick_bundle(payload: PackedByteArray) -> void:

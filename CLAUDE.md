@@ -147,5 +147,5 @@ HTTPS_PROXY=http://127.0.0.1:7897 uv run --with "gdtoolkit==4.*" gdradon cc <路
 - **V1~V4 全部完成**（V4-S5 赛季/榜暂缓 KAN-41）；详细历史按版本线归档于 docs/HISTORY_*.md。
 - **V5 = 实时在线 F2P 闯关养成（决策 48，服务器权威；[PLAN_V5.md](PLAN_V5.md)，Epic KAN-50）**：本地原型 S0~S8 + 在线化 N1~N7 + S9 账号/引导/菜单 + 卡池 16→48 + 框架地基（Router/Events/Log/lint）**代码全部完成**；S8e 难度手感等多组真人验收欠账，台账见 [docs/ACCEPTANCE_SANGUO.md](docs/ACCEPTANCE_SANGUO.md) 与各 ACCEPTANCE_* 文档。
 - **Now = 上线工程线 E0~E9（[PLAN_V5.md](PLAN_V5.md) §13）**：E0 契约 + E1 在线主流程接线（唯一 `Online` autoload、fail-closed、结算幂等）已 Done；**下一步 E2 公网安全**（Prod 去 GM / WS ticket / WSS）。E2 完成前不得上公网、不打正式联机包。
-- **内容支线**：三国改版轨道A（A1~A3 欠验收、A4 素材接入进行中，[PLAN_V5_SANGUO.md](PLAN_V5_SANGUO.md)）；横版战斗 H3~H6 未开工（[PLAN_V5_HBATTLE.md](PLAN_V5_HBATTLE.md)）；UI 骨架 F 组验收欠（[PLAN_V5_UIFRAME.md](PLAN_V5_UIFRAME.md)）；数值线 KAN-87/88 挂起。
+- **内容支线**：**王国领地系统 K0~K5 代码完成**（城建经营+城防→塔养成维度，[docs/DESIGN_KINGDOM.md](docs/DESIGN_KINGDOM.md)/KAN-112，K6 IAP 待排、真人验收欠）；三国改版轨道A（A1~A3 欠验收、A4 文本/遭遇/奖励回填完成·素材接入进行中，[PLAN_V5_SANGUO.md](PLAN_V5_SANGUO.md)）；横版战斗 H3~H6 未开工（[PLAN_V5_HBATTLE.md](PLAN_V5_HBATTLE.md)）；UI 骨架 F 组验收欠（[PLAN_V5_UIFRAME.md](PLAN_V5_UIFRAME.md)）；数值线 KAN-87/88 挂起。
 - 基线：客户端单测 **409/409**；Go unit+integration 全过；服务端 schema **v8**（0008_pve_battles）；docker **6 容器**（含 verifier）。

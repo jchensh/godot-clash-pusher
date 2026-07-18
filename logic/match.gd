@@ -96,9 +96,24 @@ func setup_stage(
 
 # K4：我方(OWNER_PLAYER)三塔按王国城防加成（hp_pct=城墙累计、dmg_pct=箭楼累计；0 = no-op 零回归）。
 func scale_player_towers(hp_pct: int, dmg_pct: int) -> void:
-	if battle == null or (hp_pct <= 0 and dmg_pct <= 0):
+	if battle == null:
 		return
-	for t in battle.player_towers:
+	_scale_tower_list(battle.player_towers, hp_pct, dmg_pct)
+
+# K5（PVP）：双方城防对称注入——两端对 side1(player)/side2(opponent) 应用同一份服务器
+# 下发值（JoinRoomResp TowerBonus），固定顺序 side1 先 → 逐 bit 一致进 lockstep hash。
+func scale_side_towers(side1_bonus: Dictionary, side2_bonus: Dictionary) -> void:
+	if battle == null:
+		return
+	_scale_tower_list(battle.player_towers,
+			int(side1_bonus.get("hp_pct", 0)), int(side1_bonus.get("dmg_pct", 0)))
+	_scale_tower_list(battle.opponent_towers,
+			int(side2_bonus.get("hp_pct", 0)), int(side2_bonus.get("dmg_pct", 0)))
+
+func _scale_tower_list(towers: Array, hp_pct: int, dmg_pct: int) -> void:
+	if hp_pct <= 0 and dmg_pct <= 0:
+		return
+	for t in towers:
 		if hp_pct > 0:
 			t.max_hp = t.max_hp * float(100 + hp_pct) / 100.0
 			t.hp = t.max_hp

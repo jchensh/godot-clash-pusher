@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jchensh/godot-clash-pusher/server/internal/kingdom"
 	"github.com/jchensh/godot-clash-pusher/server/internal/matchmaking"
 	pbbattle "github.com/jchensh/godot-clash-pusher/server/internal/pb/battle"
 	pbcommon "github.com/jchensh/godot-clash-pusher/server/internal/pb/common"
@@ -44,6 +45,10 @@ type Lobby struct {
 	db      *store.DB
 	levelID string
 	now     func() time.Time
+
+	// KingdomCfg（K5，DESIGN_KINGDOM）：建房时把双方王国城防换算成塔加成随 JoinRoomResp
+	// 权威下发。可选注入（gateway main 装配）；nil = 全部零加成（配置缺失不阻塞对战）。
+	KingdomCfg *kingdom.Config
 
 	mu      sync.Mutex
 	waiting map[int64]*waiter // queued, awaiting a match
@@ -151,11 +156,12 @@ func (l *Lobby) createMatch(ctx context.Context, pair matchmaking.Pair) {
 
 	deckA := l.lookupDeck(ctx, wa.accountID, wa.deckSlot)
 	deckB := l.lookupDeck(ctx, wb.accountID, wb.deckSlot)
-	p1 := &player{accountID: wa.accountID, side: 1, deck: deckA, progress: l.lookupProgress(ctx, wa.accountID, deckA), summary: wa.summary, send: wa.send}
-	p2 := &player{accountID: wb.accountID, side: 2, deck: deckB, progress: l.lookupProgress(ctx, wb.accountID, deckB), summary: wb.summary, send: wb.send}
+	p1 := &player{accountID: wa.accountID, side: 1, deck: deckA, progress: l.lookupProgress(ctx, wa.accountID, deckA), towers: l.lookupTowers(ctx, wa.accountID), summary: wa.summary, send: wa.send}
+	p2 := &player{accountID: wb.accountID, side: 2, deck: deckB, progress: l.lookupProgress(ctx, wb.accountID, deckB), towers: l.lookupTowers(ctx, wb.accountID), summary: wb.summary, send: wb.send}
 	room := NewRoom(roomID, l.levelID, 0, p1, p2, l.persist, l.now)
-	log.Printf("mm: room %s ready: side1 acc=%d deck=%dcards %s | side2 acc=%d deck=%dcards %s",
-		roomID, p1.accountID, len(p1.deck), progressSummary(p1.progress), p2.accountID, len(p2.deck), progressSummary(p2.progress))
+	log.Printf("mm: room %s ready: side1 acc=%d deck=%dcards %s def[%s] | side2 acc=%d deck=%dcards %s def[%s]",
+		roomID, p1.accountID, len(p1.deck), progressSummary(p1.progress), towerSummary(p1.towers),
+		p2.accountID, len(p2.deck), progressSummary(p2.progress), towerSummary(p2.towers))
 
 	l.mu.Lock()
 	l.active[wa.accountID] = room
@@ -255,6 +261,31 @@ func (l *Lobby) lookupProgress(ctx context.Context, accountID int64, deck []stri
 		out = append(out, &pbbattle.CardProgress{CardId: cid, Level: lv, Rank: rk})
 	}
 	return out
+}
+
+// lookupTowers 把账号的王国城防换算成塔加成（K5）。复用 kingdom.TowerBonus（含到点
+// 未懒结转的施工计级）。零加成/查询失败/未配置 → nil（JoinRoomResp 缺省 = 白板，向后兼容）。
+func (l *Lobby) lookupTowers(ctx context.Context, accountID int64) *pbbattle.TowerBonus {
+	if l.KingdomCfg == nil {
+		return nil
+	}
+	hp, dmg, err := kingdom.NewRepo(l.db).TowerBonus(ctx, accountID, l.KingdomCfg)
+	if err != nil {
+		log.Printf("mm: acc=%d tower bonus query failed (%v) -> no bonus", accountID, err)
+		return nil
+	}
+	if hp == 0 && dmg == 0 {
+		return nil
+	}
+	return &pbbattle.TowerBonus{HpPct: int32(hp), DmgPct: int32(dmg)}
+}
+
+// towerSummary compacts a tower bonus for the room log（建房观察口，2026-07-02 口径③）。
+func towerSummary(t *pbbattle.TowerBonus) string {
+	if t == nil {
+		return "-"
+	}
+	return fmt.Sprintf("+%d%%hp/+%d%%dmg", t.HpPct, t.DmgPct)
 }
 
 // progressSummary compacts a progress list for the room log. 决策②（2026-07-02）:

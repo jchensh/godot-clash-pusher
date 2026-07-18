@@ -182,3 +182,42 @@ func test_unknown_card_is_noop() -> void:
 		m1.advance_tick([{"side": 1, "card_id": "___not_a_real_card___", "pos": p_pos}])
 		m2.advance_tick([])
 		assert_eq(_h(m1), _h(m2), "垃圾卡应被丢弃为 no-op，tick %d 不应分叉" % t)
+
+# —— K5：王国城防注入后的确定性（PVP 城防下发的命门，镜像 KAN-76 两条）——
+
+func test_same_towers_hash_equal() -> void:
+	# 两端对 side1/side2 注入同一份城防 + 相同出兵：逐 tick 哈希必须全等。
+	var m1 = _new_match()
+	var m2 = _new_match()
+	for m in [m1, m2]:
+		m.scale_side_towers({"hp_pct": 30, "dmg_pct": 20}, {"hp_pct": 6, "dmg_pct": 0})
+	var p_pos := _valid_pos(m1.battle.arena, 0)
+	var deployed := false
+	for t in 200:
+		var deploys: Array = []
+		var i := _first_troop_idx(m1.player)
+		if not deployed and i >= 0 and m1.player.can_play(i):
+			deploys.append({"side": 1, "card_id": m1.player.deck.get_hand()[i], "pos": p_pos})
+			deployed = true
+		m1.advance_tick(deploys)
+		m2.advance_tick(deploys)
+		assert_eq(_h(m1), _h(m2), "同城防同输入下 tick %d 哈希分叉" % t)
+	assert_true(deployed, "side1 应已出兵（塔有交战，哈希覆盖到塔数值）")
+
+func test_different_towers_forks_hash() -> void:
+	# 一端注入城防、另一端白板，相同指令：哈希必须分叉——hash 对帐抓得住
+	# 「两端对同一方用了不同城防」的 desync/作弊（塔血/塔攻在 state_hash 内）。
+	var m1 = _new_match()
+	var m2 = _new_match()
+	m1.scale_side_towers({"hp_pct": 30, "dmg_pct": 20}, {"hp_pct": 0, "dmg_pct": 0})
+	var p_pos := _valid_pos(m1.battle.arena, 0)
+	var deployed := false
+	for t in 160:
+		var deploys: Array = []
+		var i := _first_troop_idx(m1.player)
+		if not deployed and i >= 0 and m1.player.can_play(i):
+			deploys.append({"side": 1, "card_id": m1.player.deck.get_hand()[i], "pos": p_pos})
+			deployed = true
+		m1.advance_tick(deploys)
+		m2.advance_tick(deploys)
+	assert_ne(_h(m1), _h(m2), "同指令但城防不同 → 塔数值不同 → 哈希必须分叉")

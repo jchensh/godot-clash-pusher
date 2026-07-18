@@ -80,6 +80,7 @@
 | design/card_progression_design_doc.html | 卡牌升级/升阶系统策划案（HTML 单页） |
 | [ART_ASSETS.md](ART_ASSETS.md) | 美术圣经（单位帧网格/塔/FX/地形 as-built，V3 定稿） |
 | [DESIGN_V5_S7_UI.md](DESIGN_V5_S7_UI.md) | S7 UI 整合设计稿（已施工完，存档） |
+| [DESIGN_KINGDOM.md](DESIGN_KINGDOM.md) | 王国领地系统设计（城建经营×城防养成维度，KAN-112；K0~K5 已施工、K6 IAP 待排） |
 | [BALANCE_V5_S8.md](BALANCE_V5_S8.md) | S8d 平衡报告（AI-vs-AI 局限 + 曲线形状验证） |
 
 ## 环境 / 杂记
