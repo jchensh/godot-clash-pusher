@@ -22,16 +22,29 @@ const CELL := 40.0           # 屏幕格边长（720/18）
 const GROUND_TILES := [Vector2i(4, 1), Vector2i(4, 2)]
 const PATH_TILES := [Vector2i(1, 1), Vector2i(2, 1)]
 
-# —— 建筑贴图（老中世纪 building 组，一栋一图；三国城建正式图后换）——
+# —— 建筑贴图（2026-07-21 正式三国城建素材，testAssets/7.21.2026/王国领地 接入）——
 const BUILDING_TEX := {
-	"keep": preload("res://assets/towers/building1.png"),
-	"farm": preload("res://assets/towers/building2.png"),
-	"workshop": preload("res://assets/towers/building3.png"),
-	"watchtower": preload("res://assets/towers/building4.png"),
-	"granary": preload("res://assets/towers/building5.png"),
-	"mint": preload("res://assets/towers/building6.png"),
-	"wall": preload("res://assets/towers/building8.png"),
+	"keep": preload("res://assets/kingdom/kingdom_palace.png"),
+	"farm": preload("res://assets/kingdom/kingdom_farm.png"),
+	"workshop": preload("res://assets/kingdom/kingdom_workshop.png"),
+	"watchtower": preload("res://assets/kingdom/kingdom_watchtower.png"),
+	"granary": preload("res://assets/kingdom/kingdom_granary.png"),
+	"mint": preload("res://assets/kingdom/kingdom_mint.png"),
+	"wall": preload("res://assets/kingdom/kingdom_wall.png"),
 }
+# —— 装饰树（同批素材；纯表现，不可点击，随建筑/小人一起 Y-sort）——
+const TREE_TEX := [
+	preload("res://assets/kingdom/kingdom_tree_1.png"),
+	preload("res://assets/kingdom/kingdom_tree_2.png"),
+	preload("res://assets/kingdom/kingdom_tree_3.png"),
+]
+# [tex_idx, 底边中心 pos, 绘制宽]，摆在槽位/路网空隙处，位置留真人验收调。
+const TREE_DECO := [
+	[0, Vector2(56, 420), 88.0],
+	[1, Vector2(664, 440), 92.0],
+	[2, Vector2(52, 1240), 80.0],
+	[0, Vector2(676, 1252), 84.0],
+]
 # 槽位：pos = 建筑底边中心（屏幕 px），w = 绘制宽。布局参照 SLG 主城：王城居中偏上、
 # 生产环绕、城防近前门。
 const SLOTS := {
@@ -39,7 +52,7 @@ const SLOTS := {
 	"farm": {"pos": Vector2(150, 780), "w": 210.0},
 	"workshop": {"pos": Vector2(570, 790), "w": 220.0},
 	"granary": {"pos": Vector2(130, 990), "w": 130.0},
-	"mint": {"pos": Vector2(588, 1000), "w": 130.0},
+	"mint": {"pos": Vector2(588, 1000), "w": 175.0},
 	"wall": {"pos": Vector2(238, 1146), "w": 190.0},
 	"watchtower": {"pos": Vector2(510, 1140), "w": 110.0},
 }
@@ -138,10 +151,14 @@ func _draw() -> void:
 		items.append([(SLOTS[b]["pos"] as Vector2).y, items.size(), "b", b])
 	for w in _walkers:
 		items.append([(w["pos"] as Vector2).y + WALKER_BOX * 0.4, items.size(), "w", w])
+	for t in TREE_DECO:
+		items.append([(t[1] as Vector2).y, items.size(), "t", t])
 	items.sort_custom(func(p, q): return p[0] < q[0] if p[0] != q[0] else p[1] < q[1])
 	for it in items:
 		if it[2] == "b":
 			_draw_building(String(it[3]), kd)
+		elif it[2] == "t":
+			_draw_tree(it[3])
 		else:
 			_draw_walker(it[3])
 	for b in SLOTS:
@@ -159,6 +176,13 @@ func _draw_terrain() -> void:
 func _blit(tex: Texture2D, cell: Vector2i, rect: Rect2) -> void:
 	draw_texture_rect_region(tex, rect,
 			Rect2(cell.x * TILE_PX, cell.y * TILE_PX, TILE_PX, TILE_PX))
+
+func _draw_tree(t: Array) -> void:
+	var tex: Texture2D = TREE_TEX[int(t[0])]
+	var w: float = float(t[2])
+	var h: float = w * float(tex.get_height()) / float(tex.get_width())
+	var pos: Vector2 = t[1]
+	draw_texture_rect(tex, Rect2(pos.x - w * 0.5, pos.y - h, w, h), false)
 
 func _slot_rect(building: String) -> Rect2:
 	var tex: Texture2D = BUILDING_TEX[building]

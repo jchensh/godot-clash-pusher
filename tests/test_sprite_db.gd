@@ -53,9 +53,9 @@ func test_make_card_portrait_size_not_inflated_by_large_frame() -> void:
 		port.free()
 
 func test_placeholder_inventory() -> void:
-	# 占位盘点：31 条 ph 标记（29 新单位 + golem/baby_dragon 旧暂替）。
+	# 占位盘点：0704 铺满时 31 条；0721 批次正式素材替换 bat/royal_giant/inferno_dragon 三条 → 28。
 	# 正式三国素材替换一条就删一条 ph → 此断言同步减一（刻意的替换进度账本）。
-	assert_eq(SpriteDB.placeholder_ids().size(), 31, "占位条目数应为 31（替换素材后同步更新此断言）")
+	assert_eq(SpriteDB.placeholder_ids().size(), 28, "占位条目数应为 28（替换素材后同步更新此断言）")
 
 # —— 0715 正式素材全家桶（knight 试点：立绘肖像 + 配套战斗特效）——
 
@@ -84,17 +84,17 @@ func test_unit_fx_manifest_valid() -> void:
 	assert_true(SpriteDB.unit_fx("knight_body", "nope").is_empty(), "未知 kind 返回空")
 
 func test_knight_attack_cell_and_sc() -> void:
-	# 攻击帧 152 方格 + sc 补偿（走↔攻切换脚底不跳的前提）；8 帧全部在条带边界内。
+	# 0721 更新版：攻击帧 200 方格 + sc=200/160 补偿（走↔攻切换脚底不跳的前提）；8 帧全部在条带边界内。
 	var spr: Dictionary = SpriteDB.frame("knight_body", "attack", 0, 7.0 / 12.0 + 0.001)  # 最后一帧
 	assert_false(spr.is_empty(), "knight attack 帧非空")
 	if not spr.is_empty():
 		var src: Rect2 = spr["src"]
-		assert_eq(int(src.size.x), 152, "攻击帧宽 152")
-		assert_eq(int(src.size.y), 152, "攻击帧高 152")
+		assert_eq(int(src.size.x), 200, "攻击帧宽 200")
+		assert_eq(int(src.size.y), 200, "攻击帧高 200")
 		var tex: Texture2D = spr["tex"]
 		assert_true(src.end.x <= float(tex.get_width()), "末帧在条带内")
-		# scale = 条目 1.35 × sc 1.583（浮点近似）
-		assert_true(absf(float(spr["scale"]) - 1.35 * 1.583) < 0.01, "攻击态 scale 含 sc 补偿")
+		# scale = 条目 1.7 × sc 1.25（浮点近似）
+		assert_true(absf(float(spr["scale"]) - 1.7 * 1.25) < 0.01, "攻击态 scale 含 sc 补偿")
 		# 0715 验收反馈修复：base_scale 不含 sc（阴影身体基准）；mirror 单方向素材按朝向翻转
-		assert_true(absf(float(spr["base_scale"]) - 1.35) < 0.001, "base_scale 应为条目 scale（不含 sc）")
+		assert_true(absf(float(spr["base_scale"]) - 1.7) < 0.001, "base_scale 应为条目 scale（不含 sc）")
 		assert_true(bool(spr["mirror"]), "knight 为单方向素材应标 mirror")

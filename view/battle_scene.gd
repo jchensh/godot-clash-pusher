@@ -64,10 +64,13 @@ const END_BTN_DELAY := 0.85                     # 结算按钮淡入延迟（先
 # —— V3-7 精灵贴图（架构 A：immediate _draw + draw_texture；逻辑零改）——
 # 单位精灵走 SpriteDB(manifest，含帧网格/走攻行/朝向)；塔/落地 FX 仍在此 preload（塔皮 7b-2、FX 7b-3 再细化）。
 # 三国正式塔（0715）：阵营分色贴图（我=蓝顶/敌=红顶）；素材自带配色 → natural 轻染 22% 不再乘 0.5 队伍色。
-const TEX_TOWER_KING_BLUE := preload("res://assets/towers/sanguo_tower_king_blue.png")
-const TEX_TOWER_KING_RED := preload("res://assets/towers/sanguo_tower_king_red.png")
-const TEX_TOWER_ARROW_BLUE := preload("res://assets/towers/sanguo_tower_arrow_blue.png")
-const TEX_TOWER_ARROW_RED := preload("res://assets/towers/sanguo_tower_arrow_red.png")
+const TEX_TOWER_KING_MINE := preload("res://assets/towers/sanguo_tower_king_mine.png")
+const TEX_TOWER_KING_ENEMY := preload("res://assets/towers/sanguo_tower_king_enemy.png")
+const TEX_TOWER_ARROW_MINE := preload("res://assets/towers/sanguo_tower_arrow_mine.png")
+const TEX_TOWER_ARROW_ENEMY := preload("res://assets/towers/sanguo_tower_arrow_enemy.png")
+const TEX_TOWER_KING_MINE_BROKEN := preload("res://assets/towers/sanguo_tower_king_mine_broken.png")
+const TEX_TOWER_KING_ENEMY_BROKEN := preload("res://assets/towers/sanguo_tower_king_enemy_broken.png")
+const TEX_TOWER_ARROW_BROKEN := preload("res://assets/towers/sanguo_tower_arrow_broken.png")
 const TEX_EXPLOSION := preload("res://assets/fx/Fire_Explosion_28x28.png")
 const EXPLOSION_FPX := 28
 const EXPLOSION_N := 12
@@ -81,19 +84,18 @@ const FX_KIND := {
 	"arrows": "arrows", "log": "log", "heal": "heal",
 }
 # —— 远程投射物（路线 A：view 侧检测攻击冷却上升沿=开火）——
-const TEX_PROJ_FIREBALL := preload("res://assets/units/fire_skull_fireball.png")
-const PROJ_FB_FPX := 16
-const PROJ_SPEED := 16.0       # 投射物飞行速度 tile/s
+const PROJ_SPEED := 16.0       # 投射物飞行速度 tile/s（绘制收口 SpriteDB.draw_projectile）
 const PROJ_RANGED_MIN := 2.5   # attack_range ≥ 此值才出投射物（排除近战/短手）
-const PROJ_KIND := {"archer_body": "arrow", "musketeer_body": "bolt", "baby_dragon_body": "fireball"}
+const PROJ_KIND := {"archer_body": "arrow", "musketeer_body": "bolt", "baby_dragon_body": "fireball",
+	"royal_giant_body": "stone", "inferno_dragon_body": "dragonfire"}
 # —— 战场整图背景（三国美术；BG_ENABLED=false 回退 tile 铺地）——
 # 特征对齐：以「双桥中心定 x 缩放 + 河中心锚 y」等比取源贴 _field_rect（直接拉伸会变形、桥错位），
 # 特征像素为 python 测量值（水带行/桥木色列质心）。0715 新 BG 720×1502：黄土路正好绕六塔逻辑位画。
-const TEX_BATTLE_BG := preload("res://assets/map/battle_bg.png")
+const TEX_BATTLE_BG := preload("res://assets/map/battle_bg_green.png")
 const BG_ENABLED := true
-const BG_BRIDGE1_PX := 188.8   # 图上左桥中心 x（px）
-const BG_BRIDGE2_PX := 505.2   # 图上右桥中心 x（px）
-const BG_RIVER_PX := 648.0     # 图上河带中心 y（px）
+const BG_BRIDGE1_PX := 160.0   # 图上左桥中心 x（px，0721 绿地图实测）
+const BG_BRIDGE2_PX := 543.0   # 图上右桥中心 x（px）
+const BG_RIVER_PX := 768.0     # 图上河带中心 y（px，=桥板垂直中心）
 # 单位脚下阴影（正式素材配套；SpriteDB 条目带 "shadow": true 才画）
 const TEX_UNIT_SHADOW := preload("res://assets/units/unit_shadow.png")
 # —— 地形 tile（7b-4，Lonesome Summer；16px tile 逐逻辑格铺，与河行/桥列对齐）——
@@ -490,6 +492,9 @@ func _draw_world(a) -> void:
 	var items: Array = []
 	for side in [match_obj.battle.player_towers, match_obj.battle.opponent_towers]:
 		for t in side:
+			if t.is_destroyed():
+				_draw_tower_one(t)   # 废墟=贴地花纹，先画在一切单位之下（单位可踩上去）
+				continue
 			items.append([_tower_anchor(t).y + _fp_screen(t.fw, t.fh).y * 0.5, items.size(), false, t])
 	var ur: float = _ur()
 	var cur := {}
@@ -526,18 +531,20 @@ func _draw_tower_one(t) -> void:
 	var mine: bool = t.owner_id == 0
 	var tex: Texture2D
 	if king:
-		tex = TEX_TOWER_KING_BLUE if mine else TEX_TOWER_KING_RED
+		tex = TEX_TOWER_KING_MINE if mine else TEX_TOWER_KING_ENEMY
 	else:
-		tex = TEX_TOWER_ARROW_BLUE if mine else TEX_TOWER_ARROW_RED
+		tex = TEX_TOWER_ARROW_MINE if mine else TEX_TOWER_ARROW_ENEMY
 	var ts: Vector2 = tex.get_size()
 	# 保持长宽比、底部贴地；0715 中式塔纵高 → 系数比旧城堡压小防过高（真人验收可调）。
 	var draw_w: float = fp.x * (0.95 if king else 0.85)
 	var draw_h: float = draw_w * ts.y / ts.x
 	var rx: float = c.x - draw_w * 0.5
 	var ry: float = foot_bottom - draw_h
-	if t.is_destroyed():                                  # 摧毁：压低 + 染暗成废墟堆
-		var dh: float = draw_h * 0.42
-		draw_texture_rect(tex, Rect2(rx, foot_bottom - dh, draw_w, dh), false, Color(0.30, 0.28, 0.26, 0.95))
+	if t.is_destroyed():                                  # 摧毁：0721 正式废墟素材（同宽贴地，比例自算；箭塔破共用）
+		var btex: Texture2D = (TEX_TOWER_KING_MINE_BROKEN if mine
+				else TEX_TOWER_KING_ENEMY_BROKEN) if king else TEX_TOWER_ARROW_BROKEN
+		var bh: float = draw_w * btex.get_size().y / btex.get_size().x
+		draw_texture_rect(btex, Rect2(rx, foot_bottom - bh, draw_w, bh), false, Color.WHITE)
 		return
 	var fill: Color = Color.WHITE.lerp(base, 0.22)       # 正式素材自带阵营配色 → natural 轻染
 	var fend: float = _flash.get(t.get_instance_id(), 0.0)
@@ -576,7 +583,11 @@ func _draw_unit_one(u, ur: float) -> void:
 			reach = u.attack_range + maxf(float(ct.fw), float(ct.fh)) * 0.5 + 0.5
 		if u.pos.distance_to(ct.pos) <= reach:
 			st = "attack"
-	var spr: Dictionary = SpriteDB.frame(u.unit_id, st, u.owner_id, _elapsed)
+	# 0721：正/背双行素材（霹雳车）攻击时炮口朝目标——目标在屏幕上方转背面、下方转正面。
+	var face_up := -1
+	if st == "attack" and ct != null and is_instance_valid(ct):
+		face_up = 1 if _t2s(ct.pos).y < c.y else 0
+	var spr: Dictionary = SpriteDB.frame(u.unit_id, st, u.owner_id, _elapsed, face_up)
 	if not spr.is_empty():   # 精灵帧（modulate=fill 染队伍色+受击闪白，×占位 tint 区分共享贴图）
 		var box: float = rad * 2.0 * float(spr["scale"])
 		if spr.get("shadow", false) and not flying:   # 正式素材配套脚下椭圆影（贴地、不染队伍色）
@@ -863,6 +874,9 @@ func _cull_transients() -> void:
 	_ufx = _cull_list(_ufx)
 	_dmgnums = _cull_list(_dmgnums)
 	_sparks = _cull_list(_sparks)
+	for pr in _projectiles:   # 0721：弹道到点 → 落点爆花（随即被剔除，恰好一次）
+		if _elapsed - pr["t0"] >= pr["dur"] and not (pr.get("impact", {}) as Dictionary).is_empty():
+			_spawn_unit_fx(pr["impact"], pr["to"], false)
 	_projectiles = _cull_list(_projectiles)
 	for k in _flash.keys():
 		if _flash[k] <= _elapsed:
@@ -962,7 +976,8 @@ func _detect_attacks() -> void:
 				if ranged:
 					var dist: float = u.pos.distance_to(ct.pos)
 					_projectiles.append({"from": _disp_pos(u), "to": ct.pos, "t0": _elapsed,
-							"dur": clampf(dist / PROJ_SPEED, 0.1, 0.45), "kind": PROJ_KIND[u.unit_id]})
+							"dur": clampf(dist / PROJ_SPEED, 0.1, 0.45), "kind": PROJ_KIND[u.unit_id],
+							"impact": SpriteDB.unit_fx(u.unit_id, "impact")})   # 0721 落点爆花（无则空）
 					_play_projectile_audio(String(PROJ_KIND[u.unit_id]))
 				else:   # 近战刀光落在目标身上；素材默认朝左挥，目标在攻击者右侧时水平镜像
 					_spawn_unit_fx(slash_fx, ct.pos, ct.pos.x > u.pos.x)
@@ -1004,24 +1019,7 @@ func _draw_projectiles() -> void:
 		var t: float = clampf((_elapsed - pr["t0"]) / pr["dur"], 0.0, 1.0)
 		var a: Vector2 = _t2s(pr["from"])
 		var b: Vector2 = _t2s(pr["to"])
-		var pos: Vector2 = a.lerp(b, t)
-		match pr["kind"]:
-			"arrow":
-				var dir: Vector2 = (b - a)
-				dir = dir.normalized() if dir.length() > 0.001 else Vector2.UP
-				var perp := Vector2(-dir.y, dir.x)
-				var col := Color(0.93, 0.88, 0.6)
-				draw_line(pos - dir * ur * 0.7, pos, col, 2.0)
-				draw_line(pos, pos - dir * 5.0 + perp * 3.0, col, 1.5)
-				draw_line(pos, pos - dir * 5.0 - perp * 3.0, col, 1.5)
-			"bolt":
-				draw_circle(pos, ur * 0.24, Color(0.8, 0.55, 1.0, 0.85))
-				draw_circle(pos, ur * 0.12, Color(1, 1, 1, 0.95))
-			"fireball":
-				var fi: int = 1 + int(_elapsed * 14.0) % 7   # 飞行帧循环（避开末尾炸帧）
-				var sz: float = ur * 1.0
-				draw_texture_rect_region(TEX_PROJ_FIREBALL, Rect2(pos - Vector2(sz, sz) * 0.5, Vector2(sz, sz)),
-						Rect2(fi * PROJ_FB_FPX, 0, PROJ_FB_FPX, PROJ_FB_FPX))
+		SpriteDB.draw_projectile(self, String(pr["kind"]), a.lerp(b, t), b - a, ur, _elapsed)
 
 func _play_projectile_audio(kind: String) -> void:
 	match kind:
