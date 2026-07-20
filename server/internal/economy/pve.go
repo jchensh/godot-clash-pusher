@@ -44,7 +44,9 @@ type PveSummary struct {
 // PveStart 开战报到：校验关卡存在 + 线性解锁（防跳关开局）+ 卡组 8 张全 unlocked
 // （堵未解锁卡进战斗），从 economy_cards 读 level/rank 权威快照存档（层2 重放用——
 // 客户端改本地缓存的养成 → 与快照重放的 hash 对不上 → 现形），回 battle_id。
-func (r *Repo) PveStart(ctx context.Context, accountID int64, stageID string, deck []string, cfg *Config) (int64, error) {
+// K4：towerHpPct/towerDmgPct 由 handler 从王国城防查得，写进 progress JSON 的
+// "_towers" 保留键（复用现有列零 migration）→ 验证器 progress 透传 → pve_replay 同源注入。
+func (r *Repo) PveStart(ctx context.Context, accountID int64, stageID string, deck []string, cfg *Config, towerHpPct, towerDmgPct int) (int64, error) {
 	if _, ok := cfg.Stage(stageID); !ok {
 		return 0, ErrUnknownStage
 	}
@@ -109,7 +111,14 @@ func (r *Repo) PveStart(ctx context.Context, accountID int64, stageID string, de
 	}
 
 	deckJSON, _ := json.Marshal(deck)
-	progJSON, _ := json.Marshal(progress)
+	progAny := map[string]any{}
+	for cid, v := range progress {
+		progAny[cid] = v
+	}
+	if towerHpPct > 0 || towerDmgPct > 0 {
+		progAny["_towers"] = map[string]int{"hp_pct": towerHpPct, "dmg_pct": towerDmgPct}
+	}
+	progJSON, _ := json.Marshal(progAny)
 	var battleID int64
 	if err := tx.QueryRow(ctx,
 		`INSERT INTO pve_battles (account_id, stage_id, deck, progress) VALUES ($1,$2,$3,$4) RETURNING id`,

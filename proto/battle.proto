@@ -33,6 +33,14 @@ message CardProgress {
   int32  rank    = 3;
 }
 
+// K5（DESIGN_KINGDOM）：一方的王国城防塔加成（服务器建房时从 kingdom_buildings 换算，
+// 权威下发整数百分比；两端对称注入 → 同一方三塔在两端逐 bit 相同）。
+// 本 message 仅在 battle.proto 内使用（无跨文件引用，避 godobuf 跨文件内联坑）。
+message TowerBonus {
+  int32 hp_pct  = 1;   // 城墙累计：三塔 HP +N%
+  int32 dmg_pct = 2;   // 箭楼累计：三塔攻击 +N%
+}
+
 message JoinRoomResp {
   bool ok = 1;
   ProfileSummary opponent = 2;
@@ -46,6 +54,9 @@ message JoinRoomResp {
   // 对 side1/side2 对称注入 → 同一方在两端算出逐 bit 相同的数值）。空 = 白板局（向后兼容）。
   repeated CardProgress side1_progress = 9;
   repeated CardProgress side2_progress = 10;
+  // K5：双方王国城防（缺省/空 = 无加成，向后兼容白板；重连重放同一 resp 自动带上）。
+  TowerBonus side1_towers = 11;
+  TowerBonus side2_towers = 12;
 }
 
 // 客户端 -> 服务端：单条出兵/法术指令。

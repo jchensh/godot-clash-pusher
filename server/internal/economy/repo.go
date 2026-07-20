@@ -303,10 +303,10 @@ func (r *Repo) isStageCleared(ctx context.Context, accountID int64, stageID stri
 	return cleared, err
 }
 
-// CollectIdle settles an offline-gold collection (V5-N6)：now 全用服务器时间
-// （time.Now().Unix()，改本地时钟无效）。按 (now − last_collect) 算累计金币
-// （rate=GoldPerHourPerChapter×highest_chapter，封顶 CapHours）→ 发到 gold + last_collect=now。
-// 返回新状态（镜像 player_data.collect_idle；产率章节驱动、数值走 economy.json 配置）。
+// CollectIdle —— ⚠️ K3 起弃用（DESIGN_KINGDOM：铸币坊接管挂机金库，单一产出源）。
+// 挂机金币改由 kingdom.Collect 结算（产率 = idle 章节曲线 × 铸币坊系数）；本端点保留
+// 兼容老客户端但**不再发金**：只刷新 last_collect 基准并返回当前状态——堵「王国+旧挂机
+// 双份领取」的口子。新客户端不再调用（主界面挂机口已切 /v5/kingdom/collect）。
 func (r *Repo) CollectIdle(ctx context.Context, accountID int64, cfg *Config) (State, error) {
 	now := time.Now().Unix()
 	tx, err := r.db.Pool.Begin(ctx)
@@ -317,25 +317,11 @@ func (r *Repo) CollectIdle(ctx context.Context, accountID int64, cfg *Config) (S
 	if err := ensureSeeded(ctx, tx, accountID, cfg); err != nil {
 		return State{}, err
 	}
-
-	var gold, lastCollect int64
-	var highest string
-	if err := tx.QueryRow(ctx,
-		`SELECT gold, idle_last_collect_ts, highest_cleared FROM economy_state WHERE account_id=$1 FOR UPDATE`,
-		accountID).Scan(&gold, &lastCollect, &highest); err != nil {
-		return State{}, err
-	}
-
-	pending := idlePending(now, lastCollect, highest, cfg)
-	if pending > 0 {
-		gold += int64(pending)
-	}
 	if _, err := tx.Exec(ctx,
-		`UPDATE economy_state SET gold=$2, idle_last_collect_ts=$3, updated_at=NOW() WHERE account_id=$1`,
-		accountID, gold, now); err != nil {
+		`UPDATE economy_state SET idle_last_collect_ts=$2, updated_at=NOW() WHERE account_id=$1`,
+		accountID, now); err != nil {
 		return State{}, err
 	}
-
 	st, err := readState(ctx, tx, accountID)
 	if err != nil {
 		return State{}, err
@@ -347,6 +333,7 @@ func (r *Repo) CollectIdle(ctx context.Context, accountID int64, cfg *Config) (S
 }
 
 // idlePending computes offline gold since lastCollect (mirrors player_data.idle_pending).
+// K3 起仅作曲线参考保留（CollectIdle 已不发金；kingdom.pendingProduction 复用同曲线）。
 // 章节驱动产率 + 封顶 CapHours；lastCollect<=0 → 0（防御，播种已设 now 故不应出现）。
 func idlePending(now, lastCollect int64, highestCleared string, cfg *Config) int {
 	if lastCollect <= 0 {

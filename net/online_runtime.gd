@@ -8,6 +8,7 @@ const AccountSessionScript := preload("res://net/session.gd")
 const SessionConnScript := preload("res://net/session_conn.gd")
 const ConfigLoaderScript := preload("res://logic/config_loader.gd")
 const EconomyStateCacheScript := preload("res://net/economy_state_cache.gd")
+const KingdomStateCacheScript := preload("res://net/kingdom_state_cache.gd")
 
 const BOOT_TIMEOUT_MS := 15_000
 const API_RECOVERY_INTERVAL := 2.0
@@ -34,6 +35,7 @@ var _account
 var _connection
 var _config
 var _economy
+var _kingdom
 var _sync_http: HTTPRequest
 var _started := false
 var _bootstrapping := false
@@ -54,6 +56,10 @@ func _init() -> void:
 	_economy = EconomyStateCacheScript.new(_account.api_url)
 	_economy.online_guard = Callable(self, "is_online_ready")
 	_economy.transport_failure_reporter = Callable(self, "_on_api_transport_failure")
+	# K2（DESIGN_KINGDOM）：王国缓存同款 fail-closed 接线；不参与 online-ready gate（按需拉取）。
+	_kingdom = KingdomStateCacheScript.new(_account.api_url)
+	_kingdom.online_guard = Callable(self, "is_online_ready")
+	_kingdom.transport_failure_reporter = Callable(self, "_on_api_transport_failure")
 	_connection.connected.connect(_on_connected)
 	_connection.disconnected.connect(_on_disconnected)
 	_connection.reconnecting.connect(_on_reconnecting)
@@ -249,6 +255,10 @@ func config():
 
 func economy():
 	return _economy
+
+
+func kingdom():
+	return _kingdom
 
 
 func token() -> String:

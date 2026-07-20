@@ -112,3 +112,29 @@ func test_update_stops_when_over() -> void:
 	var elapsed_before: float = m.battle.elapsed
 	m.update(1.0)
 	assert_almost_eq(m.battle.elapsed, elapsed_before, 0.0001, "结束后 update 不再推进")
+
+# K4（DESIGN_KINGDOM）：王国城防 → 我方三塔加成。只动我方、敌方塔不动；0/0 = no-op 零回归。
+func test_setup_stage_tower_bonus_scales_player_towers_only() -> void:
+	var loader = ConfigLoaderScript.new()
+	loader.load_all()
+	var base = MatchScript.new(loader)
+	base.setup_stage("stage_1_1", [], null)
+	var boosted = MatchScript.new(loader)
+	boosted.setup_stage("stage_1_1", [], null, {"hp_pct": 30, "dmg_pct": 20})
+	for i in base.battle.player_towers.size():
+		var b = base.battle.player_towers[i]
+		var t = boosted.battle.player_towers[i]
+		assert_almost_eq(t.max_hp, b.max_hp * 1.30, 0.001, "我方塔 HP +30%")
+		assert_almost_eq(t.hp, t.max_hp, 0.001, "加成后满血开局")
+		assert_almost_eq(t.damage, b.damage * 1.20, 0.001, "我方塔攻 +20%")
+	for i in base.battle.opponent_towers.size():
+		var b = base.battle.opponent_towers[i]
+		var t = boosted.battle.opponent_towers[i]
+		assert_almost_eq(t.max_hp, b.max_hp, 0.001, "敌方塔 HP 不受城防影响")
+		assert_almost_eq(t.damage, b.damage, 0.001, "敌方塔攻不受城防影响")
+	# 0/0 = no-op：与不传 tower_bonus 完全一致。
+	var zero = MatchScript.new(loader)
+	zero.setup_stage("stage_1_1", [], null, {"hp_pct": 0, "dmg_pct": 0})
+	for i in base.battle.player_towers.size():
+		assert_almost_eq(zero.battle.player_towers[i].max_hp, base.battle.player_towers[i].max_hp,
+				0.001, "0 加成零回归")

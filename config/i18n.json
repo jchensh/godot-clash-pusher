@@ -10,14 +10,12 @@
     "btn_new_run": "New Run",
     "btn_back_menu": "Back to Menu",
     "btn_settings": "Settings",
-
-    "app_title": "CLASH PUSHER",
-    "app_subtitle": "Dark Medieval Tower Rush",
+    "app_title": "Warring Towers",
+    "app_subtitle": "Three Kingdoms Tower Rush",
     "menu_start": "Start",
     "menu_roguelite": "Roguelite",
     "menu_quit": "Quit",
     "app_footer": "V3 prototype",
-
     "stage_select_title": "Select Stage",
     "level_rookie": "Rookie Village",
     "level_easy": "Trial Grounds",
@@ -35,13 +33,11 @@
     "diff_desc_hard": "Fast, focuses fire",
     "diff_desc_extreme": "Relentless, ruthless",
     "stage_stats": "ELIXIR x%.1f    %ds    TOWER %d",
-
     "deck_title": "Build Deck",
     "deck_stage": "Stage: %s",
     "deck_your": "Your Deck",
     "deck_pool": "Card Pool  (tap to add / remove)",
     "deck_need8": "Need exactly 8 cards",
-
     "hud_you": "You",
     "hud_enemy": "Enemy",
     "hud_next": "Next",
@@ -49,7 +45,6 @@
     "result_lose": "You Lose",
     "result_draw": "Draw",
     "result_score": "Towers  You %d : Enemy %d",
-
     "run_title": "Roguelite Run",
     "run_progress": "Node %d / %d   ·   Wins %d",
     "node_battle": "Battle",
@@ -79,17 +74,15 @@
     "focus_defend": "Defend",
     "focus_spell": "Spell",
     "focus_boss": "Boss",
-    "tut_c1_intro": "Welcome to battle! Your goal: destroy the enemy towers.",
+    "tut_c1_intro": "War engulfs the land! Your goal: destroy the enemy towers.",
     "tut_c1_elixir": "This is Elixir — it refills over time. Deploying troops costs Elixir.",
     "tut_c1_deploy": "Drag a card down onto your half to deploy a troop!",
-    "tut_c1_push": "Your troops auto-advance and attack enemy towers. Good luck!",
+    "tut_c1_push": "Your troops advance and strike enemy towers on their own. To glory!",
     "tut_continue": "(tap to continue)",
-
     "settings_title": "Settings",
     "settings_language": "Language",
     "lang_zh": "中文",
     "lang_en": "English",
-
     "card_knight": "Tiger Guard Captain",
     "card_archers": "Wei Crossbowmen",
     "card_giant": "Yellow Turban Colossus",
@@ -138,7 +131,6 @@
     "card_electro_wizard": "Zhang Jiao",
     "card_princess": "Sun Shangxiang",
     "card_inferno_dragon": "Shu Gear Dragon",
-
     "relic_elixir_surge_name": "Elixir Surge",
     "relic_elixir_surge_desc": "+0.3 elixir/s regen",
     "relic_big_reservoir_name": "Big Reservoir",
@@ -152,7 +144,17 @@
     "relic_royal_decree_name": "Royal Decree",
     "relic_royal_decree_desc": "+30% king tower HP",
     "relic_giants_blood_name": "Giant's Blood",
-    "relic_giants_blood_desc": "+20% all tower HP"
+    "relic_giants_blood_desc": "+20% all tower HP",
+    "chapter_1": "Yellow Turban Uprising",
+    "chapter_2": "Alliance at Hulao",
+    "chapter_3": "Warlords Divided",
+    "chapter_4": "Battle of Guandu",
+    "chapter_5": "Jingzhou Storm",
+    "chapter_6": "Battle of Red Cliffs",
+    "chapter_7": "Clash at Hanzhong",
+    "chapter_8": "Flames of Jingxiang",
+    "chapter_9": "Fire of Yiling",
+    "chapter_10": "Three Kingdoms"
   },
   "zh": {
     "btn_back": "返回",
@@ -165,14 +167,12 @@
     "btn_new_run": "新征程",
     "btn_back_menu": "返回菜单",
     "btn_settings": "设置",
-
-    "app_title": "CLASH PUSHER",
-    "app_subtitle": "黑暗中世纪推塔对战",
+    "app_title": "乱世推塔",
+    "app_subtitle": "三国乱世 · 推塔对战",
     "menu_start": "开始",
     "menu_roguelite": "肉鸽闯关",
     "menu_quit": "退出",
     "app_footer": "V3 原型",
-
     "stage_select_title": "选择关卡",
     "level_rookie": "新手村",
     "level_easy": "试炼场",
@@ -190,13 +190,11 @@
     "diff_desc_hard": "凶快，会集火",
     "diff_desc_extreme": "残暴，无情",
     "stage_stats": "圣水 x%.1f    %d秒    主塔 %d",
-
     "deck_title": "组建卡组",
     "deck_stage": "关卡：%s",
     "deck_your": "你的卡组",
     "deck_pool": "卡池（点击添加 / 移除）",
     "deck_need8": "需正好 8 张卡",
-
     "hud_you": "我方",
     "hud_enemy": "敌方",
     "hud_next": "下一张",
@@ -204,7 +202,6 @@
     "result_lose": "失败",
     "result_draw": "平局",
     "result_score": "塔血  我方 %d : 敌方 %d",
-
     "run_title": "肉鸽征程",
     "run_progress": "节点 %d / %d   ·   胜场 %d",
     "node_battle": "战斗",
@@ -234,17 +231,15 @@
     "focus_defend": "防守",
     "focus_spell": "法术",
     "focus_boss": "首领",
-    "tut_c1_intro": "欢迎来到战场！你的目标：拆掉敌方的塔。",
+    "tut_c1_intro": "乱世烽烟起，群雄逐鹿！你的目标：攻破敌军城塔。",
     "tut_c1_elixir": "这是圣水，会随时间自动回涨。出兵需要消耗圣水。",
     "tut_c1_deploy": "把一张卡牌拖到己方半场，放下出兵！",
-    "tut_c1_push": "兵会自动向前推进、攻击敌塔。加油！",
+    "tut_c1_push": "士兵会自动向前推进、攻打敌塔。建功立业，就在此战！",
     "tut_continue": "（点击继续）",
-
     "settings_title": "设置",
     "settings_language": "语言",
     "lang_zh": "中文",
     "lang_en": "English",
-
     "card_knight": "虎贲校尉",
     "card_archers": "魏武强弩手",
     "card_giant": "黄巾攻城力士",
@@ -293,7 +288,6 @@
     "card_electro_wizard": "天公将军张角",
     "card_princess": "枭姬孙尚香",
     "card_inferno_dragon": "蜀汉火脉机关龙",
-
     "relic_elixir_surge_name": "圣水涌动",
     "relic_elixir_surge_desc": "圣水回速 +0.3/秒",
     "relic_big_reservoir_name": "巨型水库",
@@ -307,6 +301,16 @@
     "relic_royal_decree_name": "皇室法令",
     "relic_royal_decree_desc": "主塔血 +30%",
     "relic_giants_blood_name": "巨人之血",
-    "relic_giants_blood_desc": "全塔血 +20%"
+    "relic_giants_blood_desc": "全塔血 +20%",
+    "chapter_1": "黄巾之乱",
+    "chapter_2": "虎牢讨董",
+    "chapter_3": "群雄割据",
+    "chapter_4": "官渡之战",
+    "chapter_5": "荆州风云",
+    "chapter_6": "赤壁之战",
+    "chapter_7": "汉中争锋",
+    "chapter_8": "荆襄烽火",
+    "chapter_9": "夷陵之火",
+    "chapter_10": "三分天下"
   }
 }

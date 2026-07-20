@@ -41,7 +41,7 @@
   "stage_1_2": {
     "chapter": 1,
     "index": 2,
-    "encounter": "swarm_rush_a",
+    "encounter": "yellow_turban_swarm",
     "base_level": "ladder_01",
     "difficulty_coef": 1.016,
     "ai_difficulty": "rookie",
@@ -63,14 +63,14 @@
       "gold": 300,
       "gems": 5,
       "shards": {
-        "skeletons": 4
+        "electro_spirit": 4
       }
     },
     "repeat": {
       "gold": 30
     },
     "shard_drop": {
-      "skeletons": {
+      "electro_spirit": {
         "chance": 0.34,
         "amount": 1
       }
@@ -101,14 +101,14 @@
       "gold": 300,
       "gems": 5,
       "shards": {
-        "skeletons": 4
+        "bone_ram": 4
       }
     },
     "repeat": {
       "gold": 30
     },
     "shard_drop": {
-      "skeletons": {
+      "bone_ram": {
         "chance": 0.34,
         "amount": 1
       }
@@ -117,7 +117,7 @@
   "stage_1_4": {
     "chapter": 1,
     "index": 4,
-    "encounter": "swarm_rush_a",
+    "encounter": "yellow_turban_swarm",
     "base_level": "ladder_01",
     "difficulty_coef": 1.048,
     "ai_difficulty": "rookie",
@@ -139,14 +139,14 @@
       "gold": 300,
       "gems": 5,
       "shards": {
-        "skeletons": 4
+        "minion_horde": 4
       }
     },
     "repeat": {
       "gold": 30
     },
     "shard_drop": {
-      "skeletons": {
+      "minion_horde": {
         "chance": 0.34,
         "amount": 1
       }
@@ -193,7 +193,7 @@
   "stage_1_6": {
     "chapter": 1,
     "index": 6,
-    "encounter": "swarm_rush_a",
+    "encounter": "yellow_turban_swarm",
     "base_level": "ladder_01",
     "difficulty_coef": 1.08,
     "ai_difficulty": "rookie",
@@ -215,14 +215,14 @@
       "gold": 300,
       "gems": 5,
       "shards": {
-        "skeletons": 4
+        "electro_spirit": 4
       }
     },
     "repeat": {
       "gold": 30
     },
     "shard_drop": {
-      "skeletons": {
+      "electro_spirit": {
         "chance": 0.34,
         "amount": 1
       }
@@ -253,14 +253,14 @@
       "gold": 300,
       "gems": 5,
       "shards": {
-        "skeletons": 4
+        "bone_ram": 4
       }
     },
     "repeat": {
       "gold": 30
     },
     "shard_drop": {
-      "skeletons": {
+      "bone_ram": {
         "chance": 0.34,
         "amount": 1
       }
@@ -269,7 +269,7 @@
   "stage_1_8": {
     "chapter": 1,
     "index": 8,
-    "encounter": "swarm_rush_a",
+    "encounter": "yellow_turban_swarm",
     "base_level": "ladder_01",
     "difficulty_coef": 1.112,
     "ai_difficulty": "rookie",
@@ -291,14 +291,14 @@
       "gold": 300,
       "gems": 5,
       "shards": {
-        "skeletons": 4
+        "minion_horde": 4
       }
     },
     "repeat": {
       "gold": 30
     },
     "shard_drop": {
-      "skeletons": {
+      "minion_horde": {
         "chance": 0.34,
         "amount": 1
       }
@@ -367,14 +367,14 @@
       "gold": 450,
       "gems": 25,
       "shards": {
-        "skeletons": 8
+        "minion_horde": 8
       }
     },
     "repeat": {
       "gold": 45
     },
     "shard_drop": {
-      "skeletons": {
+      "minion_horde": {
         "chance": 0.34,
         "amount": 1
       }
@@ -383,7 +383,7 @@
   "stage_2_1": {
     "chapter": 2,
     "index": 1,
-    "encounter": "undead_horde",
+    "encounter": "yellow_turban_swarm",
     "base_level": "ladder_01",
     "difficulty_coef": 1.16,
     "ai_difficulty": "easy",
@@ -405,14 +405,14 @@
       "gold": 570,
       "gems": 5,
       "shards": {
-        "log": 4
+        "squire": 4
       }
     },
     "repeat": {
       "gold": 57
     },
     "shard_drop": {
-      "log": {
+      "squire": {
         "chance": 0.34,
         "amount": 1
       }
@@ -421,7 +421,7 @@
   "stage_2_2": {
     "chapter": 2,
     "index": 2,
-    "encounter": "graveyard_control",
+    "encounter": "undead_horde",
     "base_level": "ladder_01",
     "difficulty_coef": 1.176,
     "ai_difficulty": "easy",
@@ -443,14 +443,14 @@
       "gold": 570,
       "gems": 5,
       "shards": {
-        "log": 4
+        "barbarians": 4
       }
     },
     "repeat": {
       "gold": 57
     },
     "shard_drop": {
-      "log": {
+      "barbarians": {
         "chance": 0.34,
         "amount": 1
       }
@@ -459,7 +459,7 @@
   "stage_2_3": {
     "chapter": 2,
     "index": 3,
-    "encounter": "undead_horde",
+    "encounter": "yellow_turban_swarm",
     "base_level": "ladder_01",
     "difficulty_coef": 1.192,
     "ai_difficulty": "easy",
@@ -481,14 +481,14 @@
       "gold": 570,
       "gems": 5,
       "shards": {
-        "log": 4
+        "arrows": 4
       }
     },
     "repeat": {
       "gold": 57
     },
     "shard_drop": {
-      "log": {
+      "arrows": {
         "chance": 0.34,
         "amount": 1
       }
@@ -497,7 +497,7 @@
   "stage_2_4": {
     "chapter": 2,
     "index": 4,
-    "encounter": "graveyard_control",
+    "encounter": "undead_horde",
     "base_level": "ladder_01",
     "difficulty_coef": 1.208,
     "ai_difficulty": "easy",
@@ -535,7 +535,7 @@
   "stage_2_5": {
     "chapter": 2,
     "index": 5,
-    "encounter": "undead_horde",
+    "encounter": "yellow_turban_swarm",
     "base_level": "ladder_01",
     "difficulty_coef": 1.224,
     "ai_difficulty": "easy",
@@ -557,14 +557,14 @@
       "gold": 570,
       "gems": 5,
       "shards": {
-        "log": 4
+        "squire": 4
       }
     },
     "repeat": {
       "gold": 57
     },
     "shard_drop": {
-      "log": {
+      "squire": {
         "chance": 0.34,
         "amount": 1
       }
@@ -573,7 +573,7 @@
   "stage_2_6": {
     "chapter": 2,
     "index": 6,
-    "encounter": "graveyard_control",
+    "encounter": "undead_horde",
     "base_level": "ladder_01",
     "difficulty_coef": 1.24,
     "ai_difficulty": "easy",
@@ -595,14 +595,14 @@
       "gold": 570,
       "gems": 5,
       "shards": {
-        "log": 4
+        "barbarians": 4
       }
     },
     "repeat": {
       "gold": 57
     },
     "shard_drop": {
-      "log": {
+      "barbarians": {
         "chance": 0.34,
         "amount": 1
       }
@@ -611,7 +611,7 @@
   "stage_2_7": {
     "chapter": 2,
     "index": 7,
-    "encounter": "undead_horde",
+    "encounter": "yellow_turban_swarm",
     "base_level": "ladder_01",
     "difficulty_coef": 1.256,
     "ai_difficulty": "easy",
@@ -633,14 +633,14 @@
       "gold": 570,
       "gems": 5,
       "shards": {
-        "log": 4
+        "arrows": 4
       }
     },
     "repeat": {
       "gold": 57
     },
     "shard_drop": {
-      "log": {
+      "arrows": {
         "chance": 0.34,
         "amount": 1
       }
@@ -649,7 +649,7 @@
   "stage_2_8": {
     "chapter": 2,
     "index": 8,
-    "encounter": "graveyard_control",
+    "encounter": "undead_horde",
     "base_level": "ladder_01",
     "difficulty_coef": 1.272,
     "ai_difficulty": "easy",
@@ -687,7 +687,7 @@
   "stage_2_9": {
     "chapter": 2,
     "index": 9,
-    "encounter": "undead_horde",
+    "encounter": "yellow_turban_swarm",
     "base_level": "ladder_01",
     "difficulty_coef": 1.288,
     "ai_difficulty": "easy",
@@ -709,14 +709,14 @@
       "gold": 570,
       "gems": 5,
       "shards": {
-        "log": 4
+        "squire": 4
       }
     },
     "repeat": {
       "gold": 57
     },
     "shard_drop": {
-      "log": {
+      "squire": {
         "chance": 0.34,
         "amount": 1
       }
@@ -725,7 +725,7 @@
   "stage_2_10": {
     "chapter": 2,
     "index": 10,
-    "encounter": "graveyard_control",
+    "encounter": "sorcerer_qun",
     "base_level": "ladder_01",
     "difficulty_coef": 1.434,
     "ai_difficulty": "normal",
@@ -785,14 +785,14 @@
       "gold": 840,
       "gems": 5,
       "shards": {
-        "mini_pekka": 4
+        "spear_goblins": 4
       }
     },
     "repeat": {
       "gold": 84
     },
     "shard_drop": {
-      "mini_pekka": {
+      "spear_goblins": {
         "chance": 0.34,
         "amount": 1
       }
@@ -801,7 +801,7 @@
   "stage_3_2": {
     "chapter": 3,
     "index": 2,
-    "encounter": "swarm_rush_a",
+    "encounter": "wu_river_raiders",
     "base_level": "ladder_01",
     "difficulty_coef": 1.336,
     "ai_difficulty": "easy",
@@ -823,14 +823,14 @@
       "gold": 840,
       "gems": 5,
       "shards": {
-        "mini_pekka": 4
+        "bats": 4
       }
     },
     "repeat": {
       "gold": 84
     },
     "shard_drop": {
-      "mini_pekka": {
+      "bats": {
         "chance": 0.34,
         "amount": 1
       }
@@ -861,14 +861,14 @@
       "gold": 840,
       "gems": 5,
       "shards": {
-        "mini_pekka": 4
+        "fire_spirit": 4
       }
     },
     "repeat": {
       "gold": 84
     },
     "shard_drop": {
-      "mini_pekka": {
+      "fire_spirit": {
         "chance": 0.34,
         "amount": 1
       }
@@ -877,7 +877,7 @@
   "stage_3_4": {
     "chapter": 3,
     "index": 4,
-    "encounter": "swarm_rush_a",
+    "encounter": "wu_river_raiders",
     "base_level": "ladder_01",
     "difficulty_coef": 1.368,
     "ai_difficulty": "easy",
@@ -899,14 +899,14 @@
       "gold": 840,
       "gems": 5,
       "shards": {
-        "mini_pekka": 4
+        "goblin_gang": 4
       }
     },
     "repeat": {
       "gold": 84
     },
     "shard_drop": {
-      "mini_pekka": {
+      "goblin_gang": {
         "chance": 0.34,
         "amount": 1
       }
@@ -953,7 +953,7 @@
   "stage_3_6": {
     "chapter": 3,
     "index": 6,
-    "encounter": "swarm_rush_a",
+    "encounter": "wu_river_raiders",
     "base_level": "ladder_01",
     "difficulty_coef": 1.4,
     "ai_difficulty": "easy",
@@ -975,14 +975,14 @@
       "gold": 840,
       "gems": 5,
       "shards": {
-        "mini_pekka": 4
+        "spear_goblins": 4
       }
     },
     "repeat": {
       "gold": 84
     },
     "shard_drop": {
-      "mini_pekka": {
+      "spear_goblins": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1013,14 +1013,14 @@
       "gold": 840,
       "gems": 5,
       "shards": {
-        "mini_pekka": 4
+        "bats": 4
       }
     },
     "repeat": {
       "gold": 84
     },
     "shard_drop": {
-      "mini_pekka": {
+      "bats": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1029,7 +1029,7 @@
   "stage_3_8": {
     "chapter": 3,
     "index": 8,
-    "encounter": "swarm_rush_a",
+    "encounter": "wu_river_raiders",
     "base_level": "ladder_01",
     "difficulty_coef": 1.432,
     "ai_difficulty": "easy",
@@ -1051,14 +1051,14 @@
       "gold": 840,
       "gems": 5,
       "shards": {
-        "mini_pekka": 4
+        "fire_spirit": 4
       }
     },
     "repeat": {
       "gold": 84
     },
     "shard_drop": {
-      "mini_pekka": {
+      "fire_spirit": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1089,14 +1089,14 @@
       "gold": 840,
       "gems": 5,
       "shards": {
-        "mini_pekka": 4
+        "goblin_gang": 4
       }
     },
     "repeat": {
       "gold": 84
     },
     "shard_drop": {
-      "mini_pekka": {
+      "goblin_gang": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1105,7 +1105,7 @@
   "stage_3_10": {
     "chapter": 3,
     "index": 10,
-    "encounter": "orc_blitz",
+    "encounter": "wu_river_raiders",
     "base_level": "ladder_01",
     "difficulty_coef": 1.61,
     "ai_difficulty": "normal",
@@ -1143,7 +1143,7 @@
   "stage_4_1": {
     "chapter": 4,
     "index": 1,
-    "encounter": "tank_push_a",
+    "encounter": "wei_iron_wall",
     "base_level": "ladder_01",
     "difficulty_coef": 1.48,
     "ai_difficulty": "normal",
@@ -1165,14 +1165,14 @@
       "gold": 1110,
       "gems": 5,
       "shards": {
-        "musketeer": 4
+        "giant_snowball": 4
       }
     },
     "repeat": {
       "gold": 111
     },
     "shard_drop": {
-      "musketeer": {
+      "giant_snowball": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1203,14 +1203,14 @@
       "gold": 1110,
       "gems": 5,
       "shards": {
-        "musketeer": 4
+        "battle_ram": 4
       }
     },
     "repeat": {
       "gold": 111
     },
     "shard_drop": {
-      "musketeer": {
+      "battle_ram": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1219,7 +1219,7 @@
   "stage_4_3": {
     "chapter": 4,
     "index": 3,
-    "encounter": "tank_push_a",
+    "encounter": "wei_iron_wall",
     "base_level": "ladder_01",
     "difficulty_coef": 1.512,
     "ai_difficulty": "normal",
@@ -1241,14 +1241,14 @@
       "gold": 1110,
       "gems": 5,
       "shards": {
-        "musketeer": 4
+        "hog_rider": 4
       }
     },
     "repeat": {
       "gold": 111
     },
     "shard_drop": {
-      "musketeer": {
+      "hog_rider": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1279,14 +1279,14 @@
       "gold": 1110,
       "gems": 5,
       "shards": {
-        "musketeer": 4
+        "royal_giant": 4
       }
     },
     "repeat": {
       "gold": 111
     },
     "shard_drop": {
-      "musketeer": {
+      "royal_giant": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1295,7 +1295,7 @@
   "stage_4_5": {
     "chapter": 4,
     "index": 5,
-    "encounter": "tank_push_a",
+    "encounter": "wei_iron_wall",
     "base_level": "ladder_01",
     "difficulty_coef": 1.544,
     "ai_difficulty": "normal",
@@ -1317,14 +1317,14 @@
       "gold": 1110,
       "gems": 5,
       "shards": {
-        "musketeer": 4
+        "heal": 4
       }
     },
     "repeat": {
       "gold": 111
     },
     "shard_drop": {
-      "musketeer": {
+      "heal": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1355,14 +1355,14 @@
       "gold": 1110,
       "gems": 5,
       "shards": {
-        "musketeer": 4
+        "giant_snowball": 4
       }
     },
     "repeat": {
       "gold": 111
     },
     "shard_drop": {
-      "musketeer": {
+      "giant_snowball": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1371,7 +1371,7 @@
   "stage_4_7": {
     "chapter": 4,
     "index": 7,
-    "encounter": "tank_push_a",
+    "encounter": "wei_iron_wall",
     "base_level": "ladder_01",
     "difficulty_coef": 1.576,
     "ai_difficulty": "normal",
@@ -1393,14 +1393,14 @@
       "gold": 1110,
       "gems": 5,
       "shards": {
-        "musketeer": 4
+        "battle_ram": 4
       }
     },
     "repeat": {
       "gold": 111
     },
     "shard_drop": {
-      "musketeer": {
+      "battle_ram": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1431,14 +1431,14 @@
       "gold": 1110,
       "gems": 5,
       "shards": {
-        "musketeer": 4
+        "hog_rider": 4
       }
     },
     "repeat": {
       "gold": 111
     },
     "shard_drop": {
-      "musketeer": {
+      "hog_rider": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1447,7 +1447,7 @@
   "stage_4_9": {
     "chapter": 4,
     "index": 9,
-    "encounter": "tank_push_a",
+    "encounter": "wei_iron_wall",
     "base_level": "ladder_01",
     "difficulty_coef": 1.608,
     "ai_difficulty": "normal",
@@ -1469,14 +1469,14 @@
       "gold": 1110,
       "gems": 5,
       "shards": {
-        "musketeer": 4
+        "royal_giant": 4
       }
     },
     "repeat": {
       "gold": 111
     },
     "shard_drop": {
-      "musketeer": {
+      "royal_giant": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1485,7 +1485,7 @@
   "stage_4_10": {
     "chapter": 4,
     "index": 10,
-    "encounter": "double_tank",
+    "encounter": "wei_cold_council",
     "base_level": "ladder_01",
     "difficulty_coef": 1.786,
     "ai_difficulty": "hard",
@@ -1507,14 +1507,14 @@
       "gold": 1665,
       "gems": 25,
       "shards": {
-        "musketeer": 8
+        "heal": 8
       }
     },
     "repeat": {
       "gold": 166
     },
     "shard_drop": {
-      "musketeer": {
+      "heal": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1523,7 +1523,7 @@
   "stage_5_1": {
     "chapter": 5,
     "index": 1,
-    "encounter": "spell_siege",
+    "encounter": "shu_mountain_ambush",
     "base_level": "ladder_01",
     "difficulty_coef": 1.64,
     "ai_difficulty": "normal",
@@ -1545,14 +1545,14 @@
       "gold": 1380,
       "gems": 5,
       "shards": {
-        "baby_dragon": 4
+        "axe_thrower": 4
       }
     },
     "repeat": {
       "gold": 138
     },
     "shard_drop": {
-      "baby_dragon": {
+      "axe_thrower": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1561,7 +1561,7 @@
   "stage_5_2": {
     "chapter": 5,
     "index": 2,
-    "encounter": "lich_control",
+    "encounter": "ranged_kite",
     "base_level": "ladder_01",
     "difficulty_coef": 1.656,
     "ai_difficulty": "normal",
@@ -1583,14 +1583,14 @@
       "gold": 1380,
       "gems": 5,
       "shards": {
-        "baby_dragon": 4
+        "cave_spiders": 4
       }
     },
     "repeat": {
       "gold": 138
     },
     "shard_drop": {
-      "baby_dragon": {
+      "cave_spiders": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1599,7 +1599,7 @@
   "stage_5_3": {
     "chapter": 5,
     "index": 3,
-    "encounter": "spell_siege",
+    "encounter": "shu_mountain_ambush",
     "base_level": "ladder_01",
     "difficulty_coef": 1.672,
     "ai_difficulty": "normal",
@@ -1621,14 +1621,14 @@
       "gold": 1380,
       "gems": 5,
       "shards": {
-        "baby_dragon": 4
+        "ice_spirit": 4
       }
     },
     "repeat": {
       "gold": 138
     },
     "shard_drop": {
-      "baby_dragon": {
+      "ice_spirit": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1637,7 +1637,7 @@
   "stage_5_4": {
     "chapter": 5,
     "index": 4,
-    "encounter": "lich_control",
+    "encounter": "ranged_kite",
     "base_level": "ladder_01",
     "difficulty_coef": 1.688,
     "ai_difficulty": "normal",
@@ -1659,14 +1659,14 @@
       "gold": 1380,
       "gems": 5,
       "shards": {
-        "baby_dragon": 4
+        "rock_shower": 4
       }
     },
     "repeat": {
       "gold": 138
     },
     "shard_drop": {
-      "baby_dragon": {
+      "rock_shower": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1675,7 +1675,7 @@
   "stage_5_5": {
     "chapter": 5,
     "index": 5,
-    "encounter": "spell_siege",
+    "encounter": "shu_mountain_ambush",
     "base_level": "ladder_01",
     "difficulty_coef": 1.704,
     "ai_difficulty": "normal",
@@ -1697,14 +1697,14 @@
       "gold": 1380,
       "gems": 5,
       "shards": {
-        "baby_dragon": 4
+        "musketeer": 4
       }
     },
     "repeat": {
       "gold": 138
     },
     "shard_drop": {
-      "baby_dragon": {
+      "musketeer": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1713,7 +1713,7 @@
   "stage_5_6": {
     "chapter": 5,
     "index": 6,
-    "encounter": "lich_control",
+    "encounter": "ranged_kite",
     "base_level": "ladder_01",
     "difficulty_coef": 1.72,
     "ai_difficulty": "normal",
@@ -1735,14 +1735,14 @@
       "gold": 1380,
       "gems": 5,
       "shards": {
-        "baby_dragon": 4
+        "axe_thrower": 4
       }
     },
     "repeat": {
       "gold": 138
     },
     "shard_drop": {
-      "baby_dragon": {
+      "axe_thrower": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1751,7 +1751,7 @@
   "stage_5_7": {
     "chapter": 5,
     "index": 7,
-    "encounter": "spell_siege",
+    "encounter": "shu_mountain_ambush",
     "base_level": "ladder_01",
     "difficulty_coef": 1.736,
     "ai_difficulty": "normal",
@@ -1773,14 +1773,14 @@
       "gold": 1380,
       "gems": 5,
       "shards": {
-        "baby_dragon": 4
+        "cave_spiders": 4
       }
     },
     "repeat": {
       "gold": 138
     },
     "shard_drop": {
-      "baby_dragon": {
+      "cave_spiders": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1789,7 +1789,7 @@
   "stage_5_8": {
     "chapter": 5,
     "index": 8,
-    "encounter": "lich_control",
+    "encounter": "ranged_kite",
     "base_level": "ladder_01",
     "difficulty_coef": 1.752,
     "ai_difficulty": "normal",
@@ -1811,14 +1811,14 @@
       "gold": 1380,
       "gems": 5,
       "shards": {
-        "baby_dragon": 4
+        "ice_spirit": 4
       }
     },
     "repeat": {
       "gold": 138
     },
     "shard_drop": {
-      "baby_dragon": {
+      "ice_spirit": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1827,7 +1827,7 @@
   "stage_5_9": {
     "chapter": 5,
     "index": 9,
-    "encounter": "spell_siege",
+    "encounter": "shu_mountain_ambush",
     "base_level": "ladder_01",
     "difficulty_coef": 1.768,
     "ai_difficulty": "normal",
@@ -1849,14 +1849,14 @@
       "gold": 1380,
       "gems": 5,
       "shards": {
-        "baby_dragon": 4
+        "rock_shower": 4
       }
     },
     "repeat": {
       "gold": 138
     },
     "shard_drop": {
-      "baby_dragon": {
+      "rock_shower": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1865,7 +1865,7 @@
   "stage_5_10": {
     "chapter": 5,
     "index": 10,
-    "encounter": "lich_control",
+    "encounter": "shu_sky_lantern",
     "base_level": "ladder_01",
     "difficulty_coef": 1.962,
     "ai_difficulty": "hard",
@@ -1887,14 +1887,14 @@
       "gold": 2070,
       "gems": 25,
       "shards": {
-        "baby_dragon": 8
+        "musketeer": 8
       }
     },
     "repeat": {
       "gold": 207
     },
     "shard_drop": {
-      "baby_dragon": {
+      "musketeer": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1903,7 +1903,7 @@
   "stage_6_1": {
     "chapter": 6,
     "index": 1,
-    "encounter": "vampire_balanced",
+    "encounter": "air_raid",
     "base_level": "ladder_01",
     "difficulty_coef": 1.8,
     "ai_difficulty": "normal",
@@ -1925,14 +1925,14 @@
       "gold": 1650,
       "gems": 5,
       "shards": {
-        "lightning": 4
+        "fireball": 4
       }
     },
     "repeat": {
       "gold": 165
     },
     "shard_drop": {
-      "lightning": {
+      "fireball": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1941,7 +1941,7 @@
   "stage_6_2": {
     "chapter": 6,
     "index": 2,
-    "encounter": "graveyard_control",
+    "encounter": "wu_fire_fleet",
     "base_level": "ladder_01",
     "difficulty_coef": 1.816,
     "ai_difficulty": "normal",
@@ -1963,14 +1963,14 @@
       "gold": 1650,
       "gems": 5,
       "shards": {
-        "lightning": 4
+        "valkyrie": 4
       }
     },
     "repeat": {
       "gold": 165
     },
     "shard_drop": {
-      "lightning": {
+      "valkyrie": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1979,7 +1979,7 @@
   "stage_6_3": {
     "chapter": 6,
     "index": 3,
-    "encounter": "vampire_balanced",
+    "encounter": "air_raid",
     "base_level": "ladder_01",
     "difficulty_coef": 1.832,
     "ai_difficulty": "normal",
@@ -2001,14 +2001,14 @@
       "gold": 1650,
       "gems": 5,
       "shards": {
-        "lightning": 4
+        "goblin_barrel": 4
       }
     },
     "repeat": {
       "gold": 165
     },
     "shard_drop": {
-      "lightning": {
+      "goblin_barrel": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2017,7 +2017,7 @@
   "stage_6_4": {
     "chapter": 6,
     "index": 4,
-    "encounter": "graveyard_control",
+    "encounter": "wu_fire_fleet",
     "base_level": "ladder_01",
     "difficulty_coef": 1.848,
     "ai_difficulty": "normal",
@@ -2039,14 +2039,14 @@
       "gold": 1650,
       "gems": 5,
       "shards": {
-        "lightning": 4
+        "baby_dragon": 4
       }
     },
     "repeat": {
       "gold": 165
     },
     "shard_drop": {
-      "lightning": {
+      "baby_dragon": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2055,7 +2055,7 @@
   "stage_6_5": {
     "chapter": 6,
     "index": 5,
-    "encounter": "vampire_balanced",
+    "encounter": "air_raid",
     "base_level": "ladder_01",
     "difficulty_coef": 1.864,
     "ai_difficulty": "normal",
@@ -2077,14 +2077,14 @@
       "gold": 1650,
       "gems": 5,
       "shards": {
-        "lightning": 4
+        "wizard": 4
       }
     },
     "repeat": {
       "gold": 165
     },
     "shard_drop": {
-      "lightning": {
+      "wizard": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2093,7 +2093,7 @@
   "stage_6_6": {
     "chapter": 6,
     "index": 6,
-    "encounter": "graveyard_control",
+    "encounter": "wu_fire_fleet",
     "base_level": "ladder_01",
     "difficulty_coef": 1.88,
     "ai_difficulty": "normal",
@@ -2115,14 +2115,14 @@
       "gold": 1650,
       "gems": 5,
       "shards": {
-        "lightning": 4
+        "fireball": 4
       }
     },
     "repeat": {
       "gold": 165
     },
     "shard_drop": {
-      "lightning": {
+      "fireball": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2131,7 +2131,7 @@
   "stage_6_7": {
     "chapter": 6,
     "index": 7,
-    "encounter": "vampire_balanced",
+    "encounter": "air_raid",
     "base_level": "ladder_01",
     "difficulty_coef": 1.896,
     "ai_difficulty": "normal",
@@ -2153,14 +2153,14 @@
       "gold": 1650,
       "gems": 5,
       "shards": {
-        "lightning": 4
+        "valkyrie": 4
       }
     },
     "repeat": {
       "gold": 165
     },
     "shard_drop": {
-      "lightning": {
+      "valkyrie": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2169,7 +2169,7 @@
   "stage_6_8": {
     "chapter": 6,
     "index": 8,
-    "encounter": "graveyard_control",
+    "encounter": "wu_fire_fleet",
     "base_level": "ladder_01",
     "difficulty_coef": 1.912,
     "ai_difficulty": "normal",
@@ -2191,14 +2191,14 @@
       "gold": 1650,
       "gems": 5,
       "shards": {
-        "lightning": 4
+        "goblin_barrel": 4
       }
     },
     "repeat": {
       "gold": 165
     },
     "shard_drop": {
-      "lightning": {
+      "goblin_barrel": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2207,7 +2207,7 @@
   "stage_6_9": {
     "chapter": 6,
     "index": 9,
-    "encounter": "vampire_balanced",
+    "encounter": "air_raid",
     "base_level": "ladder_01",
     "difficulty_coef": 1.928,
     "ai_difficulty": "normal",
@@ -2229,14 +2229,14 @@
       "gold": 1650,
       "gems": 5,
       "shards": {
-        "lightning": 4
+        "baby_dragon": 4
       }
     },
     "repeat": {
       "gold": 165
     },
     "shard_drop": {
-      "lightning": {
+      "baby_dragon": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2245,7 +2245,7 @@
   "stage_6_10": {
     "chapter": 6,
     "index": 10,
-    "encounter": "vampire_balanced",
+    "encounter": "wu_fire_fleet",
     "base_level": "ladder_01",
     "difficulty_coef": 2.138,
     "ai_difficulty": "hard",
@@ -2267,14 +2267,14 @@
       "gold": 2475,
       "gems": 25,
       "shards": {
-        "lightning": 8
+        "wizard": 8
       }
     },
     "repeat": {
       "gold": 248
     },
     "shard_drop": {
-      "lightning": {
+      "wizard": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2283,7 +2283,7 @@
   "stage_7_1": {
     "chapter": 7,
     "index": 1,
-    "encounter": "air_raid",
+    "encounter": "wei_hanzhong_vanguard",
     "base_level": "ladder_01",
     "difficulty_coef": 1.96,
     "ai_difficulty": "hard",
@@ -2305,14 +2305,14 @@
       "gold": 1920,
       "gems": 5,
       "shards": {
-        "heal": 4
+        "bomber": 4
       }
     },
     "repeat": {
       "gold": 192
     },
     "shard_drop": {
-      "heal": {
+      "bomber": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2321,7 +2321,7 @@
   "stage_7_2": {
     "chapter": 7,
     "index": 2,
-    "encounter": "ranged_kite",
+    "encounter": "spell_siege",
     "base_level": "ladder_01",
     "difficulty_coef": 1.976,
     "ai_difficulty": "hard",
@@ -2343,14 +2343,14 @@
       "gold": 1920,
       "gems": 5,
       "shards": {
-        "heal": 4
+        "mega_minion": 4
       }
     },
     "repeat": {
       "gold": 192
     },
     "shard_drop": {
-      "heal": {
+      "mega_minion": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2359,7 +2359,7 @@
   "stage_7_3": {
     "chapter": 7,
     "index": 3,
-    "encounter": "air_raid",
+    "encounter": "wei_hanzhong_vanguard",
     "base_level": "ladder_01",
     "difficulty_coef": 1.992,
     "ai_difficulty": "hard",
@@ -2381,14 +2381,14 @@
       "gold": 1920,
       "gems": 5,
       "shards": {
-        "heal": 4
+        "executioner": 4
       }
     },
     "repeat": {
       "gold": 192
     },
     "shard_drop": {
-      "heal": {
+      "executioner": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2397,7 +2397,7 @@
   "stage_7_4": {
     "chapter": 7,
     "index": 4,
-    "encounter": "ranged_kite",
+    "encounter": "spell_siege",
     "base_level": "ladder_01",
     "difficulty_coef": 2.008,
     "ai_difficulty": "hard",
@@ -2419,14 +2419,14 @@
       "gold": 1920,
       "gems": 5,
       "shards": {
-        "heal": 4
+        "freeze": 4
       }
     },
     "repeat": {
       "gold": 192
     },
     "shard_drop": {
-      "heal": {
+      "freeze": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2435,7 +2435,7 @@
   "stage_7_5": {
     "chapter": 7,
     "index": 5,
-    "encounter": "air_raid",
+    "encounter": "wei_hanzhong_vanguard",
     "base_level": "ladder_01",
     "difficulty_coef": 2.024,
     "ai_difficulty": "hard",
@@ -2457,14 +2457,14 @@
       "gold": 1920,
       "gems": 5,
       "shards": {
-        "heal": 4
+        "balloon": 4
       }
     },
     "repeat": {
       "gold": 192
     },
     "shard_drop": {
-      "heal": {
+      "balloon": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2473,7 +2473,7 @@
   "stage_7_6": {
     "chapter": 7,
     "index": 6,
-    "encounter": "ranged_kite",
+    "encounter": "spell_siege",
     "base_level": "ladder_01",
     "difficulty_coef": 2.04,
     "ai_difficulty": "hard",
@@ -2495,14 +2495,14 @@
       "gold": 1920,
       "gems": 5,
       "shards": {
-        "heal": 4
+        "bomber": 4
       }
     },
     "repeat": {
       "gold": 192
     },
     "shard_drop": {
-      "heal": {
+      "bomber": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2511,7 +2511,7 @@
   "stage_7_7": {
     "chapter": 7,
     "index": 7,
-    "encounter": "air_raid",
+    "encounter": "wei_hanzhong_vanguard",
     "base_level": "ladder_01",
     "difficulty_coef": 2.056,
     "ai_difficulty": "hard",
@@ -2533,14 +2533,14 @@
       "gold": 1920,
       "gems": 5,
       "shards": {
-        "heal": 4
+        "mega_minion": 4
       }
     },
     "repeat": {
       "gold": 192
     },
     "shard_drop": {
-      "heal": {
+      "mega_minion": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2549,7 +2549,7 @@
   "stage_7_8": {
     "chapter": 7,
     "index": 8,
-    "encounter": "ranged_kite",
+    "encounter": "spell_siege",
     "base_level": "ladder_01",
     "difficulty_coef": 2.072,
     "ai_difficulty": "hard",
@@ -2571,14 +2571,14 @@
       "gold": 1920,
       "gems": 5,
       "shards": {
-        "heal": 4
+        "executioner": 4
       }
     },
     "repeat": {
       "gold": 192
     },
     "shard_drop": {
-      "heal": {
+      "executioner": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2587,7 +2587,7 @@
   "stage_7_9": {
     "chapter": 7,
     "index": 9,
-    "encounter": "air_raid",
+    "encounter": "wei_hanzhong_vanguard",
     "base_level": "ladder_01",
     "difficulty_coef": 2.088,
     "ai_difficulty": "hard",
@@ -2609,14 +2609,14 @@
       "gold": 1920,
       "gems": 5,
       "shards": {
-        "heal": 4
+        "freeze": 4
       }
     },
     "repeat": {
       "gold": 192
     },
     "shard_drop": {
-      "heal": {
+      "freeze": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2625,7 +2625,7 @@
   "stage_7_10": {
     "chapter": 7,
     "index": 10,
-    "encounter": "air_raid",
+    "encounter": "wei_cold_council",
     "base_level": "ladder_01",
     "difficulty_coef": 2.314,
     "ai_difficulty": "hard",
@@ -2647,14 +2647,14 @@
       "gold": 2880,
       "gems": 25,
       "shards": {
-        "heal": 8
+        "balloon": 8
       }
     },
     "repeat": {
       "gold": 288
     },
     "shard_drop": {
-      "heal": {
+      "balloon": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2663,7 +2663,7 @@
   "stage_8_1": {
     "chapter": 8,
     "index": 1,
-    "encounter": "throne_combined",
+    "encounter": "wu_tide_guard",
     "base_level": "ladder_01",
     "difficulty_coef": 2.12,
     "ai_difficulty": "hard",
@@ -2685,14 +2685,14 @@
       "gold": 2190,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "knight": 4
       }
     },
     "repeat": {
       "gold": 219
     },
     "shard_drop": {
-      "golem": {
+      "knight": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2701,7 +2701,7 @@
   "stage_8_2": {
     "chapter": 8,
     "index": 2,
-    "encounter": "ranged_kite",
+    "encounter": "lich_control",
     "base_level": "ladder_01",
     "difficulty_coef": 2.136,
     "ai_difficulty": "hard",
@@ -2723,14 +2723,14 @@
       "gold": 2190,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "archers": 4
       }
     },
     "repeat": {
       "gold": 219
     },
     "shard_drop": {
-      "golem": {
+      "archers": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2739,7 +2739,7 @@
   "stage_8_3": {
     "chapter": 8,
     "index": 3,
-    "encounter": "throne_combined",
+    "encounter": "wu_tide_guard",
     "base_level": "ladder_01",
     "difficulty_coef": 2.152,
     "ai_difficulty": "hard",
@@ -2761,14 +2761,14 @@
       "gold": 2190,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "skeleton_army": 4
       }
     },
     "repeat": {
       "gold": 219
     },
     "shard_drop": {
-      "golem": {
+      "skeleton_army": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2777,7 +2777,7 @@
   "stage_8_4": {
     "chapter": 8,
     "index": 4,
-    "encounter": "ranged_kite",
+    "encounter": "lich_control",
     "base_level": "ladder_01",
     "difficulty_coef": 2.168,
     "ai_difficulty": "hard",
@@ -2799,14 +2799,14 @@
       "gold": 2190,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "lightning": 4
       }
     },
     "repeat": {
       "gold": 219
     },
     "shard_drop": {
-      "golem": {
+      "lightning": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2815,7 +2815,7 @@
   "stage_8_5": {
     "chapter": 8,
     "index": 5,
-    "encounter": "throne_combined",
+    "encounter": "wu_tide_guard",
     "base_level": "ladder_01",
     "difficulty_coef": 2.184,
     "ai_difficulty": "hard",
@@ -2837,14 +2837,14 @@
       "gold": 2190,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "phoenix": 4
       }
     },
     "repeat": {
       "gold": 219
     },
     "shard_drop": {
-      "golem": {
+      "phoenix": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2853,7 +2853,7 @@
   "stage_8_6": {
     "chapter": 8,
     "index": 6,
-    "encounter": "ranged_kite",
+    "encounter": "lich_control",
     "base_level": "ladder_01",
     "difficulty_coef": 2.2,
     "ai_difficulty": "hard",
@@ -2875,14 +2875,14 @@
       "gold": 2190,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "knight": 4
       }
     },
     "repeat": {
       "gold": 219
     },
     "shard_drop": {
-      "golem": {
+      "knight": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2891,7 +2891,7 @@
   "stage_8_7": {
     "chapter": 8,
     "index": 7,
-    "encounter": "throne_combined",
+    "encounter": "wu_tide_guard",
     "base_level": "ladder_01",
     "difficulty_coef": 2.216,
     "ai_difficulty": "hard",
@@ -2913,14 +2913,14 @@
       "gold": 2190,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "archers": 4
       }
     },
     "repeat": {
       "gold": 219
     },
     "shard_drop": {
-      "golem": {
+      "archers": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2929,7 +2929,7 @@
   "stage_8_8": {
     "chapter": 8,
     "index": 8,
-    "encounter": "ranged_kite",
+    "encounter": "lich_control",
     "base_level": "ladder_01",
     "difficulty_coef": 2.232,
     "ai_difficulty": "hard",
@@ -2951,14 +2951,14 @@
       "gold": 2190,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "skeleton_army": 4
       }
     },
     "repeat": {
       "gold": 219
     },
     "shard_drop": {
-      "golem": {
+      "skeleton_army": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2967,7 +2967,7 @@
   "stage_8_9": {
     "chapter": 8,
     "index": 9,
-    "encounter": "throne_combined",
+    "encounter": "wu_tide_guard",
     "base_level": "ladder_01",
     "difficulty_coef": 2.248,
     "ai_difficulty": "hard",
@@ -2989,14 +2989,14 @@
       "gold": 2190,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "lightning": 4
       }
     },
     "repeat": {
       "gold": 219
     },
     "shard_drop": {
-      "golem": {
+      "lightning": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3027,14 +3027,14 @@
       "gold": 3285,
       "gems": 25,
       "shards": {
-        "golem": 8
+        "phoenix": 8
       }
     },
     "repeat": {
       "gold": 328
     },
     "shard_drop": {
-      "golem": {
+      "phoenix": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3043,7 +3043,7 @@
   "stage_9_1": {
     "chapter": 9,
     "index": 1,
-    "encounter": "abyss_overload",
+    "encounter": "nanman_firebrood",
     "base_level": "ladder_01",
     "difficulty_coef": 2.28,
     "ai_difficulty": "hard",
@@ -3065,14 +3065,14 @@
       "gold": 2460,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "goblins": 4
       }
     },
     "repeat": {
       "gold": 246
     },
     "shard_drop": {
-      "golem": {
+      "goblins": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3081,7 +3081,7 @@
   "stage_9_2": {
     "chapter": 9,
     "index": 2,
-    "encounter": "throne_combined",
+    "encounter": "abyss_overload",
     "base_level": "ladder_01",
     "difficulty_coef": 2.296,
     "ai_difficulty": "hard",
@@ -3103,14 +3103,14 @@
       "gold": 2460,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "minions": 4
       }
     },
     "repeat": {
       "gold": 246
     },
     "shard_drop": {
-      "golem": {
+      "minions": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3119,7 +3119,7 @@
   "stage_9_3": {
     "chapter": 9,
     "index": 3,
-    "encounter": "abyss_overload",
+    "encounter": "nanman_firebrood",
     "base_level": "ladder_01",
     "difficulty_coef": 2.312,
     "ai_difficulty": "hard",
@@ -3157,7 +3157,7 @@
   "stage_9_4": {
     "chapter": 9,
     "index": 4,
-    "encounter": "throne_combined",
+    "encounter": "abyss_overload",
     "base_level": "ladder_01",
     "difficulty_coef": 2.328,
     "ai_difficulty": "hard",
@@ -3179,14 +3179,14 @@
       "gold": 2460,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "lava_hound": 4
       }
     },
     "repeat": {
       "gold": 246
     },
     "shard_drop": {
-      "golem": {
+      "lava_hound": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3195,7 +3195,7 @@
   "stage_9_5": {
     "chapter": 9,
     "index": 5,
-    "encounter": "abyss_overload",
+    "encounter": "nanman_firebrood",
     "base_level": "ladder_01",
     "difficulty_coef": 2.344,
     "ai_difficulty": "hard",
@@ -3217,14 +3217,14 @@
       "gold": 2460,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "princess": 4
       }
     },
     "repeat": {
       "gold": 246
     },
     "shard_drop": {
-      "golem": {
+      "princess": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3233,7 +3233,7 @@
   "stage_9_6": {
     "chapter": 9,
     "index": 6,
-    "encounter": "throne_combined",
+    "encounter": "abyss_overload",
     "base_level": "ladder_01",
     "difficulty_coef": 2.36,
     "ai_difficulty": "hard",
@@ -3255,14 +3255,14 @@
       "gold": 2460,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "goblins": 4
       }
     },
     "repeat": {
       "gold": 246
     },
     "shard_drop": {
-      "golem": {
+      "goblins": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3271,7 +3271,7 @@
   "stage_9_7": {
     "chapter": 9,
     "index": 7,
-    "encounter": "abyss_overload",
+    "encounter": "nanman_firebrood",
     "base_level": "ladder_01",
     "difficulty_coef": 2.376,
     "ai_difficulty": "hard",
@@ -3293,14 +3293,14 @@
       "gold": 2460,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "minions": 4
       }
     },
     "repeat": {
       "gold": 246
     },
     "shard_drop": {
-      "golem": {
+      "minions": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3309,7 +3309,7 @@
   "stage_9_8": {
     "chapter": 9,
     "index": 8,
-    "encounter": "throne_combined",
+    "encounter": "abyss_overload",
     "base_level": "ladder_01",
     "difficulty_coef": 2.392,
     "ai_difficulty": "hard",
@@ -3347,7 +3347,7 @@
   "stage_9_9": {
     "chapter": 9,
     "index": 9,
-    "encounter": "abyss_overload",
+    "encounter": "nanman_firebrood",
     "base_level": "ladder_01",
     "difficulty_coef": 2.408,
     "ai_difficulty": "hard",
@@ -3369,14 +3369,14 @@
       "gold": 2460,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "lava_hound": 4
       }
     },
     "repeat": {
       "gold": 246
     },
     "shard_drop": {
-      "golem": {
+      "lava_hound": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3385,7 +3385,7 @@
   "stage_9_10": {
     "chapter": 9,
     "index": 10,
-    "encounter": "abyss_overload",
+    "encounter": "nanman_firebrood",
     "base_level": "ladder_01",
     "difficulty_coef": 2.666,
     "ai_difficulty": "extreme",
@@ -3407,14 +3407,14 @@
       "gold": 3690,
       "gems": 25,
       "shards": {
-        "golem": 8
+        "princess": 8
       }
     },
     "repeat": {
       "gold": 369
     },
     "shard_drop": {
-      "golem": {
+      "princess": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3445,14 +3445,14 @@
       "gold": 2730,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "zap": 4
       }
     },
     "repeat": {
       "gold": 273
     },
     "shard_drop": {
-      "golem": {
+      "zap": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3483,14 +3483,14 @@
       "gold": 2730,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "giant": 4
       }
     },
     "repeat": {
       "gold": 273
     },
     "shard_drop": {
-      "golem": {
+      "giant": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3521,14 +3521,14 @@
       "gold": 2730,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "ice_wizard": 4
       }
     },
     "repeat": {
       "gold": 273
     },
     "shard_drop": {
-      "golem": {
+      "ice_wizard": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3559,14 +3559,14 @@
       "gold": 2730,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "electro_wizard": 4
       }
     },
     "repeat": {
       "gold": 273
     },
     "shard_drop": {
-      "golem": {
+      "electro_wizard": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3597,14 +3597,14 @@
       "gold": 2730,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "inferno_dragon": 4
       }
     },
     "repeat": {
       "gold": 273
     },
     "shard_drop": {
-      "golem": {
+      "inferno_dragon": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3635,14 +3635,14 @@
       "gold": 2730,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "zap": 4
       }
     },
     "repeat": {
       "gold": 273
     },
     "shard_drop": {
-      "golem": {
+      "zap": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3673,14 +3673,14 @@
       "gold": 2730,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "giant": 4
       }
     },
     "repeat": {
       "gold": 273
     },
     "shard_drop": {
-      "golem": {
+      "giant": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3711,14 +3711,14 @@
       "gold": 2730,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "ice_wizard": 4
       }
     },
     "repeat": {
       "gold": 273
     },
     "shard_drop": {
-      "golem": {
+      "ice_wizard": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3749,14 +3749,14 @@
       "gold": 2730,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "electro_wizard": 4
       }
     },
     "repeat": {
       "gold": 273
     },
     "shard_drop": {
-      "golem": {
+      "electro_wizard": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3765,7 +3765,7 @@
   "stage_10_10": {
     "chapter": 10,
     "index": 10,
-    "encounter": "final_boss",
+    "encounter": "three_kingdoms_final",
     "base_level": "ladder_01",
     "difficulty_coef": 2.842,
     "ai_difficulty": "extreme",
@@ -3787,14 +3787,14 @@
       "gold": 4095,
       "gems": 25,
       "shards": {
-        "golem": 8
+        "inferno_dragon": 8
       }
     },
     "repeat": {
       "gold": 410
     },
     "shard_drop": {
-      "golem": {
+      "inferno_dragon": {
         "chance": 0.34,
         "amount": 1
       }

@@ -63,6 +63,11 @@ enum MsgId {
   ECONOMY_COLLECT_IDLE_REQ = 67; // V5-N6：挂机领取（now 全服务器定）
   PVE_START_REQ = 68;       // KAN-78：PVE 开战报到（服务器时钟记 started_at + 养成快照）
   PVE_REPORT_REQ = 69;      // KAN-79：PVE 指令流/哈希周期批量上报（时序真实性）
+  KINGDOM_STATE_REQ = 70;   // K1（DESIGN_KINGDOM）client->server：拉王国状态
+  KINGDOM_STATE_RESP = 71;  // K1 server->client：王国状态（含 server_now/pending）
+  KINGDOM_UPGRADE_REQ = 72; // K1：建造/升级（Lv0→1 即建造，统一动作）
+  KINGDOM_COLLECT_REQ = 73; // K1：收取全部产出（服务器时钟结算）
+  KINGDOM_SPEEDUP_REQ = 74; // K1：宝石加速完成施工
 }
 
 // 通用错误码。前 1000 为框架级（鉴权/限流），1000+ 为业务级（按模块分段）。

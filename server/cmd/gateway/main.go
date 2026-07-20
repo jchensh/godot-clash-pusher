@@ -26,6 +26,7 @@ import (
 	"github.com/jchensh/godot-clash-pusher/server/internal/auth"
 	"github.com/jchensh/godot-clash-pusher/server/internal/battle"
 	"github.com/jchensh/godot-clash-pusher/server/internal/gameconfig"
+	"github.com/jchensh/godot-clash-pusher/server/internal/kingdom"
 	"github.com/jchensh/godot-clash-pusher/server/internal/matchmaking"
 	pbcommon "github.com/jchensh/godot-clash-pusher/server/internal/pb/common"
 	"github.com/jchensh/godot-clash-pusher/server/internal/session"
@@ -101,6 +102,15 @@ func main() {
 	sessMgr := session.NewManager()
 
 	lobby := battle.NewLobby(matchmaking.NewRedisQueue(rdb.Client()), battle.NewPGPersister(db), db, levelID, nil)
+	// K5：王国城防 → PVP 塔加成（建房时查询下发）。配置解析失败只警告不阻塞（零加成开局）。
+	if cfgErr == nil {
+		if kc, kErr := kingdom.ParseConfig(cfgBundle); kErr == nil {
+			lobby.KingdomCfg = kc
+			log.Printf("gateway: kingdom tower bonus wired into lobby (%d buildings)", len(kc.Buildings))
+		} else {
+			log.Printf("gateway: kingdom config parse failed (%v) — pvp tower bonus off", kErr)
+		}
+	}
 	go lobby.RunMatchmaker(rootCtx)
 
 	mux := http.NewServeMux()

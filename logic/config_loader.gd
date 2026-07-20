@@ -23,6 +23,7 @@ var stages: Dictionary = {}          # V5-S0：闯关关卡表（stages.json）�
 var encounters: Dictionary = {}      # V5-S0：遭遇模板池（encounters.json），结构性、不进 Excel 镜像
 var economy: Dictionary = {}         # V5-S0：经济数值（economy.json）
 var card_progression: Dictionary = {} # V5-S0：卡牌养成元数据（card_progression.json）
+var kingdom: Dictionary = {}         # K2：王国领地（kingdom.json，DESIGN_KINGDOM）
 var errors: Array[String] = []
 
 # 读入配置；全部成功且校验无误返回 true，否则 false（详情见 errors）。
@@ -41,6 +42,7 @@ func load_all(config_dir: String = DEFAULT_CONFIG_DIR) -> bool:
 	encounters = _load_json_dict(config_dir.path_join("encounters.json"))
 	economy = _load_json_dict(config_dir.path_join("economy.json"))
 	card_progression = _load_json_dict(config_dir.path_join("card_progression.json"))
+	kingdom = _load_json_dict(config_dir.path_join("kingdom.json"))
 	_validate()
 	return errors.is_empty()
 
@@ -63,6 +65,7 @@ func load_from_files(files: Dictionary) -> bool:
 	candidate.encounters = candidate._bundle_dict(files, "encounters.json")
 	candidate.economy = candidate._bundle_dict(files, "economy.json")
 	candidate.card_progression = candidate._bundle_dict(files, "card_progression.json")
+	candidate.kingdom = candidate._bundle_dict(files, "kingdom.json")
 	candidate._validate()
 	if not candidate.errors.is_empty():
 		errors = candidate.errors.duplicate()
@@ -94,6 +97,7 @@ func _copy_from(other: ConfigLoader) -> void:
 	encounters = other.encounters
 	economy = other.economy
 	card_progression = other.card_progression
+	kingdom = other.kingdom
 
 func _load_json_dict(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):
@@ -372,6 +376,41 @@ func _validate() -> void:
 	for ef in ["upgrade_cost_base", "rank_up", "unlock_shards", "idle", "rewards"]:
 		if not economy.has(ef):
 			errors.append("economy.json 缺少 %s" % ef)
+
+	_validate_kingdom()
+
+# kingdom.json（K2/DESIGN_KINGDOM）：结构 + 引用校验，镜像服务端 kingdom.ParseConfig 规则——
+# keep 必在 / 等级表连续 / 成本只用声明资源且禁 gold（金币不能买城建资源=商业化铁门）。
+func _validate_kingdom() -> void:
+	if not (kingdom.has("resources") and typeof(kingdom["resources"]) == TYPE_ARRAY):
+		errors.append("kingdom.json 缺少 resources 数组")
+		return
+	if not (kingdom.has("rules") and typeof(kingdom["rules"]) == TYPE_DICTIONARY):
+		errors.append("kingdom.json 缺少 rules")
+		return
+	var bs = kingdom.get("buildings", {})
+	if typeof(bs) != TYPE_DICTIONARY or not bs.has("keep"):
+		errors.append("kingdom.json buildings 缺少 keep")
+		return
+	var known := {}
+	for r in (kingdom["resources"] as Array):
+		known[str(r)] = true
+	for name in bs:
+		var b = bs[name]
+		if typeof(b) != TYPE_DICTIONARY or typeof(b.get("levels")) != TYPE_ARRAY:
+			errors.append("kingdom building '%s' 缺少 levels 数组" % name)
+			continue
+		var lvs: Array = b["levels"]
+		for i in lvs.size():
+			var row = lvs[i]
+			if typeof(row) != TYPE_DICTIONARY or int(row.get("level", 0)) != i + 1:
+				errors.append("kingdom building '%s' 等级表在第 %d 行不连续" % [name, i])
+				break
+			for res in (row.get("cost", {}) as Dictionary):
+				if str(res) == "gold" or not known.has(str(res)):
+					errors.append("kingdom building '%s' Lv%d 成本用了非法资源 '%s'" % [name, i + 1, str(res)])
+		if str(b.get("kind", "")) == "producer" and not (known.has(str(b.get("produces", ""))) or str(b.get("produces", "")) == "gold"):
+			errors.append("kingdom building '%s' produces 非法" % name)
 
 # —— 便捷访问 ——
 func get_card(id: String) -> Dictionary:

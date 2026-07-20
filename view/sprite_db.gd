@@ -18,11 +18,9 @@ extends RefCounted
 
 const T_KNIGHT_NC := preload("res://assets/units/Heavy_Knight_Non-Combat_Animations.png")
 const T_KNIGHT_CB := preload("res://assets/units/Heavy_Knight_Combat_Animations.png")
-# 三国正式素材全家桶（2026-07-15，testAssets/newAssets0715 经 python 切帧重打包，管线同 KAN-104）：
-# 走帧 10 帧单行 100×96（统一缩放 94px 峰值身高、bbox 居中、脚底对齐 y95）。
+# 三国正式素材（0721 美术更新版重打包，管线同 KAN-104：谷切→脚线锚定→单行帧条，k=1 不缩放）：
+# 走帧 10 帧单行 160×160 脚线 y158；攻击 8 帧 200×200 脚线 y178=158+(200-160)/2 → sc=200/160 脚底不跳。
 const T_SANGUO_KNIGHT := preload("res://assets/units/sanguo_knight_walk.png")
-# 攻击帧 8 帧单行 152×152（挥砍横扫宽 124px 装不进 100 格 → 大方格 + sc=152/96 补偿；
-# 基线 y123 由 sc 反解保证走↔攻切换脚底不跳；前冲下压位移全局锚定保留）。
 const T_SANGUO_KNIGHT_ATK := preload("res://assets/units/sanguo_knight_attack.png")
 # 立绘（322×346 原图）：卡面/图鉴/头像肖像优先用立绘，不再取走帧 col0。
 const T_SANGUO_KNIGHT_PORTRAIT := preload("res://assets/units/sanguo_knight_portrait.png")
@@ -31,6 +29,26 @@ const T_SANGUO_KNIGHT_PORTRAIT := preload("res://assets/units/sanguo_knight_port
 const T_SANGUO_KNIGHT_FX_ATK := preload("res://assets/fx/sanguo_knight_attack_fx.png")
 const T_SANGUO_KNIGHT_FX_HIT := preload("res://assets/fx/sanguo_knight_hit_fx.png")
 const T_SANGUO_KNIGHT_FX_DEATH := preload("res://assets/fx/sanguo_knight_death_fx.png")
+# 0721 批次正式素材（testAssets/7.21.2026/角色战斗动画 重打包；全部 natural 彩色、地面单位带脚线锚定）：
+const T_SANGUO_BAT := preload("res://assets/units/sanguo_bat_walk.png")
+const T_SANGUO_BAT_ATK := preload("res://assets/units/sanguo_bat_attack.png")
+const T_SANGUO_GIANT := preload("res://assets/units/sanguo_giant_walk.png")
+const T_SANGUO_GIANT_ATK := preload("res://assets/units/sanguo_giant_attack.png")
+const T_SANGUO_GIANT_FX_ATK := preload("res://assets/fx/sanguo_giant_attack_fx.png")
+const T_SANGUO_DRAGON := preload("res://assets/units/sanguo_dragon_walk.png")
+const T_SANGUO_DRAGON_ATK := preload("res://assets/units/sanguo_dragon_attack.png")
+const T_SANGUO_DRAGON_FX_IMPACT := preload("res://assets/fx/sanguo_dragon_impact_fx.png")
+# 刘晔霹雳车：炮车静帧双行（row0=正面朝下/敌方，row1=背面朝上/我方）；攻击表现走弹道+落点爆花。
+const T_SANGUO_RG := preload("res://assets/units/sanguo_royal_giant.png")
+const T_SANGUO_RG_FX_IMPACT := preload("res://assets/fx/sanguo_royal_giant_impact_fx.png")
+const T_SANGUO_RG_FX_DEATH := preload("res://assets/fx/sanguo_royal_giant_death_fx.png")
+# 通用受击星芒（0721 批次新角色共用 hit 特效）。
+const T_SANGUO_FX_HIT := preload("res://assets/fx/sanguo_generic_hit_fx.png")
+# 远程投射物贴图（0721 起投射物绘制收口本文件，battle_scene/net_battle_scene 共用）。
+const T_PROJ_FIREBALL := preload("res://assets/units/fire_skull_fireball.png")
+const T_PROJ_STONE := preload("res://assets/units/sanguo_stone_projectile.png")
+const T_PROJ_DRAGONFIRE := preload("res://assets/units/sanguo_dragon_projectile.png")
+const PROJ_FB_FPX := 16
 const T_ARCHER_NC := preload("res://assets/units/Archer_Non-Combat.png")
 const T_ARCHER_CB := preload("res://assets/units/Archer_Combat.png")
 const T_MAGE_NC := preload("res://assets/units/Mage_Hooded_BROWN.png")
@@ -71,15 +89,15 @@ const SPELL_ICON := {
 #   mirror（true=单方向侧脸素材：battle_scene 按移动/攻击朝向水平镜像——素材默认朝左，向右走/砍时翻转）。
 const DB := {
 	# ============ 已坐实素材（V3-7b 10 条，三国正式素材到位后同样逐条替换） ============
-	"knight_body": {  # 虎贲校尉：三国正式素材全家桶（0715 批次：走/攻/立绘/攻击刀光/受击星芒/死亡白烟）。
-		# 单方向素材：无背面行。攻击帧 152 方格见 T_SANGUO_KNIGHT_ATK 注释。
-		"scale": 1.35, "shadow": true, "natural": true, "mirror": true,
+	"knight_body": {  # 虎贲校尉：0721 美术更新版（走/攻/刀光新版；受击星芒/死亡白烟/立绘沿用 0715）。
+		# 单方向素材：无背面行。scale 1.35→1.7 补新画布身高占比（126/160 vs 旧 94/96）。
+		"scale": 1.7, "shadow": true, "natural": true, "mirror": true,
 		"portrait": T_SANGUO_KNIGHT_PORTRAIT,
-		"walk":   {"tex": T_SANGUO_KNIGHT, "fw": 100, "fh": 96, "cols": 10, "row": 0, "n": 10, "fps": 12.0},
-		"attack": {"tex": T_SANGUO_KNIGHT_ATK, "fw": 152, "fh": 152, "cols": 8, "row": 0, "n": 8,
-				"fps": 12.0, "sc": 1.583},
+		"walk":   {"tex": T_SANGUO_KNIGHT, "fw": 160, "fh": 160, "cols": 10, "row": 0, "n": 10, "fps": 12.0},
+		"attack": {"tex": T_SANGUO_KNIGHT_ATK, "fw": 200, "fh": 200, "cols": 8, "row": 0, "n": 8,
+				"fps": 12.0, "sc": 1.25},
 		"fx": {
-			"attack": {"tex": T_SANGUO_KNIGHT_FX_ATK, "fw": 116, "fh": 116, "n": 4, "dur": 0.28, "size": 2.0},
+			"attack": {"tex": T_SANGUO_KNIGHT_FX_ATK, "fw": 160, "fh": 160, "n": 3, "dur": 0.25, "size": 2.0},
 			"hit":    {"tex": T_SANGUO_KNIGHT_FX_HIT, "fw": 72, "fh": 40, "n": 6, "dur": 0.3, "size": 1.6},
 			"death":  {"tex": T_SANGUO_KNIGHT_FX_DEATH, "fw": 200, "fh": 150, "n": 8, "dur": 0.55, "size": 2.4},
 		},
@@ -109,10 +127,15 @@ const DB := {
 		"walk":   {"tex": T_SKELLY, "fw": 16, "fh": 16, "cols": 4, "row": 0, "n": 4, "fps": 9.0},
 		"attack": {"tex": T_SKELLY, "fw": 16, "fh": 16, "cols": 4, "row": 8, "n": 4, "fps": 10.0},
 	},
-	"giant_body": {  # 黄巾攻城力士：orc_champion 16×16 4×14
-		"scale": 1.4,
-		"walk":   {"tex": T_ORC, "fw": 16, "fh": 16, "cols": 4, "row": 0, "n": 4, "fps": 7.0},
-		"attack": {"tex": T_ORC, "fw": 16, "fh": 16, "cols": 4, "row": 8, "n": 4, "fps": 8.0},
+	"giant_body": {  # 黄巾攻城力士：0721 正式素材（石甲力士；走 12 帧脚线 y189、攻 12 帧 256 格 sc 补偿）
+		"scale": 1.3, "shadow": true, "natural": true, "mirror": true,
+		"walk":   {"tex": T_SANGUO_GIANT, "fw": 192, "fh": 192, "cols": 12, "row": 0, "n": 12, "fps": 10.0},
+		"attack": {"tex": T_SANGUO_GIANT_ATK, "fw": 256, "fh": 256, "cols": 12, "row": 0, "n": 12,
+				"fps": 12.0, "sc": 1.333},
+		"fx": {
+			"attack": {"tex": T_SANGUO_GIANT_FX_ATK, "fw": 224, "fh": 224, "n": 5, "dur": 0.32, "size": 2.2},
+			"hit":    {"tex": T_SANGUO_FX_HIT, "fw": 176, "fh": 96, "n": 5, "dur": 0.28, "size": 1.8},
+		},
 	},
 	"golem_body": {  # 江东镇岳巨械：orc_champion 放大（缺真素材，暂换皮）
 		"scale": 1.6, "tint": Color(1.0, 0.62, 0.55), "ph": true,
@@ -136,10 +159,14 @@ const DB := {
 		"walk":   {"tex": T_GOB_SLINGER, "fw": 16, "fh": 16, "cols": 4, "row": 2, "row_up": 0, "n": 4, "fps": 9.0},
 		"attack": {"tex": T_GOB_SLINGER, "fw": 16, "fh": 16, "cols": 4, "row": 9, "n": 4, "fps": 10.0},
 	},
-	"bat_body": {  # 江东机关蜂：占位=wraith（飞行体）
-		"scale": 1.0, "tint": Color(1.0, 0.62, 0.55), "ph": true,
-		"walk":   {"tex": T_WRAITH, "fw": 16, "fh": 16, "cols": 4, "row": 0, "n": 4, "fps": 10.0},
-		"attack": {"tex": T_WRAITH, "fw": 16, "fh": 16, "cols": 4, "row": 8, "n": 4, "fps": 10.0},
+	"bat_body": {  # 江东机关蜂：0721 正式素材（黄蜂；飞行整高裁切保留悬浮起伏）
+		# body_radius 仅 0.3 → scale 拉大补可读性（0721 验收反馈"太小看不清"）。
+		"scale": 2.6, "natural": true, "mirror": true,
+		"walk":   {"tex": T_SANGUO_BAT, "fw": 128, "fh": 128, "cols": 10, "row": 0, "n": 10, "fps": 14.0},
+		"attack": {"tex": T_SANGUO_BAT_ATK, "fw": 128, "fh": 128, "cols": 7, "row": 0, "n": 7, "fps": 14.0},
+		"fx": {
+			"hit": {"tex": T_SANGUO_FX_HIT, "fw": 176, "fh": 96, "n": 5, "dur": 0.28, "size": 1.2},
+		},
 	},
 	"fire_spirit_body": {  # 赤焰符童：占位=slime 染火橙
 		"scale": 1.0, "tint": Color(1.0, 0.55, 0.35), "ph": true,
@@ -198,10 +225,16 @@ const DB := {
 		"walk":   {"tex": T_KNIGHT_NC, "fw": 24, "fh": 24, "cols": 4, "row": 0, "row_up": 16, "n": 4, "fps": 8.0},
 		"attack": {"tex": T_KNIGHT_CB, "fw": 32, "fh": 32, "cols": 4, "row": 0, "row_up": 5, "n": 4, "fps": 10.0, "sc": 1.25},
 	},
-	"royal_giant_body": {  # 刘晔霹雳车：占位=orc_soldier 巨蓝
-		"scale": 2.0, "tint": Color(0.68, 0.76, 1.0), "ph": true,
-		"walk":   {"tex": T_ORC_SOLDIER, "fw": 16, "fh": 16, "cols": 4, "row": 0, "n": 4, "fps": 6.0},
-		"attack": {"tex": T_ORC_SOLDIER, "fw": 16, "fh": 16, "cols": 4, "row": 8, "n": 4, "fps": 7.0},
+	"royal_giant_body": {  # 刘晔霹雳车：0721 正式素材（炮车静帧：row=正面朝下/敌方、row_up=背面朝上/我方；
+		# 无侧脸不 mirror；攻击表现=石弹弹道+落点爆花（impact），死亡=火焰爆炸（机关车炸毁）。
+		"scale": 1.6, "shadow": true, "natural": true,
+		"walk": {"tex": T_SANGUO_RG, "fw": 152, "fh": 200, "cols": 1, "row": 0, "row_up": 1,
+				"n": 1, "fps": 1.0},
+		"fx": {
+			"impact": {"tex": T_SANGUO_RG_FX_IMPACT, "fw": 152, "fh": 152, "n": 6, "dur": 0.35, "size": 2.2},
+			"death":  {"tex": T_SANGUO_RG_FX_DEATH, "fw": 232, "fh": 232, "n": 4, "dur": 0.5, "size": 2.6},
+			"hit":    {"tex": T_SANGUO_FX_HIT, "fw": 176, "fh": 96, "n": 5, "dur": 0.28, "size": 1.8},
+		},
 	},
 	"hog_rider_body": {  # 虎豹破城骑：占位=knight 染深蓝（走帧加速表冲锋）
 		"scale": 1.4, "tint": Color(0.62, 0.72, 0.98), "ph": true,
@@ -264,10 +297,14 @@ const DB := {
 		"walk":   {"tex": T_FIRE_SKULL, "fw": 16, "fh": 16, "cols": 4, "row": 0, "n": 4, "fps": 8.0},
 		"attack": {"tex": T_FIRE_SKULL, "fw": 16, "fh": 16, "cols": 4, "row": 4, "n": 4, "fps": 9.0},
 	},
-	"inferno_dragon_body": {  # 蜀汉火脉机关龙：占位=fire_skull 染青绿
-		"scale": 1.6, "tint": Color(0.62, 0.95, 0.7), "ph": true,
-		"walk":   {"tex": T_FIRE_SKULL, "fw": 16, "fh": 16, "cols": 4, "row": 0, "n": 4, "fps": 8.0},
-		"attack": {"tex": T_FIRE_SKULL, "fw": 16, "fh": 16, "cols": 4, "row": 4, "n": 4, "fps": 9.0},
+	"inferno_dragon_body": {  # 蜀汉火脉机关龙：0721 正式素材（飞行整高裁切；远程龙火弹道+落点爆花）
+		"scale": 1.7, "natural": true, "mirror": true,
+		"walk":   {"tex": T_SANGUO_DRAGON, "fw": 272, "fh": 272, "cols": 10, "row": 0, "n": 10, "fps": 12.0},
+		"attack": {"tex": T_SANGUO_DRAGON_ATK, "fw": 272, "fh": 272, "cols": 7, "row": 0, "n": 7, "fps": 10.0},
+		"fx": {
+			"impact": {"tex": T_SANGUO_DRAGON_FX_IMPACT, "fw": 112, "fh": 112, "n": 7, "dur": 0.3, "size": 1.3},
+			"hit":    {"tex": T_SANGUO_FX_HIT, "fw": 176, "fh": 96, "n": 5, "dur": 0.28, "size": 1.6},
+		},
 	},
 	"golemite_body": {  # 石心攻城兽：占位=orc 染石灰
 		"scale": 1.15, "tint": Color(0.75, 0.75, 0.82), "ph": true,
@@ -295,7 +332,9 @@ static func placeholder_ids() -> Array:
 # 取某单位某状态当前帧：返回 {tex, src:Rect2, scale:float, tint:Color}，无则空字典（调用方回退白膜）。
 # owner_id==0(玩家,朝上) 且该状态有 row_up → 用背面行；否则用 row（朝下/正面）。
 # tint = 占位染色（默认 WHITE=不染）；战斗侧与队伍色相乘、卡面侧作自然色用。
-static func frame(unit_id: String, state: String, owner_id: int, t: float) -> Dictionary:
+# face_up：正/背双行素材的朝向覆写（0721 霹雳车炮口朝目标）——-1=按 owner 默认（0 朝上/背面），
+# 1=强制背面(朝上)，0=强制正面(朝下)。仅对有 row_up 的条目生效。
+static func frame(unit_id: String, state: String, owner_id: int, t: float, face_up: int = -1) -> Dictionary:
 	if not DB.has(unit_id):
 		return {}
 	var u: Dictionary = DB[unit_id]
@@ -307,7 +346,7 @@ static func frame(unit_id: String, state: String, owner_id: int, t: float) -> Di
 	var n: int = maxi(1, int(s["n"]))
 	var fps: float = float(s["fps"])
 	var row: int = int(s["row"])
-	if owner_id == 0 and s.has("row_up"):
+	if s.has("row_up") and (face_up == 1 or (face_up == -1 and owner_id == 0)):
 		row = int(s["row_up"])
 	var col: int = int(t * fps) % n
 	var sc: float = float(u.get("scale", 1.2)) * float(s.get("sc", 1.0))
@@ -317,6 +356,39 @@ static func frame(unit_id: String, state: String, owner_id: int, t: float) -> Di
 			"mirror": bool(u.get("mirror", false)),
 			"tint": u.get("tint", Color.WHITE), "shadow": bool(u.get("shadow", false)),
 			"natural": bool(u.get("natural", false))}
+
+# 投射物绘制（双场景共用，0721 收口）：kind 对应 PROJ_KIND 值；dir=飞行方向（屏幕系），
+# 朝左素材（dragonfire）按 dir.x 镜像；t 传场景 _elapsed 做帧循环/旋转。
+static func draw_projectile(c: CanvasItem, kind: String, pos: Vector2, dir: Vector2, ur: float, t: float) -> void:
+	match kind:
+		"arrow":
+			var d: Vector2 = dir.normalized() if dir.length() > 0.001 else Vector2.UP
+			var perp := Vector2(-d.y, d.x)
+			var col := Color(0.93, 0.88, 0.6)
+			c.draw_line(pos - d * ur * 0.7, pos, col, 2.0)
+			c.draw_line(pos, pos - d * 5.0 + perp * 3.0, col, 1.5)
+			c.draw_line(pos, pos - d * 5.0 - perp * 3.0, col, 1.5)
+		"bolt":
+			c.draw_circle(pos, ur * 0.24, Color(0.8, 0.55, 1.0, 0.85))
+			c.draw_circle(pos, ur * 0.12, Color(1, 1, 1, 0.95))
+		"fireball":
+			var fi: int = 1 + int(t * 14.0) % 7   # 飞行帧循环（避开末尾炸帧）
+			var sz: float = ur * 1.0
+			c.draw_texture_rect_region(T_PROJ_FIREBALL, Rect2(pos - Vector2(sz, sz) * 0.5, Vector2(sz, sz)),
+					Rect2(fi * PROJ_FB_FPX, 0, PROJ_FB_FPX, PROJ_FB_FPX))
+		"stone":     # 霹雳车石弹：翻滚旋转
+			var ss: float = ur * 0.8
+			c.draw_set_transform(pos, t * 9.0, Vector2.ONE)
+			c.draw_texture_rect(T_PROJ_STONE, Rect2(-Vector2(ss, ss) * 0.5, Vector2(ss, ss)), false)
+			c.draw_set_transform(Vector2.ZERO)
+		"dragonfire":  # 机关龙火弹：3 帧循环；素材朝左，向右飞水平镜像
+			var di: int = int(t * 12.0) % 3
+			var dw: float = ur * 1.1
+			var dh: float = dw * 64.0 / 80.0
+			c.draw_set_transform(pos, 0.0, Vector2(-1.0 if dir.x > 0.0 else 1.0, 1.0))
+			c.draw_texture_rect_region(T_PROJ_DRAGONFIRE, Rect2(Vector2(-dw, -dh) * 0.5, Vector2(dw, dh)),
+					Rect2(di * 80, 0, 80, 64))
+			c.draw_set_transform(Vector2.ZERO)
 
 # 单位配套战斗特效（attack=攻击刀光/hit=受击星芒/death=死亡消散；无配套返回空字典）。
 # 返回 {tex, fw, fh, n, dur, size}；battle_scene 按 dur 推进度、size(直径 tile)×ur 定屏幕尺寸。

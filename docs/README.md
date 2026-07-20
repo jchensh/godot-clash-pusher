@@ -80,6 +80,9 @@
 | design/card_progression_design_doc.html | 卡牌升级/升阶系统策划案（HTML 单页） |
 | [ART_ASSETS.md](ART_ASSETS.md) | 美术圣经（单位帧网格/塔/FX/地形 as-built，V3 定稿） |
 | [DESIGN_V5_S7_UI.md](DESIGN_V5_S7_UI.md) | S7 UI 整合设计稿（已施工完，存档） |
+| [DESIGN_KINGDOM.md](DESIGN_KINGDOM.md) | 王国领地系统设计（城建经营×城防养成维度，KAN-112；K0~K5 已施工、K6 IAP 待排） |
+| [HANDOFF_WIN_2026-07-19.md](HANDOFF_WIN_2026-07-19.md) | Mac→Windows 换机交接（2026-07-19：环境差异/gcp_test 铁律/本轮进度/验收欠账） |
+| [SECURITY_ANTICHEAT.md](SECURITY_ANTICHEAT.md) | 防作弊体系总览（服务器权威/PVP 对帐/PVE 证据链重放/加速器盘点；残余风险台账 KAN-113） |
 | [BALANCE_V5_S8.md](BALANCE_V5_S8.md) | S8d 平衡报告（AI-vs-AI 局限 + 曲线形状验证） |
 
 ## 环境 / 杂记
@@ -87,6 +90,7 @@
 | 文档 | 一句话 |
 |---|---|
 | [ENVIRONMENT.md](ENVIRONMENT.md) | 环境搭建 + MCP 安装注册 + 画面验收协议 |
+| [HANDOFF_MAC_2026-07-16.md](HANDOFF_MAC_2026-07-16.md) | Windows→Mac 换机交接快照：环境搭建步骤 + 项目状态 + 已知欠账（写作当天快照，以 HISTORY.md 为准） |
 | [V4_S3_g_real_machine_test.md](V4_S3_g_real_machine_test.md) | V4-S3g 两台真机对战测试记录（存档） |
 | [NOTE_image_gen_mcp_pipeline.md](NOTE_image_gen_mcp_pipeline.md) | AI 生图素材管线（§7 已实战：骑士攻击帧 banana 出图+确定性后处理+入库全记录） |
 | [../net/README.md](../net/README.md) / [../server/README.md](../server/README.md) | net 层 / Go 服务端模块内说明 |

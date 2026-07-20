@@ -32,7 +32,13 @@ static func replay(config, stage_id: String, deck: Array, progress: Dictionary,
 	if config == null or deck.is_empty():
 		return _err("bad input: no config/deck")
 	var m = MatchScript.new(config)
-	m.setup_stage(stage_id, deck, _pd(progress))
+	# K4：progress 的 "_towers" 保留键 = 王国城防塔加成（服务器 PveStart 写入）——
+	# 与客户端 sim 同源注入，别当卡牌解析。
+	var towers: Dictionary = {}
+	var tw = progress.get("_towers")
+	if typeof(tw) == TYPE_DICTIONARY:
+		towers = {"hp_pct": int(tw.get("hp_pct", 0)), "dmg_pct": int(tw.get("dmg_pct", 0))}
+	m.setup_stage(stage_id, deck, _pd(progress), towers)
 	if m.battle == null or m.battle.arena == null:
 		return _err("stage setup failed: %s" % stage_id)
 
@@ -98,6 +104,8 @@ static func replay(config, stage_id: String, deck: Array, progress: Dictionary,
 static func _pd(progress: Dictionary):
 	var pd = PlayerDataScript.new()
 	for cid in progress:
+		if String(cid).begins_with("_"):   # K4："_towers" 等保留键不是卡
+			continue
 		var e = progress[cid]
 		if typeof(e) != TYPE_DICTIONARY:
 			continue

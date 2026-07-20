@@ -826,6 +826,70 @@ class CardProgress:
 			return PB_ERR.PARSE_INCOMPLETE
 		return result
 	
+class TowerBonus:
+	extends RefCounted
+	func _init():
+		var service
+		
+		__hp_pct = PBField.new("hp_pct", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 1, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
+		service = PBServiceField.new()
+		service.field = __hp_pct
+		data[__hp_pct.tag] = service
+		
+		__dmg_pct = PBField.new("dmg_pct", PB_DATA_TYPE.INT32, PB_RULE.OPTIONAL, 2, true, DEFAULT_VALUES_3[PB_DATA_TYPE.INT32])
+		service = PBServiceField.new()
+		service.field = __dmg_pct
+		data[__dmg_pct.tag] = service
+		
+	var data = {}
+	
+	var __hp_pct: PBField
+	func has_hp_pct() -> bool:
+		if __hp_pct.value != null:
+			return true
+		return false
+	func get_hp_pct() -> int:
+		return __hp_pct.value
+	func clear_hp_pct() -> void:
+		data[1].state = PB_SERVICE_STATE.UNFILLED
+		__hp_pct.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
+	func set_hp_pct(value : int) -> void:
+		__hp_pct.value = value
+	
+	var __dmg_pct: PBField
+	func has_dmg_pct() -> bool:
+		if __dmg_pct.value != null:
+			return true
+		return false
+	func get_dmg_pct() -> int:
+		return __dmg_pct.value
+	func clear_dmg_pct() -> void:
+		data[2].state = PB_SERVICE_STATE.UNFILLED
+		__dmg_pct.value = DEFAULT_VALUES_3[PB_DATA_TYPE.INT32]
+	func set_dmg_pct(value : int) -> void:
+		__dmg_pct.value = value
+	
+	func _to_string() -> String:
+		return PBPacker.message_to_string(data)
+		
+	func to_bytes() -> PackedByteArray:
+		return PBPacker.pack_message(data)
+		
+	func from_bytes(bytes : PackedByteArray, offset : int = 0, limit : int = -1) -> int:
+		var cur_limit = bytes.size()
+		if limit != -1:
+			cur_limit = limit
+		var result = PBPacker.unpack_message(data, bytes, offset, cur_limit)
+		if result == cur_limit:
+			if PBPacker.check_required(data):
+				if limit == -1:
+					return PB_ERR.NO_ERRORS
+			else:
+				return PB_ERR.REQUIRED_FIELDS
+		elif limit == -1 && result > 0:
+			return PB_ERR.PARSE_INCOMPLETE
+		return result
+	
 class JoinRoomResp:
 	extends RefCounted
 	func _init():
@@ -887,6 +951,18 @@ class JoinRoomResp:
 		service.field = __side2_progress
 		service.func_ref = Callable(self, "add_side2_progress")
 		data[__side2_progress.tag] = service
+		
+		__side1_towers = PBField.new("side1_towers", PB_DATA_TYPE.MESSAGE, PB_RULE.OPTIONAL, 11, true, DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE])
+		service = PBServiceField.new()
+		service.field = __side1_towers
+		service.func_ref = Callable(self, "new_side1_towers")
+		data[__side1_towers.tag] = service
+		
+		__side2_towers = PBField.new("side2_towers", PB_DATA_TYPE.MESSAGE, PB_RULE.OPTIONAL, 12, true, DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE])
+		service = PBServiceField.new()
+		service.field = __side2_towers
+		service.func_ref = Callable(self, "new_side2_towers")
+		data[__side2_towers.tag] = service
 		
 	var data = {}
 	
@@ -1008,6 +1084,34 @@ class JoinRoomResp:
 		var element = CardProgress.new()
 		__side2_progress.value.append(element)
 		return element
+	
+	var __side1_towers: PBField
+	func has_side1_towers() -> bool:
+		if __side1_towers.value != null:
+			return true
+		return false
+	func get_side1_towers() -> TowerBonus:
+		return __side1_towers.value
+	func clear_side1_towers() -> void:
+		data[11].state = PB_SERVICE_STATE.UNFILLED
+		__side1_towers.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+	func new_side1_towers() -> TowerBonus:
+		__side1_towers.value = TowerBonus.new()
+		return __side1_towers.value
+	
+	var __side2_towers: PBField
+	func has_side2_towers() -> bool:
+		if __side2_towers.value != null:
+			return true
+		return false
+	func get_side2_towers() -> TowerBonus:
+		return __side2_towers.value
+	func clear_side2_towers() -> void:
+		data[12].state = PB_SERVICE_STATE.UNFILLED
+		__side2_towers.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+	func new_side2_towers() -> TowerBonus:
+		__side2_towers.value = TowerBonus.new()
+		return __side2_towers.value
 	
 	func _to_string() -> String:
 		return PBPacker.message_to_string(data)
@@ -1726,7 +1830,12 @@ enum MsgId {
 	ECONOMY_STAGE_CLEAR_REQ = 66,
 	ECONOMY_COLLECT_IDLE_REQ = 67,
 	PVE_START_REQ = 68,
-	PVE_REPORT_REQ = 69
+	PVE_REPORT_REQ = 69,
+	KINGDOM_STATE_REQ = 70,
+	KINGDOM_STATE_RESP = 71,
+	KINGDOM_UPGRADE_REQ = 72,
+	KINGDOM_COLLECT_REQ = 73,
+	KINGDOM_SPEEDUP_REQ = 74
 }
 
 enum ErrorCode {

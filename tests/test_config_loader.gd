@@ -151,6 +151,7 @@ func _server_files(loader) -> Dictionary:
 		"encounters.json": loader.encounters.duplicate(true),
 		"economy.json": loader.economy.duplicate(true),
 		"card_progression.json": loader.card_progression.duplicate(true),
+		"kingdom.json": loader.kingdom.duplicate(true),
 	}
 
 

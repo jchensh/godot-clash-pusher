@@ -55,7 +55,7 @@ var starterDeck = []string{"knight", "archers", "giant", "goblins", "minions", "
 // 限速（测试不真等墙钟）→ 喂一条玩家出兵。返回 (battle_id, 满足任意星目标的摘要)。
 func pveBattleFor(t *testing.T, repo *Repo, ctx context.Context, acc int64, stageID string, cfg *Config) (int64, PveSummary) {
 	t.Helper()
-	bid, err := repo.PveStart(ctx, acc, stageID, starterDeck, cfg)
+	bid, err := repo.PveStart(ctx, acc, stageID, starterDeck, cfg, 0, 0)
 	if err != nil {
 		t.Fatalf("pve start %s: %v", stageID, err)
 	}
@@ -278,7 +278,7 @@ func TestRepo_StageClear_RejectsSkip(t *testing.T) {
 	repo.Get(ctx, acc, cfg)
 
 	// 跳关在开战报到就被拒 → 拿不到 battle_id。
-	if _, err := repo.PveStart(ctx, acc, "stage_1_2", starterDeck, cfg); !errors.Is(err, ErrStageLocked) {
+	if _, err := repo.PveStart(ctx, acc, "stage_1_2", starterDeck, cfg, 0, 0); !errors.Is(err, ErrStageLocked) {
 		t.Fatalf("pve_start skip want ErrStageLocked, got %v", err)
 	}
 	// 就算伪造 battle_id 直接报 StageClear 也过不了（先撞线性解锁）。
@@ -313,7 +313,7 @@ func TestRepo_PveGuards(t *testing.T) {
 	okSum := PveSummary{DurationTicks: 600, DeployCount: 1, KingHpPermille: 1000}
 
 	// —— 秒推：刚 PveStart（不倒拨）就报通关 → 墙钟 < 15s 拒。
-	bid, err := repo.PveStart(ctx, acc, "stage_1_1", starterDeck, cfg)
+	bid, err := repo.PveStart(ctx, acc, "stage_1_1", starterDeck, cfg, 0, 0)
 	if err != nil {
 		t.Fatalf("pve start: %v", err)
 	}
@@ -326,7 +326,7 @@ func TestRepo_PveGuards(t *testing.T) {
 	}
 
 	// —— 无出兵：倒拨后但服务器没收到任何玩家指令的另一局 → 拒。
-	bid2, _ := repo.PveStart(ctx, acc, "stage_1_1", starterDeck, cfg)
+	bid2, _ := repo.PveStart(ctx, acc, "stage_1_1", starterDeck, cfg, 0, 0)
 	repo.db.Pool.Exec(ctx, `UPDATE pve_battles SET started_at = NOW() - INTERVAL '5 minutes' WHERE id=$1`, bid2)
 	if _, err := repo.StageClear(ctx, acc, "stage_1_1", 1, bid2, okSum, cfg); !errors.Is(err, ErrPveBattleInvalid) {
 		t.Fatalf("no-deploy clear want ErrPveBattleInvalid, got %v", err)
@@ -362,7 +362,7 @@ func TestRepo_PveGuards(t *testing.T) {
 
 	// —— 未解锁卡进卡组：golem（legendary 锁定）→ PveStart 拒。
 	badDeck := []string{"golem", "archers", "giant", "goblins", "minions", "fireball", "arrows", "zap"}
-	if _, err := repo.PveStart(ctx, acc, "stage_1_1", badDeck, cfg); !errors.Is(err, ErrPveBattleInvalid) {
+	if _, err := repo.PveStart(ctx, acc, "stage_1_1", badDeck, cfg, 0, 0); !errors.Is(err, ErrPveBattleInvalid) {
 		t.Fatalf("locked-card deck want ErrPveBattleInvalid, got %v", err)
 	}
 
@@ -378,91 +378,46 @@ func TestRepo_PveGuards(t *testing.T) {
 	}
 }
 
-// N6 挂机领取：服务器时钟结算。新号播种 last_collect=now（注册即计时）；
-// 把 last_collect 倒拨模拟过去时间 → CollectIdle 按服务器时间累计/封顶/发金币/刷新基准。
-func TestRepo_CollectIdle(t *testing.T) {
+// N6 挂机领取 → K3 弃用回归：CollectIdle 不再发金（铸币坊接管，单一产出源），
+// 只刷新 last_collect 基准。防「王国+旧挂机」双份领取。
+func TestRepo_CollectIdle_DeprecatedNoAccrual(t *testing.T) {
 	repo, cfg, acc := setupRepo(t)
 	ctx := context.Background()
 
-	// ① 新号 Get → 播种。idle_last_collect_ts 应≈now（注册即计时，非 0）。
+	// 新号 Get → 播种。idle_last_collect_ts 应≈now（注册即计时，非 0）。
 	st, err := repo.Get(ctx, acc, cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if st.IdleLastCollect <= 0 {
-		t.Fatalf("seeded idle_last_collect=%d (want >0, 注册即计时)", st.IdleLastCollect)
+		t.Fatalf("seeded idle_last_collect=%d (want >0)", st.IdleLastCollect)
 	}
 
-	// ② 新号未通关（highest 空）→ chapter 0 → rate 0。倒拨 10h 后领取仍是 0。
-	repo.db.Pool.Exec(ctx,
-		`UPDATE economy_state SET idle_last_collect_ts = $2 WHERE account_id=$1`,
-		acc, st.IdleLastCollect-36000) // -10h
-	st, err = repo.CollectIdle(ctx, acc, cfg)
-	if err != nil {
-		t.Fatalf("collect (no progress): %v", err)
-	}
-	if st.Gold != 0 {
-		t.Fatalf("no-progress collect gold=%d (want 0)", st.Gold)
-	}
-
-	// ③ 通关到 chapter 1（stage_1_2）→ rate 50/h。倒拨 2h → +100。
+	// 通关到 chapter 1 后倒拨 2h：旧口径会 +100，K3 后必须 +0。
 	mustClear(t, repo, ctx, acc, "stage_1_1", 1, cfg)
-	mustClear(t, repo, ctx, acc, "stage_1_2", 1, cfg) // highest=stage_1_2 (chapter 1)
-	repo.db.Pool.Exec(ctx,
-		`UPDATE economy_state SET idle_last_collect_ts = $2 WHERE account_id=$1`,
-		acc, st.IdleLastCollect-7200) // -2h
+	mustClear(t, repo, ctx, acc, "stage_1_2", 1, cfg)
 	st, _ = repo.Get(ctx, acc, cfg)
 	prevGold := st.Gold
 	lastBefore := st.IdleLastCollect
-	st, err = repo.CollectIdle(ctx, acc, cfg)
-	if err != nil {
-		t.Fatalf("collect chapter1 2h: %v", err)
-	}
-	if st.Gold != prevGold+100 {
-		t.Fatalf("chapter1 2h gold=%d (want %d)", st.Gold, prevGold+100)
-	}
-	if st.IdleLastCollect <= lastBefore {
-		t.Fatalf("last_collect not advanced: %d <= %d", st.IdleLastCollect, lastBefore)
-	}
-
-	// ④ 封顶：倒拨 100h（cap 8h）→ chapter1 rate 50 × 8 = 400。
 	repo.db.Pool.Exec(ctx,
 		`UPDATE economy_state SET idle_last_collect_ts = $2 WHERE account_id=$1`,
-		acc, st.IdleLastCollect-3600*100) // -100h
-	prevGold = st.Gold
-	st, _ = repo.CollectIdle(ctx, acc, cfg)
-	if st.Gold != prevGold+400 {
-		t.Fatalf("100h capped gold=%d (want %d)", st.Gold, prevGold+400)
+		acc, st.IdleLastCollect-7200)
+	st, err = repo.CollectIdle(ctx, acc, cfg)
+	if err != nil {
+		t.Fatalf("deprecated collect: %v", err)
 	}
-
-	// ⑤ 连续领取：刚领完立即再领 → elapsed≈0 → +0（无重复领）。
-	prevGold = st.Gold
-	st, _ = repo.CollectIdle(ctx, acc, cfg)
 	if st.Gold != prevGold {
-		t.Fatalf("immediate re-collect gold=%d (want %d, no double collect)", st.Gold, prevGold)
+		t.Fatalf("deprecated CollectIdle must not pay: gold %d → %d", prevGold, st.Gold)
+	}
+	if st.IdleLastCollect < lastBefore {
+		t.Fatalf("last_collect must advance to now, got %d < %d", st.IdleLastCollect, lastBefore)
 	}
 }
 
 // 改本地时钟无效验证：CollectIdle 用 time.Now()，客户端改 last_collect 入参无影响
-// （CollectIdle 无入参）；服务器只信自己存的 last_collect + 自己的 now。
-func TestRepo_CollectIdle_ServerAuthoritative(t *testing.T) {
-	repo, cfg, acc := setupRepo(t)
-	ctx := context.Background()
-	repo.Get(ctx, acc, cfg)
-	mustClear(t, repo, ctx, acc, "stage_1_1", 1, cfg)
-	mustClear(t, repo, ctx, acc, "stage_1_2", 1, cfg)
 
-	// 倒拨 3h，领取应 +150（chapter1 50/h × 3）。
-	repo.db.Pool.Exec(ctx, `UPDATE economy_state SET idle_last_collect_ts = (SELECT EXTRACT(EPOCH FROM NOW())::bigint - 10800) WHERE account_id=$1`, acc)
-	st, _ := repo.Get(ctx, acc, cfg)
-	prevGold := st.Gold
-	st, _ = repo.CollectIdle(ctx, acc, cfg)
-	if st.Gold <= prevGold {
-		t.Fatalf("server-authoritative collect should add gold: %d -> %d", prevGold, st.Gold)
-	}
-}
-
-// shard_drop 概率掉落：stage_1_2 skeletons 30% 掉 1。重复刷很多次应至少掉过一次。
+// shard_drop 概率掉落：重复刷 stage_1_2 很多次应至少掉过一次。掉哪张卡从配置读
+// （A4/KAN-93 起各关按本章 shard_cards 轮转池发卡，勿钉魔数卡 id）。
 func TestRepo_StageClear_ShardDrop(t *testing.T) {
 	repo, cfg, acc := setupRepo(t)
 	ctx := context.Background()
@@ -477,10 +432,18 @@ func TestRepo_StageClear_ShardDrop(t *testing.T) {
 	for i := 0; i < 200; i++ {
 		mustClear(t, repo, ctx, acc, "stage_1_2", 1, cfg)
 	}
+	stage, _ := cfg.Stage("stage_1_2")
+	dropCard := ""
+	for cid := range stage.ShardDrop {
+		dropCard = cid
+	}
+	if dropCard == "" {
+		t.Fatal("stage_1_2 has no shard_drop in config")
+	}
 	st, _ := repo.Get(ctx, acc, cfg)
-	c, _ := cardOf(st, "skeletons")
-	// 200 次 30% ≈ 期望 60，远 > 首通 3；放宽下界确保掉落确有发生。
+	c, _ := cardOf(st, dropCard)
+	// 200 次 34% ≈ 期望 68，远 > 首通；放宽下界确保掉落确有发生。
 	if c.Shards < 20 {
-		t.Fatalf("skeletons shards after 200 repeats=%d (drop not firing?)", c.Shards)
+		t.Fatalf("%s shards after 200 repeats=%d (drop not firing?)", dropCard, c.Shards)
 	}
 }

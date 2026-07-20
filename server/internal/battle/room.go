@@ -46,6 +46,7 @@ type player struct {
 	side      int32 // 1 or 2
 	deck      []string
 	progress  []*pbbattle.CardProgress // per-card level/rank from economy_cards (KAN-76)
+	towers    *pbbattle.TowerBonus     // 王国城防塔加成 (K5)；nil = 无
 	summary   *pbcommon.ProfileSummary
 	send      chan []byte
 	connected bool
@@ -170,6 +171,8 @@ func (r *Room) joinRespFor(p *player) *pbbattle.JoinRoomResp {
 		// KAN-76: both sides receive BOTH progressions so the two clients build
 		// bit-identical Matches (lockstep). Reconnect replays this same resp.
 		Side1Progress: r.p1.progress, Side2Progress: r.p2.progress,
+		// K5: 双方王国城防（重连重放同一 resp 自动带上，与 progress 同语义）。
+		Side1Towers: r.p1.towers, Side2Towers: r.p2.towers,
 	}
 }
 

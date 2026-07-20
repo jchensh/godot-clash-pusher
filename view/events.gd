@@ -12,3 +12,8 @@ extends Node
 ## 解锁 / 通关发奖 / GM / 本地种子，全部收口在 _apply/seed_from_local 两个落地点。
 @warning_ignore("unused_signal")   # 总线信号天然由外部 emit（发射端在 EconomyStateCache）
 signal economy_changed(cache)
+
+## 王国领地服务器快照更新（载荷 = KingdomStateCache 本体；K2/DESIGN_KINGDOM）。
+## 发射端：net/kingdom_state_cache.gd `_apply`——refresh / 建造升级 / 收取 / 加速 全收口。
+@warning_ignore("unused_signal")   # 同上：发射端在 KingdomStateCache
+signal kingdom_changed(kingdom_cache)
