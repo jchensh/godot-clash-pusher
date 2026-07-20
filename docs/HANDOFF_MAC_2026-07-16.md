@@ -120,7 +120,8 @@ Windows 版 `CLAUDE.md` 里提到下载走代理（`HTTPS_PROXY=http://127.0.0.1
 **最近几轮做完的东西**（按时间倒序）：
 
 1. **首次公网部署验证通过**（release 分支，GCP 后端 `towerpushserver.jeffgame.tech` + Firebase
-   Web 前端 `towerpush.web.app`）：新玩家注册、PVE 反作弊全链路、经济发奖、真人双浏览器 PVP
+   Web 前端 `towerpush.web.app`〔⚠️ 该前端地址 2026-07-21 已弃用、Firebase 项目已删，
+   现行地址 = `tower-push-godot.web.app`，见 GCP_RELEASE_TLS.md〕）：新玩家注册、PVE 反作弊全链路、经济发奖、真人双浏览器 PVP
    对战全部实测通过。详细踩坑记录在 release 分支的 `HISTORY.md`「发布与打包」附录，
    **不在 master 上**（部署记录是 release 独有内容）。
 2. **首批正式 BGM**：菜单曲（Snowland 循环）+ 战斗双曲轮播（曲终随机换）+ 选卡曲（Heroic Demise），
