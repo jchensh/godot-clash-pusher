@@ -23,14 +23,19 @@ func _build() -> void:
 	PixelUI.add_background(self)
 	_title(tr("settings_title"), 150, 60)
 	# H2 横版战斗实验开关（PLAN_V5_HBATTLE；文案暂硬编码中文对齐 GM 区先例，H5 正式化再进 i18n）
-	_center_label("战斗版式（实验 · 仅 PvE）", 250, 28, PixelUI.COL_MUTED)
+	_center_label("战斗版式（实验 · 仅 PvE）", 222, 28, PixelUI.COL_MUTED)
 	var lay := GameStateScript.battle_layout()
-	_layout_button("竖版（默认）", "portrait", 150, 296, lay != "landscape")
-	_layout_button("横版（实验）", "landscape", 390, 296, lay == "landscape")
-	_center_label(tr("settings_language"), 420, 34, PixelUI.COL_MUTED)
+	_layout_button("竖版（默认）", "portrait", 150, 260, lay != "landscape")
+	_layout_button("横版（实验）", "landscape", 390, 260, lay == "landscape")
+	# L1 全局横屏模式（2026-07-26 用户拍板：竖屏保留默认，切换即改窗口方向并重建页面）
+	_center_label("屏幕方向（实验 · 全局）", 384, 28, PixelUI.COL_MUTED)
+	var ui_lay := GameStateScript.ui_layout()
+	_ui_layout_button("竖屏（默认）", "portrait", 150, 422, ui_lay != "landscape")
+	_ui_layout_button("横屏（实验）", "landscape", 390, 422, ui_lay == "landscape")
+	_center_label(tr("settings_language"), 546, 34, PixelUI.COL_MUTED)
 	var cur := I18n.current_locale()
-	_lang_button(tr("lang_zh"), "zh", 150, 500, cur.begins_with("zh"))
-	_lang_button(tr("lang_en"), "en", 390, 500, cur.begins_with("en"))
+	_lang_button(tr("lang_zh"), "zh", 150, 584, cur.begins_with("zh"))
+	_lang_button(tr("lang_en"), "en", 390, 584, cur.begins_with("en"))
 	_logout_button(1170)   # KAN-109：登出 → 回登录页换号/创新号
 	_back_button(1080)
 
@@ -113,6 +118,28 @@ func _set_layout(lay: String) -> void:
 	AudioManager.play_sfx("ui_button_press")
 	GameStateScript.set_battle_layout(lay)
 	Router.reload()   # 重建本页刷新按钮态（对齐 _set_lang）
+
+func _ui_layout_button(text: String, lay: String, x: float, y: float, active: bool) -> void:
+	var btn := Button.new()
+	btn.text = text
+	btn.position = Vector2(x, y)
+	btn.size = Vector2(180, 104)
+	btn.pivot_offset = Vector2(90, 52)
+	btn.focus_mode = Control.FOCUS_NONE
+	PixelUI.style_button(btn, "gold" if active else "stone", 24)
+	btn.pressed.connect(_set_ui_layout.bind(lay))
+	btn.button_down.connect(_scale_to.bind(btn, 0.96))
+	btn.button_up.connect(_scale_to.bind(btn, 1.0))
+	add_child(btn)
+
+func _set_ui_layout(lay: String) -> void:
+	AudioManager.play_sfx("ui_button_press")
+	if GameStateScript.ui_layout() == lay:
+		return
+	Log.i("[V5][settings] 屏幕方向切换 → %s" % lay)
+	GameStateScript.set_ui_layout(lay)
+	Router.apply_ui_layout()   # 立即换窗口方向/逻辑分辨率
+	Router.reload()            # 以新视口重建本页
 
 func _lang_button(text: String, loc: String, x: float, y: float, active: bool) -> void:
 	var btn := Button.new()

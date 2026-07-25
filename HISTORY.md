@@ -736,3 +736,13 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
 ### 运维 · Web 前端域名更替（📌 环境事实，2026-07-21）
 
 **旧 Firebase 前端 `towerpush.web.app` 弃用，项目已整体删除**；现行 Web 前端 = **`https://tower-push-godot.web.app`**（后端不变 `towerpushserver.jeffgame.tech`）。历史文档/交接/HISTORY 里出现的旧地址一律作废。权威地址记录在 [docs/deployment/GCP_RELEASE_TLS.md](docs/deployment/GCP_RELEASE_TLS.md) 文件头；本批（0721 素材+王国系统）已由 Antigravity 部署至新地址（部署侧记录归 release 分支「发布与打包」附录）。
+
+### V5 · 全局横屏模式 L1+L2：设置开关/窗口切换 + SubViewport 页面适配壳（✅ 真人验收 5 项通过，2026-07-26）
+
+用户拍板：竖屏保留为默认，设置页做横竖切换开关（重启进程可接受；实际做到免重启）。L2 呈现方案选 B=居中立柱+滚动（A=整页缩放否决：像素字缩到 56% 不可读）。
+
+- **L1 设置与切换**：`GameState.ui_layout()`（settings.cfg [display]，与战斗版式 battle_layout 独立，单测锁互不覆盖）；`Router.apply_ui_layout()` 唯一切换收口——逻辑分辨率 720×1280↔1280×720（40px/格 密度不变）+ 桌面改窗口尺寸居中 / 移动端 screen_set_orientation / Web 只改逻辑分辨率；开机在 Router._ready 自动应用。设置页新增「屏幕方向（实验 · 全局）」区块（原区块压行距腾位）。
+- **L2 适配壳 `view/ui/landscape_wrap.gd`**：页面装进 720×1280 SubViewport——**页面代码零改动零感知**（get_viewport_rect/绝对坐标/DragScroll 照旧）。菜单页 scroll 模式=居中 720 立柱+竖向裁剪窗，滚轮任意位置可滚（前置 _input 拦截，按铁律查 UI.modal_open() 让路）+ 两侧边距拖拽 + 右缘滚动指示条；战斗类 fit 模式=整页等比缩放居中（L3 真横屏投影前的过渡）。Router 横屏下手动实例化包壳（竖屏仍走引擎原生换场，零风险）+ **开机首屏补壳**（引擎直启不走 goto 的边角）。
+- **弹窗/toast 层适配**：modal 基类横屏下把按竖版设计坐标摆的绝对定位子面板平移居中（全铺型锚点子节点不动）；UI.toast y 参数按视口高度等比换算+宽度取实际视口。
+- **踩坑**：编辑器托管的调试窗口不受游戏 window_set_size 控制（Godot 4.4+ 内嵌机制）——F5 验收把 Game 面板 Embedded Window Sizing 调 Stretch to Fit 体验最好；导出包/真机不受影响。
+- **测试**：客户端 **435/435**（+3 ui_layout 持久化独立性 / +3 壳几何：子视口画布·滚动钳制·fit 缩放居中）；gdlint 绿；MCP 实跑自检横屏立柱+滚轮滚动 OK 后交真人。**真人验收 5 项全过（2026-07-26）**：横屏首屏立柱/设置页滚到底返回/切回竖屏零残留/弹窗位置/战斗过渡态。
