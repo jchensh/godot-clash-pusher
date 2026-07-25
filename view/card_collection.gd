@@ -29,6 +29,7 @@ var _sort_key := "rarity"
 var _sort_asc := true                 # 记忆上次选择；默认稀有度升序（寻常→无双）
 var _key_btns := {}
 var _dir_btn: Button
+var _land := false                    # L4 原生横屏：顶带 + 4 列网格
 
 func _ready() -> void:
 	AudioManager.play_music("music_main_menu")
@@ -39,13 +40,16 @@ func _ready() -> void:
 	await _bootstrap()
 
 func _build_static() -> void:
+	_land = GameStateScript.ui_layout() == "landscape"
 	var bg := TextureRect.new()
 	bg.texture = BG_TEX
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
-
+	if _land:
+		_build_static_land()
+		return
 	_wallet_holder = Control.new()
 	_wallet_holder.position = Vector2(80, 24)
 	_wallet_holder.size = Vector2(560, 44)
@@ -69,6 +73,54 @@ func _build_static() -> void:
 	scroll.add_child(_grid)
 
 	_back_button(1168)
+
+# —— L4 横屏骨架：顶带(返回/标题/状态/钱包) + 排序条一行 + 卡片 4 列网格 ——
+func _build_static_land() -> void:
+	var strip := Panel.new()
+	strip.size = Vector2(1280, 72)
+	strip.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("16110c"), 3, Color("2b1e12")))
+	strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(strip)
+	var back := Button.new()
+	back.text = "← 返回"
+	back.position = Vector2(12, 10)
+	back.size = Vector2(120, 52)
+	back.focus_mode = Control.FOCUS_NONE
+	PixelUI.style_button(back, "stone", 22)
+	back.pressed.connect(_on_back)
+	add_child(back)
+	var t := Label.new()
+	t.text = "养成"
+	t.position = Vector2(156, 18)
+	t.size = Vector2(160, 36)
+	t.add_theme_font_size_override("font_size", 30)
+	t.add_theme_color_override("font_color", PixelUI.COL_GOLD)
+	add_child(t)
+	_status = Label.new()
+	_status.text = "连接中…"
+	_status.position = Vector2(330, 26)
+	_status.size = Vector2(300, 24)
+	_status.add_theme_font_size_override("font_size", 18)
+	_status.add_theme_color_override("font_color", PixelUI.COL_HINT)
+	add_child(_status)
+	_wallet_holder = Control.new()
+	_wallet_holder.position = Vector2(706, 14)   # wallet_bar 560 宽右贴边
+	_wallet_holder.size = Vector2(560, 44)
+	_wallet_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_wallet_holder)
+	_build_sort_bar(84)
+	var scroll := ScrollContainer.new()
+	scroll.position = Vector2(12, 140)
+	scroll.size = Vector2(1256, 568)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.scroll_deadzone = 16
+	add_child(scroll)
+	DragScroll.attach(scroll)
+	_grid = GridContainer.new()
+	_grid.columns = 4
+	_grid.add_theme_constant_override("h_separation", 16)
+	_grid.add_theme_constant_override("v_separation", 16)
+	scroll.add_child(_grid)
 
 func _bootstrap() -> void:
 	var session = GameStateScript.session()

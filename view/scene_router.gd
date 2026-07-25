@@ -147,7 +147,8 @@ func _switch_scene(path: String) -> int:
 	return OK
 
 # L4 起原生横屏页面白名单：已按 mockup 实装横屏布局的页面不再包壳，逐页迁移逐页加。
-const LANDSCAPE_NATIVE := ["res://view/main_menu.tscn", "res://view/stage_map.tscn"]
+const LANDSCAPE_NATIVE := ["res://view/main_menu.tscn", "res://view/stage_map.tscn",
+	"res://view/deck_builder.tscn", "res://view/card_collection.tscn"]
 
 # 返回包壳模式；"" = 不包壳（场景自适配横屏）。⚠️ net_battle_scene 也含 "battle_scene"
 # 子串，判断顺序要先网络后单机。
