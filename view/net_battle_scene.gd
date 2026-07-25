@@ -413,7 +413,8 @@ func _draw() -> void:
 
 # —— 地形（0715 整图 BG 特征对齐；BG_ENABLED=false 回退 V3-7b-4 逐格 tile）——
 func _draw_terrain(a) -> void:
-	if BG_ENABLED:
+	# 无河桥场地回退瓦片（对齐 battle_scene 0726 防越界保护）。
+	if BG_ENABLED and a.bridges.size() >= 2:
 		_draw_bg_image(a)
 	else:
 		_draw_terrain_tiles(a)
@@ -717,41 +718,10 @@ func _draw_elixir() -> void:
 	var lp = _local_player()
 	if lp == null:
 		return
-	var e = lp.elixir
-	var amt: float = e.get_amount()
-	var mx: int = maxi(1, int(round(float(e.maximum) if "maximum" in e else 10.0)))
-	var full: bool = e.is_full()
-	var y := _vh - HUD_BOTTOM_H + 10.0
-	var x0 := 16.0
-	var next_w := 104.0
-	var total_w := _vw - 32.0 - next_w
-	var gap := 3.0
-	var pip_w: float = (total_w - gap * (mx - 1)) / mx
-	for i in mx:
-		var px := x0 + i * (pip_w + gap)
-		draw_rect(Rect2(px, y, pip_w, 20.0), Color(0.10, 0.05, 0.12, 0.85))
-		var fillf: float = clampf(amt - float(i), 0.0, 1.0)
-		if fillf > 0.0:
-			var col := COL_ELIXIR
-			if full:
-				col = COL_ELIXIR.lerp(Color(1, 0.85, 1), (0.5 + 0.5 * sin(_elapsed * 8.0)) * 0.6)
-			draw_rect(Rect2(px, y, pip_w * fillf, 20.0), col)
-	_text(Vector2(x0 + 4, y + 16.0), "%d" % e.get_int(), Color.WHITE, 14)
-	_draw_next_chip(_vw - next_w - 4.0, y - 2.0, next_w - 6.0, 24.0)
-
-func _draw_next_chip(x: float, y: float, w: float, h: float) -> void:
-	var lp = _local_player()
-	if lp == null:
-		return
 	var nx = lp.deck.peek_next()
-	if nx == null:
-		return
-	draw_rect(Rect2(x, y, w, h), Color(0, 0, 0, 0.4))
-	_text(Vector2(x + 5, y + 10), tr("hud_next"), Color(0.7, 0.7, 0.7), 10)
-	_text(Vector2(x + 5, y + h - 4), _short(tr("card_" + str(nx)), 9), Color.WHITE, 11)
-	var cost: int = lp.card_cost(nx)
-	draw_circle(Vector2(x + w - 12, y + h * 0.5), 8.0, COL_ELIXIR)
-	_text(Vector2(x + w - 15, y + h * 0.5 + 4.0), "%d" % cost, Color.WHITE, 11)
+	HudWidgets.draw_elixir_row(self, _font, lp.elixir,
+			"" if nx == null else str(nx), 0 if nx == null else lp.card_cost(nx),
+			0.0, _vw, _vh - HUD_BOTTOM_H + 10.0, _elapsed)
 
 
 func _hp_color(ratio: float) -> Color:

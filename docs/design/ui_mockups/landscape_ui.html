@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>横屏 UI 布局 mockup（L4 评审稿）</title>
+<style>
+/* 横屏 mockup 独立样式（1280×720 逻辑画布，缩放显示）；配色对齐 PixelUI 夜色系。 */
+:root { --s: 0.62; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #23262e; color: #dfe3ea; font-family: "Microsoft YaHei", sans-serif; padding: 24px; }
+h1 { font-size: 20px; margin-bottom: 4px; }
+h2 { font-size: 16px; margin: 26px 0 8px; color: #ecb94e; }
+.sub { color: #9aa3b2; font-size: 13px; margin-bottom: 14px; max-width: 900px; line-height: 1.6; }
+.frame { width: calc(1280px * var(--s)); height: calc(720px * var(--s)); position: relative; flex: none;
+         border-radius: 18px; overflow: hidden; border: 5px solid #0b0d11; box-shadow: 0 10px 34px rgba(0,0,0,.5); }
+.canvas { width: 1280px; height: 720px; transform: scale(var(--s)); transform-origin: 0 0; position: relative;
+          background: #100c18; }
+.cap { color: #9aa3b2; font-size: 13px; margin: 8px 0 4px; }
+.panel { position: absolute; background: #241c30; border: 3px solid #3a3352; border-radius: 10px; }
+.gold { background: linear-gradient(180deg,#f5cf6f,#ecb94e 60%,#c9922e); color: #2c1f06; border-color: #3a2a08; }
+.stone { background: #3d3654; color: #e7decb; }
+.dim { background: #2a2440; color: #6f6888; }
+.lbl { position: absolute; color: #e7decb; font-weight: 700; }
+.tag { position: absolute; background: rgba(236,185,78,.14); border: 2px dashed #ecb94e; color: #ecb94e;
+       font-size: 15px; padding: 2px 8px; border-radius: 6px; z-index: 9; }
+.center { display: flex; align-items: center; justify-content: center; text-align: center; }
+.field { position: absolute; background: linear-gradient(90deg,#3e7a52 0%,#58a05e 49%,#4b8ea0 50%,#58a05e 51%,#3e7a52 100%); border: 3px solid #223; }
+</style>
+</head>
+<body>
+<h1>全局横屏模式 · 原生横屏 UI mockup（评审稿 2026-07-26）</h1>
+<p class="sub">目标：替换 L2「竖版立柱+滚动」过渡态，做真正的横屏布局。设计原则沿用像素画风 +
+科学 UI/UX（拇指区/不遮挡/按下反馈）：<b>竖屏的「上下堆叠」在横屏改为「左导航 · 中主体 · 右辅助」三栏</b>；
+页签从底部横排改为左侧竖排导航栏（Switch/掌机惯例，双手握持拇指区）；所有页面共用此骨架，逐页填充。</p>
+
+<h2>① 主界面（main_menu 横屏版）</h2>
+<div class="frame"><div class="canvas">
+  <!-- 顶栏 -->
+  <div class="panel" style="left:0;top:0;width:1280px;height:72px;border-radius:0"></div>
+  <div class="panel stone" style="left:12px;top:8px;width:300px;height:56px"></div>
+  <div class="lbl" style="left:24px;top:22px">🗡 jeff · 杯 0（名片）</div>
+  <div class="panel stone" style="left:850px;top:10px;width:170px;height:52px"></div>
+  <div class="lbl" style="left:862px;top:24px;font-size:15px">🪙 23,234</div>
+  <div class="panel stone" style="left:1032px;top:10px;width:140px;height:52px"></div>
+  <div class="lbl" style="left:1044px;top:24px;font-size:15px">💎 2,017</div>
+  <div class="panel stone center" style="left:1184px;top:10px;width:84px;height:52px">设置</div>
+
+  <!-- 左侧页签导航栏（替代竖屏底部五页签） -->
+  <div class="panel" style="left:0;top:72px;width:120px;height:648px;border-radius:0"></div>
+  <div class="panel dim center"   style="left:12px;top:96px; width:96px;height:96px">商店</div>
+  <div class="panel stone center" style="left:12px;top:208px;width:96px;height:96px">卡牌</div>
+  <div class="panel gold center"  style="left:12px;top:320px;width:96px;height:96px"><b>主页</b></div>
+  <div class="panel stone center" style="left:12px;top:432px;width:96px;height:96px">王国</div>
+  <div class="panel dim center"   style="left:12px;top:544px;width:96px;height:96px">宫廷</div>
+  <div class="tag" style="left:130px;top:600px">页签=左竖排导航栏（当前页金色高亮；灰=未开放）</div>
+
+  <!-- 中央：章节主视觉 + 三大入口 -->
+  <div class="panel" style="left:150px;top:100px;width:760px;height:380px"></div>
+  <div class="lbl center" style="left:150px;top:220px;width:760px;font-size:34px;color:#ecb94e">第1章 · 黄巾之乱</div>
+  <div class="lbl center" style="left:150px;top:280px;width:760px;font-size:16px;color:#a79fc0">章节主视觉（点击进闯关）· 闯关进度 4/100</div>
+  <div class="panel" style="left:150px;top:430px;width:560px;height:22px"></div>
+  <div class="panel gold" style="left:150px;top:430px;width:120px;height:22px"></div>
+  <div class="panel stone center" style="left:150px;top:520px;width:230px;height:150px">布阵<br>(组卡)</div>
+  <div class="panel gold center"  style="left:412px;top:504px;width:236px;height:166px;font-size:22px"><b>国王征途</b></div>
+  <div class="panel stone center" style="left:680px;top:520px;width:230px;height:150px">对战<br>(PVP)</div>
+  <div class="tag" style="left:412px;top:474px">主 CTA 居中放大（拇指区：双手握持右手可及）</div>
+
+  <!-- 右栏：挂机金库 + 探险 -->
+  <div class="panel" style="left:930px;top:100px;width:330px;height:280px"></div>
+  <div class="lbl" style="left:950px;top:120px;color:#ecb94e">挂机金库</div>
+  <div class="lbl" style="left:950px;top:156px;font-size:14px;color:#a79fc0">+400 金币可领</div>
+  <div class="panel gold center" style="left:950px;top:300px;width:290px;height:60px">领 取</div>
+  <div class="panel" style="left:930px;top:400px;width:330px;height:270px"></div>
+  <div class="lbl" style="left:950px;top:420px;color:#ecb94e">探险 · 活动轨</div>
+  <div class="lbl" style="left:950px;top:456px;font-size:14px;color:#6f6888">敬请期待</div>
+</div></div>
+<p class="cap">主界面：左导航（五页签竖排）· 中主体（章节主视觉+三大入口）· 右辅助（挂机/活动）。无滚动，一屏放下。</p>
+
+<h2>② 列表页通用骨架（以闯关图 stage_map 为例；卡牌图鉴/王国/设置同款）</h2>
+<div class="frame"><div class="canvas">
+  <div class="panel" style="left:0;top:0;width:1280px;height:72px;border-radius:0"></div>
+  <div class="panel stone center" style="left:12px;top:10px;width:110px;height:52px">← 返回</div>
+  <div class="lbl" style="left:150px;top:22px;font-size:22px;color:#ecb94e">国王征途</div>
+  <div class="panel stone" style="left:1030px;top:10px;width:140px;height:52px"></div>
+  <div class="lbl" style="left:1042px;top:24px;font-size:15px">🪙 23,234</div>
+
+  <!-- 左：章节纵列（可滚动） -->
+  <div class="panel" style="left:0;top:72px;width:300px;height:648px;border-radius:0"></div>
+  <div class="panel gold center"  style="left:14px;top:96px;width:272px;height:88px">第1章 黄巾之乱</div>
+  <div class="panel stone center" style="left:14px;top:196px;width:272px;height:88px">第2章 董卓乱政</div>
+  <div class="panel dim center"   style="left:14px;top:296px;width:272px;height:88px">第3章 🔒</div>
+  <div class="panel dim center"   style="left:14px;top:396px;width:272px;height:88px">第4章 🔒</div>
+  <div class="tag" style="left:14px;top:500px">左=章节导航列（纵向滚动）</div>
+
+  <!-- 右：关卡网格（4×2 大格，纵向滚动） -->
+  <div class="panel stone center" style="left:330px;top:100px;width:210px;height:200px">1-1 ⭐⭐⭐</div>
+  <div class="panel stone center" style="left:560px;top:100px;width:210px;height:200px">1-2 ⭐⭐</div>
+  <div class="panel stone center" style="left:790px;top:100px;width:210px;height:200px">1-3 ⭐</div>
+  <div class="panel gold center"  style="left:1020px;top:100px;width:210px;height:200px"><b>1-4 挑战</b></div>
+  <div class="panel dim center"   style="left:330px;top:330px;width:210px;height:200px">1-5 🔒</div>
+  <div class="panel dim center"   style="left:560px;top:330px;width:210px;height:200px">1-6 🔒</div>
+  <div class="panel dim center"   style="left:790px;top:330px;width:210px;height:200px">1-7 🔒</div>
+  <div class="panel dim center"   style="left:1020px;top:330px;width:210px;height:200px">1-8 🔒</div>
+  <div class="tag" style="left:330px;top:560px">右=内容网格：竖屏 2 列改横屏 4 列（同一份数据源，只换排布参数）</div>
+</div></div>
+<p class="cap">通用骨架：顶栏（返回+标题+货币）· 左导航列 · 右内容网格。竖屏单列滚动 → 横屏双栏。</p>
+
+<h2>③ 战斗横屏（本轮已实装口径，供确认）</h2>
+<div class="frame"><div class="canvas">
+  <div class="panel" style="left:0;top:0;width:1280px;height:54px;border-radius:0"></div>
+  <div class="lbl" style="left:20px;top:16px;font-size:15px;color:#7fb0ff">我方 👑👑</div>
+  <div class="lbl center" style="left:540px;top:14px;width:200px;font-size:18px">2:09</div>
+  <div class="lbl" style="left:1150px;top:16px;font-size:15px;color:#ff8f8f">敌方 👑</div>
+  <div class="field" style="left:208px;top:56px;width:864px;height:486px"></div>
+  <div class="lbl center" style="left:208px;top:250px;width:864px;color:#eaf7ff;font-size:18px">
+    战场 864×486（27px/格）· 我左敌右 · 顶栏/手牌带之外，永不被遮挡</div>
+  <div class="tag" style="left:16px;top:300px;width:160px">左留边 208px<br>（名片/战斗日志候选位）</div>
+  <div class="tag" style="left:1088px;top:300px;width:160px">右留边 208px<br>（表情/投降按钮候选位）</div>
+  <div class="panel" style="left:0;top:544px;width:1280px;height:176px;border-radius:0"></div>
+  <div class="panel" style="left:296px;top:552px;width:560px;height:22px;background:#57345f"></div>
+  <div class="lbl" style="left:872px;top:552px;font-size:13px;color:#a79fc0">下一张 · 江东机关蜂 ②</div>
+  <div class="panel stone center" style="left:296px;top:588px;width:150px;height:120px">孔明熏天灯 ⑤</div>
+  <div class="panel stone center" style="left:462px;top:588px;width:150px;height:120px">魏武箭阵 ③</div>
+  <div class="panel stone center" style="left:628px;top:588px;width:150px;height:120px">青州悍卒 ⑤</div>
+  <div class="panel stone center" style="left:794px;top:588px;width:150px;height:120px">黄盖火龙鸢 ④</div>
+  <div class="tag" style="left:20px;top:600px">底带全宽实底、独立于地图；<br>卡面仍居中 720（可及性）</div>
+</div></div>
+<p class="cap">战斗：顶栏 54 + 场地区（864×486 居中，两侧留边做装饰/扩展位）+ 底部手牌带 176。已实装，此图为最终口径确认。</p>
+</body>
+</html>

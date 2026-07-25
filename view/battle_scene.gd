@@ -250,9 +250,11 @@ func _ready() -> void:
 	else:
 		Log.i("[V5][battle] 模式=自由 关=%s" % GameStateScript.level_id)
 		match_obj.setup(GameStateScript.level_id, GameStateScript.player_deck)
-	# H2 横版实验开关：仅 PvE 生效；战役/新手引导强制竖版（教程高亮是竖版语义，且新手不吃实验特性）。
+	# H2 横版实验开关：仅 PvE 生效；L3 全局横屏模式下战斗一律真横版投影——
+	# 唯新手教程锁竖版（高亮矩形是竖版语义；Router 会给教程战斗包 fit 壳保竖版画布）。
 	var pve_free: bool = (campaign == null or campaign.is_over()) and not GameStateScript.tutorial
-	_landscape = pve_free and GameStateScript.battle_layout() == "landscape"
+	_landscape = ((GameStateScript.ui_layout() == "landscape" and not GameStateScript.tutorial)
+			or (pve_free and GameStateScript.battle_layout() == "landscape"))
 	Log.i("[V5][battle] 版式=%s" % ("横版(实验·我左敌右)" if _landscape else "竖版"))
 	# 0716 首批 BGM：普通战斗 = 双曲轮播集（曲终随机换）；boss 关保留专属曲意图（素材未到位时自动落轮播）
 	if battle_music_id != "music_battle_boss" or not AudioManager.play_music(battle_music_id):
@@ -302,13 +304,23 @@ func _process(delta: float) -> void:
 # 逻辑坐标恒为竖版语义：x∈[0,grid_w) 横向、y∈[0,grid_h) 纵深、y 小=敌方（logic 层不知道屏幕）。
 # H2 横版（_landscape，PLAN_V5_HBATTLE §2）：敌右我左，sx←(grid_h-y)、sy←x；
 # 「屏幕向上 / 部署半场 / footprint」等方向语义全在本区块内翻转，区块外零方向假设。
+# L3 HUD 布局块：竖版=全宽；横版=居中 720 浮层（手牌/圣水/下一张/名片共用锚定）。
+func _hud_w() -> float:
+	return minf(_vw, 720.0)
+
+func _hud_x0() -> float:
+	return (_vw - _hud_w()) * 0.5
+
 func _field_rect() -> Rect2:
 	var zone := Rect2(0.0, TOPBAR_H, _vw, _vh - TOPBAR_H - HUD_BOTTOM_H)
 	var a = match_obj.battle.arena
 	if _landscape:
-		# H2 临时投影区（H5 切横屏窗口前）：竖屏场区内按 grid_h:grid_w 满宽 letterbox 垂直居中。
-		var h: float = zone.size.x * float(a.grid_w) / float(a.grid_h)
-		return Rect2(zone.position.x, zone.position.y + (zone.size.y - h) * 0.5, zone.size.x, h)
+		# L3b（0726 验收反馈：选卡区必须独立、不得压地图）：横版在「顶栏下、手牌板上」的
+		# 区内取整方格居中——1280×720 下 zone=1280×490 → 27px/格、场地 864×486，两侧留边
+		# 露深底；竖屏窗口跑横版（旧实验开关）同公式自动 letterbox。
+		var cell := floorf(minf(zone.size.x / a.grid_h, zone.size.y / a.grid_w))
+		var fsz := Vector2(cell * a.grid_h, cell * a.grid_w)
+		return Rect2(zone.position + (zone.size - fsz) * 0.5, fsz)
 	# 竖版 32×32 正方形屏幕格（KAN-107，2026-07-13）：格边长取整数、letterbox 居中——
 	# 720×1280 基准下 = 32px/格、场地 576×1024，两侧各 72px 装饰边栏（露 COL_BG 深底，边栏素材另出）。
 	# 逻辑 18×32 与 _t2s/_s2t 契约不变；美术出图画布随之改 576×1024（1 格=32×32 整除）。
@@ -384,7 +396,8 @@ func _draw() -> void:
 	_draw_combat_fx()
 	_draw_drag_ghost(a)
 	_draw_topbar()
-	draw_rect(Rect2(0, _vh - HUD_BOTTOM_H, _vw, HUD_BOTTOM_H), COL_PANEL)   # 底部 HUD 底板
+	# 底部 HUD 底板：横竖同款全宽实底（L3b：选卡区独立成带，恒不压地图；卡面仍居中 720 块）。
+	draw_rect(Rect2(0, _vh - HUD_BOTTOM_H, _vw, HUD_BOTTOM_H), COL_PANEL)
 	_draw_elixir()
 	_draw_cards()
 	_draw_end_screen()
@@ -406,7 +419,8 @@ func _draw_online_pause() -> void:
 			HORIZONTAL_ALIGNMENT_CENTER, panel.size.x, 20, COL_CROWN)
 
 func _draw_terrain(a) -> void:
-	if BG_ENABLED:
+	# 整图 BG 依赖双桥特征对齐——无河桥场地（V1 遗留关）回退瓦片铺地（0726 自检实锤 level_01 越界崩）。
+	if BG_ENABLED and a.bridges.size() >= 2:
 		_draw_bg_image(a)
 	else:
 		for ty in range(a.grid_h):
@@ -666,38 +680,10 @@ func _draw_crown(c: Vector2, s: float, col: Color, filled: bool) -> void:
 		draw_polyline(line, Color(col.r, col.g, col.b, 0.35), 1.5)
 
 func _draw_elixir() -> void:
-	var e = match_obj.player.elixir
-	var amt: float = e.get_amount()
-	var mx: int = maxi(1, int(round(float(e.maximum) if "maximum" in e else 10.0)))
-	var full: bool = e.is_full()
-	var y := _vh - HUD_BOTTOM_H + 10.0
-	var x0 := 16.0
-	var next_w := 104.0
-	var total_w := _vw - 32.0 - next_w
-	var gap := 3.0
-	var pip_w: float = (total_w - gap * (mx - 1)) / mx
-	for i in mx:
-		var px := x0 + i * (pip_w + gap)
-		draw_rect(Rect2(px, y, pip_w, 20.0), Color(0.10, 0.05, 0.12, 0.85))   # 空槽
-		var fillf: float = clampf(amt - float(i), 0.0, 1.0)
-		if fillf > 0.0:
-			var col := COL_ELIXIR
-			if full:
-				col = COL_ELIXIR.lerp(Color(1, 0.85, 1), (0.5 + 0.5 * sin(_elapsed * 8.0)) * 0.6)
-			draw_rect(Rect2(px, y, pip_w * fillf, 20.0), col)
-	_text(Vector2(x0 + 4, y + 16.0), "%d" % e.get_int(), Color.WHITE, 14)
-	_draw_next_chip(_vw - next_w - 4.0, y - 2.0, next_w - 6.0, 24.0)
-
-func _draw_next_chip(x: float, y: float, w: float, h: float) -> void:
 	var nx = match_obj.player.deck.peek_next()
-	if nx == null:
-		return
-	draw_rect(Rect2(x, y, w, h), Color(0, 0, 0, 0.4))
-	_text(Vector2(x + 5, y + 10), tr("hud_next"), Color(0.7, 0.7, 0.7), 10)
-	_text(Vector2(x + 5, y + h - 4), _short(tr("card_" + str(nx)), 9), Color.WHITE, 11)
-	var cost: int = match_obj.player.card_cost(nx)
-	draw_circle(Vector2(x + w - 12, y + h * 0.5), 8.0, COL_ELIXIR)
-	_text(Vector2(x + w - 15, y + h * 0.5 + 4.0), "%d" % cost, Color.WHITE, 11)
+	HudWidgets.draw_elixir_row(self, _font, match_obj.player.elixir,
+			"" if nx == null else str(nx), 0 if nx == null else match_obj.player.card_cost(nx),
+			_hud_x0(), _hud_w(), _vh - HUD_BOTTOM_H + 10.0, _elapsed)
 
 func _hp_color(ratio: float) -> Color:
 	if ratio > 0.5:
@@ -1084,10 +1070,10 @@ func _pop_scale(id: int) -> float:
 # —— HUD：手牌 ——
 func _build_cards() -> void:
 	var n := 4
-	var bw := (_vw - 16.0 * (n + 1)) / n
+	var bw := (_hud_w() - 16.0 * (n + 1)) / n
 	for i in n:
 		var b := Button.new()
-		b.position = Vector2(16.0 + i * (bw + 16.0), _vh - HUD_BOTTOM_H + 40.0)
+		b.position = Vector2(_hud_x0() + 16.0 + i * (bw + 16.0), _vh - HUD_BOTTOM_H + 40.0)
 		b.size = Vector2(bw, HUD_BOTTOM_H - 56.0)
 		b.button_down.connect(_on_card_down.bind(i))
 		b.button_up.connect(_on_card_up.bind(i))
@@ -1386,7 +1372,7 @@ func _build_player_nameplate() -> void:
 	var session = GameStateScript.session()
 	var np := HudWidgets.nameplate(session.nickname(), session.avatar_card_id(), loader, -1, true)
 	var vp := get_viewport_rect().size
-	np.position = Vector2(16, vp.y - HUD_BOTTOM_H - 78.0)
+	np.position = Vector2((vp.x - minf(vp.x, 720.0)) * 0.5 + 16.0, vp.y - HUD_BOTTOM_H - 78.0)
 	np.z_index = 50
 	add_child(np)
 

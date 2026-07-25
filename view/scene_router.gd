@@ -66,11 +66,14 @@ func _wrap_boot_scene() -> void:
 	if cs == null or cs.get_script() == LandscapeWrap:
 		return
 	var path := cs.scene_file_path
+	var mode := _wrap_mode(path)
+	if mode == "":
+		return   # 战斗场景自适配横屏，不包壳
 	get_tree().root.remove_child(cs)   # 原地收养进壳（不重建场景，_ready 已跑过的状态保留）
-	var target: Node = LandscapeWrap.wrap(cs, "fit" if _is_battle_path(path) else "scroll")
+	var target: Node = LandscapeWrap.wrap(cs, mode)
 	get_tree().root.add_child(target)
 	get_tree().current_scene = target
-	Log.i("[Router] 开机场景已包横屏壳（%s）" % path)
+	Log.i("[Router] 开机场景已包横屏壳（%s，%s）" % [path, mode])
 
 # —— 全局横屏模式（L1，2026-07-26）：窗口/方向/内容缩放的唯一切换收口 ——
 # 桌面=改窗口尺寸并居中；移动端=切屏幕方向；Web=只改逻辑分辨率（浏览器自己转）。
@@ -124,8 +127,9 @@ func goto(route: String, params: Dictionary = {}) -> void:
 	_busy = false
 	_flush_pending()   # 转场中重定向过 → 幕布保持黑、直接接力去终点（不闪屏）
 
-# L2 全局横屏：竖屏走引擎原生换场；横屏手动实例化 + LandscapeWrap 包壳
-# （菜单页=居中立柱滚动 scroll；战斗类=整页等比缩放 fit，L3 真横屏投影前的过渡）。
+# L2 全局横屏：竖屏走引擎原生换场；横屏手动实例化 + LandscapeWrap 包壳。
+# L3：单机战斗不包壳（battle_scene 自带真横屏满屏投影）；教程战斗例外包 fit 保竖版画布
+# （教程高亮是竖版语义）；联机/战役=fit 过渡（H6 另排）；菜单页=scroll 居中立柱。
 func _switch_scene(path: String) -> int:
 	if GameStateScript.ui_layout() != "landscape":
 		return get_tree().change_scene_to_file(path)
@@ -133,8 +137,8 @@ func _switch_scene(path: String) -> int:
 	if ps == null:
 		return ERR_CANT_OPEN
 	var page := ps.instantiate()
-	var mode := "fit" if _is_battle_path(path) else "scroll"
-	var target: Node = LandscapeWrap.wrap(page, mode)
+	var mode := _wrap_mode(path)
+	var target: Node = page if mode == "" else LandscapeWrap.wrap(page, mode)
 	var old := get_tree().current_scene
 	get_tree().root.add_child(target)
 	get_tree().current_scene = target
@@ -142,8 +146,19 @@ func _switch_scene(path: String) -> int:
 		old.queue_free()
 	return OK
 
-func _is_battle_path(path: String) -> bool:
-	return path.contains("battle_scene") or path.contains("campaign_scene")
+# L4 起原生横屏页面白名单：已按 mockup 实装横屏布局的页面不再包壳，逐页迁移逐页加。
+const LANDSCAPE_NATIVE := ["res://view/main_menu.tscn", "res://view/stage_map.tscn"]
+
+# 返回包壳模式；"" = 不包壳（场景自适配横屏）。⚠️ net_battle_scene 也含 "battle_scene"
+# 子串，判断顺序要先网络后单机。
+func _wrap_mode(path: String) -> String:
+	if path.ends_with("net_battle_scene.tscn") or path.contains("campaign_scene"):
+		return "fit"
+	if path.ends_with("battle_scene.tscn"):
+		return "fit" if GameStateScript.tutorial else ""
+	if path in LANDSCAPE_NATIVE:
+		return ""
+	return "scroll"
 
 # 重载当前路由（params 保留）。设置页换语言重建、战斗「再来一局」用。
 func reload() -> void:

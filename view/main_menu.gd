@@ -21,6 +21,7 @@ const MenuIcons := preload("res://view/ui/menu_icons.gd")
 
 const COL_BADGE := Color("e5453a")
 
+var _land := false             # L4 原生横屏（mockup landscape_ui.html ①：左导航/中主体/右辅助三栏）
 var _status: Label
 var _retry_btn: Button
 var _boot_ui: Control          # 登录期标题+状态（菜单建成后整体移除）
@@ -37,6 +38,7 @@ var _stage_sub: Label
 var _battle_sub: Label
 
 func _ready() -> void:
+	_land = GameStateScript.ui_layout() == "landscape"
 	AudioManager.play_music("music_main_menu")
 	AudioManager.stop_ambience()
 	_build_bg()
@@ -115,7 +117,10 @@ func _build_menu() -> void:
 	_build_rails()
 	_build_showpiece()
 	_build_cluster()
-	_build_tabbar()
+	if _land:
+		_build_navrail()   # 横屏：页签=左竖排导航栏（mockup ①）
+	else:
+		_build_tabbar()
 
 func _refresh_economy() -> void:
 	var session = GameStateScript.session()
@@ -132,22 +137,46 @@ func _refresh_economy() -> void:
 # ---------- 1 顶部：名片 + 货币 + 小钮 ----------
 func _build_top_row() -> void:
 	var session = GameStateScript.session()
+	if _land:   # 横屏：72px 顶带一行放齐（名片左 · 货币右 · 公告/设置角落）
+		var strip := Panel.new()
+		strip.size = Vector2(1280, 72)
+		strip.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("16110c"), 3, Color("2b1e12")))
+		strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(strip)
 	var np := HudWidgets.nameplate(session.nickname(), session.avatar_card_id(),
 			GameStateScript.config(), session.trophies(), true)
-	np.position = Vector2(20, 20)
+	np.position = Vector2(12, 4) if _land else Vector2(20, 20)
 	add_child(np)
 	_wallet_holder = Control.new()
-	_wallet_holder.position = Vector2(388, 24)
+	_wallet_holder.position = Vector2(790, 14) if _land else Vector2(388, 24)
 	_wallet_holder.size = Vector2(312, 44)
 	_wallet_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_wallet_holder)
 	_set_wallet(0, 0)
-	var notice := _pin_button("公告", Vector2(556, 84), Vector2(66, 60), _noop, "dark", 20)
+	var notice_pos := Vector2(1116, 10) if _land else Vector2(556, 84)
+	var notice_sz := Vector2(70, 52) if _land else Vector2(66, 60)
+	var notice := _pin_button("公告", notice_pos, notice_sz, _noop, "dark", 20)
 	notice.disabled = true   # 未开放，按示意图灰态占位
-	_pin_button("设置", Vector2(634, 84), Vector2(66, 60), _on_settings, "dark", 20)
+	_pin_button("设置", Vector2(1196, 10) if _land else Vector2(634, 84), notice_sz,
+			_on_settings, "dark", 20)
 
-# ---------- 2 左右活动轨 ----------
+# ---------- 2 活动轨：竖屏=左右两翼；横屏=右侧辅助栏（挂机卡 + 探险卡，mockup ①）----------
 func _build_rails() -> void:
+	if _land:
+		for card_y in [96.0, 400.0]:
+			var card := Panel.new()
+			card.position = Vector2(930, card_y)
+			card.size = Vector2(330, 280 if card_y < 200.0 else 270)
+			card.add_theme_stylebox_override("panel",
+					PixelUI.sbpixel(Color(0.09, 0.08, 0.06, 0.66), 3, Color("2b1e12")))
+			card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			add_child(card)
+		_idle_btn = _pin_button("挂机金库", Vector2(958, 128), Vector2(274, 88), _on_collect_idle, "gold", 24)
+		_idle_lbl = _rail_label("产出中…", Vector2(930, 236), 330)
+		var explore := _pin_button("探险", Vector2(958, 432), Vector2(274, 88), _noop, "stone", 24)
+		explore.disabled = true
+		_rail_label("敬请期待", Vector2(930, 540), 330)
+		return
 	_idle_btn = _pin_button("挂机\n金库", Vector2(24, 230), Vector2(96, 96), _on_collect_idle, "gold", 22)
 	_idle_lbl = _rail_label("产出中…", Vector2(4, 332), 136)
 	var explore := _pin_button("探险", Vector2(600, 230), Vector2(96, 96), _noop, "stone", 22)
@@ -169,8 +198,8 @@ func _rail_label(text: String, pos: Vector2, w: float) -> Label:
 # ---------- 3 中央章节主视觉 + 闯关进度 ----------
 func _build_showpiece() -> void:
 	var art := Button.new()   # 主视觉整块可点 → 闯关地图（美术位后补正式图）
-	art.position = Vector2(120, 340)
-	art.size = Vector2(480, 300)
+	art.position = Vector2(150, 96) if _land else Vector2(120, 340)
+	art.size = Vector2(760, 352) if _land else Vector2(480, 300)
 	art.focus_mode = Control.FOCUS_NONE
 	art.add_theme_stylebox_override("normal",
 			PixelUI.sbpixel(Color(0.16, 0.12, 0.20, 0.72), 3, Color("4a3a14")))
@@ -180,11 +209,11 @@ func _build_showpiece() -> void:
 			PixelUI.sbpixel(Color(0.12, 0.09, 0.16, 0.78), 3, Color("4a3a14")))
 	art.pressed.connect(_on_pressed.bind(_on_stage))
 	add_child(art)
-	_chapter_lbl = _child_label(art, "第 — 章", 96, 44, PixelUI.COL_GOLD)
-	_child_label(art, "章节主视觉 · 美术位占位（点击进闯关）", 168, 18, PixelUI.COL_HINT)
+	_chapter_lbl = _child_label(art, "第 — 章", 110 if _land else 96, 44, PixelUI.COL_GOLD)
+	_child_label(art, "章节主视觉 · 美术位占位（点击进闯关）", 190 if _land else 168, 18, PixelUI.COL_HINT)
 	var bar := Panel.new()
-	bar.position = Vector2(160, 660)
-	bar.size = Vector2(400, 26)
+	bar.position = Vector2(250, 466) if _land else Vector2(160, 660)
+	bar.size = Vector2(560, 26) if _land else Vector2(400, 26)
 	bar.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("241c14"), 3, Color("2b1e12")))
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bar)
@@ -194,27 +223,34 @@ func _build_showpiece() -> void:
 	_prog_fill.color = Color("3f8ede")
 	_prog_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bar.add_child(_prog_fill)
-	_prog_txt = _center_label("闯关进度 — / —", 692, 20, PixelUI.COL_PARCHMENT)
+	if _land:
+		_prog_txt = _rail_label("闯关进度 — / —", Vector2(250, 496), 560)
+		_prog_txt.add_theme_font_size_override("font_size", 20)
+	else:
+		_prog_txt = _center_label("闯关进度 — / —", 692, 20, PixelUI.COL_PARCHMENT)
 
 # ---------- 4 底部操作大簇 ----------
 func _build_cluster() -> void:
 	var panel := Panel.new()
-	panel.position = Vector2(26, 900)
-	panel.size = Vector2(668, 210)
+	panel.position = Vector2(138, 524) if _land else Vector2(26, 900)
+	panel.size = Vector2(784, 186) if _land else Vector2(668, 210)
 	panel.add_theme_stylebox_override("panel",
 			PixelUI.sbpixel(Color(0.09, 0.08, 0.06, 0.66), 3, Color("2b1e12")))
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(panel)
 	# 0718 用户定稿：布阵(原卡组) | 国王征途(原闯关，主 CTA) | 对战(天梯)。
-	var deck := _entry_button("布阵", "formation", Vector2(58, 922), Vector2(150, 166),
-			_on_deck, "stone", 28, 56.0)
+	var deck := _entry_button("布阵", "formation",
+			Vector2(158, 542) if _land else Vector2(58, 922),
+			Vector2(220, 150) if _land else Vector2(150, 166), _on_deck, "stone", 28, 56.0)
 	_deck_badge = _badge(deck, "8")
-	var stage := _entry_button("国王征途", "journey", Vector2(226, 912), Vector2(268, 186),
-			_on_stage, "gold", 40, 64.0)
-	_stage_sub = _child_label(stage, "下一关 —", 148, 20, PixelUI.COL_GOLD_INK)
-	var battle := _entry_button("对战", "battle", Vector2(512, 922), Vector2(150, 166),
-			_on_ladder, "stone", 28, 56.0)
-	_battle_sub = _child_label(battle, "— 杯", 128, 16, PixelUI.COL_MUTED)
+	var stage := _entry_button("国王征途", "journey",
+			Vector2(398, 532) if _land else Vector2(226, 912),
+			Vector2(264, 170) if _land else Vector2(268, 186), _on_stage, "gold", 40, 64.0)
+	_stage_sub = _child_label(stage, "下一关 —", 134 if _land else 148, 20, PixelUI.COL_GOLD_INK)
+	var battle := _entry_button("对战", "battle",
+			Vector2(682, 542) if _land else Vector2(512, 922),
+			Vector2(220, 150) if _land else Vector2(150, 166), _on_ladder, "stone", 28, 56.0)
+	_battle_sub = _child_label(battle, "— 杯", 116 if _land else 128, 16, PixelUI.COL_MUTED)
 
 # ---------- 5 底部页签（0718 用户定稿：商店 卡牌 王国 宫廷 外交，后三者待开发灰态）----------
 func _build_tabbar() -> void:
@@ -236,6 +272,27 @@ func _build_tabbar() -> void:
 		if btn.disabled:   # 待开发灰态（贴图 disabled 态与 icon 一起压暗）
 			btn.modulate = Color(1, 1, 1, 0.55)
 
+# ---------- 5b 横屏左导航栏（替代底部页签，mockup ①；主页=当前页金色高亮不可点）----------
+func _build_navrail() -> void:
+	var rail := Panel.new()
+	rail.position = Vector2(0, 72)
+	rail.size = Vector2(120, 648)
+	rail.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("16110c"), 3, Color("2b1e12")))
+	add_child(rail)
+	var defs: Array = [
+		["商店", "shop", _noop, true], ["卡牌", "cards", _on_progression, false],
+		["主页", "journey", _noop, false], ["王国", "kingdom", _on_kingdom, false],
+		["宫廷", "court", _noop, true], ["外交", "diplomacy", _noop, true],
+	]
+	for i in defs.size():
+		var d: Array = defs[i]
+		var kind := "gold" if i == 2 else "dark"   # 主页=当前页高亮
+		var btn := _entry_button(String(d[0]), String(d[1]), Vector2(12.0, 84.0 + i * 106.0),
+				Vector2(96.0, 96.0), d[2], kind, 20, 40.0)
+		btn.disabled = bool(d[3])
+		if btn.disabled:
+			btn.modulate = Color(1, 1, 1, 0.55)
+
 # ---------- 数据回填（economy_changed 订阅，框架地基#2）----------
 func _on_economy_changed(cache) -> void:
 	if cache != null:
@@ -250,7 +307,7 @@ func _populate(cache, config) -> void:
 	for sid in cache.stages:
 		if bool((cache.stages[sid] as Dictionary).get("cleared", false)):
 			cleared += 1
-	_prog_fill.size.x = 394.0 * (float(cleared) / float(maxi(1, total)))
+	_prog_fill.size.x = (554.0 if _land else 394.0) * (float(cleared) / float(maxi(1, total)))
 	_prog_txt.text = "闯关进度 %d / %d" % [cleared, total]
 	var next_id: String = sp.next_stage(cache)
 	if next_id != "":
@@ -281,7 +338,7 @@ func _show_retry() -> void:
 	if _retry_btn != null:
 		_retry_btn.disabled = false
 		return
-	_retry_btn = _menu_button("重试连接", 720, _on_retry, "gold", 30)
+	_retry_btn = _menu_button("重试连接", 540.0 if _land else 720.0, _on_retry, "gold", 30)
 
 func _clear_retry() -> void:
 	if _retry_btn != null:
@@ -397,7 +454,7 @@ func _mk_label(text: String, y: float, font_size: int, color: Color) -> Label:
 	var l := Label.new()
 	l.text = text
 	l.position = Vector2(0, y)
-	l.size = Vector2(720, float(font_size) * 2.6 + 16.0)
+	l.size = Vector2(1280.0 if _land else 720.0, float(font_size) * 2.6 + 16.0)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.add_theme_font_size_override("font_size", font_size)
 	l.add_theme_color_override("font_color", color)
@@ -410,7 +467,7 @@ func _center_label(text: String, y: float, font_size: int, color: Color) -> Labe
 	var l := Label.new()
 	l.text = text
 	l.position = Vector2(0, y)
-	l.size = Vector2(720, float(font_size) + 16.0)
+	l.size = Vector2(1280.0 if _land else 720.0, float(font_size) + 16.0)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.add_theme_font_size_override("font_size", font_size)
 	l.add_theme_color_override("font_color", color)
@@ -435,7 +492,8 @@ func _pin_button(
 	return btn
 
 func _menu_button(text: String, y: float, cb: Callable, kind: String = "stone", font_size: int = 34) -> Button:
-	return _pin_button(text, Vector2((720.0 - 384.0) / 2.0, y), Vector2(384.0, 112.0), cb, kind, font_size)
+	var w := 1280.0 if _land else 720.0
+	return _pin_button(text, Vector2((w - 384.0) / 2.0, y), Vector2(384.0, 112.0), cb, kind, font_size)
 
 func _scale_to(btn: Button, s: float) -> void:
 	create_tween().tween_property(btn, "scale", Vector2(s, s), 0.07)
