@@ -10,6 +10,7 @@ const ModalScript := preload("res://view/ui/modal.gd")   # KAN-109 登出确认�
 var _http: HTTPRequest
 var _gm_status: Label = null
 var _gm_buttons: Array = []
+var _land := false   # L4 原生横屏：左=设置组（版式/方向/语言/登出）· 右=GM 区三列
 
 func _ready() -> void:
 	_build()
@@ -20,31 +21,60 @@ func _ready() -> void:
 	_init_gm()        # async：登录 + 拉状态填充（fire-and-forget 协程）
 
 func _build() -> void:
+	_land = GameStateScript.ui_layout() == "landscape"
 	PixelUI.add_background(self)
+	var lay := GameStateScript.battle_layout()
+	var ui_lay := GameStateScript.ui_layout()
+	var cur := I18n.current_locale()
+	if _land:
+		# 横屏两栏：左=设置组（x 0..620，按钮对 x100/340）· 右=GM（_build_gm 分支）；返回在顶栏。
+		_zone_label(tr("settings_title"), 40, 20, 560, 34, PixelUI.COL_GOLD)
+		_zone_label("战斗版式（实验 · 仅 PvE）", 40, 84, 560, 24, PixelUI.COL_MUTED)
+		_layout_button("竖版（默认）", "portrait", 100, 120, lay != "landscape")
+		_layout_button("横版（实验）", "landscape", 340, 120, lay == "landscape")
+		_zone_label("屏幕方向（实验 · 全局）", 40, 248, 560, 24, PixelUI.COL_MUTED)
+		_ui_layout_button("竖屏（默认）", "portrait", 100, 284, ui_lay != "landscape")
+		_ui_layout_button("横屏（实验）", "landscape", 340, 284, ui_lay == "landscape")
+		_zone_label(tr("settings_language"), 40, 412, 560, 24, PixelUI.COL_MUTED)
+		_lang_button(tr("lang_zh"), "zh", 100, 448, cur.begins_with("zh"))
+		_lang_button(tr("lang_en"), "en", 340, 448, cur.begins_with("en"))
+		_logout_button(590)
+		_back_button(590)
+		return
 	_title(tr("settings_title"), 150, 60)
 	# H2 横版战斗实验开关（PLAN_V5_HBATTLE；文案暂硬编码中文对齐 GM 区先例，H5 正式化再进 i18n）
 	_center_label("战斗版式（实验 · 仅 PvE）", 222, 28, PixelUI.COL_MUTED)
-	var lay := GameStateScript.battle_layout()
 	_layout_button("竖版（默认）", "portrait", 150, 260, lay != "landscape")
 	_layout_button("横版（实验）", "landscape", 390, 260, lay == "landscape")
 	# L1 全局横屏模式（2026-07-26 用户拍板：竖屏保留默认，切换即改窗口方向并重建页面）
 	_center_label("屏幕方向（实验 · 全局）", 384, 28, PixelUI.COL_MUTED)
-	var ui_lay := GameStateScript.ui_layout()
 	_ui_layout_button("竖屏（默认）", "portrait", 150, 422, ui_lay != "landscape")
 	_ui_layout_button("横屏（实验）", "landscape", 390, 422, ui_lay == "landscape")
 	_center_label(tr("settings_language"), 546, 34, PixelUI.COL_MUTED)
-	var cur := I18n.current_locale()
 	_lang_button(tr("lang_zh"), "zh", 150, 584, cur.begins_with("zh"))
 	_lang_button(tr("lang_en"), "en", 390, 584, cur.begins_with("en"))
 	_logout_button(1170)   # KAN-109：登出 → 回登录页换号/创新号
 	_back_button(1080)
+
+# 横屏左栏分组标题（区别于 720 全宽居中的 _center_label）
+func _zone_label(text: String, x: float, y: float, w: float, fs: int, col: Color) -> Label:
+	var l := Label.new()
+	l.text = text
+	l.position = Vector2(x, y)
+	l.size = Vector2(w, float(fs) + 16.0)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.add_theme_font_size_override("font_size", fs)
+	l.add_theme_color_override("font_color", col)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(l)
+	return l
 
 
 # —— KAN-109 登出（换号/创新账号；开发阶段 username 裸登录）——
 func _logout_button(y: float) -> void:
 	var bw := 240.0
 	var btn := Button.new()
-	btn.position = Vector2((720.0 - bw) / 2.0, y)
+	btn.position = Vector2(100.0 if _land else (720.0 - bw) / 2.0, y)
 	btn.size = Vector2(bw, 80)
 	btn.text = "登出账号"
 	btn.pivot_offset = Vector2(bw / 2.0, 40.0)
@@ -161,7 +191,7 @@ func _set_lang(loc: String) -> void:
 func _back_button(y: float) -> void:
 	var bw := 240.0
 	var btn := Button.new()
-	btn.position = Vector2((720.0 - bw) / 2.0, y)
+	btn.position = Vector2(360.0 if _land else (720.0 - bw) / 2.0, y)
 	btn.size = Vector2(bw, 80)
 	btn.text = tr("btn_back")
 	btn.pivot_offset = Vector2(bw / 2.0, 40.0)
@@ -199,8 +229,12 @@ func _center_label(text: String, y: float, font_size: int, color: Color) -> Labe
 # —— GM 工具（开发作弊；始终开放，直接改服务器 DB）——
 
 func _build_gm() -> void:
-	_center_label("GM 工具（开发）", 630, 30, PixelUI.COL_GOLD)
-	_gm_status = _center_label("连接服务器中…", 680, 22, PixelUI.COL_MUTED)
+	if _land:
+		_zone_label("GM 工具（开发）", 640, 20, 620, 26, PixelUI.COL_GOLD)
+		_gm_status = _zone_label("连接服务器中…", 640, 60, 620, 20, PixelUI.COL_MUTED)
+	else:
+		_center_label("GM 工具（开发）", 630, 30, PixelUI.COL_GOLD)
+		_gm_status = _center_label("连接服务器中…", 680, 22, PixelUI.COL_MUTED)
 	# 王国 GM（__kingdom 标记 → /v5/kingdom/gm）：粮草/木石/完成施工（加速类总开关）。
 	var defs := [
 		["金币 +10000", {"add_gold": 10000}],
@@ -216,13 +250,13 @@ func _build_gm() -> void:
 		["完成王国施工", {"__kingdom": {"finish_builds": true}}],
 		["重置王国", {"__kingdom": {"reset": true}}],
 	]
-	var col_w := 216.0
-	var bh := 68.0
+	var col_w := 196.0 if _land else 216.0
+	var bh := 64.0 if _land else 68.0
 	for i in defs.size():
 		var col: int = i % 3
 		var row: int = i / 3
-		var x := 20.0 + float(col) * (col_w + 16.0)
-		var y := 720.0 + float(row) * (bh + 10.0)
+		var x := (648.0 + float(col) * (col_w + 12.0)) if _land else (20.0 + float(col) * (col_w + 16.0))
+		var y := (108.0 + float(row) * (bh + 10.0)) if _land else (720.0 + float(row) * (bh + 10.0))
 		_gm_button(String(defs[i][0]), defs[i][1], x, y, col_w, bh)
 
 func _gm_button(text: String, ops: Dictionary, x: float, y: float, w: float, h: float) -> void:

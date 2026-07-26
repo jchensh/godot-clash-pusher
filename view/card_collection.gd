@@ -238,6 +238,18 @@ func _card_tile(cid: String, cache, config) -> Control:
 	tile.add_child(_tile_label(tr("card_" + cid), Vector2(126, 26), 22, PixelUI.COL_PARCHMENT, 160))
 	# 稀有度
 	tile.add_child(_tile_label(_rarity_zh(rarity), Vector2(126, 58), 16, bd.lightened(0.2), 160))
+	# 费用药丸（0726 验收反馈：图鉴卡面补圣水费）——紫底金字，压肖像左上角
+	var cost_bg := Panel.new()
+	cost_bg.position = Vector2(10, 14)
+	cost_bg.size = Vector2(36, 36)
+	cost_bg.add_theme_stylebox_override("panel",
+			PixelUI.sbpixel(Color(0.80, 0.33, 0.96), 3, Color(0.35, 0.10, 0.45)))
+	cost_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tile.add_child(cost_bg)
+	var cost_lbl := _tile_label(str(int(config.get_card(cid).get("elixir_cost", 0))),
+			Vector2(10, 20), 22, Color.WHITE, 36)
+	cost_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tile.add_child(cost_lbl)
 	if unlocked:
 		tile.add_child(_tile_label("Lv.%d" % int(st.get("level", 1)), Vector2(126, 92), 22, PixelUI.COL_GOLD, 160))
 		var pips := HudWidgets.rank_pips(int(st.get("rank", 1)), _max_rank(config), 14.0)

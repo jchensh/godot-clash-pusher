@@ -57,6 +57,25 @@ const SLOTS := {
 	"watchtower": {"pos": Vector2(510, 1140), "w": 110.0},
 }
 const PLAZA := Vector2(360, 700)   # 中央广场（路网与小人巡游枢纽）
+# —— L4 原生横屏（1280×720）：王城顶中、生产两翼、城防近前门，广场居中 ——
+const SLOTS_LAND := {
+	"keep": {"pos": Vector2(640, 330), "w": 280.0},
+	"farm": {"pos": Vector2(210, 430), "w": 200.0},
+	"workshop": {"pos": Vector2(1070, 440), "w": 210.0},
+	"granary": {"pos": Vector2(170, 640), "w": 130.0},
+	"mint": {"pos": Vector2(1090, 668), "w": 175.0},
+	"wall": {"pos": Vector2(500, 692), "w": 190.0},
+	"watchtower": {"pos": Vector2(806, 690), "w": 110.0},
+}
+const PLAZA_LAND := Vector2(640, 500)
+const TREE_DECO_LAND := [
+	[0, Vector2(70, 200), 88.0], [1, Vector2(1210, 210), 92.0],
+	[2, Vector2(380, 180), 76.0], [0, Vector2(930, 176), 80.0],
+]
+var _land := false
+var _slots_map: Dictionary = SLOTS
+var _plaza: Vector2 = PLAZA
+var _trees: Array = TREE_DECO
 
 # —— 巡游小人（占位=战斗单位走路帧；数量/速度纯表现，与逻辑无关）——
 const WALKER_IDS := ["squire_body", "goblin_body", "archer_body", "barbarian_body", "knight_body"]
@@ -76,6 +95,11 @@ var _def_lbl: Label
 var _collect_btn: Button
 
 func _ready() -> void:
+	_land = GameStateScript.ui_layout() == "landscape"
+	if _land:
+		_slots_map = SLOTS_LAND
+		_plaza = PLAZA_LAND
+		_trees = TREE_DECO_LAND
 	AudioManager.play_music("music_main_menu")
 	_font = load("res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf")
 	_build_paths()
@@ -91,13 +115,13 @@ func _ready() -> void:
 # ---------- 路网/小人（纯表现）----------
 func _build_paths() -> void:
 	var seen := {}
-	for b in SLOTS:
-		var from: Vector2 = (SLOTS[b]["pos"] as Vector2) + Vector2(0, -6)
+	for b in _slots_map:
+		var from: Vector2 = (_slots_map[b]["pos"] as Vector2) + Vector2(0, -6)
 		# L 型：先横到广场 x，再纵到广场 y。
 		var cx := int(from.x / CELL)
 		var cy := int(from.y / CELL)
-		var px := int(PLAZA.x / CELL)
-		var py := int(PLAZA.y / CELL)
+		var px := int(_plaza.x / CELL)
+		var py := int(_plaza.y / CELL)
 		var x := cx
 		while x != px:
 			seen[Vector2i(x, cy)] = true
@@ -109,16 +133,16 @@ func _build_paths() -> void:
 	# 广场 2×2
 	for dx in [-1, 0]:
 		for dy in [-1, 0]:
-			seen[Vector2i(int(PLAZA.x / CELL) + dx, int(PLAZA.y / CELL) + dy)] = true
+			seen[Vector2i(int(_plaza.x / CELL) + dx, int(_plaza.y / CELL) + dy)] = true
 	_path_cells = seen.keys()
 
 func _spawn_walkers() -> void:
 	for i in WALKER_IDS.size():
-		var slot: Vector2 = (SLOTS[SLOTS.keys()[i % SLOTS.size()]]["pos"] as Vector2)
+		var slot: Vector2 = (_slots_map[_slots_map.keys()[i % _slots_map.size()]]["pos"] as Vector2)
 		_walkers.append({
 			"uid": WALKER_IDS[i],
 			"pos": slot + Vector2(0, 14),
-			"target": PLAZA + Vector2(randf_range(-30, 30), randf_range(-20, 20)),
+			"target": _plaza + Vector2(randf_range(-30, 30), randf_range(-20, 20)),
 			"speed": randf_range(WALKER_SPEED_MIN, WALKER_SPEED_MAX),
 			"at_plaza": false,
 		})
@@ -132,11 +156,11 @@ func _process(delta: float) -> void:
 		if d.length() < 6.0:
 			# 到站：广场 ↔ 随机建筑门口 交替（贴着 L 路网观感即可，直线巡游）。
 			if bool(w["at_plaza"]):
-				var b: String = SLOTS.keys()[randi() % SLOTS.size()]
-				w["target"] = (SLOTS[b]["pos"] as Vector2) + Vector2(randf_range(-24, 24), randf_range(6, 22))
+				var b: String = _slots_map.keys()[randi() % _slots_map.size()]
+				w["target"] = (_slots_map[b]["pos"] as Vector2) + Vector2(randf_range(-24, 24), randf_range(6, 22))
 				w["at_plaza"] = false
 			else:
-				w["target"] = PLAZA + Vector2(randf_range(-40, 40), randf_range(-24, 24))
+				w["target"] = _plaza + Vector2(randf_range(-40, 40), randf_range(-24, 24))
 				w["at_plaza"] = true
 			continue
 		w["pos"] = pos + d.normalized() * float(w["speed"]) * delta
@@ -147,11 +171,11 @@ func _draw() -> void:
 	_draw_terrain()
 	var kd = GameStateScript.kingdom()
 	var items: Array = []   # [ground_y, seq, kind, payload]
-	for b in SLOTS:
-		items.append([(SLOTS[b]["pos"] as Vector2).y, items.size(), "b", b])
+	for b in _slots_map:
+		items.append([(_slots_map[b]["pos"] as Vector2).y, items.size(), "b", b])
 	for w in _walkers:
 		items.append([(w["pos"] as Vector2).y + WALKER_BOX * 0.4, items.size(), "w", w])
-	for t in TREE_DECO:
+	for t in _trees:
 		items.append([(t[1] as Vector2).y, items.size(), "t", t])
 	items.sort_custom(func(p, q): return p[0] < q[0] if p[0] != q[0] else p[1] < q[1])
 	for it in items:
@@ -161,12 +185,12 @@ func _draw() -> void:
 			_draw_tree(it[3])
 		else:
 			_draw_walker(it[3])
-	for b in SLOTS:
+	for b in _slots_map:
 		_draw_building_overlay(String(b), kd)
 
 func _draw_terrain() -> void:
-	for ty in range(0, int(1280 / CELL) + 1):
-		for tx in range(0, int(720 / CELL) + 1):
+	for ty in range(0, int((720.0 if _land else 1280.0) / CELL) + 1):
+		for tx in range(0, int((1280.0 if _land else 720.0) / CELL) + 1):
 			var cell: Vector2i = GROUND_TILES[(tx * 7 + ty * 13) % GROUND_TILES.size()]
 			_blit(TEX_FLOOR, cell, Rect2(tx * CELL, ty * CELL, CELL + 1, CELL + 1))
 	for c in _path_cells:
@@ -186,9 +210,9 @@ func _draw_tree(t: Array) -> void:
 
 func _slot_rect(building: String) -> Rect2:
 	var tex: Texture2D = BUILDING_TEX[building]
-	var w: float = SLOTS[building]["w"]
+	var w: float = _slots_map[building]["w"]
 	var h: float = w * float(tex.get_height()) / float(tex.get_width())
-	var pos: Vector2 = SLOTS[building]["pos"]
+	var pos: Vector2 = _slots_map[building]["pos"]
 	return Rect2(pos.x - w * 0.5, pos.y - h, w, h)
 
 func _draw_building(building: String, kd) -> void:
@@ -209,7 +233,7 @@ func _draw_building(building: String, kd) -> void:
 # 顶饰（恒在建筑/小人之上）：名牌+等级 / 施工倒计时 / 待收取气泡 / 空地提示。
 func _draw_building_overlay(building: String, kd) -> void:
 	var rect := _slot_rect(building)
-	var pos: Vector2 = SLOTS[building]["pos"]
+	var pos: Vector2 = _slots_map[building]["pos"]
 	var lv := _level_of(building, kd)
 	var bcfg: Dictionary = (GameStateScript.config().kingdom.get("buildings", {}) as Dictionary).get(building, {})
 	var label: String = str(bcfg.get("display_zh", building)) + ((" Lv%d" % lv) if lv > 0 else "")
@@ -270,13 +294,13 @@ func _gui_input(event: InputEvent) -> void:
 	var p: Vector2 = (event as InputEventMouseButton).position
 	var best := ""
 	var best_y := -INF
-	for b in SLOTS:
+	for b in _slots_map:
 		var rect := _slot_rect(b)
 		rect.position.y -= 8.0   # 顶部留点余量（名牌/气泡也算命中）
 		rect.size.y += 34.0
-		if rect.has_point(p) and (SLOTS[b]["pos"] as Vector2).y > best_y:
+		if rect.has_point(p) and (_slots_map[b]["pos"] as Vector2).y > best_y:
 			best = b
-			best_y = (SLOTS[b]["pos"] as Vector2).y
+			best_y = (_slots_map[b]["pos"] as Vector2).y
 	if best == "":
 		return
 	AudioManager.play_sfx("ui_button_press")
@@ -288,20 +312,22 @@ func _gui_input(event: InputEvent) -> void:
 func _build_hud() -> void:
 	var bar := Panel.new()
 	bar.position = Vector2(0, 0)
-	bar.size = Vector2(720, 118)
+	bar.size = Vector2(1280, 92) if _land else Vector2(720, 118)
 	bar.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color(0.07, 0.06, 0.10, 0.86), 3, Color("2b1e12")))
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bar)
-	_pin_label("王国领地", Vector2(28, 12), 26, PixelUI.COL_GOLD)
-	_res_lbl = _pin_label("粮草 — · 木石 —", Vector2(28, 52), 20, PixelUI.COL_PARCHMENT)
-	_def_lbl = _pin_label("城防：塔 HP +0% · 塔攻 +0%", Vector2(28, 84), 16, PixelUI.COL_HINT)
+	_pin_label("王国领地", Vector2(28, 12) if _land else Vector2(28, 12), 26, PixelUI.COL_GOLD)
+	_res_lbl = _pin_label("粮草 — · 木石 —", Vector2(28, 54) if _land else Vector2(28, 52), 20,
+			PixelUI.COL_PARCHMENT)
+	_def_lbl = _pin_label("城防：塔 HP +0% · 塔攻 +0%",
+			Vector2(330, 58) if _land else Vector2(28, 84), 16, PixelUI.COL_HINT)
 	_wallet_holder = Control.new()
-	_wallet_holder.position = Vector2(430, 12)
+	_wallet_holder.position = Vector2(690, 12) if _land else Vector2(430, 12)
 	_wallet_holder.size = Vector2(270, 40)
 	_wallet_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_wallet_holder)
 	_collect_btn = Button.new()
-	_collect_btn.position = Vector2(474, 58)
+	_collect_btn.position = Vector2(1030, 22) if _land else Vector2(474, 58)
 	_collect_btn.size = Vector2(226, 50)
 	_collect_btn.pivot_offset = _collect_btn.size * 0.5
 	_collect_btn.focus_mode = Control.FOCUS_NONE
@@ -312,7 +338,7 @@ func _build_hud() -> void:
 	add_child(_collect_btn)
 	var back := Button.new()
 	back.text = tr("btn_back")
-	back.position = Vector2(20, 1204)
+	back.position = Vector2(20, 646) if _land else Vector2(20, 1204)
 	back.size = Vector2(170, 58)
 	back.pivot_offset = back.size * 0.5
 	back.focus_mode = Control.FOCUS_NONE
