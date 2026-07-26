@@ -4,6 +4,12 @@
 > 同时是 release 分支打安卓/桌面包前的检查单。任何后续会话/Antigravity 照本文操作即可，无需上下文。
 > **产出自** KAN-110（2026-07-16）。安全边界见文末——这是 E2-lite，不是完整 E2。
 
+> ⚠️ **当前生产地址（2026-07-21 起）**：
+> - 后端 API+WS：`https://towerpushserver.jeffgame.tech`（GCE e2-small，Caddy 反代）
+> - **Web 前端：`https://tower-push-godot.web.app`（Firebase Hosting）**
+> - ❌ 旧前端 `towerpush.web.app` **已弃用，Firebase 项目已删除**——历史文档/HISTORY 中出现的该地址
+>   一律作废，勿再部署或引用（Caddy CORS 白名单已在 release `b56d8dd` 加入新域名）。
+
 ## 一、架构一句话
 
 ```

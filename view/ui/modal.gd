@@ -13,6 +13,7 @@ var dim_alpha := 0.72            # 暗幕不透明度；0 = 无暗幕（如结�
 var close_on_bg_click := false   # 点空白即关闭（确认框类弹窗置 true）
 var bg_click_cb: Callable = Callable()   # 点空白自定义回调（免建子类的轻量覆写；优先于 close_on_bg_click）
 var _assembled := false
+var _canvas_shift := Vector2.ZERO   # L2 横屏：把 720×1280 设计坐标的面板平移到居中竖版画布
 
 func _ready() -> void:
 	_assemble()
@@ -26,6 +27,13 @@ func _assemble() -> void:
 	# 根本拦不到输入）——2026-07-06 P0 实锤（教程弹层点不到、手牌照常可拖），勿回退。
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	# L2 全局横屏（2026-07-26）：弹窗层挂主视口（1280×720），而调用方按 720×1280 设计坐标摆面板
+	# → 后进的绝对定位子节点统一平移居中；全铺型子节点（anchors 到边，如暗幕/教程覆盖）不动。
+	if is_inside_tree():
+		var vs := get_viewport_rect().size
+		if vs.x > vs.y:
+			_canvas_shift = Vector2((vs.x - 720.0) * 0.5, (vs.y - 1280.0) * 0.5)
+			child_entered_tree.connect(_shift_child)
 	if dim_alpha > 0.0:
 		var d := ColorRect.new()
 		d.color = Color(0.04, 0.03, 0.07, dim_alpha)   # 夜色石板调，对齐 PixelUI 暗幕语言
@@ -37,6 +45,13 @@ func _assemble() -> void:
 
 func _build() -> void:
 	pass   # 子类在此搭内容（标题/按钮/…），add_child 到 self
+
+func _shift_child(n: Node) -> void:
+	var c := n as Control
+	if c == null or c.anchor_right > 0.0 or c.anchor_bottom > 0.0:
+		return   # 非 Control / 全铺型（锚点到边）不平移
+	c.position += _canvas_shift
+	c.position.y = maxf(c.position.y, 8.0)   # 高处面板防顶出屏（横屏纵向只有 720）
 
 func close() -> void:
 	closed.emit()

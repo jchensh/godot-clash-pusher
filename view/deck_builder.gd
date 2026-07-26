@@ -31,6 +31,7 @@ var _cache                              # EconomyStateCache 缓存的 PlayerData
 var _recommended := 0                   # 闯关模式下本关推荐战力（着色基准）
 var _mode := ""                         # 组卡上下文：stage / edit / 其它(自由对战)
 var _pool_content: Control              # 卡池滚动内容层（48 卡超屏，ScrollContainer 拖动/滚轮滑动）
+var _land := false                      # L4 原生横屏：左卡组面板 + 右卡池 5 列网格
 
 func _ready() -> void:
 	AudioManager.play_music("music_deck_prep")   # 0716 首批 BGM：战前选卡上阵曲（PVE 上阵/天梯选卡组共用）
@@ -77,8 +78,8 @@ func _is_troop(id) -> bool:
 	return false
 
 func _build() -> void:
+	_land = GameStateScript.ui_layout() == "landscape"
 	PixelUI.add_background(self)
-	_title(tr("deck_title"), 40, 46)
 	var subtitle := ""
 	if GameStateScript.stage_id != "":
 		var s = _loader.get_stage(GameStateScript.stage_id)
@@ -89,6 +90,10 @@ func _build() -> void:
 		subtitle = "天梯征途 · 选出战卡组"
 	else:
 		subtitle = tr("deck_stage") % GameStateScript.level_id.to_upper()
+	if _land:
+		_build_land(subtitle)
+		return
+	_title(tr("deck_title"), 40, 46)
 	_center_label(subtitle, 108, 22, PixelUI.COL_MUTED)
 	_power_label = _center_label("", 138, 22, PixelUI.COL_GOLD)
 
@@ -150,6 +155,81 @@ func _build() -> void:
 	_battle_btn.add_theme_stylebox_override("disabled", PixelUI.sbpixel(Color(0.18, 0.18, 0.20), 3, Color(0.30, 0.30, 0.33)))
 	_battle_btn.add_theme_color_override("font_disabled_color", Color(0.5, 0.5, 0.55))
 	_center_label(tr("deck_need8"), 1086, 20, PixelUI.COL_HINT)
+
+# —— L4 横屏布局（mockup 三栏原则）：顶带(返回/标题/副题/计数) + 左卡组面板 360 + 右卡池 5 列 ——
+func _build_land(subtitle: String) -> void:
+	var strip := Panel.new()
+	strip.size = Vector2(1280, 72)
+	strip.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("16110c"), 3, Color("2b1e12")))
+	strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(strip)
+	var back := Button.new()
+	back.text = "← 返回"
+	back.position = Vector2(12, 10)
+	back.size = Vector2(120, 52)
+	back.focus_mode = Control.FOCUS_NONE
+	PixelUI.style_button(back, "stone", 22)
+	back.pressed.connect(_on_back)
+	add_child(back)
+	_pin_label(tr("deck_title"), Vector2(156, 18), Vector2(180, 36), 30, GOLD, HORIZONTAL_ALIGNMENT_LEFT)
+	_pin_label(subtitle, Vector2(350, 26), Vector2(360, 26), 18, PixelUI.COL_MUTED, HORIZONTAL_ALIGNMENT_LEFT)
+	_count_label = _pin_label("", Vector2(1000, 22), Vector2(266, 28), 24, GOLD, HORIZONTAL_ALIGNMENT_RIGHT)
+	# 左：卡组面板（8 格 2 列×4 行 + 战力 + 出战/保存 + 满 8 提示）
+	var rail := Panel.new()
+	rail.position = Vector2(0, 72)
+	rail.size = Vector2(360, 648)
+	rail.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("16110c"), 3, Color("2b1e12")))
+	add_child(rail)
+	_pin_label(tr("deck_your"), Vector2(20, 84), Vector2(320, 28), 24, PixelUI.COL_PARCHMENT,
+			HORIZONTAL_ALIGNMENT_LEFT)
+	for i in DECK_SIZE:
+		var x := 20.0 + (i % 2) * 166.0
+		var y := 124.0 + float(i / 2) * 86.0
+		var btn := Button.new()
+		btn.position = Vector2(x, y)
+		btn.size = Vector2(150, 70)
+		btn.focus_mode = Control.FOCUS_NONE
+		btn.add_theme_stylebox_override("normal", PixelUI.sbpixel(SLOT_FILLED_BG, 2, Color(0.40, 0.55, 0.42)))
+		btn.add_theme_stylebox_override("hover", PixelUI.sbpixel(SLOT_FILLED_BG.lightened(0.12), 2, GOLD))
+		btn.add_theme_stylebox_override("pressed", PixelUI.sbpixel(SLOT_FILLED_BG.darkened(0.1), 2, Color(0.40, 0.55, 0.42)))
+		btn.pressed.connect(_remove_at.bind(i))
+		add_child(btn)
+		var port := TextureRect.new()
+		port.position = Vector2(x + 50, y + 3)
+		port.size = Vector2(50, 34)
+		port.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		port.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		port.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		port.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(port)
+		var lbl := _pin_label("", Vector2(x, y + 36), Vector2(150, 30), 18, Color(1, 1, 1),
+				HORIZONTAL_ALIGNMENT_CENTER)
+		_slots.append({"btn": btn, "label": lbl, "portrait": port})
+	_power_label = _pin_label("", Vector2(20, 476), Vector2(320, 26), 22, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+	var confirm_label: String = "保存" if _mode == "edit" else ("出征" if _mode == "ladder" else tr("btn_battle"))
+	_battle_btn = _action_button(confirm_label, 50, 520, 260, "gold", _on_battle)
+	_battle_btn.add_theme_stylebox_override("disabled", PixelUI.sbpixel(Color(0.18, 0.18, 0.20), 3, Color(0.30, 0.30, 0.33)))
+	_battle_btn.add_theme_color_override("font_disabled_color", Color(0.5, 0.5, 0.55))
+	_pin_label(tr("deck_need8"), Vector2(20, 616), Vector2(320, 24), 18, PixelUI.COL_HINT,
+			HORIZONTAL_ALIGNMENT_CENTER)
+	# 右：卡池 5 列网格（滚轮/拖动滚动；tile 布局与竖屏同款仅列数不同）
+	_pin_label(tr("deck_pool"), Vector2(390, 82), Vector2(400, 26), 20, PixelUI.COL_MUTED,
+			HORIZONTAL_ALIGNMENT_LEFT)
+	var ids: Array = _card_pool()
+	var rows: int = int(ceil(ids.size() / 5.0))
+	var scroll := ScrollContainer.new()
+	scroll.position = Vector2(388, 112)
+	scroll.size = Vector2(880, 596)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	scroll.scroll_deadzone = 16
+	add_child(scroll)
+	DragScroll.attach(scroll)
+	_pool_content = Control.new()
+	_pool_content.custom_minimum_size = Vector2(880.0, ((rows - 1) * 100.0 + 96.0) if rows > 0 else 0.0)
+	scroll.add_child(_pool_content)
+	for i in ids.size():
+		_pool_tile(ids[i], 2.0 + (i % 5) * 176.0, 4.0 + float(i / 5) * 100.0)
 
 func _pool_tile(id, x: float, y: float) -> void:
 	var troop := _is_troop(id)

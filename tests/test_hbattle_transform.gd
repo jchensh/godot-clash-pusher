@@ -75,21 +75,21 @@ func test_portrait_roundtrip() -> void:
 func test_landscape_field_rect_letterbox() -> void:
 	var bs = _mk(true)
 	_assert_grid(bs)
-	# 场区 720×1050 内按 32:18 满宽 → 720×405，垂直居中 y=376.5
+	# L3b：顶栏/手牌带之外的 zone(720×1050) 内取整方格居中——cell=22 → 704×396 @ (8,381)
 	var fr: Rect2 = bs._field_rect()
-	assert_almost_eq(fr.position.x, 0.0, EPS, "横版场区左")
-	assert_almost_eq(fr.position.y, 376.5, EPS, "横版场区顶（letterbox 居中）")
-	assert_almost_eq(fr.size.x, 720.0, EPS, "横版场区宽")
-	assert_almost_eq(fr.size.y, 405.0, EPS, "横版场区高")
+	assert_almost_eq(fr.position.x, 8.0, EPS, "横版场区左（水平居中）")
+	assert_almost_eq(fr.position.y, 381.0, EPS, "横版场区顶（zone 内垂直居中）")
+	assert_almost_eq(fr.size.x, 704.0, EPS, "横版场区宽 32×22")
+	assert_almost_eq(fr.size.y, 396.0, EPS, "横版场区高 18×22")
 	bs.free()
 
 func test_landscape_projection_direction() -> void:
 	var bs = _mk(true)
 	# 敌底线 y=0 → 屏幕右缘；我底线 y=32 → 左缘；逻辑 x=0 → 屏幕顶；中心映中心
-	assert_almost_eq(bs._t2s(Vector2(0, 0)).x, 720.0, EPS, "敌底线在屏幕右缘")
-	assert_almost_eq(bs._t2s(Vector2(0, 32)).x, 0.0, EPS, "我底线在屏幕左缘")
-	assert_almost_eq(bs._t2s(Vector2(0, 0)).y, 376.5, EPS, "逻辑 x=0 在场区顶")
-	assert_almost_eq(bs._t2s(Vector2(18, 0)).y, 781.5, EPS, "逻辑 x=18 在场区底")
+	assert_almost_eq(bs._t2s(Vector2(0, 0)).x, 712.0, EPS, "敌底线在场区右缘")
+	assert_almost_eq(bs._t2s(Vector2(0, 32)).x, 8.0, EPS, "我底线在场区左缘")
+	assert_almost_eq(bs._t2s(Vector2(0, 0)).y, 381.0, EPS, "逻辑 x=0 在场区顶")
+	assert_almost_eq(bs._t2s(Vector2(18, 0)).y, 777.0, EPS, "逻辑 x=18 在场区底")
 	var c: Vector2 = bs._t2s(Vector2(9, 16))
 	assert_almost_eq(c.x, 360.0, EPS, "横版中心 x")
 	assert_almost_eq(c.y, 579.0, EPS, "横版中心 y")
@@ -105,22 +105,22 @@ func test_landscape_roundtrip() -> void:
 
 func test_landscape_tile_square_and_rect() -> void:
 	var bs = _mk(true)
-	# 720/32 = 405/18 = 22.5：横版 tile 恒方形（旋转不变密度）
+	# 704/32 = 396/18 = 22：横版 tile 恒方形（整数取整，旋转不变密度）
 	var tp: Vector2 = bs._tile_px()
-	assert_almost_eq(tp.x, 22.5, EPS, "横版格宽")
-	assert_almost_eq(tp.y, 22.5, EPS, "横版格高")
-	# tile(0,31)（我方底线角）屏幕左上角 = 场区左上 (0, 376.5)
+	assert_almost_eq(tp.x, 22.0, EPS, "横版格宽")
+	assert_almost_eq(tp.y, 22.0, EPS, "横版格高")
+	# tile(0,31)（我方底线角）屏幕左上角 = 场区左上 (8, 381)
 	var r: Rect2 = bs._tile_rect(0, 31)
-	assert_almost_eq(r.position.x, 0.0, EPS, "横版角 tile x")
-	assert_almost_eq(r.position.y, 376.5, EPS, "横版角 tile y")
+	assert_almost_eq(r.position.x, 8.0, EPS, "横版角 tile x")
+	assert_almost_eq(r.position.y, 381.0, EPS, "横版角 tile y")
 	bs.free()
 
 func test_landscape_direction_apis() -> void:
 	var bs = _mk(true)
 	# footprint：逻辑纵深(fh)→屏幕横向、逻辑宽(fw)→屏幕纵向
 	var fp: Vector2 = bs._fp_screen(3.0, 4.0)
-	assert_almost_eq(fp.x, 90.0, EPS, "横版 footprint 屏幕宽 = fh*22.5")
-	assert_almost_eq(fp.y, 67.5, EPS, "横版 footprint 屏幕高 = fw*22.5")
+	assert_almost_eq(fp.x, 88.0, EPS, "横版 footprint 屏幕宽 = fh*22")
+	assert_almost_eq(fp.y, 66.0, EPS, "横版 footprint 屏幕高 = fw*22")
 	assert_eq(bs._screen_up_tiles(2.0), Vector2(-2.0, 0.0), "横版屏幕向上=逻辑-x")
 	bs.free()
 
@@ -138,8 +138,8 @@ func test_deploy_zone_rect_both_layouts() -> void:
 	# 横版：左段矩形，右边 = 部署线投影 x
 	var bl = _mk(true)
 	var lr: Rect2 = bl._deploy_zone_rect(a)
-	var x1: float = (32.0 - ymin) / 32.0 * 720.0
-	assert_almost_eq(lr.position.x, 0.0, EPS, "横版部署区从左缘起")
+	var x1: float = 8.0 + (32.0 - ymin) / 32.0 * 704.0
+	assert_almost_eq(lr.position.x, 8.0, EPS, "横版部署区从场区左缘起")
 	assert_almost_eq(lr.end.x, x1, EPS, "横版部署区右边=部署线")
-	assert_almost_eq(lr.size.y, 405.0, EPS, "横版部署区全高")
+	assert_almost_eq(lr.size.y, 396.0, EPS, "横版部署区全高")
 	bl.free()

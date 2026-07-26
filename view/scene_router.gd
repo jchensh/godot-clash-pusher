@@ -12,6 +12,8 @@
 #   （test_scene_router 规约扫描把关，唯一豁免 = 本文件）。
 extends Node
 
+const GameStateScript := preload("res://view/game_state.gd")
+const LandscapeWrap := preload("res://view/ui/landscape_wrap.gd")
 const TRANSITION_LAYER := 100
 const FADE_S := 0.15
 
@@ -53,6 +55,43 @@ func _init() -> void:
 	_dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)   # ⚠️ 带 offsets 版才真铺满（见 modal.gd 同注释）
 	_layer.add_child(_dim)
 
+func _ready() -> void:
+	apply_ui_layout()   # 开机即按持久化偏好定窗口方向（autoload 先于主场景，首屏就是对的）
+	_wrap_boot_scene.call_deferred()   # 引擎直启的主场景不走 goto → 横屏下补包壳
+
+func _wrap_boot_scene() -> void:
+	if GameStateScript.ui_layout() != "landscape":
+		return
+	var cs := get_tree().current_scene
+	if cs == null or cs.get_script() == LandscapeWrap:
+		return
+	var path := cs.scene_file_path
+	var mode := _wrap_mode(path)
+	if mode == "":
+		return   # 战斗场景自适配横屏，不包壳
+	get_tree().root.remove_child(cs)   # 原地收养进壳（不重建场景，_ready 已跑过的状态保留）
+	var target: Node = LandscapeWrap.wrap(cs, mode)
+	get_tree().root.add_child(target)
+	get_tree().current_scene = target
+	Log.i("[Router] 开机场景已包横屏壳（%s，%s）" % [path, mode])
+
+# —— 全局横屏模式（L1，2026-07-26）：窗口/方向/内容缩放的唯一切换收口 ——
+# 桌面=改窗口尺寸并居中；移动端=切屏幕方向；Web=只改逻辑分辨率（浏览器自己转）。
+# 逻辑分辨率 720×1280 ↔ 1280×720（40px/格 信息密度不变）；页面重建靠调用方 reload/goto。
+func apply_ui_layout() -> void:
+	var land: bool = GameStateScript.ui_layout() == "landscape"
+	var base := Vector2i(1280, 720) if land else Vector2i(720, 1280)
+	get_tree().root.content_scale_size = base
+	if OS.has_feature("mobile"):
+		DisplayServer.screen_set_orientation(
+				DisplayServer.SCREEN_SENSOR_LANDSCAPE if land else DisplayServer.SCREEN_PORTRAIT)
+	elif not OS.has_feature("web") and not DisplayServer.get_name() == "headless":
+		var win := get_window()
+		if win.mode == Window.MODE_WINDOWED:
+			win.size = base
+			var scr := DisplayServer.screen_get_usable_rect(win.current_screen)
+			win.position = scr.position + (scr.size - win.size) / 2
+
 # 路由名 → 场景路径；也接受 res:// 原始路径直通（动态路径调用方用）。未知返回 ""。
 func resolve(route: String) -> String:
 	if ROUTES.has(route):
@@ -77,7 +116,7 @@ func goto(route: String, params: Dictionary = {}) -> void:
 	Log.i("[Router] goto %s (%s)" % [route, path])
 	_dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	await _fade_to(1.0)
-	var err := get_tree().change_scene_to_file(path)
+	var err := _switch_scene(path)
 	if err != OK:
 		push_error("[Router] 切场景失败 err=%d path=%s" % [err, path])
 	await get_tree().process_frame   # change_scene 延迟生效：等新场景挂树再揭幕
@@ -87,6 +126,43 @@ func goto(route: String, params: Dictionary = {}) -> void:
 		_dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_busy = false
 	_flush_pending()   # 转场中重定向过 → 幕布保持黑、直接接力去终点（不闪屏）
+
+# L2 全局横屏：竖屏走引擎原生换场；横屏手动实例化 + LandscapeWrap 包壳。
+# L3：单机战斗不包壳（battle_scene 自带真横屏满屏投影）；教程战斗例外包 fit 保竖版画布
+# （教程高亮是竖版语义）；联机/战役=fit 过渡（H6 另排）；菜单页=scroll 居中立柱。
+func _switch_scene(path: String) -> int:
+	if GameStateScript.ui_layout() != "landscape":
+		return get_tree().change_scene_to_file(path)
+	var ps := load(path) as PackedScene
+	if ps == null:
+		return ERR_CANT_OPEN
+	var page := ps.instantiate()
+	var mode := _wrap_mode(path)
+	var target: Node = page if mode == "" else LandscapeWrap.wrap(page, mode)
+	var old := get_tree().current_scene
+	get_tree().root.add_child(target)
+	get_tree().current_scene = target
+	if old != null:
+		old.queue_free()
+	return OK
+
+# L4 起原生横屏页面白名单：已按 mockup 实装横屏布局的页面不再包壳，逐页迁移逐页加。
+const LANDSCAPE_NATIVE := ["res://view/main_menu.tscn", "res://view/stage_map.tscn",
+	"res://view/deck_builder.tscn", "res://view/card_collection.tscn",
+	"res://view/settings.tscn", "res://view/kingdom.tscn", "res://view/card_detail.tscn"]
+
+# 返回包壳模式；"" = 不包壳（场景自适配横屏）。⚠️ net_battle_scene 也含 "battle_scene"
+# 子串，判断顺序要先网络后单机。
+func _wrap_mode(path: String) -> String:
+	if path.ends_with("net_battle_scene.tscn"):
+		return ""   # H6（KAN-115）：联机战斗自带横版投影×side2 复合，不包壳
+	if path.contains("campaign_scene"):
+		return "fit"
+	if path.ends_with("battle_scene.tscn"):
+		return "fit" if GameStateScript.tutorial else ""
+	if path in LANDSCAPE_NATIVE:
+		return ""
+	return "scroll"
 
 # 重载当前路由（params 保留）。设置页换语言重建、战斗「再来一局」用。
 func reload() -> void:

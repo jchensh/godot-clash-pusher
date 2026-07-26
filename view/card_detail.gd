@@ -24,6 +24,7 @@ var _cid := ""
 var _content: Control
 var _wallet_holder: Control
 var _busy := false
+var _land := false   # L4 横屏：720 内容列整体平移居中（内部布局零改动）+ 顶带返回/钱包
 
 func _ready() -> void:
 	AudioManager.play_music("music_main_menu")
@@ -35,6 +36,7 @@ func _ready() -> void:
 	await _bootstrap()
 
 func _build_static() -> void:
+	_land = GameStateScript.ui_layout() == "landscape"
 	var bg := TextureRect.new()
 	bg.texture = BG_TEX
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -42,7 +44,7 @@ func _build_static() -> void:
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
 	_wallet_holder = Control.new()
-	_wallet_holder.position = Vector2(80, 24)
+	_wallet_holder.position = Vector2(706, 14) if _land else Vector2(80, 24)
 	_wallet_holder.size = Vector2(560, 44)
 	_wallet_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_wallet_holder)
@@ -50,6 +52,18 @@ func _build_static() -> void:
 	_content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_content)
+	if _land:
+		# 内容按 720 竖版坐标搭（y 84~700 恰好塞进 720 高）→ 整列平移居中；返回钮进左上角。
+		_content.position.x = 280.0
+		var back := Button.new()
+		back.text = "← 返回"
+		back.position = Vector2(12, 10)
+		back.size = Vector2(120, 52)
+		back.focus_mode = Control.FOCUS_NONE
+		PixelUI.style_button(back, "stone", 22)
+		back.pressed.connect(_on_back)
+		add_child(back)
+		return
 	_back_button(1168)
 
 func _bootstrap() -> void:

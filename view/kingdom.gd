@@ -1,9 +1,10 @@
-# Kingdom —— 王国主城（K2 场景化改版，2026-07-19 用户拍板：SLG/4X 式主城，
-# 场景化 + 动态小人，不做按钮列表）。
+# Kingdom —— 王国主城（0726 正式城建场景：testAssets/城建0726 整图 BG + 16 建筑落位）。
 #
-# 视觉 = 老中世纪占位资源（building1~8 城堡组 + Lonesome 地形 + SpriteDB 走路小人），
-# 正式三国城建美术后整体换皮。架构同 battle_scene：纯 _draw 即时渲染（地形/建筑/小人
-# Y-sort 伪深度），HUD 用 Control 子节点浮在上层；点建筑 → UI.modal(KingdomBuildingModal)。
+# 场景 = 整图 BG（1440×1830 城内俯视，含围墙/路网/南门开口）+ 槽位表（BG 像素坐标系，
+# 布局按美术「角色大小示意」参考图落位）。横竖屏共用一套槽位，只差视野变换：
+# 竖屏 = 高铺满左右拖动 / 横屏 = 宽铺满上下拖动（_k2s 单点收敛，_pan 钳制在图内）。
+# 纯 _draw 即时渲染（建筑/小人 Y-sort 伪深度），HUD 用 Control 子节点浮在上层；
+# 点建筑 → UI.modal(KingdomBuildingModal)；placeholder 建筑（config kind）建成后点击=敬请期待。
 # 决策 48 + 永久原则：服务器权威——本页只收发数据 + 表现；倒计时用服务器时间基准插值。
 extends Control
 
@@ -13,16 +14,13 @@ const GameStateScript := preload("res://view/game_state.gd")
 const SpriteDB := preload("res://view/sprite_db.gd")
 const BuildingModal := preload("res://view/ui/kingdom_building_modal.gd")
 
-# —— 地形（战场同款 Lonesome 套）——
-const TEX_FLOOR := preload("res://assets/terrain/Lonesome_Forest_FLOOR.png")
-const TEX_PATH := preload("res://assets/terrain/Lonesome_Forest_COBBLESTONE_PATH.png")
+# —— 场景整图（0726 城建正式素材）——
+const TEX_BG := preload("res://assets/kingdom/kingdom_bg.png")
+const TEX_PLOT := preload("res://assets/kingdom/kingdom_plot.png")   # 「未建造」空地占位图
 const TEX_UNIT_SHADOW := preload("res://assets/units/unit_shadow.png")
-const TILE_PX := 16          # 源 tile 尺寸
-const CELL := 40.0           # 屏幕格边长（720/18）
-const GROUND_TILES := [Vector2i(4, 1), Vector2i(4, 2)]
-const PATH_TILES := [Vector2i(1, 1), Vector2i(2, 1)]
+const BG_SIZE := Vector2(1440.0, 1830.0)
 
-# —— 建筑贴图（2026-07-21 正式三国城建素材，testAssets/7.21.2026/王国领地 接入）——
+# —— 建筑贴图（0726 批次；watchtower 沿用 0721 defenseTower，用户拍板）——
 const BUILDING_TEX := {
 	"keep": preload("res://assets/kingdom/kingdom_palace.png"),
 	"farm": preload("res://assets/kingdom/kingdom_farm.png"),
@@ -31,32 +29,48 @@ const BUILDING_TEX := {
 	"granary": preload("res://assets/kingdom/kingdom_granary.png"),
 	"mint": preload("res://assets/kingdom/kingdom_mint.png"),
 	"wall": preload("res://assets/kingdom/kingdom_wall.png"),
+	"quarry": preload("res://assets/kingdom/kingdom_quarry.png"),
+	"stoneworks": preload("res://assets/kingdom/kingdom_stoneworks.png"),
+	"ironworks": preload("res://assets/kingdom/kingdom_ironworks.png"),
+	"ranch": preload("res://assets/kingdom/kingdom_ranch.png"),
+	"shop": preload("res://assets/kingdom/kingdom_shop.png"),
+	"camp_infantry": preload("res://assets/kingdom/kingdom_camp_infantry.png"),
+	"camp_spear": preload("res://assets/kingdom/kingdom_camp_spear.png"),
+	"camp_crossbow": preload("res://assets/kingdom/kingdom_camp_crossbow.png"),
+	"camp_cavalry": preload("res://assets/kingdom/kingdom_camp_cavalry.png"),
 }
-# —— 装饰树（同批素材；纯表现，不可点击，随建筑/小人一起 Y-sort）——
-const TREE_TEX := [
-	preload("res://assets/kingdom/kingdom_tree_1.png"),
-	preload("res://assets/kingdom/kingdom_tree_2.png"),
-	preload("res://assets/kingdom/kingdom_tree_3.png"),
-]
-# [tex_idx, 底边中心 pos, 绘制宽]，摆在槽位/路网空隙处，位置留真人验收调。
-const TREE_DECO := [
-	[0, Vector2(56, 420), 88.0],
-	[1, Vector2(664, 440), 92.0],
-	[2, Vector2(52, 1240), 80.0],
-	[0, Vector2(676, 1252), 84.0],
-]
-# 槽位：pos = 建筑底边中心（屏幕 px），w = 绘制宽。布局参照 SLG 主城：王城居中偏上、
-# 生产环绕、城防近前门。
+# 槽位（BG 像素系，pos=建筑底边中心；按美术示意图落位）。w 缺省 = 贴图原生宽
+# （0726 素材与示意图同比例）；watchtower 老素材过大需显式压宽。
 const SLOTS := {
-	"keep": {"pos": Vector2(360, 560), "w": 300.0},
-	"farm": {"pos": Vector2(150, 780), "w": 210.0},
-	"workshop": {"pos": Vector2(570, 790), "w": 220.0},
-	"granary": {"pos": Vector2(130, 990), "w": 130.0},
-	"mint": {"pos": Vector2(588, 1000), "w": 175.0},
-	"wall": {"pos": Vector2(238, 1146), "w": 190.0},
-	"watchtower": {"pos": Vector2(510, 1140), "w": 110.0},
+	"keep": {"pos": Vector2(715, 690)},
+	"farm": {"pos": Vector2(1090, 480)},
+	"workshop": {"pos": Vector2(1135, 1215)},
+	"granary": {"pos": Vector2(480, 800)},
+	"mint": {"pos": Vector2(565, 1010)},
+	"wall": {"pos": Vector2(702, 1558)},   # 旗杆(贴图x102)对准土路中心708.5、门体微超墙基线（0726 三轮真人校准）
+	"watchtower": {"pos": Vector2(88, 1618), "w": 80.0},
+	"quarry": {"pos": Vector2(395, 470)},
+	"stoneworks": {"pos": Vector2(950, 720)},
+	"ironworks": {"pos": Vector2(1128, 800)},
+	"ranch": {"pos": Vector2(932, 965)},
+	"shop": {"pos": Vector2(295, 1215)},
+	"camp_infantry": {"pos": Vector2(280, 680)},
+	"camp_spear": {"pos": Vector2(290, 985)},
+	"camp_crossbow": {"pos": Vector2(570, 1225)},
+	"camp_cavalry": {"pos": Vector2(885, 1230)},
 }
-const PLAZA := Vector2(360, 700)   # 中央广场（路网与小人巡游枢纽）
+# 箭塔四角（0726 验收反馈）：主槽=左下角；其余三角视觉复刻（建成才画）；右下角与主槽同为交互入口。
+const WT_CLICK_EXTRA := Vector2(1352, 1618)
+const WT_VISUAL_EXTRA := [Vector2(1352, 1618), Vector2(88, 305), Vector2(1352, 305)]
+var _land := false
+# —— 视野（_k2s 单点收敛；横竖同缩放，竖屏双向拖动）——
+var _scale := 1.0
+var _pan := Vector2.ZERO
+var _pan_max := Vector2.ZERO
+var _press := Vector2.ZERO
+var _press_pan := Vector2.ZERO
+var _pressing := false
+var _dragged := false
 
 # —— 巡游小人（占位=战斗单位走路帧；数量/速度纯表现，与逻辑无关）——
 const WALKER_IDS := ["squire_body", "goblin_body", "archer_body", "barbarian_body", "knight_body"]
@@ -67,8 +81,7 @@ const WALKER_SPEED_MAX := 58.0
 var _font: Font
 var _http: HTTPRequest
 var _elapsed := 0.0
-var _walkers: Array = []       # [{uid, pos, target, speed, at_plaza}]
-var _path_cells: Array = []    # 路面格 Vector2i（_ready 预铺）
+var _walkers: Array = []       # [{uid, pos(BG系), target(BG系), speed}]
 # —— HUD ——
 var _res_lbl: Label
 var _wallet_holder: Control
@@ -76,9 +89,10 @@ var _def_lbl: Label
 var _collect_btn: Button
 
 func _ready() -> void:
+	_land = GameStateScript.ui_layout() == "landscape"
 	AudioManager.play_music("music_main_menu")
 	_font = load("res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf")
-	_build_paths()
+	_init_view()
 	_spawn_walkers()
 	_build_hud()
 	Events.kingdom_changed.connect(_on_kingdom_changed)
@@ -88,118 +102,97 @@ func _ready() -> void:
 	set_process(true)
 	await _bootstrap()
 
-# ---------- 路网/小人（纯表现）----------
-func _build_paths() -> void:
-	var seen := {}
-	for b in SLOTS:
-		var from: Vector2 = (SLOTS[b]["pos"] as Vector2) + Vector2(0, -6)
-		# L 型：先横到广场 x，再纵到广场 y。
-		var cx := int(from.x / CELL)
-		var cy := int(from.y / CELL)
-		var px := int(PLAZA.x / CELL)
-		var py := int(PLAZA.y / CELL)
-		var x := cx
-		while x != px:
-			seen[Vector2i(x, cy)] = true
-			x += 1 if px > cx else -1
-		var y := cy
-		while y != py:
-			seen[Vector2i(px, y)] = true
-			y += 1 if py > cy else -1
-	# 广场 2×2
-	for dx in [-1, 0]:
-		for dy in [-1, 0]:
-			seen[Vector2i(int(PLAZA.x / CELL) + dx, int(PLAZA.y / CELL) + dy)] = true
-	_path_cells = seen.keys()
+# ---------- 视野/小人（纯表现）----------
+func _init_view() -> void:
+	var vs := Vector2(1280, 720) if _land else Vector2(720, 1280)
+	_scale = 1280.0 / BG_SIZE.x   # 横竖同缩放（0726 验收：竖屏拉近对齐横屏观感，双向拖动）
+	_pan_max = (BG_SIZE * _scale - vs).max(Vector2.ZERO)
+	var keep_pos: Vector2 = SLOTS["keep"]["pos"]   # 初始视野对准主公府一带
+	_set_pan(Vector2(keep_pos.x * _scale - vs.x * 0.5, keep_pos.y * _scale - vs.y * 0.45))
+
+func _set_pan(p: Vector2) -> void:
+	_pan = p.clamp(Vector2.ZERO, _pan_max)
+	queue_redraw()
+
+func _k2s(p: Vector2) -> Vector2:   # BG 像素系 → 屏幕
+	return p * _scale - _pan
+
+func _rand_slot_pos() -> Vector2:
+	var b: String = SLOTS.keys()[randi() % SLOTS.size()]
+	return (SLOTS[b]["pos"] as Vector2) + Vector2(randf_range(-30, 30), randf_range(8, 26))
 
 func _spawn_walkers() -> void:
 	for i in WALKER_IDS.size():
-		var slot: Vector2 = (SLOTS[SLOTS.keys()[i % SLOTS.size()]]["pos"] as Vector2)
 		_walkers.append({
 			"uid": WALKER_IDS[i],
-			"pos": slot + Vector2(0, 14),
-			"target": PLAZA + Vector2(randf_range(-30, 30), randf_range(-20, 20)),
+			"pos": _rand_slot_pos(),
+			"target": _rand_slot_pos(),
 			"speed": randf_range(WALKER_SPEED_MIN, WALKER_SPEED_MAX),
-			"at_plaza": false,
 		})
 
 func _process(delta: float) -> void:
 	_elapsed += delta
 	for w in _walkers:
 		var pos: Vector2 = w["pos"]
-		var target: Vector2 = w["target"]
-		var d := target - pos
-		if d.length() < 6.0:
-			# 到站：广场 ↔ 随机建筑门口 交替（贴着 L 路网观感即可，直线巡游）。
-			if bool(w["at_plaza"]):
-				var b: String = SLOTS.keys()[randi() % SLOTS.size()]
-				w["target"] = (SLOTS[b]["pos"] as Vector2) + Vector2(randf_range(-24, 24), randf_range(6, 22))
-				w["at_plaza"] = false
-			else:
-				w["target"] = PLAZA + Vector2(randf_range(-40, 40), randf_range(-24, 24))
-				w["at_plaza"] = true
+		var d: Vector2 = (w["target"] as Vector2) - pos
+		if d.length() < 8.0:
+			w["target"] = _rand_slot_pos()   # 到站：换个建筑门口继续逛（BG 自带路网，直线巡游观感即可）
 			continue
 		w["pos"] = pos + d.normalized() * float(w["speed"]) * delta
 	queue_redraw()
 
 # ---------- 绘制（地形 → 路 → 空地 → 建筑+小人 Y-sort → 顶饰）----------
 func _draw() -> void:
-	_draw_terrain()
+	draw_rect(Rect2(Vector2.ZERO, Vector2(1280, 1280)), Color("100c18"))   # 图外露夜色底
+	draw_texture_rect(TEX_BG, Rect2(-_pan, BG_SIZE * _scale), false)
 	var kd = GameStateScript.kingdom()
-	var items: Array = []   # [ground_y, seq, kind, payload]
+	var items: Array = []   # [screen_ground_y, seq, kind, payload]
 	for b in SLOTS:
-		items.append([(SLOTS[b]["pos"] as Vector2).y, items.size(), "b", b])
+		items.append([_k2s(SLOTS[b]["pos"] as Vector2).y, items.size(), "b", b])
+	if _level_of("watchtower", kd) >= 1:   # 箭塔其余三角视觉复刻（建成才现身）
+		for wp in WT_VISUAL_EXTRA:
+			items.append([_k2s(wp as Vector2).y, items.size(), "wt", wp])
 	for w in _walkers:
-		items.append([(w["pos"] as Vector2).y + WALKER_BOX * 0.4, items.size(), "w", w])
-	for t in TREE_DECO:
-		items.append([(t[1] as Vector2).y, items.size(), "t", t])
+		items.append([_k2s(w["pos"] as Vector2).y + WALKER_BOX * 0.4, items.size(), "w", w])
 	items.sort_custom(func(p, q): return p[0] < q[0] if p[0] != q[0] else p[1] < q[1])
 	for it in items:
 		if it[2] == "b":
 			_draw_building(String(it[3]), kd)
-		elif it[2] == "t":
-			_draw_tree(it[3])
+		elif it[2] == "wt":
+			_draw_watchtower_at(it[3] as Vector2, kd)
 		else:
 			_draw_walker(it[3])
 	for b in SLOTS:
 		_draw_building_overlay(String(b), kd)
 
-func _draw_terrain() -> void:
-	for ty in range(0, int(1280 / CELL) + 1):
-		for tx in range(0, int(720 / CELL) + 1):
-			var cell: Vector2i = GROUND_TILES[(tx * 7 + ty * 13) % GROUND_TILES.size()]
-			_blit(TEX_FLOOR, cell, Rect2(tx * CELL, ty * CELL, CELL + 1, CELL + 1))
-	for c in _path_cells:
-		var cell: Vector2i = PATH_TILES[(c.x + c.y) % PATH_TILES.size()]
-		_blit(TEX_PATH, cell, Rect2(c.x * CELL, c.y * CELL, CELL + 1, CELL + 1))
-
-func _blit(tex: Texture2D, cell: Vector2i, rect: Rect2) -> void:
-	draw_texture_rect_region(tex, rect,
-			Rect2(cell.x * TILE_PX, cell.y * TILE_PX, TILE_PX, TILE_PX))
-
-func _draw_tree(t: Array) -> void:
-	var tex: Texture2D = TREE_TEX[int(t[0])]
-	var w: float = float(t[2])
-	var h: float = w * float(tex.get_height()) / float(tex.get_width())
-	var pos: Vector2 = t[1]
-	draw_texture_rect(tex, Rect2(pos.x - w * 0.5, pos.y - h, w, h), false)
-
-func _slot_rect(building: String) -> Rect2:
+func _slot_rect(building: String) -> Rect2:   # 屏幕系（BG 槽位经 _k2s 变换）
 	var tex: Texture2D = BUILDING_TEX[building]
-	var w: float = SLOTS[building]["w"]
+	var w: float = float((SLOTS[building] as Dictionary).get("w", tex.get_width()))
 	var h: float = w * float(tex.get_height()) / float(tex.get_width())
 	var pos: Vector2 = SLOTS[building]["pos"]
-	return Rect2(pos.x - w * 0.5, pos.y - h, w, h)
+	return Rect2(_k2s(Vector2(pos.x - w * 0.5, pos.y - h)), Vector2(w, h) * _scale)
+
+# 箭塔视觉复刻（角落副本；施工半透明跟随主建筑状态）。
+func _draw_watchtower_at(pos: Vector2, kd) -> void:
+	var tex: Texture2D = BUILDING_TEX["watchtower"]
+	var w := 80.0
+	var h := w * float(tex.get_height()) / float(tex.get_width())
+	var mod := Color.WHITE
+	if kd != null and kd.is_loaded and int(kd.remaining_s("watchtower")) > 0:
+		mod = Color(1, 1, 1, 0.55)
+	draw_texture_rect(tex,
+			Rect2(_k2s(Vector2(pos.x - w * 0.5, pos.y - h)), Vector2(w, h) * _scale), false, mod)
 
 func _draw_building(building: String, kd) -> void:
 	var rect := _slot_rect(building)
 	var lv := _level_of(building, kd)
 	if lv <= 0:
-		# 空地：虚线地皮 + 提示（点击建造）。
-		var plot := Rect2(rect.position.x + rect.size.x * 0.12, rect.end.y - rect.size.x * 0.42,
-				rect.size.x * 0.76, rect.size.x * 0.4)
-		draw_rect(plot, Color(0.24, 0.19, 0.12, 0.55))
-		draw_rect(plot, Color(0.55, 0.45, 0.25, 0.9), false, 2.0)
+		# 空地：0726「未建造」占位图（点击建造）。
+		var pos: Vector2 = SLOTS[building]["pos"]
+		var pw := float(TEX_PLOT.get_width())
+		var ph := float(TEX_PLOT.get_height())
+		draw_texture_rect(TEX_PLOT,
+				Rect2(_k2s(Vector2(pos.x - pw * 0.5, pos.y - ph)), Vector2(pw, ph) * _scale), false)
 		return
 	var mod := Color.WHITE
 	if kd != null and kd.is_loaded and int(kd.remaining_s(building)) > 0:
@@ -209,7 +202,7 @@ func _draw_building(building: String, kd) -> void:
 # 顶饰（恒在建筑/小人之上）：名牌+等级 / 施工倒计时 / 待收取气泡 / 空地提示。
 func _draw_building_overlay(building: String, kd) -> void:
 	var rect := _slot_rect(building)
-	var pos: Vector2 = SLOTS[building]["pos"]
+	var pos: Vector2 = _k2s(SLOTS[building]["pos"] as Vector2)   # 屏幕系锚点
 	var lv := _level_of(building, kd)
 	var bcfg: Dictionary = (GameStateScript.config().kingdom.get("buildings", {}) as Dictionary).get(building, {})
 	var label: String = str(bcfg.get("display_zh", building)) + ((" Lv%d" % lv) if lv > 0 else "")
@@ -239,8 +232,8 @@ func _draw_building_overlay(building: String, kd) -> void:
 		draw_string(_font, c + Vector2(-5, 6), "!", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.25, 0.16, 0.03))
 
 func _draw_walker(w: Dictionary) -> void:
-	var pos: Vector2 = w["pos"]
-	var dir: Vector2 = (w["target"] as Vector2) - pos
+	var pos: Vector2 = _k2s(w["pos"] as Vector2)
+	var dir: Vector2 = (w["target"] as Vector2) - (w["pos"] as Vector2)
 	# 行向定帧行：向上走用背面行（owner0），向下用正面行（owner1）；横移镜像。
 	var owner := 0 if dir.y < 0.0 else 1
 	var spr: Dictionary = SpriteDB.frame(String(w["uid"]), "walk", owner, _elapsed)
@@ -259,27 +252,56 @@ func _draw_walker(w: Dictionary) -> void:
 			spr["src"], spr.get("tint", Color.WHITE) if not spr.get("natural", false) else Color.WHITE)
 	draw_set_transform(Vector2.ZERO)
 
-# ---------- 点击：命中建筑 → 弹操作窗 ----------
+# ---------- 输入：按住拖动看全城；轻点命中建筑 → 弹操作窗 / placeholder 敬请期待 ----------
 func _gui_input(event: InputEvent) -> void:
-	if not (event is InputEventMouseButton and event.pressed
-			and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT):
-		return
+	if event is InputEventMouseButton and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+		var e := event as InputEventMouseButton
+		if e.pressed:
+			_pressing = true
+			_dragged = false
+			_press = e.position
+			_press_pan = _pan
+		else:
+			_pressing = false
+			if not _dragged:
+				_click(e.position)
+	elif event is InputEventMouseMotion and _pressing:
+		var d: Vector2 = (event as InputEventMouseMotion).position - _press
+		if _dragged or d.length() > 12.0:   # 阈值内=点选；超出=拖动平移（不再触发点选）
+			_dragged = true
+			_set_pan(_press_pan - d)
+
+func _click(p: Vector2) -> void:
 	var kd = GameStateScript.kingdom()
 	if kd == null or not kd.is_loaded:
 		return
-	var p: Vector2 = (event as InputEventMouseButton).position
 	var best := ""
 	var best_y := -INF
 	for b in SLOTS:
 		var rect := _slot_rect(b)
 		rect.position.y -= 8.0   # 顶部留点余量（名牌/气泡也算命中）
 		rect.size.y += 34.0
-		if rect.has_point(p) and (SLOTS[b]["pos"] as Vector2).y > best_y:
+		var sy: float = _k2s(SLOTS[b]["pos"] as Vector2).y
+		if rect.has_point(p) and sy > best_y:
 			best = b
-			best_y = (SLOTS[b]["pos"] as Vector2).y
+			best_y = sy
 	if best == "":
-		return
+		# 右下角箭塔副本 = 第二交互入口（0726：下方两塔都作为入口）
+		var tex: Texture2D = BUILDING_TEX["watchtower"]
+		var wt_h := 80.0 * float(tex.get_height()) / float(tex.get_width())
+		var wt_rect := Rect2(_k2s(WT_CLICK_EXTRA - Vector2(40.0, wt_h)),
+				Vector2(80.0, wt_h) * _scale)
+		wt_rect.position.y -= 8.0
+		wt_rect.size.y += 34.0
+		if wt_rect.has_point(p):
+			best = "watchtower"
+		else:
+			return
 	AudioManager.play_sfx("ui_button_press")
+	var bcfg: Dictionary = (GameStateScript.config().kingdom.get("buildings", {}) as Dictionary).get(best, {})
+	if _level_of(best, kd) >= 1 and str(bcfg.get("kind", "")) == "placeholder":
+		UI.toast("敬请期待")   # 0726 用户口径：placeholder 建筑可建造，功能后续设计
+		return
 	var m := BuildingModal.new()
 	m.building = best
 	UI.modal(m)
@@ -288,20 +310,22 @@ func _gui_input(event: InputEvent) -> void:
 func _build_hud() -> void:
 	var bar := Panel.new()
 	bar.position = Vector2(0, 0)
-	bar.size = Vector2(720, 118)
+	bar.size = Vector2(1280, 92) if _land else Vector2(720, 118)
 	bar.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color(0.07, 0.06, 0.10, 0.86), 3, Color("2b1e12")))
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bar)
-	_pin_label("王国领地", Vector2(28, 12), 26, PixelUI.COL_GOLD)
-	_res_lbl = _pin_label("粮草 — · 木石 —", Vector2(28, 52), 20, PixelUI.COL_PARCHMENT)
-	_def_lbl = _pin_label("城防：塔 HP +0% · 塔攻 +0%", Vector2(28, 84), 16, PixelUI.COL_HINT)
+	_pin_label("王国领地", Vector2(28, 12) if _land else Vector2(28, 12), 26, PixelUI.COL_GOLD)
+	_res_lbl = _pin_label("粮草 — · 木石 —", Vector2(28, 54) if _land else Vector2(28, 52), 20,
+			PixelUI.COL_PARCHMENT)
+	_def_lbl = _pin_label("城防：塔 HP +0% · 塔攻 +0%",
+			Vector2(330, 58) if _land else Vector2(28, 84), 16, PixelUI.COL_HINT)
 	_wallet_holder = Control.new()
-	_wallet_holder.position = Vector2(430, 12)
+	_wallet_holder.position = Vector2(690, 12) if _land else Vector2(430, 12)
 	_wallet_holder.size = Vector2(270, 40)
 	_wallet_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_wallet_holder)
 	_collect_btn = Button.new()
-	_collect_btn.position = Vector2(474, 58)
+	_collect_btn.position = Vector2(1030, 22) if _land else Vector2(474, 58)
 	_collect_btn.size = Vector2(226, 50)
 	_collect_btn.pivot_offset = _collect_btn.size * 0.5
 	_collect_btn.focus_mode = Control.FOCUS_NONE
@@ -312,7 +336,7 @@ func _build_hud() -> void:
 	add_child(_collect_btn)
 	var back := Button.new()
 	back.text = tr("btn_back")
-	back.position = Vector2(20, 1204)
+	back.position = Vector2(20, 646) if _land else Vector2(20, 1204)
 	back.size = Vector2(170, 58)
 	back.pivot_offset = back.size * 0.5
 	back.focus_mode = Control.FOCUS_NONE

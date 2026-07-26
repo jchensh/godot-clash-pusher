@@ -149,6 +149,10 @@ var _cancel_btn: Button
 var _font: Font
 var _status := "连接中…"
 var _flip := false                              # side2 时整场翻转视角
+# H6（KAN-115）：全局横屏下联机也走横版投影。复合次序 = 先 _flip 逻辑 180° 翻转（沿用竖版
+# side2 已验收语义），再套横版投影（我左敌右）——等价于施工图「横投影+左右镜像」外加一次
+# 上下换道；场地双桥/河对两轴对称，BG 不参与翻转仍对齐。
+var _landscape := false
 
 # 出牌交互
 var _selected := -1
@@ -191,6 +195,8 @@ var _end_buttons_added := false
 
 
 func _ready() -> void:
+	_landscape = GameStateScript.ui_layout() == "landscape"
+	Log.i("[net] 版式=%s" % ("横版(H6·我左敌右)" if _landscape else "竖版"))
 	_font = load("res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf")
 	_loader = GameStateScript.config()
 	_http = HTTPRequest.new()
@@ -273,7 +279,7 @@ func _build_nameplates(opp_name: String, opp_avatar: String) -> void:
 	var vp := get_viewport_rect().size
 	var mine := HudWidgets.nameplate(session.nickname(), session.avatar_card_id(), _loader, -1, true)
 	mine.name = "np_mine"
-	mine.position = Vector2(16, vp.y - HUD_BOTTOM_H - 78.0)
+	mine.position = Vector2((vp.x - minf(vp.x, 720.0)) * 0.5 + 16.0, vp.y - HUD_BOTTOM_H - 78.0)
 	mine.z_index = 50
 	add_child(mine)
 	var foe := HudWidgets.nameplate(opp_name, opp_avatar, _loader, -1, false)
@@ -350,6 +356,10 @@ func _local_player():
 func _field_rect() -> Rect2:
 	var zone := Rect2(0.0, TOPBAR_H, _vw, _vh - TOPBAR_H - HUD_BOTTOM_H)
 	var a = _client.match_obj.battle.arena
+	if _landscape:   # H6：横版=zone 内取整方格居中（1280×720 → 27px/格 864×486，同单机 L3b）
+		var cell := floorf(minf(zone.size.x / float(a.grid_h), zone.size.y / float(a.grid_w)))
+		var fsz := Vector2(cell * float(a.grid_h), cell * float(a.grid_w))
+		return Rect2(zone.position + (zone.size - fsz) * 0.5, fsz)
 	var ts: float = floor(minf(zone.size.x / float(a.grid_w), zone.size.y / float(a.grid_h)))
 	var fs := Vector2(ts * float(a.grid_w), ts * float(a.grid_h))
 	return Rect2(zone.position + (zone.size - fs) * 0.5, fs)
@@ -359,14 +369,23 @@ func _t2s(p: Vector2) -> Vector2:
 	var x: float = (a.grid_w - p.x) if _flip else p.x
 	var y: float = (a.grid_h - p.y) if _flip else p.y
 	var fr := _field_rect()
+	if _landscape:   # 横版投影：逻辑 y→屏幕横向(敌右)、逻辑 x→屏幕纵向
+		return Vector2(fr.position.x + (a.grid_h - y) / a.grid_h * fr.size.x,
+				fr.position.y + x / a.grid_w * fr.size.y) + _shake
 	return Vector2(fr.position.x + x / a.grid_w * fr.size.x,
 			fr.position.y + y / a.grid_h * fr.size.y) + _shake   # _shake 只动场内、HUD 不抖
 
 func _s2t(s: Vector2) -> Vector2:
 	var a = _client.match_obj.battle.arena
 	var fr := _field_rect()
-	var x: float = (s.x - fr.position.x) / fr.size.x * a.grid_w
-	var y: float = (s.y - fr.position.y) / fr.size.y * a.grid_h
+	var x: float
+	var y: float
+	if _landscape:
+		x = (s.y - fr.position.y) / fr.size.y * a.grid_w
+		y = a.grid_h - (s.x - fr.position.x) / fr.size.x * a.grid_h
+	else:
+		x = (s.x - fr.position.x) / fr.size.x * a.grid_w
+		y = (s.y - fr.position.y) / fr.size.y * a.grid_h
 	if _flip:
 		x = a.grid_w - x
 		y = a.grid_h - y
@@ -375,14 +394,33 @@ func _s2t(s: Vector2) -> Vector2:
 func _tile_px() -> Vector2:
 	var a = _client.match_obj.battle.arena
 	var fr := _field_rect()
+	if _landscape:   # 横版格恒方形（取整构造保证）
+		return Vector2(fr.size.x / a.grid_h, fr.size.y / a.grid_w)
 	return Vector2(fr.size.x / a.grid_w, fr.size.y / a.grid_h)
+
+# HUD 布局块：竖版=全宽；横版=居中 720（手牌/圣水/名片共用锚定，同单机 L3b）。
+func _hud_w() -> float:
+	return minf(_vw, 720.0)
+
+func _hud_x0() -> float:
+	return (_vw - _hud_w()) * 0.5
+
+# footprint（逻辑 fw×fh）在屏幕上的宽高：横版下逻辑纵深(fh)→屏幕横向、逻辑宽(fw)→屏幕纵向。
+func _fp_screen(fw: float, fh: float) -> Vector2:
+	var tp := _tile_px()
+	if _landscape:
+		return Vector2(fh * tp.x, fw * tp.y)
+	return Vector2(fw * tp.x, fh * tp.y)
 
 func _ur() -> float:          # 单位绘制参考半径基准 = tile 屏幕边长均值
 	var tp := _tile_px()
 	return (tp.x + tp.y) * 0.5
 
-# 「屏幕向上 n 格」对应的逻辑位移（塔顶伤害数字锚点/箭口）：_flip 时逻辑 y 增 = 屏幕向上。
+# 「屏幕向上 n 格」对应的逻辑位移（塔顶伤害数字锚点/箭口）：_flip 时逻辑 y 增 = 屏幕向上；
+# 横版下屏幕纵向对应逻辑 x（_flip 再反号）。
 func _screen_up_tiles(n: float) -> Vector2:
+	if _landscape:
+		return Vector2(n if _flip else -n, 0.0)
 	return Vector2(0.0, n if _flip else -n)
 
 
@@ -413,27 +451,35 @@ func _draw() -> void:
 
 # —— 地形（0715 整图 BG 特征对齐；BG_ENABLED=false 回退 V3-7b-4 逐格 tile）——
 func _draw_terrain(a) -> void:
-	if BG_ENABLED:
+	# 无河桥场地回退瓦片（对齐 battle_scene 0726 防越界保护）。
+	if BG_ENABLED and a.bridges.size() >= 2:
 		_draw_bg_image(a)
 	else:
 		_draw_terrain_tiles(a)
-	# 己方半场可部署区描边提示（按 _flip 选上下半场；本方半场恒在屏幕下方）。
+	# 己方半场可部署区描边提示：竖版=下半场（_flip 已保证本方在下）；横版=左半场（本方恒在左）。
 	var fr := _field_rect()
-	var y0 := _t2s(Vector2(0, _deploy_y_min(a))).y
-	draw_rect(Rect2(fr.position.x, y0, fr.size.x, fr.position.y + fr.size.y - y0),
-			Color(0.4, 0.8, 0.5, 0.10))
+	if _landscape:
+		var x1 := _t2s(Vector2(0, _deploy_y_min(a))).x
+		draw_rect(Rect2(fr.position.x, fr.position.y, x1 - fr.position.x, fr.size.y),
+				Color(0.4, 0.8, 0.5, 0.10))
+	else:
+		var y0 := _t2s(Vector2(0, _deploy_y_min(a))).y
+		draw_rect(Rect2(fr.position.x, y0, fr.size.x, fr.position.y + fr.size.y - y0),
+				Color(0.4, 0.8, 0.5, 0.10))
 
 # 本方半场的部署 y 下界（tile）：side1=deploy_player_y_min，side2=对敌方半场对称。
 func _deploy_y_min(a) -> int:
 	return a.deploy_player_y_min if not _flip else (a.grid_h - a.deploy_player_y_min)
 
 func _draw_terrain_tiles(a) -> void:
-	var tp := _tile_px()
 	for ty in range(a.grid_h):
 		for tx in range(a.grid_w):
 			var t: int = a.tile_type(tx, ty)
+			# tile 矩形取两对角投影的包围盒（_flip/横版下 _t2s(tx,ty) 不一定是左上角）。
 			var s := _t2s(Vector2(tx, ty))
-			var rect := Rect2(s.x, s.y, tp.x + 1.0, tp.y + 1.0)
+			var s2 := _t2s(Vector2(tx + 1, ty + 1))
+			var rect := Rect2(Vector2(minf(s.x, s2.x), minf(s.y, s2.y)),
+					Vector2(absf(s2.x - s.x) + 1.0, absf(s2.y - s.y) + 1.0))
 			if t == a.TILE_WATER:
 				_draw_water_tile(rect)
 			elif t != a.TILE_TOWER and ty >= a.river_y_min and ty < a.river_y_max:
@@ -448,6 +494,16 @@ func _draw_bg_image(a) -> void:
 	var b1: float = (a.bridges[0]["x_min"] + a.bridges[0]["x_max"]) * 0.5 / float(a.grid_w)
 	var b2: float = (a.bridges[1]["x_min"] + a.bridges[1]["x_max"]) * 0.5 / float(a.grid_w)
 	var rv: float = (a.river_y_min + a.river_y_max) * 0.5 / float(a.grid_h)
+	if _landscape:
+		# H6：横版 BG 绕场心转 90°（同单机 H2 公式）；场地两轴对称，_flip 不参与仍对齐。
+		draw_set_transform(fr.get_center() + _shake, PI / 2)
+		var vfr := Rect2(-fr.size.y * 0.5, -fr.size.x * 0.5, fr.size.y, fr.size.x)
+		var off: Vector2 = Vector2(_vw, _vh) * 0.5 - fr.get_center()
+		var vpl := Rect2(Vector2(off.y, -off.x) - Vector2(_vh, _vw) * 0.5, Vector2(_vh, _vw))
+		var pl := _bg_full(vfr, vpl, _bg_src(vfr, b1, b2, rv))
+		draw_texture_rect_region(TEX_BATTLE_BG, pl[0], pl[1])
+		draw_set_transform(Vector2.ZERO)
+		return
 	var pp := _bg_full(fr, Rect2(0.0, 0.0, _vw, _vh), _bg_src(fr, b1, b2, rv))
 	draw_texture_rect_region(TEX_BATTLE_BG,
 			Rect2((pp[0] as Rect2).position + _shake, (pp[0] as Rect2).size), pp[1])
@@ -508,7 +564,7 @@ func _draw_world(a) -> void:
 			if t.is_destroyed():
 				_draw_tower_one(t)   # 废墟=贴地花纹，先画在一切单位之下（单位可踩上去）
 				continue
-			items.append([_tower_anchor(t).y + t.fh * tp.y * 0.5, items.size(), false, t])
+			items.append([_tower_anchor(t).y + _fp_screen(t.fw, t.fh).y * 0.5, items.size(), false, t])
 	var ur: float = _ur()
 	var cur := {}
 	for u in a.get_units():
@@ -537,12 +593,11 @@ func _draw_world(a) -> void:
 
 # —— 塔（0716：三国正式素材 阵营分色 + 血条 + 王塔金冠 + 摧毁废墟）——
 func _draw_tower_one(t) -> void:
-	var tp := _tile_px()
 	var mine: bool = _is_mine(t.owner_id)
 	var base: Color = COL_SELF if mine else COL_FOE
 	var king: bool = t.is_king()
 	var c := _tower_anchor(t)
-	var fp := Vector2(t.fw * tp.x, t.fh * tp.y)
+	var fp := _fp_screen(t.fw, t.fh)   # H6：横版下 footprint 方向语义自动翻转
 	var foot_bottom: float = c.y + fp.y * 0.5            # footprint 底边 = 塔贴地处
 	var tex: Texture2D
 	if king:
@@ -717,41 +772,10 @@ func _draw_elixir() -> void:
 	var lp = _local_player()
 	if lp == null:
 		return
-	var e = lp.elixir
-	var amt: float = e.get_amount()
-	var mx: int = maxi(1, int(round(float(e.maximum) if "maximum" in e else 10.0)))
-	var full: bool = e.is_full()
-	var y := _vh - HUD_BOTTOM_H + 10.0
-	var x0 := 16.0
-	var next_w := 104.0
-	var total_w := _vw - 32.0 - next_w
-	var gap := 3.0
-	var pip_w: float = (total_w - gap * (mx - 1)) / mx
-	for i in mx:
-		var px := x0 + i * (pip_w + gap)
-		draw_rect(Rect2(px, y, pip_w, 20.0), Color(0.10, 0.05, 0.12, 0.85))
-		var fillf: float = clampf(amt - float(i), 0.0, 1.0)
-		if fillf > 0.0:
-			var col := COL_ELIXIR
-			if full:
-				col = COL_ELIXIR.lerp(Color(1, 0.85, 1), (0.5 + 0.5 * sin(_elapsed * 8.0)) * 0.6)
-			draw_rect(Rect2(px, y, pip_w * fillf, 20.0), col)
-	_text(Vector2(x0 + 4, y + 16.0), "%d" % e.get_int(), Color.WHITE, 14)
-	_draw_next_chip(_vw - next_w - 4.0, y - 2.0, next_w - 6.0, 24.0)
-
-func _draw_next_chip(x: float, y: float, w: float, h: float) -> void:
-	var lp = _local_player()
-	if lp == null:
-		return
 	var nx = lp.deck.peek_next()
-	if nx == null:
-		return
-	draw_rect(Rect2(x, y, w, h), Color(0, 0, 0, 0.4))
-	_text(Vector2(x + 5, y + 10), tr("hud_next"), Color(0.7, 0.7, 0.7), 10)
-	_text(Vector2(x + 5, y + h - 4), _short(tr("card_" + str(nx)), 9), Color.WHITE, 11)
-	var cost: int = lp.card_cost(nx)
-	draw_circle(Vector2(x + w - 12, y + h * 0.5), 8.0, COL_ELIXIR)
-	_text(Vector2(x + w - 15, y + h * 0.5 + 4.0), "%d" % cost, Color.WHITE, 11)
+	HudWidgets.draw_elixir_row(self, _font, lp.elixir,
+			"" if nx == null else str(nx), 0 if nx == null else lp.card_cost(nx),
+			_hud_x0(), _hud_w(), _vh - HUD_BOTTOM_H + 10.0, _elapsed)
 
 
 func _hp_color(ratio: float) -> Color:
@@ -1184,10 +1208,10 @@ func _build_cards() -> void:
 	_card_btns.clear()
 	_card_base_pos.clear()
 	var n := 4
-	var bw := (_vw - 16.0 * (n + 1)) / n
+	var bw := (_hud_w() - 16.0 * (n + 1)) / n
 	for i in n:
 		var b := Button.new()
-		b.position = Vector2(16.0 + i * (bw + 16.0), _vh - HUD_BOTTOM_H + 40.0)
+		b.position = Vector2(_hud_x0() + 16.0 + i * (bw + 16.0), _vh - HUD_BOTTOM_H + 40.0)
 		b.size = Vector2(bw, HUD_BOTTOM_H - 56.0)
 		b.button_down.connect(_on_card_down.bind(i))
 		b.button_up.connect(_on_card_up.bind(i))

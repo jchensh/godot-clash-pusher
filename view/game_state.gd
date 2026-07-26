@@ -48,6 +48,24 @@ static func set_battle_layout(v: String) -> void:
 	c.set_value("battle", "layout", v)
 	c.save(_SETTINGS_PATH)
 
+# —— 全局横屏模式（L1，2026-07-26 用户拍板：竖屏保留为默认，设置页开关切换）——
+# 纯表现层偏好，存 settings.cfg [display]；窗口/方向的实际切换收口 Router.apply_ui_layout()。
+static var _ui_layout := ""            # 内存缓存；"" = 未从盘加载
+static func ui_layout() -> String:     # "portrait"(默认) / "landscape"(全局横屏)
+	if _ui_layout == "":
+		_ui_layout = "portrait"
+		var c := ConfigFile.new()
+		if c.load(_SETTINGS_PATH) == OK:
+			_ui_layout = String(c.get_value("display", "layout", "portrait"))
+	return _ui_layout
+
+static func set_ui_layout(v: String) -> void:
+	_ui_layout = v
+	var c := ConfigFile.new()
+	c.load(_SETTINGS_PATH)
+	c.set_value("display", "layout", v)
+	c.save(_SETTINGS_PATH)
+
 # —— V4-S4 联机会话（登录 token + 档案/杯数，跨场景复用）——
 static var _session = null
 static func session():                 # 懒创建；主菜单/联机对战页共用

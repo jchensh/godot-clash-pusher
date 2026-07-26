@@ -55,8 +55,12 @@ func modal_open() -> bool:
 func toast(msg: String, col: Color = PixelUI.COL_GOLD, y: float = 1080.0, hold: float = 1.0) -> void:
 	var l := Label.new()
 	l.text = msg
-	l.position = Vector2(0, y)
-	l.size = Vector2(720, 40)
+	# L2 全局横屏：y 参数是 720×1280 竖版设计坐标 → 按实际视口高度等比换算；宽度取实际视口宽。
+	var vs := Vector2(720.0, 1280.0)
+	if is_inside_tree():
+		vs = get_viewport().get_visible_rect().size
+	l.position = Vector2(0, y / 1280.0 * vs.y)
+	l.size = Vector2(vs.x, 40)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.add_theme_font_size_override("font_size", 24)
 	l.add_theme_color_override("font_color", col)

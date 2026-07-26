@@ -143,3 +143,46 @@ static func nameplate(nickname: String, avatar_card_id: String, loader, trophies
 		tl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		root.add_child(tl)
 	return root
+
+
+# —— 战斗 HUD 共用绘制（L3 收口，2026-07-26）：圣水槽条 + 「下一张」chip ——
+# battle_scene / net_battle_scene 双场景同款（原各自复制一份）。x0/w = HUD 内容块横向
+# 锚定（竖版 0/_vw、横版居中 720 浮层），几何与收口前逐像素一致。
+const COL_ELIXIR := Color(0.80, 0.33, 0.96)
+
+
+static func draw_elixir_row(c: CanvasItem, font: Font, e, next_id: String, next_cost: int,
+		x0: float, w: float, y: float, elapsed: float) -> void:
+	var next_w := 104.0
+	var bar_x := x0 + 16.0
+	var total_w := w - 32.0 - next_w
+	var mx: int = maxi(1, int(round(float(e.maximum) if "maximum" in e else 10.0)))
+	var amt: float = e.get_amount()
+	var full: bool = e.is_full()
+	var gap := 3.0
+	var pip_w: float = (total_w - gap * (mx - 1)) / mx
+	for i in mx:
+		var px := bar_x + i * (pip_w + gap)
+		c.draw_rect(Rect2(px, y, pip_w, 20.0), Color(0.10, 0.05, 0.12, 0.85))   # 空槽
+		var fillf: float = clampf(amt - float(i), 0.0, 1.0)
+		if fillf > 0.0:
+			var col := COL_ELIXIR
+			if full:
+				col = COL_ELIXIR.lerp(Color(1, 0.85, 1), (0.5 + 0.5 * sin(elapsed * 8.0)) * 0.6)
+			c.draw_rect(Rect2(px, y, pip_w * fillf, 20.0), col)
+	c.draw_string(font, Vector2(bar_x + 4, y + 16.0), "%d" % e.get_int(),
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
+	if next_id == "":
+		return
+	var r := Rect2(x0 + w - next_w - 4.0, y - 2.0, next_w - 6.0, 24.0)
+	c.draw_rect(r, Color(0, 0, 0, 0.4))
+	c.draw_string(font, r.position + Vector2(5, 10), c.tr("hud_next"),
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(0.7, 0.7, 0.7))
+	var label: String = c.tr("card_" + next_id)
+	if label.length() > 9:
+		label = label.substr(0, 8) + "…"
+	c.draw_string(font, r.position + Vector2(5, r.size.y - 4), label,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color.WHITE)
+	c.draw_circle(r.position + Vector2(r.size.x - 12, r.size.y * 0.5), 8.0, COL_ELIXIR)
+	c.draw_string(font, r.position + Vector2(r.size.x - 15, r.size.y * 0.5 + 4.0), "%d" % next_cost,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color.WHITE)

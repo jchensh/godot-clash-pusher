@@ -81,3 +81,15 @@ func test_kingdom_pb_roundtrip_and_dict() -> void:
 	assert_eq(int((d["pending"] as Dictionary).get("food", 0)), 60, "pending 转换")
 	assert_eq(int(d["pending_gold"]), 30, "pending_gold 转换")
 	assert_eq(int(d["server_now_ts"]), 1700000000, "服务器时间基准转换")
+
+# 0726 城建扩容账本：16 建筑（7 功能 + 9 placeholder）；placeholder 仅 1 级、kind 标记
+# 驱动客户端「敬请期待」交互（功能后续设计再扩级）。
+func test_kingdom_building_expansion_0726() -> void:
+	var c = _config()
+	var bs: Dictionary = c.kingdom.get("buildings", {})
+	assert_eq(bs.size(), 16, "0726 起 16 建筑（增删建筑后同步更新此账本）")
+	for name in ["quarry", "stoneworks", "ironworks", "ranch", "shop",
+			"camp_infantry", "camp_spear", "camp_crossbow", "camp_cavalry"]:
+		assert_true(bs.has(name), "placeholder 建筑 %s 存在" % name)
+		assert_eq(str((bs[name] as Dictionary).get("kind", "")), "placeholder", "%s kind=placeholder" % name)
+		assert_eq(((bs[name] as Dictionary).get("levels", []) as Array).size(), 1, "%s 仅 1 级" % name)
