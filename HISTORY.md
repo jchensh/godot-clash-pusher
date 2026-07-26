@@ -1134,5 +1134,26 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
   - 前端 Web 生产包发布完毕（唯一有效域名：`https://tower-push-godot.web.app`）。
 
 
+### V5-E2 / Release 03f3ffc — 外网测试包部署 (0726 批次：王国 16 建筑素材 + H6 PVP 横版 + 全局横屏 L1~L4) (2026-07-27)
+- **部署内容**：
+  - 合并 `master` 最新进展至 `release` 分支（提交 `03f3ffc`）。包含：王国 16 建筑新场景（0726 素材/BG 1440×1830）、H6 联机 PVP 横版（KAN-115）、全局横屏 L1~L4（包含设置、卡牌组卡/图鉴原生横屏）。
+  - 改动仅涉及客户端代码/场景/素材及 `config/kingdom.json`，服务端 Go 代码与 proto 无改动，数据库 schema 维持在 v9（无需跑新 migration）。
+- **服务端部署**：
+  - 通过 `gcloud compute ssh towerpush-backend --tunnel-through-iap` 登录 GCP VM（`/opt/godot-clash-pusher`），同步 `release` 分支至 `03f3ffc`。
+  - 运行 `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build` 重建并拉起全量容器。
+  - 按反作弊铁律重启重放验证器：`docker restart server-verifier-1`（针对 `config/kingdom.json` 变更）。
+  - 健康度校验：`curl https://towerpushserver.jeffgame.tech/healthz` 回复 `ok` (200)，WebSocket Upgrade 请求握手正常。
+- **Web 前端部署**：
+  - 在 `release` 工作树运行 `tools/build_web.ps1`，动态注入生产端点：
+    `API_URL: https://towerpushserver.jeffgame.tech`
+    `WS_URL: wss://towerpushserver.jeffgame.tech/v4/battle/ws`
+    `SESSION_WS_URL: wss://towerpushserver.jeffgame.tech/v5/session/ws`
+  - 使用 `firebase deploy --project tower-push-godot` 成功发布至唯一有效 Firebase Hosting 域名 (`https://tower-push-godot.web.app`)。
+- **结果**：
+  - GCP 后端容器全线 Up 稳定运行，重放验证器重启加载最新配置。
+  - Web 前端生产包已部署完成，访问 `https://tower-push-godot.web.app` 可直接实测 0726 王国 16 建筑与 H6 横版 PVP。
+
+
+
 
 
