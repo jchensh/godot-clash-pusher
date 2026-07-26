@@ -154,7 +154,9 @@ const LANDSCAPE_NATIVE := ["res://view/main_menu.tscn", "res://view/stage_map.ts
 # 返回包壳模式；"" = 不包壳（场景自适配横屏）。⚠️ net_battle_scene 也含 "battle_scene"
 # 子串，判断顺序要先网络后单机。
 func _wrap_mode(path: String) -> String:
-	if path.ends_with("net_battle_scene.tscn") or path.contains("campaign_scene"):
+	if path.ends_with("net_battle_scene.tscn"):
+		return ""   # H6（KAN-115）：联机战斗自带横版投影×side2 复合，不包壳
+	if path.contains("campaign_scene"):
 		return "fit"
 	if path.ends_with("battle_scene.tscn"):
 		return "fit" if GameStateScript.tutorial else ""
