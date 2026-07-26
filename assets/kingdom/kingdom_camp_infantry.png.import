@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://uf8bldskgoom"
-path="res://.godot/imported/步兵.png-c8f82943dcf7ae6748c03fd2089fa7ae.ctex"
+uid="uid://d0ujwqha2x7q0"
+path="res://.godot/imported/kingdom_camp_infantry.png-6e8febbabd73fa6c311df8b16f536f6f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://testAssets/城建0726/步兵.png"
-dest_files=["res://.godot/imported/步兵.png-c8f82943dcf7ae6748c03fd2089fa7ae.ctex"]
+source_file="res://assets/kingdom/kingdom_camp_infantry.png"
+dest_files=["res://.godot/imported/kingdom_camp_infantry.png-6e8febbabd73fa6c311df8b16f536f6f.ctex"]
 
 [params]
 

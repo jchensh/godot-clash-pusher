@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://brnbwq0klwn6o"
-path="res://.godot/imported/弩兵.png-a830e0e07abb4731cd1be41910152a51.ctex"
+uid="uid://cjoyt8e5c5vc3"
+path="res://.godot/imported/骑兵营.png-23ade535b2f22b22e01dc7597817eea7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://testAssets/城建0726/弩兵.png"
-dest_files=["res://.godot/imported/弩兵.png-a830e0e07abb4731cd1be41910152a51.ctex"]
+source_file="res://testAssets/城建0726/骑兵营.png"
+dest_files=["res://.godot/imported/骑兵营.png-23ade535b2f22b22e01dc7597817eea7.ctex"]
 
 [params]
 

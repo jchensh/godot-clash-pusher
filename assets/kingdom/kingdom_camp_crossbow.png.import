@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cjy2hp0wkvmso"
-path="res://.godot/imported/枪兵.png-5bf609d371f7295b9892c5d6c371b3bc.ctex"
+uid="uid://cro8jh24fnf7e"
+path="res://.godot/imported/kingdom_camp_crossbow.png-445bcecb6d903252f5ada59c9dd53093.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://testAssets/城建0726/枪兵.png"
-dest_files=["res://.godot/imported/枪兵.png-5bf609d371f7295b9892c5d6c371b3bc.ctex"]
+source_file="res://assets/kingdom/kingdom_camp_crossbow.png"
+dest_files=["res://.godot/imported/kingdom_camp_crossbow.png-445bcecb6d903252f5ada59c9dd53093.ctex"]
 
 [params]
 
