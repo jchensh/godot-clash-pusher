@@ -824,3 +824,9 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
 - **`tools/slice_cartoon_frames.py`**（幂等，uv+pillow）：透明列投影找内容段 → **相邻段中心距中位数推帧距、N=round(W/帧距)**（检测只负责数帧，切割恒用等距网格——美术等间距导出，角色每帧同位；粘连段/特效跨界不糊帧数）→ 等距切 N 帧 → **全帧 alpha 包围盒并集统一裁切**（角色锚点跨帧恒定，单帧特效不拉宽）→ ÷2（2 倍交付→1x，LANCZOS）→ 等宽横排 spritesheet。
 - **踩坑修正**：初版 per-frame 包围盒+中心对齐导致角色帧间跳动（鼹鼠枪口烟把单帧包围盒拉宽）、粘连段致帧数误判（8 均分把实际 14 帧的开枪动画切乱）——并集裁切+中位距推帧修复，抽查（musketeer 14 帧/valkyrie 7 帧/goblins 8 帧）角色恒位确认。
 - **产出**：`assets/units_cartoon/` 42 张（21 角色×attack/walk）+ `cartoon_frames.json`（帧数/帧宽高/检测模式/来源，P1-6 sprite_db 读）；`assets/portraits_cartoon/` 21 张立绘（P2 卡面用先行产出）。帧数分布：多数 8 帧、fire_spirit/valkyrie walk 7 帧、musketeer attack 14 帧，全部 auto 检测零回退。headless import 零报错。
+
+### V5 · 卡通改版 P1-6：sprite_db 卡通层 + 21 角色接入战斗（✅ 443 绿，2026-08-30，KAN-121）
+
+- **sprite_db 卡通素材层**（lazy 构建，查询优先于旧 DB）：首访读 `cartoon_frames.json` + load() 贴图生成同构条目；旧三国/占位条目保留为锁定卡兜底（AI 关卡仍出旧卡）。映射=PLAN §5；**spear_goblin_body 分蟑螂恶霸素材**（goblin_gang 出 goblin+spear 混编 → 蟑螂+恶霸双形象）；派生形态复用父贴图缩小（phoenix_reborn 0.72×火又鸟、lava_pup 0.4×幺蛾子；golem 亡语裂 goblin=蟑螂天然成立）。
+- **px 直画新约定**（取代方形 box 拉伸——卡通帧非方形，旧路径会拉变形）：条目 px=true 时 dst=帧像素×(ur/25)×scale、**底边贴脚线**（c.y+rad，对齐切帧底对齐产物）；影子 px 分支按帧宽做基准、影心压脚线。battle_scene/net_battle_scene 双份同步；朝向沿用 mirror 机制（正面微朝左单行帧，向右走/砍水平翻转，net side2 屏幕语义自动正确）。
+- **测试**：test_sprite_db 两用例改卡通口径（knight 帧尺寸以 cartoon_frames.json 为真相源对比；fx manifest 改用仍走旧 DB 的 giant_body）+ 新增 `test_cartoon_layer_covers_21_cards`（21 卡双态可取帧/px 标记/帧界/派生缩小全覆盖）。全量 **443/443**；gdlint 绿。

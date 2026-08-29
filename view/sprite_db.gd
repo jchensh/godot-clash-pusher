@@ -16,6 +16,8 @@
 #   战斗内与队伍色相乘（队伍可读性优先），卡面/图鉴/头像为自然色 tint（个体识别）。
 extends RefCounted
 
+# ⚠️ 决策 49 卡通改版（2026-08-30/KAN-121）：21 张可玩卡的单位精灵由**卡通素材层**接管
+# （lazy 构建见文件尾 _cartoon_db）；下方 DB 旧三国/占位条目保留，为锁定卡（AI 关卡仍会出）兜底。
 const T_KNIGHT_NC := preload("res://assets/units/Heavy_Knight_Non-Combat_Animations.png")
 const T_KNIGHT_CB := preload("res://assets/units/Heavy_Knight_Combat_Animations.png")
 # 三国正式素材（0721 美术更新版重打包，管线同 KAN-104：谷切→脚线锚定→单行帧条，k=1 不缩放）：
@@ -319,7 +321,7 @@ const DB := {
 }
 
 static func has_sprite(unit_id: String) -> bool:
-	return DB.has(unit_id)
+	return _cartoon_db().has(unit_id) or DB.has(unit_id)
 
 # 占位条目清单（供测试/盘点：还剩多少单位等正式素材）。
 static func placeholder_ids() -> Array:
@@ -335,9 +337,9 @@ static func placeholder_ids() -> Array:
 # face_up：正/背双行素材的朝向覆写（0721 霹雳车炮口朝目标）——-1=按 owner 默认（0 朝上/背面），
 # 1=强制背面(朝上)，0=强制正面(朝下)。仅对有 row_up 的条目生效。
 static func frame(unit_id: String, state: String, owner_id: int, t: float, face_up: int = -1) -> Dictionary:
-	if not DB.has(unit_id):
+	var u: Dictionary = _cartoon_db().get(unit_id, DB.get(unit_id, {}))
+	if u.is_empty():
 		return {}
-	var u: Dictionary = DB[unit_id]
 	var s: Dictionary = u.get(state, u.get("walk", {}))
 	if s.is_empty():
 		return {}
@@ -354,6 +356,7 @@ static func frame(unit_id: String, state: String, owner_id: int, t: float, face_
 	return {"tex": s["tex"], "src": Rect2(col * fw, row * fh, fw, fh), "scale": sc,
 			"base_scale": float(u.get("scale", 1.2)),
 			"mirror": bool(u.get("mirror", false)),
+			"px": bool(u.get("px", false)),
 			"tint": u.get("tint", Color.WHITE), "shadow": bool(u.get("shadow", false)),
 			"natural": bool(u.get("natural", false))}
 
@@ -393,9 +396,8 @@ static func draw_projectile(c: CanvasItem, kind: String, pos: Vector2, dir: Vect
 # 单位配套战斗特效（attack=攻击刀光/hit=受击星芒/death=死亡消散；无配套返回空字典）。
 # 返回 {tex, fw, fh, n, dur, size}；battle_scene 按 dur 推进度、size(直径 tile)×ur 定屏幕尺寸。
 static func unit_fx(unit_id: String, kind: String) -> Dictionary:
-	if not DB.has(unit_id):
-		return {}
-	var fx: Dictionary = (DB[unit_id] as Dictionary).get("fx", {})
+	var u: Dictionary = _cartoon_db().get(unit_id, DB.get(unit_id, {}))
+	var fx: Dictionary = u.get("fx", {})
 	return fx.get(kind, {})
 
 # —— 卡片肖像（菜单/draft/组卡 用 TextureRect；7b-5b）——
@@ -432,9 +434,8 @@ static func card_portrait_tint(card_id: String, loader) -> Color:
 	for sk in loader.get_card(card_id).get("skills", []):
 		if typeof(sk) == TYPE_DICTIONARY and str(sk.get("type")) == "spawn_unit":
 			var uid := str(sk.get("unit_id"))
-			if DB.has(uid):
-				return (DB[uid] as Dictionary).get("tint", Color.WHITE)
-			return Color.WHITE
+			var u: Dictionary = _cartoon_db().get(uid, DB.get(uid, {}))
+			return u.get("tint", Color.WHITE)
 	return Color.WHITE
 
 # 现成可加到 Control 的肖像 TextureRect（无肖像返 null；占位 tint 自动应用）。
@@ -454,3 +455,70 @@ static func make_card_portrait(card_id: String, loader, pos: Vector2, size: Vect
 	t.size = size
 	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return t
+
+
+# ═══════ 决策 49 卡通素材层（0830 批，tools/slice_cartoon_frames.py 产出）═══════
+# lazy 构建：首访读 cartoon_frames.json + load() 贴图，生成与 DB 同构条目、查询优先于 DB。
+# 条目特有 px=true：帧非方形，绘制侧按「帧像素 × (ur/PX_TILE) × scale」直画 + 底边贴脚线
+# （美术 2 倍交付÷2 后 @25px/格 1:1，交付即所得），不再拉伸进方形 box。
+# 朝向约定：正面 3/4 微朝左单行帧 → mirror（向右走/砍时水平翻转），取代旧 row/row_up 双行。
+const PX_TILE := 25.0
+const CARTOON_META := "res://assets/units_cartoon/cartoon_frames.json"
+const CARTOON_DIR := "res://assets/units_cartoon"
+const CARTOON_PORTRAIT_DIR := "res://assets/portraits_cartoon"
+# 卡 id（=切帧产物文件名）→ unit_id。spear_goblin_body 分蟑螂恶霸素材：goblin_gang 出
+# goblin+spear_goblin 混编 → 蟑螂+蟑螂恶霸双形象（PLAN_V5_CARTOON §5）。
+const CARTOON_UNIT_OF_CARD := {
+	"princess": "princess_body", "archers": "archer_body", "musketeer": "musketeer_body",
+	"fire_spirit": "fire_spirit_body", "electro_spirit": "electro_spirit_body",
+	"axe_thrower": "axe_thrower_body", "valkyrie": "valkyrie_body", "knight": "knight_body",
+	"goblins": "goblin_body", "bomber": "bomber_body", "hog_rider": "hog_rider_body",
+	"phoenix": "phoenix_body", "lava_hound": "lava_hound_body", "balloon": "balloon_body",
+	"mega_minion": "mega_minion_body", "golem": "golem_body", "mini_pekka": "mini_pekka_body",
+	"barbarians": "barbarian_body", "goblin_gang": "spear_goblin_body",
+	"royal_giant": "royal_giant_body", "ice_wizard": "ice_wizard_body",
+}
+# 派生形态（亡语裂兵）：无专属素材 → 复用父卡贴图 + scale 缩小。
+const CARTOON_DERIVED := {
+	"phoenix_reborn_body": {"card": "phoenix", "scale": 0.72},
+	"lava_pup_body": {"card": "lava_hound", "scale": 0.4},
+}
+static var _cartoon: Dictionary = {}
+static var _cartoon_ready := false
+
+static func _cartoon_db() -> Dictionary:
+	if _cartoon_ready:
+		return _cartoon
+	_cartoon_ready = true
+	if not FileAccess.file_exists(CARTOON_META):
+		return _cartoon   # 素材未产出（如精简构建）→ 全回退旧 DB
+	var meta = JSON.parse_string(FileAccess.get_file_as_string(CARTOON_META))
+	if typeof(meta) != TYPE_DICTIONARY:
+		return _cartoon
+	for card in CARTOON_UNIT_OF_CARD:
+		var e := _cartoon_entry(str(card), (meta as Dictionary).get(card, {}), 1.0)
+		if not e.is_empty():
+			_cartoon[CARTOON_UNIT_OF_CARD[card]] = e
+	for uid in CARTOON_DERIVED:
+		var d: Dictionary = CARTOON_DERIVED[uid]
+		var e := _cartoon_entry(str(d["card"]), (meta as Dictionary).get(d["card"], {}), float(d["scale"]))
+		if not e.is_empty():
+			_cartoon[uid] = e
+	return _cartoon
+
+static func _cartoon_entry(card: String, m: Dictionary, k: float) -> Dictionary:
+	if m.is_empty():
+		return {}
+	var entry := {"scale": k, "px": true, "natural": true, "mirror": true, "shadow": true}
+	for kind in ["walk", "attack"]:
+		var s: Dictionary = m.get(kind, {})
+		var path := "%s/%s_%s.png" % [CARTOON_DIR, card, kind]
+		if s.is_empty() or not ResourceLoader.exists(path):
+			continue
+		entry[kind] = {"tex": load(path), "fw": int(s["fw"]), "fh": int(s["fh"]),
+				"cols": int(s["frames"]), "row": 0, "n": int(s["frames"]),
+				"fps": 12.0 if kind == "attack" else 10.0}
+	var pp := "%s/%s.png" % [CARTOON_PORTRAIT_DIR, card]
+	if ResourceLoader.exists(pp):
+		entry["portrait"] = load(pp)
+	return entry if entry.has("walk") else {}

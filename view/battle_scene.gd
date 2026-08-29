@@ -608,13 +608,23 @@ func _draw_unit_one(u, ur: float) -> void:
 	var spr: Dictionary = SpriteDB.frame(u.unit_id, st, u.owner_id, _elapsed, face_up)
 	if not spr.is_empty():   # 精灵帧（modulate=fill 染队伍色+受击闪白，×占位 tint 区分共享贴图）
 		var box: float = rad * 2.0 * float(spr["scale"])
+		# 决策 49 px 直画（卡通层）：帧非方形——dst=帧像素×(ur/25)×scale、底边贴脚线(c.y+rad)，
+		# 不拉伸进方形 box（美术 2 倍交付÷2 后 @25px/格 交付即所得）。旧素材沿用方形 box 路径。
+		var px: bool = bool(spr.get("px", false))
+		var dst := Vector2(box, box)
+		var dst_rect := Rect2(-dst * 0.5, dst)
+		if px:
+			dst = (spr["src"] as Rect2).size * (ur / SpriteDB.PX_TILE) * float(spr["scale"])
+			dst_rect = Rect2(Vector2(-dst.x * 0.5, rad - dst.y), dst)
 		if spr.get("shadow", false) and not flying:   # 正式素材配套脚下椭圆影（贴地、不染队伍色）
 			# 自带 30% alpha 太淡 → 叠两遍 ≈51% 黑、宽 0.9 基准框压脚线。⚠️ 基准用 base_scale
-			# （不含状态 sc）：攻击大方格若用 box，阴影会放大下坠（0715 验收实测偏离）。
+			# （不含状态 sc）：攻击大方格若用 box，阴影会放大下坠（0715 验收实测偏离）。px 模式
+			# 用帧宽做基准、影心压脚线。
 			var sbox: float = rad * 2.0 * float(spr.get("base_scale", spr["scale"]))
-			var sw: float = sbox * 0.9
+			var sw: float = (dst.x if px else sbox) * 0.9
 			var sh: float = sw * 0.4
-			var srect := Rect2(c + Vector2(-sw * 0.5, sbox * 0.5 - sh * 0.5), Vector2(sw, sh))
+			var sy: float = (rad - sh * 0.5) if px else (sbox * 0.5 - sh * 0.5)
+			var srect := Rect2(c + Vector2(-sw * 0.5, sy), Vector2(sw, sh))
 			draw_texture_rect(TEX_UNIT_SHADOW, srect, false)
 			draw_texture_rect(TEX_UNIT_SHADOW, srect, false)
 		var spr_mod: Color = fill * spr.get("tint", Color.WHITE)
@@ -630,8 +640,7 @@ func _draw_unit_one(u, ur: float) -> void:
 				_face[id] = c.x > float(_facex.get(id, c.x))
 			_facex[id] = c.x
 		draw_set_transform(c, 0.0, Vector2(-1.0 if _face.get(id, false) else 1.0, 1.0))
-		draw_texture_rect_region(spr["tex"], Rect2(-Vector2(box, box) * 0.5, Vector2(box, box)),
-				spr["src"], spr_mod)
+		draw_texture_rect_region(spr["tex"], dst_rect, spr["src"], spr_mod)
 		draw_set_transform(Vector2.ZERO)
 	else:                    # 无精灵 → 白膜回退
 		draw_circle(c, rad, fill)
