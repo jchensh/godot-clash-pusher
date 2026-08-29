@@ -253,8 +253,8 @@ func _ready() -> void:
 	# H2 横版实验开关：仅 PvE 生效；L3 全局横屏模式下战斗一律真横版投影——
 	# 唯新手教程锁竖版（高亮矩形是竖版语义；Router 会给教程战斗包 fit 壳保竖版画布）。
 	var pve_free: bool = (campaign == null or campaign.is_over()) and not GameStateScript.tutorial
-	_landscape = ((GameStateScript.ui_layout() == "landscape" and not GameStateScript.tutorial)
-			or (pve_free and GameStateScript.battle_layout() == "landscape"))
+	# 决策 49：战斗恒竖屏横板（横版投影，含教程/战役）；竖版投影分支封存（变换层保留）。
+	_landscape = true
 	Log.i("[V5][battle] 版式=%s" % ("横版(实验·我左敌右)" if _landscape else "竖版"))
 	# 0716 首批 BGM：普通战斗 = 双曲轮播集（曲终随机换）；boss 关保留专属曲意图（素材未到位时自动落轮播）
 	if battle_music_id != "music_battle_boss" or not AudioManager.play_music(battle_music_id):

@@ -195,7 +195,7 @@ var _end_buttons_added := false
 
 
 func _ready() -> void:
-	_landscape = GameStateScript.ui_layout() == "landscape"
+	_landscape = true   # 决策 49：联机战斗恒竖屏横板（横版投影 × side2 复合保留）
 	Log.i("[net] 版式=%s" % ("横版(H6·我左敌右)" if _landscape else "竖版"))
 	_font = load("res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf")
 	_loader = GameStateScript.config()

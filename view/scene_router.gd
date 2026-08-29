@@ -77,10 +77,10 @@ func _wrap_boot_scene() -> void:
 
 # —— 全局横屏模式（L1，2026-07-26）：窗口/方向/内容缩放的唯一切换收口 ——
 # 桌面=改窗口尺寸并居中；移动端=切屏幕方向；Web=只改逻辑分辨率（浏览器自己转）。
-# 逻辑分辨率 720×1280 ↔ 1280×720（40px/格 信息密度不变）；页面重建靠调用方 reload/goto。
+# 决策 49：竖屏基准 750×1334（战斗区 30×26 格 @25px 严丝合缝）；横屏分支封存（ui_layout 恒 portrait）。
 func apply_ui_layout() -> void:
 	var land: bool = GameStateScript.ui_layout() == "landscape"
-	var base := Vector2i(1280, 720) if land else Vector2i(720, 1280)
+	var base := Vector2i(1334, 750) if land else Vector2i(750, 1334)
 	get_tree().root.content_scale_size = base
 	if OS.has_feature("mobile"):
 		DisplayServer.screen_set_orientation(

@@ -804,3 +804,9 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
 - **logic/ 零改动**（arena.gd 完全配置驱动）；AI/view 变换层全按 grid 动态取值自动跟随。
 - **测试更新 6 文件**：test_arena（9 处盘面断言换新值）；test_building_target/test_ai_controller（塔位坐标跟随）；test_lockstep_determinism（新盘面下双方兵 220 tick 内相遇同归于尽 → 断言改"曾出现单位"）；**test_hbattle_transform/test_net_hbattle_transform 重写为相对断言版**——期望值从 _field_rect()+grid 推导（锁方向语义与几何自洽，不锁像素），P1-3/P1-4 视口与场区公式连续变更时免连环返工，P1-4 定稿后可另补具体基准锁定。全量 **442/442**；gdlint 绿。
 - **运维**：verifier/api/gateway 重启（反作弊铁律）；dev 库 3 条 verify_status=0 旧盘面待验局标 skipped=4 留痕（旧重放在新盘面必失效，防误判）。
+
+### V5 · 卡通改版 P1-3：竖屏壳 750×1334 + 横屏线封存（✅ 441 绿，2026-08-30，KAN-121）
+
+- **viewport 720×1280 → 750×1334**（战斗区 30 格×25px=750 严丝合缝；桌面窗口基准同步 Router.apply_ui_layout）。存量页面按 720 宽设计 → 右侧 30px/底部 54px 留白属过渡期已知观感（P2 UI 换皮时代统一治理），真人验收时逐页记录。
+- **横屏线封存**（代码全留 git，入口失活）：`ui_layout()` 恒 portrait、`battle_layout()` 恒 landscape（战斗恒竖屏横板投影，含教程/战役/联机——battle_scene/net_battle_scene 的 `_landscape = true`）；设置页「战斗版式/屏幕方向」两组实验开关下线（语言区上移补位）；各页 `_land` 横屏分支、Router SubViewport 壳、landscape_wrap 自然失活。
+- **test_ui_layout.gd 重写为封存语义锁定**（恒竖屏/恒横板、set 不影响读取，防误恢复）；全量 **441/441**（-1=该文件 3 用例并 2）；gdlint 绿；headless editor 导入验证过。
