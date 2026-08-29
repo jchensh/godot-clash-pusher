@@ -810,3 +810,11 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
 - **viewport 720×1280 → 750×1334**（战斗区 30 格×25px=750 严丝合缝；桌面窗口基准同步 Router.apply_ui_layout）。存量页面按 720 宽设计 → 右侧 30px/底部 54px 留白属过渡期已知观感（P2 UI 换皮时代统一治理），真人验收时逐页记录。
 - **横屏线封存**（代码全留 git，入口失活）：`ui_layout()` 恒 portrait、`battle_layout()` 恒 landscape（战斗恒竖屏横板投影，含教程/战役/联机——battle_scene/net_battle_scene 的 `_landscape = true`）；设置页「战斗版式/屏幕方向」两组实验开关下线（语言区上移补位）；各页 `_land` 横屏分支、Router SubViewport 壳、landscape_wrap 自然失活。
 - **test_ui_layout.gd 重写为封存语义锁定**（恒竖屏/恒横板、set 不影响读取，防误恢复）；全量 **441/441**（-1=该文件 3 用例并 2）；gdlint 绿；headless editor 导入验证过。
+
+### V5 · 卡通改版 P1-4：战斗场景换新——卡通 BG/塔接入 + 场区 750×650@25px（✅ 442 绿，2026-08-30，KAN-121）
+
+- **素材接入**（0830 批）：`assets/map/cartoon_battle_bg.png`（750×1625 原生竖屏横板构图）+ `assets/towers/cartoon_tower_{king,arrow,arrow_broken}.png`；headless import 零报错。
+- **BG 直贴**：横版分支弃用"绕场心旋转 90°+双桥特征反解"（那是给竖构图旧 BG 的），新公式 = 图上战斗区矩形 `CARTOON_BG_FIELD(0,487.5,750,650)` 对齐 `_field_rect()` 等比直贴，上下装饰区自然延伸裁剪；net 版同步（场地两轴对称，side2 _flip 不参与 BG 仍对齐）。竖版分支保留旧特征反解（封存死代码）。
+- **场区自动 25px**：750×1334 下原取整公式自然解出 cell=25 → 场区 750×650 满宽、y=281（顶栏 54/手牌板 176 之间垂直居中），零公式改动；`test_cartoon_baseline_750x1334` 锁定此基准（兑现 P1-2 承诺）。
+- **塔**：单套素材敌我共用（mine/enemy 常量改别名防 duplicated-load），阵营程序调色 mine 染蓝 0.12/敌染红 0.40（KAN-124 欠正式配色套）；王塔废墟暂共用箭塔破贴图（欠账同单）；塔宽系数 king 1.0/arrow 1.05（2 倍素材÷2≈footprint 1:1）；旧 BG 路环视觉偏移 TOWER_YOFF_TILE 清零。
+- 全量 **442/442**；gdlint 绿。单位仍旧素材混搭（P1-6 换）；画面真人验收并入 P1-8 台账。

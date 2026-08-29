@@ -166,3 +166,19 @@ func test_deploy_zone_rect_both_layouts() -> void:
 	assert_almost_eq(lr.end.x, bl._t2s(Vector2(0, ymin)).x, EPS, "横版部署区右边=部署线")
 	assert_almost_eq(lr.size.y, frl.size.y, EPS, "横版部署区全高")
 	bl.free()
+
+func test_cartoon_baseline_750x1334() -> void:
+	# P1-4 定稿基准锁定：750×1334 视口 + 26×30 盘面 → cell=25、场区 750×650 满宽、
+	# 垂直居中于顶栏(54)与手牌板(176)之间 zone → y = 54 + (1104-650)/2 = 281。
+	var bs = _mk(true)
+	bs._vw = 750.0
+	bs._vh = 1334.0
+	var fr: Rect2 = bs._field_rect()
+	assert_almost_eq(fr.position.x, 0.0, EPS, "卡通场区满宽从 0 起")
+	assert_almost_eq(fr.position.y, 281.0, EPS, "卡通场区顶 y=281")
+	assert_almost_eq(fr.size.x, 750.0, EPS, "卡通场区宽 30 格×25px")
+	assert_almost_eq(fr.size.y, 650.0, EPS, "卡通场区高 26 格×25px")
+	var tp: Vector2 = bs._tile_px()
+	assert_almost_eq(tp.x, 25.0, EPS, "卡通格宽 25px")
+	assert_almost_eq(tp.y, 25.0, EPS, "卡通格高 25px")
+	bs.free()

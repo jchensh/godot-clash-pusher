@@ -69,13 +69,15 @@ const END_BTN_DELAY := 0.85
 
 # —— V3-7 精灵贴图（架构 A：immediate _draw + draw_texture；逻辑零改）——
 # 0721 塔换正式我/敌素材（_flip 已保证本方在下半场；摧毁态另有废墟贴图，箭塔破双方共用）。
-const TEX_TOWER_KING_MINE := preload("res://assets/towers/sanguo_tower_king_mine.png")
-const TEX_TOWER_KING_ENEMY := preload("res://assets/towers/sanguo_tower_king_enemy.png")
-const TEX_TOWER_ARROW_MINE := preload("res://assets/towers/sanguo_tower_arrow_mine.png")
-const TEX_TOWER_ARROW_ENEMY := preload("res://assets/towers/sanguo_tower_arrow_enemy.png")
-const TEX_TOWER_KING_MINE_BROKEN := preload("res://assets/towers/sanguo_tower_king_mine_broken.png")
-const TEX_TOWER_KING_ENEMY_BROKEN := preload("res://assets/towers/sanguo_tower_king_enemy_broken.png")
-const TEX_TOWER_ARROW_BROKEN := preload("res://assets/towers/sanguo_tower_arrow_broken.png")
+# 决策 49 卡通塔（0830 素材 2 倍交付，footprint 驱动缩放）：单套素材敌我共用、阵营程序调色
+# （美术欠账 KAN-124：敌方配色套 + 王塔废墟——暂以箭塔破共用）。常量名保持 mine/enemy 引用面不动。
+const TEX_TOWER_KING_MINE := preload("res://assets/towers/cartoon_tower_king.png")
+const TEX_TOWER_KING_ENEMY := TEX_TOWER_KING_MINE
+const TEX_TOWER_ARROW_MINE := preload("res://assets/towers/cartoon_tower_arrow.png")
+const TEX_TOWER_ARROW_ENEMY := TEX_TOWER_ARROW_MINE
+const TEX_TOWER_ARROW_BROKEN := preload("res://assets/towers/cartoon_tower_arrow_broken.png")
+const TEX_TOWER_KING_MINE_BROKEN := TEX_TOWER_ARROW_BROKEN
+const TEX_TOWER_KING_ENEMY_BROKEN := TEX_TOWER_ARROW_BROKEN
 const TEX_EXPLOSION := preload("res://assets/fx/Fire_Explosion_28x28.png")
 const EXPLOSION_FPX := 28
 const EXPLOSION_N := 12
@@ -97,7 +99,9 @@ const PROJ_KIND := {"archer_body": "arrow", "musketeer_body": "bolt", "baby_drag
 # —— 整图战场背景（0715 正式素材；与单机 battle_scene 同款特征对齐算法）——
 # 特征对齐：以「双桥中心定 x 缩放 + 河中心锚 y」等比取源贴 _field_rect（直接拉伸会变形、桥错位）。
 # _flip 不参与 BG：场地河/桥上下左右对称，双方视角贴同一张图即可。
-const TEX_BATTLE_BG := preload("res://assets/map/battle_bg_green.png")
+const TEX_BATTLE_BG := preload("res://assets/map/cartoon_battle_bg.png")
+# 卡通 BG 750×1625 原生竖屏横板构图：战斗区（30×26 格 @25px）在图上的矩形——顶 y=(1625-650)/2。
+const CARTOON_BG_FIELD := Rect2(0.0, 487.5, 750.0, 650.0)
 const BG_ENABLED := true
 const BG_BRIDGE1_PX := 160.0   # 图上左桥中心 x（px，0721 绿地图实测）
 const BG_BRIDGE2_PX := 543.0   # 图上右桥中心 x（px）
@@ -495,15 +499,14 @@ func _draw_bg_image(a) -> void:
 	var b2: float = (a.bridges[1]["x_min"] + a.bridges[1]["x_max"]) * 0.5 / float(a.grid_w)
 	var rv: float = (a.river_y_min + a.river_y_max) * 0.5 / float(a.grid_h)
 	if _landscape:
-		# H6：横版 BG 绕场心转 90°（同单机 H2 公式）；场地两轴对称，_flip 不参与仍对齐。
-		draw_set_transform(fr.get_center() + _shake, PI / 2)
-		var vfr := Rect2(-fr.size.y * 0.5, -fr.size.x * 0.5, fr.size.y, fr.size.x)
-		var off: Vector2 = Vector2(_vw, _vh) * 0.5 - fr.get_center()
-		var vpl := Rect2(Vector2(off.y, -off.x) - Vector2(_vh, _vw) * 0.5, Vector2(_vh, _vw))
-		var pl := _bg_full(vfr, vpl, _bg_src(vfr, b1, b2, rv))
-		draw_texture_rect_region(TEX_BATTLE_BG, pl[0], pl[1])
-		draw_set_transform(Vector2.ZERO)
+		# 决策 49：卡通 BG 原生竖屏横板构图——直贴不旋转（同单机 P1-4）；
+		# 场地河纵向中轴/上下桥两轴对称，_flip（side2 镜像）不参与 BG 仍对齐。
+		var k: float = fr.size.x / CARTOON_BG_FIELD.size.x
+		var dest := Rect2(fr.position - CARTOON_BG_FIELD.position * k + _shake,
+				Vector2(TEX_BATTLE_BG.get_size()) * k)
+		draw_texture_rect(TEX_BATTLE_BG, dest, false)
 		return
+	# 竖版分支（决策 49 封存，_landscape 恒 true 走不到）：旧三国 BG 特征反解对齐。
 	var pp := _bg_full(fr, Rect2(0.0, 0.0, _vw, _vh), _bg_src(fr, b1, b2, rv))
 	draw_texture_rect_region(TEX_BATTLE_BG,
 			Rect2((pp[0] as Rect2).position + _shake, (pp[0] as Rect2).size), pp[1])
@@ -605,8 +608,8 @@ func _draw_tower_one(t) -> void:
 	else:
 		tex = TEX_TOWER_ARROW_MINE if mine else TEX_TOWER_ARROW_ENEMY
 	var ts: Vector2 = tex.get_size()
-	# 保持长宽比、底部贴地；中式塔纵高 → 系数压小防过高（与单机同参）。
-	var draw_w: float = fp.x * (0.95 if king else 0.85)
+	# 保持长宽比、底部贴地；卡通塔 2 倍素材 ÷2 后与 footprint 基本 1:1（与单机同参）。
+	var draw_w: float = fp.x * (1.0 if king else 1.05)
 	var draw_h: float = draw_w * ts.y / ts.x
 	var rx: float = c.x - draw_w * 0.5
 	var ry: float = foot_bottom - draw_h
@@ -618,7 +621,7 @@ func _draw_tower_one(t) -> void:
 		var bh: float = draw_w * bts.y / bts.x
 		draw_texture_rect(btex, Rect2(rx, foot_bottom - bh, draw_w, bh), false, Color.WHITE)
 		return
-	var fill: Color = Color.WHITE.lerp(base, 0.22)       # 正式素材自带阵营配色 → natural 轻染
+	var fill: Color = Color.WHITE.lerp(base, 0.12 if mine else 0.40)   # 单套卡通素材：敌方染红加重辨阵营（KAN-124 待正式配色套）
 	var fend: float = _flash.get(t.get_instance_id(), 0.0)
 	if fend > _elapsed:
 		fill = fill.lerp(Color.WHITE, ((fend - _elapsed) / FLASH_DUR) * 0.85)

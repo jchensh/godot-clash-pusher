@@ -64,13 +64,15 @@ const END_BTN_DELAY := 0.85                     # 结算按钮淡入延迟（先
 # —— V3-7 精灵贴图（架构 A：immediate _draw + draw_texture；逻辑零改）——
 # 单位精灵走 SpriteDB(manifest，含帧网格/走攻行/朝向)；塔/落地 FX 仍在此 preload（塔皮 7b-2、FX 7b-3 再细化）。
 # 三国正式塔（0715）：阵营分色贴图（我=蓝顶/敌=红顶）；素材自带配色 → natural 轻染 22% 不再乘 0.5 队伍色。
-const TEX_TOWER_KING_MINE := preload("res://assets/towers/sanguo_tower_king_mine.png")
-const TEX_TOWER_KING_ENEMY := preload("res://assets/towers/sanguo_tower_king_enemy.png")
-const TEX_TOWER_ARROW_MINE := preload("res://assets/towers/sanguo_tower_arrow_mine.png")
-const TEX_TOWER_ARROW_ENEMY := preload("res://assets/towers/sanguo_tower_arrow_enemy.png")
-const TEX_TOWER_KING_MINE_BROKEN := preload("res://assets/towers/sanguo_tower_king_mine_broken.png")
-const TEX_TOWER_KING_ENEMY_BROKEN := preload("res://assets/towers/sanguo_tower_king_enemy_broken.png")
-const TEX_TOWER_ARROW_BROKEN := preload("res://assets/towers/sanguo_tower_arrow_broken.png")
+# 决策 49 卡通塔（0830 素材 2 倍交付，footprint 驱动缩放）：单套素材敌我共用、阵营程序调色
+# （美术欠账 KAN-124：敌方配色套 + 王塔废墟——暂以箭塔破共用）。常量名保持 mine/enemy 引用面不动。
+const TEX_TOWER_KING_MINE := preload("res://assets/towers/cartoon_tower_king.png")
+const TEX_TOWER_KING_ENEMY := TEX_TOWER_KING_MINE
+const TEX_TOWER_ARROW_MINE := preload("res://assets/towers/cartoon_tower_arrow.png")
+const TEX_TOWER_ARROW_ENEMY := TEX_TOWER_ARROW_MINE
+const TEX_TOWER_ARROW_BROKEN := preload("res://assets/towers/cartoon_tower_arrow_broken.png")
+const TEX_TOWER_KING_MINE_BROKEN := TEX_TOWER_ARROW_BROKEN
+const TEX_TOWER_KING_ENEMY_BROKEN := TEX_TOWER_ARROW_BROKEN
 const TEX_EXPLOSION := preload("res://assets/fx/Fire_Explosion_28x28.png")
 const EXPLOSION_FPX := 28
 const EXPLOSION_N := 12
@@ -91,7 +93,9 @@ const PROJ_KIND := {"archer_body": "arrow", "musketeer_body": "bolt", "baby_drag
 # —— 战场整图背景（三国美术；BG_ENABLED=false 回退 tile 铺地）——
 # 特征对齐：以「双桥中心定 x 缩放 + 河中心锚 y」等比取源贴 _field_rect（直接拉伸会变形、桥错位），
 # 特征像素为 python 测量值（水带行/桥木色列质心）。0715 新 BG 720×1502：黄土路正好绕六塔逻辑位画。
-const TEX_BATTLE_BG := preload("res://assets/map/battle_bg_green.png")
+const TEX_BATTLE_BG := preload("res://assets/map/cartoon_battle_bg.png")
+# 卡通 BG 750×1625 原生竖屏横板构图：战斗区（30×26 格 @25px）在图上的矩形——顶 y=(1625-650)/2。
+const CARTOON_BG_FIELD := Rect2(0.0, 487.5, 750.0, 650.0)
 const BG_ENABLED := true
 const BG_BRIDGE1_PX := 160.0   # 图上左桥中心 x（px，0721 绿地图实测）
 const BG_BRIDGE2_PX := 543.0   # 图上右桥中心 x（px）
@@ -446,14 +450,14 @@ func _draw_bg_image(a) -> void:
 	var b2: float = (a.bridges[1]["x_min"] + a.bridges[1]["x_max"]) * 0.5 / float(a.grid_w)
 	var rv: float = (a.river_y_min + a.river_y_max) * 0.5 / float(a.grid_h)
 	if _landscape:
-		draw_set_transform(fr.get_center() + _shake, PI / 2)
-		var vfr := Rect2(-fr.size.y * 0.5, -fr.size.x * 0.5, fr.size.y, fr.size.x)   # 局部竖版画布
-		var off: Vector2 = Vector2(_vw, _vh) * 0.5 - fr.get_center()   # 屏幕视口映射进局部坐标（绕场心转 -90°），场外也铺 BG
-		var vpl := Rect2(Vector2(off.y, -off.x) - Vector2(_vh, _vw) * 0.5, Vector2(_vh, _vw))
-		var pl := _bg_full(vfr, vpl, _bg_src(vfr, b1, b2, rv))
-		draw_texture_rect_region(TEX_BATTLE_BG, pl[0], pl[1])
-		draw_set_transform(Vector2.ZERO)
+		# 决策 49：卡通 BG 原生竖屏横板构图（河纵向/上下桥）——直贴不旋转，图上战斗区对齐场区，
+		# 上（雪山）下（瀑布）装饰区随比例向视口延伸、超出自动裁剪。
+		var k: float = fr.size.x / CARTOON_BG_FIELD.size.x
+		var dest := Rect2(fr.position - CARTOON_BG_FIELD.position * k + _shake,
+				Vector2(TEX_BATTLE_BG.get_size()) * k)
+		draw_texture_rect(TEX_BATTLE_BG, dest, false)
 	else:
+		# 竖版分支（决策 49 封存，_landscape 恒 true 走不到）：旧三国 BG 特征反解对齐。
 		var pp := _bg_full(fr, Rect2(0.0, 0.0, _vw, _vh), _bg_src(fr, b1, b2, rv))
 		draw_texture_rect_region(TEX_BATTLE_BG, Rect2((pp[0] as Rect2).position + _shake, (pp[0] as Rect2).size), pp[1])
 
@@ -491,9 +495,9 @@ func _draw_water_tile(rect: Rect2) -> void:
 	var fr: int = int(_elapsed * WATER_FPS) % WATER_N
 	_blit_tile(TEX_WATER, Vector2i(fr % WATER_COLS, fr / WATER_COLS), rect, Color.WHITE)
 
-# 塔绘制纯视觉 y 偏移（tile，+朝己方底线；逻辑塔位不动）：与 BG 路环节点对齐（0715 验收反馈，
-# 二验追加：我王塔从 +0.5 上移一格 → -0.5）。
-const TOWER_YOFF_TILE := {"king_p": -0.5, "arrow_e": -0.5}
+# 塔绘制纯视觉 y 偏移（tile；逻辑塔位不动）：旧三国 BG 路环对齐偏移随决策 49 清零——
+# 卡通 BG 塔不入图（独立贴图落格），无需迁就图上路环。
+const TOWER_YOFF_TILE := {}
 
 # 塔绘制用屏幕锚点：中心 c（含 TOWER_YOFF_TILE 视觉偏移）；接地线 = c.y + footprint 高一半。
 func _tower_anchor(t) -> Vector2:
@@ -549,8 +553,8 @@ func _draw_tower_one(t) -> void:
 	else:
 		tex = TEX_TOWER_ARROW_MINE if mine else TEX_TOWER_ARROW_ENEMY
 	var ts: Vector2 = tex.get_size()
-	# 保持长宽比、底部贴地；0715 中式塔纵高 → 系数比旧城堡压小防过高（真人验收可调）。
-	var draw_w: float = fp.x * (0.95 if king else 0.85)
+	# 保持长宽比、底部贴地；卡通塔 2 倍素材 ÷2 后与 footprint 基本 1:1（真人验收可调）。
+	var draw_w: float = fp.x * (1.0 if king else 1.05)
 	var draw_h: float = draw_w * ts.y / ts.x
 	var rx: float = c.x - draw_w * 0.5
 	var ry: float = foot_bottom - draw_h
@@ -560,7 +564,7 @@ func _draw_tower_one(t) -> void:
 		var bh: float = draw_w * btex.get_size().y / btex.get_size().x
 		draw_texture_rect(btex, Rect2(rx, foot_bottom - bh, draw_w, bh), false, Color.WHITE)
 		return
-	var fill: Color = Color.WHITE.lerp(base, 0.22)       # 正式素材自带阵营配色 → natural 轻染
+	var fill: Color = Color.WHITE.lerp(base, 0.12 if mine else 0.40)   # 单套卡通素材：敌方染红加重辨阵营（KAN-124 待正式配色套）
 	var fend: float = _flash.get(t.get_instance_id(), 0.0)
 	if fend > _elapsed:
 		fill = fill.lerp(Color.WHITE, ((fend - _elapsed) / FLASH_DUR) * 0.85)
