@@ -60,9 +60,9 @@ func test_building_targeter_attacks_tower_not_adjacent_unit() -> void:
 	var ctx = _battle_arena()
 	var battle = ctx[0]
 	var arena = ctx[1]
-	# 站敌方左公主塔(4.5,8)前射程内(dist 2 ≤ 1.5+塔半径1.5)，身边紧贴一敌兵。
-	var hog = _unit(arena, UnitScript.OWNER_PLAYER, Vector2(4.5, 10.0), _bt_cfg())
-	var e = _still_enemy(arena, Vector2(4.5, 10.6))   # 紧贴 hog、在 aggro 内
+	# 站敌方左公主塔(1.5,8)前射程内(dist 2 ≤ 1.5+塔半径1.5)，身边紧贴一敌兵。
+	var hog = _unit(arena, UnitScript.OWNER_PLAYER, Vector2(1.5, 10.0), _bt_cfg())
+	var e = _still_enemy(arena, Vector2(1.5, 10.6))   # 紧贴 hog、在 aggro 内
 	var before: float = battle.total_tower_hp(battle.opponent_towers)
 	arena.tick(0.1)
 	assert_true(arena.towers.has(hog.current_target), "锁敌塔而非身边敌兵")

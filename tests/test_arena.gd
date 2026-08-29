@@ -1,6 +1,6 @@
 # V3-1a 测试：Arena 2D 场地 —— 地形（地面/水/桥）、塔占位、落点合法性。
-# 坐标 = tile 空间；arena.json default：18×32、河 y[15,17)、桥 x{3,4}&{13,14}、
-# 落点 玩家 y>=17 / 对手 y<=15、塔位见 config/arena.json。
+# 坐标 = tile 空间；arena.json default（决策 49 卡通改版盘面）：26×30、河 y[14,16)、
+# 桥 x[0,3)&[23,26)、落点 玩家 y>=16 / 对手 y<=14、塔位见 config/arena.json。
 extends "res://tests/test_case.gd"
 
 const ArenaScript = preload("res://logic/arena.gd")
@@ -31,8 +31,8 @@ func _battle_arena():
 
 func test_grid_dims() -> void:
 	var a = _terrain()
-	assert_eq(a.grid_w, 18, "网格宽=18")
-	assert_eq(a.grid_h, 32, "网格高=32")
+	assert_eq(a.grid_w, 26, "网格宽=26")
+	assert_eq(a.grid_h, 30, "网格高=30")
 
 func test_river_water_blocks_ground() -> void:
 	var a = _terrain()
@@ -42,11 +42,11 @@ func test_river_water_blocks_ground() -> void:
 
 func test_bridges_are_walkable() -> void:
 	var a = _terrain()
-	# 左桥 x∈{3,4}、右桥 x∈{13,14}，在河行内应为地面可走。
-	assert_eq(a.tile_type(3, 15), ArenaScript.TILE_GROUND, "左桥为地面")
-	assert_true(a.is_ground_walkable(4, 16), "左桥可走")
-	assert_eq(a.tile_type(13, 15), ArenaScript.TILE_GROUND, "右桥为地面")
-	assert_true(a.is_ground_walkable(14, 16), "右桥可走")
+	# 左桥 x∈[0,3)、右桥 x∈[23,26)，在河行内应为地面可走。
+	assert_eq(a.tile_type(1, 14), ArenaScript.TILE_GROUND, "左桥为地面")
+	assert_true(a.is_ground_walkable(2, 15), "左桥可走")
+	assert_eq(a.tile_type(24, 14), ArenaScript.TILE_GROUND, "右桥为地面")
+	assert_true(a.is_ground_walkable(25, 15), "右桥可走")
 
 func test_plain_ground_walkable() -> void:
 	var a = _terrain()
@@ -56,18 +56,18 @@ func test_plain_ground_walkable() -> void:
 func test_out_of_bounds() -> void:
 	var a = _terrain()
 	assert_eq(a.tile_type(-1, 0), ArenaScript.TILE_OOB, "左越界")
-	assert_eq(a.tile_type(18, 0), ArenaScript.TILE_OOB, "右越界")
-	assert_eq(a.tile_type(0, 32), ArenaScript.TILE_OOB, "下越界")
-	assert_false(a.in_bounds(18, 0), "in_bounds 越界为假")
+	assert_eq(a.tile_type(26, 0), ArenaScript.TILE_OOB, "右越界")
+	assert_eq(a.tile_type(0, 30), ArenaScript.TILE_OOB, "下越界")
+	assert_false(a.in_bounds(26, 0), "in_bounds 越界为假")
 
 # —— 塔占位（经 Battle.build_arena 注册）——
 
 func test_tower_footprints_block() -> void:
 	var arena = _battle_arena()[1]
-	assert_eq(arena.tile_type(9, 29), ArenaScript.TILE_TOWER, "玩家王塔中心为塔占位")
-	assert_eq(arena.tile_type(9, 3), ArenaScript.TILE_TOWER, "敌方王塔中心为塔占位")
-	assert_eq(arena.tile_type(4, 24), ArenaScript.TILE_TOWER, "玩家左公主塔占位")
-	assert_false(arena.is_ground_walkable(9, 29), "塔占位不可走")
+	assert_eq(arena.tile_type(13, 27), ArenaScript.TILE_TOWER, "玩家王塔中心为塔占位")
+	assert_eq(arena.tile_type(13, 3), ArenaScript.TILE_TOWER, "敌方王塔中心为塔占位")
+	assert_eq(arena.tile_type(1, 21), ArenaScript.TILE_TOWER, "玩家左公主塔占位")
+	assert_false(arena.is_ground_walkable(13, 27), "塔占位不可走")
 
 func test_build_arena_six_towers() -> void:
 	var battle = _battle_arena()[0]
@@ -86,13 +86,13 @@ func test_deploy_player_own_half() -> void:
 
 func test_deploy_rejects_tower_tile() -> void:
 	var arena = _battle_arena()[1]
-	assert_false(arena.can_deploy(UnitScript.OWNER_PLAYER, Vector2(9, 29)), "不可在自家塔占位部署")
+	assert_false(arena.can_deploy(UnitScript.OWNER_PLAYER, Vector2(13, 27)), "不可在自家塔占位部署")
 
 func test_deploy_enemy_symmetric() -> void:
 	var arena = _battle_arena()[1]
 	assert_true(arena.can_deploy(UnitScript.OWNER_OPPONENT, Vector2(9, 8)), "对手可在其半场部署")
 	assert_false(arena.can_deploy(UnitScript.OWNER_OPPONENT, Vector2(9, 20)), "对手不可越界到玩家半场")
-	assert_false(arena.can_deploy(UnitScript.OWNER_OPPONENT, Vector2(9, 3)), "对手不可在自家塔占位部署")
+	assert_false(arena.can_deploy(UnitScript.OWNER_OPPONENT, Vector2(13, 3)), "对手不可在自家塔占位部署")
 
 # —— 移动 + 流场寻路绕桥（V3-1b 核心）——
 
@@ -127,7 +127,7 @@ func test_ground_unit_reaches_enemy_tower_and_stops() -> void:
 	arena.add_unit(u)
 	for i in 300:
 		battle.step(0.1)
-	var princess := Vector2(4.5, 8.0)   # 敌方左公主塔
+	var princess := Vector2(1.5, 8.0)   # 敌方左公主塔
 	assert_true(u.pos.distance_to(princess) <= 3.0,
 		"停在敌方左公主塔攻击距离内; dist=%.2f pos=(%.1f,%.1f)" % [u.pos.distance_to(princess), u.pos.x, u.pos.y])
 	var before: Vector2 = u.pos
@@ -228,7 +228,7 @@ func test_distraction_picks_nearest_enemy_unit() -> void:
 
 func test_no_distraction_across_river() -> void:
 	var arena = _battle_arena()[1]
-	# 玩家近战兵在己方半场近河(9,18)，敌兵在河对岸(9,14)：dist 4 < aggro 5，但隔河不可直线到达。
+	# 玩家近战兵在己方半场近河(9,18)，敌兵在河区(9,14)：dist 4 < aggro 5，但隔水不可直线到达。
 	var p = UnitScript.new("p", UnitScript.OWNER_PLAYER, _aggro_cfg(), Vector2(9, 18))
 	arena.add_unit(p)
 	_still_enemy(arena, Vector2(9, 14))
@@ -255,7 +255,7 @@ func test_ground_unit_crosses_bridge_despite_across_river_enemy() -> void:
 		if arena.tile_type_at(p.pos) == ArenaScript.TILE_WATER:
 			touched_water = true
 	assert_false(touched_water, "全程不踏水（绕桥，不卡岸冲水）")
-	assert_true(min_y < 15.0, "越过河到达敌方半场(y<15)，未卡在岸边; 实际 min_y=%.1f" % min_y)
+	assert_true(min_y < 14.0, "越过河到达敌方半场(y<14)，未卡在岸边; 实际 min_y=%.1f" % min_y)
 
 # —— 软推挤碰撞 + 接敌攻击（V3-1d）——
 
@@ -291,8 +291,8 @@ func test_unit_attacks_enemy_tower() -> void:
 	var ctx = _battle_arena()
 	var battle = ctx[0]
 	var arena = ctx[1]
-	# 站在敌方左公主塔(4.5,8)前、射程内、无敌兵 → 锁塔攻击。
-	var atk = _fighter(arena, UnitScript.OWNER_PLAYER, Vector2(4.5, 10.0), 50.0, 100.0, 1.0, 5.0, 0.0, 0.0)
+	# 站在敌方左公主塔(1.5,8)前、射程内、无敌兵 → 锁塔攻击。
+	var atk = _fighter(arena, UnitScript.OWNER_PLAYER, Vector2(1.5, 10.0), 50.0, 100.0, 1.0, 5.0, 0.0, 0.0)
 	var before: float = battle.total_tower_hp(battle.opponent_towers)
 	arena.tick(0.1)
 	assert_true(arena.towers.has(atk.current_target), "无敌兵 → 锁敌塔")
@@ -310,7 +310,7 @@ func test_mutual_attack_resolves_simultaneously() -> void:
 
 func test_tower_attacks_enemy_unit_in_range() -> void:
 	var arena = _battle_arena()[1]
-	# 玩家左公主塔(4.5,24)旁放一个静止不还手的敌兵，进塔射程(7.5)。
+	# 玩家左公主塔(1.5,22)旁放一个静止不还手的敌兵，进塔射程(7.5)。
 	var e = _fighter(arena, UnitScript.OWNER_OPPONENT, Vector2(4.5, 27.0), 0.0, 300.0, 1.0, 0.0, 0.0, 0.0)
 	arena.tick(0.1)
 	assert_true(e.hp < 300.0, "塔反击射程内敌兵（掉血）; hp=%.0f" % e.hp)
@@ -329,13 +329,13 @@ func test_tower_death_frees_footprint_and_rebuilds_flow() -> void:
 	var arena = ctx[1]
 	var prin = null
 	for t in battle.player_towers:
-		if not t.is_king() and (t.pos as Vector2).distance_to(Vector2(4.5, 24.0)) < 0.6:
+		if not t.is_king() and (t.pos as Vector2).distance_to(Vector2(1.5, 22.0)) < 0.6:
 			prin = t
 	assert_true(prin != null, "找到玩家左公主塔")
-	assert_eq(arena.tile_type(4, 24), ArenaScript.TILE_TOWER, "死前占位为塔")
+	assert_eq(arena.tile_type(1, 21), ArenaScript.TILE_TOWER, "死前占位为塔")
 	prin.take_damage(prin.max_hp)
 	arena.tick(0.1)
-	assert_eq(arena.tile_type(4, 24), ArenaScript.TILE_GROUND, "塔毁后占位释放为地面（流场重算）")
+	assert_eq(arena.tile_type(1, 21), ArenaScript.TILE_GROUND, "塔毁后占位释放为地面（流场重算）")
 
 # —— 空军：飞兵越河 + 对空克制（V3-2）——
 

@@ -65,6 +65,7 @@ func test_identical_deploys_keep_hash_equal() -> void:
 
 	var deployed_1 := false
 	var deployed_2 := false
+	var seen_units := false
 	for t in 220:
 		var deploys: Array = []
 		# 攒够圣水再出 side 1 的 hand[0]（card 成本未知，用 can_play 判，稳）。
@@ -77,10 +78,13 @@ func test_identical_deploys_keep_hash_equal() -> void:
 		m1.advance_tick(deploys)
 		m2.advance_tick(deploys)
 		assert_eq(_h(m1), _h(m2), "相同输入下 tick %d 哈希分叉" % t)
+		if arena.units.size() > 0:
+			seen_units = true
 	assert_true(deployed_1, "side1 应已出兵（攒够圣水）")
 	assert_true(deployed_2, "side2 应已出兵")
-	# 出过兵 + 推进后场上应有单位（哈希真覆盖到 units，而非空场恒等）。
-	assert_true(arena.units.size() > 0, "出兵后场上应有单位")
+	# 出过兵 + 推进期间场上应出现过单位（哈希真覆盖到 units，而非空场恒等）。
+	# 决策 49 新盘面下双方兵可能在时限内相遇同归于尽，故检查"曾出现"而非"结束时仍在"。
+	assert_true(seen_units, "出兵后场上应出现过单位")
 
 
 func test_divergent_deploy_forks_hash() -> void:
@@ -133,6 +137,7 @@ func test_same_progress_hash_equal() -> void:
 	var e_pos := _valid_pos(m1.battle.arena, 1)
 	var deployed_1 := false
 	var deployed_2 := false
+	var seen_units := false
 	for t in 220:
 		var deploys: Array = []
 		var i1 := _first_troop_idx(m1.player)
