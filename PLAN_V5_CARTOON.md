@@ -1,7 +1,7 @@
 # PLAN_V5_CARTOON.md — 卡通改版施工图（决策 49，题材+美术+屏幕方向全面换新）
 
 > **2026-08-30 用户拍板立项**：游戏题材从**三国 → 卡通**（美术风格随之全换），主战斗改为**竖屏横板**——竖屏拿机、河流纵向贯穿、**我左敌右对推**（皇室战争旋转 90°）。素材源 = `testAssets/新风格美术资源0830`（101 PNG：战斗场景 5 + 21 角色×3 动作 + 城建拼接件 33）+ 两份飞书美术文档（[城建资源说明](https://boke.feishu.cn/docx/ASY1doidAo1tmpxSbmFcHcMJnkc) / [尺寸格子说明](https://boke.feishu.cn/docx/NsKRdoahxof8TPxUvIecftwen4f)）。
-> **状态：P1 施工中**。P2/P3/P4 排队。
+> **状态：P1 代码+双端测试完成（P1-2~P1-7，客户端 448 绿 + Go unit/integration 全绿），真人验收台账 [docs/ACCEPTANCE_CARTOON_P1.md](docs/ACCEPTANCE_CARTOON_P1.md) 待执行**。P2/P3/P4 排队。
 
 ## 0. 用户拍板七条（2026-08-30，施工依据）
 

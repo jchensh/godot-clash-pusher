@@ -838,3 +838,9 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
 - **Go**：CardMeta.Locked 解析 + `IsLocked/LockedCardIDs`；**配置 fail-fast**：锁卡配进 stages 掉落 / starter+locked 同卡 → 拒启动（对齐 kingdom validate 铁门风格）；Unlock() 挡锁卡（兜底 GM 碎片旁路）；GM unlock_all 改「解锁全部可玩卡」跳过锁卡。新增 4 条 config 单测；顺手修 auth jwt_test 时间炸弹（固定 2026-06-24 时钟致 token 过期，改当前时钟）。
 - **客户端**：PlayerData.STARTER_CARDS 同步换血；can_unlock 对 locked 恒 false（红点/按钮共用入口）；图鉴锁定卡显示「敬请期待」（不展示碎片进度/解锁红点）；组卡池 unlocked 驱动天然零改动。新增 `test_card_pool_lock`（5 条规约：17/31 数量、starter 同步、player_deck 零锁卡、掉落零锁卡、can_unlock 挡锁）；旧口径测试 3 处更新（48 卡全有源→31 可玩全有源+锁卡零源）。
 - **运维**：api/gateway 镜像 rebuild + battle/verifier 重启；dev 库清存量锁卡解锁 19 条（UPDATE unlocked=FALSE）。**Prod 部署时需同款 DB 修正**（记入上线清单）。客户端 **448/448**；Go unit 全绿。
+
+### V5 · 卡通改版 P1-8：P1 收口——集成回归 + 真人验收台账（🚧 代码完成待真人验收，2026-08-30，KAN-121）
+
+- **Go integration 全绿**（gcp_test 库，`-p 1` 串行 12 包）：集成测试卡组同步换血（starterDeck giant/minions→royal_giant/mega_minion）；GM unlock_all 断言改「锁卡跳过」口径——失败即锁卡机制生效的反证（PveStart 拒 giant 落袋为安）。
+- **验收台账** [docs/ACCEPTANCE_CARTOON_P1.md](docs/ACCEPTANCE_CARTOON_P1.md)：A 竖屏壳 3 例 / B 战斗横板 10 例 / C 缩池锁卡 5 例 / D 两机联机 1 例；已知过渡观感（720 布局留白、AI 出旧素材锁卡、王塔废墟共用箭塔破）单列不算不通过。
+- **P1 总账**（P1-1~P1-8 全部 8 步单步一 commit）：盘面 26×30 / 竖屏 750×1334 壳+横屏线封存 / 卡通 BG+塔接入 / 切帧管线 21 角色资产化 / sprite_db 卡通层 px 直画 / 缩池 31 锁 17 双端闭环。客户端 **448/448**；Go unit+integration 全过；Jira KAN-121 → 审查中（待真人验收后 Done）。**Prod 上线清单追加**：锁卡存量解锁清理 SQL（同 dev 修正）。

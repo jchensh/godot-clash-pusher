@@ -49,7 +49,8 @@ func setupRepo(t *testing.T) (*Repo, *Config, int64) {
 	return NewRepo(db), cfg, accountID
 }
 
-var starterDeck = []string{"knight", "archers", "giant", "goblins", "minions", "fireball", "arrows", "zap"}
+// 决策 49 缩池：starter 中 giant/minions（锁卡）→ royal_giant/mega_minion。
+var starterDeck = []string{"knight", "archers", "royal_giant", "goblins", "mega_minion", "fireball", "arrows", "zap"}
 
 // pveBattleFor 建一个能过层1校验的 PVE 会话（KAN-78）：PveStart → 倒拨 started_at 绕过
 // 限速（测试不真等墙钟）→ 喂一条玩家出兵。返回 (battle_id, 满足任意星目标的摘要)。
@@ -360,8 +361,8 @@ func TestRepo_PveGuards(t *testing.T) {
 		t.Fatalf("wrong-stage battle want ErrPveBattleInvalid, got %v", err)
 	}
 
-	// —— 未解锁卡进卡组：golem（legendary 锁定）→ PveStart 拒。
-	badDeck := []string{"golem", "archers", "giant", "goblins", "minions", "fireball", "arrows", "zap"}
+	// —— 未解锁卡进卡组：golem（legendary 未解锁）→ PveStart 拒。
+	badDeck := []string{"golem", "archers", "royal_giant", "goblins", "mega_minion", "fireball", "arrows", "zap"}
 	if _, err := repo.PveStart(ctx, acc, "stage_1_1", badDeck, cfg, 0, 0); !errors.Is(err, ErrPveBattleInvalid) {
 		t.Fatalf("locked-card deck want ErrPveBattleInvalid, got %v", err)
 	}

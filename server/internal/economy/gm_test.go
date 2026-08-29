@@ -26,9 +26,15 @@ func TestRepo_GMApply(t *testing.T) {
 		}
 	}
 
-	// ② 解锁全部卡。
+	// ② 解锁全部卡（决策 49：锁定卡跳过——GM 语义=解锁全部可玩卡）。
 	st, _ = repo.GMApply(ctx, acc, GMOps{UnlockAll: true}, cfg)
 	for _, c := range st.Cards {
+		if cfg.IsLocked(c.CardID) {
+			if c.Unlocked {
+				t.Fatalf("after unlock-all locked card %s should stay locked", c.CardID)
+			}
+			continue
+		}
 		if !c.Unlocked {
 			t.Fatalf("after unlock-all card %s not unlocked", c.CardID)
 		}
