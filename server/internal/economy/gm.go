@@ -88,10 +88,11 @@ func (r *Repo) GMApply(ctx context.Context, accountID int64, ops GMOps, cfg *Con
 		}
 	}
 
-	// 解锁全部卡。
+	// 解锁全部卡（决策 49：跳过缩池锁定卡——GM 语义=解锁全部「可玩」卡）。
 	if ops.UnlockAll {
 		if _, err := tx.Exec(ctx,
-			`UPDATE economy_cards SET unlocked=TRUE WHERE account_id=$1`, accountID); err != nil {
+			`UPDATE economy_cards SET unlocked=TRUE WHERE account_id=$1 AND NOT (card_id = ANY($2))`,
+			accountID, cfg.LockedCardIDs()); err != nil {
 			return State{}, err
 		}
 	}

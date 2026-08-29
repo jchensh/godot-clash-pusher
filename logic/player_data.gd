@@ -10,7 +10,8 @@ extends RefCounted
 class_name PlayerData
 
 # 默认新档解锁的初始 8 张（= levels.json level_01 默认卡组 / card_progression starter=true）。
-const STARTER_CARDS := ["knight", "archers", "giant", "goblins", "minions", "fireball", "arrows", "zap"]
+# 决策 49 缩池：giant/minions（锁卡）→ royal_giant/mega_minion（同位重坦/飞行，费用对位）。
+const STARTER_CARDS := ["knight", "archers", "royal_giant", "goblins", "mega_minion", "fireball", "arrows", "zap"]
 
 var gold: int = 0
 var gems: int = 0
@@ -134,11 +135,12 @@ func team_power(card_ids: Array, config) -> int:
 	return int(round(total))
 
 # 解锁解算：未解锁 且 碎片 ≥ 该稀有度解锁门槛 → 可解锁（实际解锁动作 V5-S6）。
+# 决策 49 缩池：locked 卡恒不可解锁（服务器 Unlock 同口径拒，双端一致）。
 func can_unlock(card_id: String, config) -> bool:
 	if is_unlocked(card_id) or config == null:
 		return false
 	var cp: Dictionary = config.get_card_progression(card_id)
-	if cp.is_empty():
+	if cp.is_empty() or bool(cp.get("locked", false)):
 		return false
 	var unlock_tbl = config.get_economy().get("unlock_shards", {})
 	if typeof(unlock_tbl) != TYPE_DICTIONARY:

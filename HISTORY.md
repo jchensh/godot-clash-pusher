@@ -830,3 +830,11 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
 - **sprite_db 卡通素材层**（lazy 构建，查询优先于旧 DB）：首访读 `cartoon_frames.json` + load() 贴图生成同构条目；旧三国/占位条目保留为锁定卡兜底（AI 关卡仍出旧卡）。映射=PLAN §5；**spear_goblin_body 分蟑螂恶霸素材**（goblin_gang 出 goblin+spear 混编 → 蟑螂+恶霸双形象）；派生形态复用父贴图缩小（phoenix_reborn 0.72×火又鸟、lava_pup 0.4×幺蛾子；golem 亡语裂 goblin=蟑螂天然成立）。
 - **px 直画新约定**（取代方形 box 拉伸——卡通帧非方形，旧路径会拉变形）：条目 px=true 时 dst=帧像素×(ur/25)×scale、**底边贴脚线**（c.y+rad，对齐切帧底对齐产物）；影子 px 分支按帧宽做基准、影心压脚线。battle_scene/net_battle_scene 双份同步；朝向沿用 mirror 机制（正面微朝左单行帧，向右走/砍水平翻转，net side2 屏幕语义自动正确）。
 - **测试**：test_sprite_db 两用例改卡通口径（knight 帧尺寸以 cartoon_frames.json 为真相源对比；fx manifest 改用仍走旧 DB 的 giant_body）+ 新增 `test_cartoon_layer_covers_21_cards`（21 卡双态可取帧/px 标记/帧界/派生缩小全覆盖）。全量 **443/443**；gdlint 绿。
+
+### V5 · 卡通改版 P1-7：卡池缩池锁定 31/48（✅ 客户端 448 + Go 全绿，2026-08-30，KAN-121）
+
+- **口径**：可玩 31 张（21 卡通角色单位卡 + 10 法术），锁定 17 张（等美术，配置/技能全保留只锁不删）。收口思路 = **锁解锁途径**（PveStart 本就校验 unlocked，锁卡永不解锁则天然不可上阵）：①掉落零源 ②Unlock API 拒 ③GM unlock_all 跳过 ④starter 换血。
+- **配置**：card_progression.json 17 张加 `locked:true`；starter 中 giant/minions（锁卡）→ **royal_giant/mega_minion**（重坦/飞行同位、费用对位）；stages_spec 掉落轮转池 10 章重排（31 可玩卡单源全覆盖、锁卡零掉落、压轴卡微调 knight/log/mini_pekka/royal_giant/musketeer/goblin_barrel/mega_minion/phoenix/princess/balloon）→ build_stages 重出 100 关；levels.json player_deck 24 处换卡（**ai_deck 不动**=AI 沿用全 48 卡保平衡，敌方出旧素材锁卡属过渡期已知观感）；build_config Excel 同步 --check 过。
+- **Go**：CardMeta.Locked 解析 + `IsLocked/LockedCardIDs`；**配置 fail-fast**：锁卡配进 stages 掉落 / starter+locked 同卡 → 拒启动（对齐 kingdom validate 铁门风格）；Unlock() 挡锁卡（兜底 GM 碎片旁路）；GM unlock_all 改「解锁全部可玩卡」跳过锁卡。新增 4 条 config 单测；顺手修 auth jwt_test 时间炸弹（固定 2026-06-24 时钟致 token 过期，改当前时钟）。
+- **客户端**：PlayerData.STARTER_CARDS 同步换血；can_unlock 对 locked 恒 false（红点/按钮共用入口）；图鉴锁定卡显示「敬请期待」（不展示碎片进度/解锁红点）；组卡池 unlocked 驱动天然零改动。新增 `test_card_pool_lock`（5 条规约：17/31 数量、starter 同步、player_deck 零锁卡、掉落零锁卡、can_unlock 挡锁）；旧口径测试 3 处更新（48 卡全有源→31 可玩全有源+锁卡零源）。
+- **运维**：api/gateway 镜像 rebuild + battle/verifier 重启；dev 库清存量锁卡解锁 19 条（UPDATE unlocked=FALSE）。**Prod 部署时需同款 DB 修正**（记入上线清单）。客户端 **448/448**；Go unit 全绿。

@@ -258,9 +258,12 @@ func _card_tile(cid: String, cache, config) -> Control:
 		if _actionable(cache, config, cid):
 			tile.add_child(_red_dot(Vector2(276, 10)))
 	else:
-		var ov := HudWidgets.locked_overlay("碎片 %d/%d" % [int(st.get("shards", 0)), _unlock_need(config, rarity)], 300, 150)
+		# 决策 49 缩池：locked 卡（等卡通素材）显示"敬请期待"，不展示碎片进度/解锁红点。
+		var pool_locked := bool(config.get_card_progression(cid).get("locked", false))
+		var ov_text := "敬请期待" if pool_locked else "碎片 %d/%d" % [int(st.get("shards", 0)), _unlock_need(config, rarity)]
+		var ov := HudWidgets.locked_overlay(ov_text, 300, 150)
 		tile.add_child(ov)
-		if cache.can_unlock(cid, config):
+		if not pool_locked and cache.can_unlock(cid, config):
 			tile.add_child(_red_dot(Vector2(276, 10)))
 	return tile
 

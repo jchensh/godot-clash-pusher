@@ -111,7 +111,8 @@ func test_every_stage_has_rewards_and_stars() -> void:
 
 # A4(KAN-93)：全 48 卡在 100 关奖励里都有获取源（首通碎片 ∪ 概率掉落）——
 # 锁死「32 张新卡 PvE 零获取」断层不复发。
-func test_all_48_cards_obtainable_via_stage_rewards() -> void:
+func test_all_playable_cards_obtainable_via_stage_rewards() -> void:
+	# 决策 49 缩池：31 张可玩卡全有源、17 张锁定卡零源（掉落侧收口，锁定详见 test_card_pool_lock）。
 	var c = _config()
 	var covered := {}
 	for sid in c.stages:
@@ -122,9 +123,15 @@ func test_all_48_cards_obtainable_via_stage_rewards() -> void:
 			covered[str(cid)] = true
 		for cid in (st.get("shard_drop", {}) as Dictionary):
 			covered[str(cid)] = true
+	var playable := 0
 	for cid in c.cards:
-		assert_true(covered.has(str(cid)), "卡 %s 在 100 关奖励中有获取源" % str(cid))
-	assert_eq(covered.size(), c.cards.size(), "奖励覆盖数 == 卡池数（48）")
+		var cp: Dictionary = c.get_card_progression(str(cid))
+		if bool(cp.get("locked", false)):
+			assert_false(covered.has(str(cid)), "锁定卡 %s 不得有掉落源" % str(cid))
+		else:
+			playable += 1
+			assert_true(covered.has(str(cid)), "可玩卡 %s 在 100 关奖励中有获取源" % str(cid))
+	assert_eq(covered.size(), playable, "奖励覆盖数 == 可玩卡数（31）")
 
 # A4(KAN-93)：三国章节名——i18n zh/en 各有 chapter_1..10，且 zh 与 stages_spec 章名一致。
 func test_chapter_names_i18n_complete_and_consistent() -> void:

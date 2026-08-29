@@ -136,6 +136,9 @@ func (r *Repo) Unlock(ctx context.Context, accountID int64, cardID string, cfg *
 		if !ok {
 			return ErrUnknownCard
 		}
+		if cfg.IsLocked(cardID) {
+			return ErrLocked // 决策 49 缩池：锁定卡不可解锁（掉落已无源，此处兜底 GM 碎片等旁路）
+		}
 		if card.unlocked {
 			return ErrLocked
 		}
