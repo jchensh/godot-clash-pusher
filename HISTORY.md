@@ -818,3 +818,9 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
 - **场区自动 25px**：750×1334 下原取整公式自然解出 cell=25 → 场区 750×650 满宽、y=281（顶栏 54/手牌板 176 之间垂直居中），零公式改动；`test_cartoon_baseline_750x1334` 锁定此基准（兑现 P1-2 承诺）。
 - **塔**：单套素材敌我共用（mine/enemy 常量改别名防 duplicated-load），阵营程序调色 mine 染蓝 0.12/敌染红 0.40（KAN-124 欠正式配色套）；王塔废墟暂共用箭塔破贴图（欠账同单）；塔宽系数 king 1.0/arrow 1.05（2 倍素材÷2≈footprint 1:1）；旧 BG 路环视觉偏移 TOWER_YOFF_TILE 清零。
 - 全量 **442/442**；gdlint 绿。单位仍旧素材混搭（P1-6 换）；画面真人验收并入 P1-8 台账。
+
+### V5 · 卡通改版 P1-5：切帧管线 + 21 角色资产化（✅ 产出全量，2026-08-30，KAN-121）
+
+- **`tools/slice_cartoon_frames.py`**（幂等，uv+pillow）：透明列投影找内容段 → **相邻段中心距中位数推帧距、N=round(W/帧距)**（检测只负责数帧，切割恒用等距网格——美术等间距导出，角色每帧同位；粘连段/特效跨界不糊帧数）→ 等距切 N 帧 → **全帧 alpha 包围盒并集统一裁切**（角色锚点跨帧恒定，单帧特效不拉宽）→ ÷2（2 倍交付→1x，LANCZOS）→ 等宽横排 spritesheet。
+- **踩坑修正**：初版 per-frame 包围盒+中心对齐导致角色帧间跳动（鼹鼠枪口烟把单帧包围盒拉宽）、粘连段致帧数误判（8 均分把实际 14 帧的开枪动画切乱）——并集裁切+中位距推帧修复，抽查（musketeer 14 帧/valkyrie 7 帧/goblins 8 帧）角色恒位确认。
+- **产出**：`assets/units_cartoon/` 42 张（21 角色×attack/walk）+ `cartoon_frames.json`（帧数/帧宽高/检测模式/来源，P1-6 sprite_db 读）；`assets/portraits_cartoon/` 21 张立绘（P2 卡面用先行产出）。帧数分布：多数 8 帧、fire_spirit/valkyrie walk 7 帧、musketeer attack 14 帧，全部 auto 检测零回退。headless import 零报错。

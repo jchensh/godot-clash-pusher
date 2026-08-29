@@ -1,0 +1,380 @@
+{
+ "archers": {
+  "attack": {
+   "detect": "auto8",
+   "fh": 40,
+   "frames": 8,
+   "fw": 49,
+   "src": "兔子攻击.png"
+  },
+  "char": "兔子",
+  "portrait": "兔射手.png",
+  "walk": {
+   "detect": "auto8",
+   "fh": 32,
+   "frames": 8,
+   "fw": 37,
+   "src": "兔子行走.png"
+  }
+ },
+ "axe_thrower": {
+  "attack": {
+   "detect": "auto8",
+   "fh": 57,
+   "frames": 8,
+   "fw": 77,
+   "src": "飞斧汪攻击.png"
+  },
+  "char": "飞斧汪",
+  "portrait": "飞斧汪.png",
+  "walk": {
+   "detect": "auto8",
+   "fh": 57,
+   "frames": 8,
+   "fw": 54,
+   "src": "飞斧汪行走.png"
+  }
+ },
+ "balloon": {
+  "attack": {
+   "detect": "auto8",
+   "fh": 296,
+   "frames": 8,
+   "fw": 234,
+   "src": "马蜂王攻击.png"
+  },
+  "char": "马蜂王",
+  "portrait": "马蜂王.png",
+  "walk": {
+   "detect": "auto8",
+   "fh": 182,
+   "frames": 8,
+   "fw": 217,
+   "src": "马蜂王移动.png"
+  }
+ },
+ "barbarians": {
+  "attack": {
+   "detect": "auto8",
+   "fh": 63,
+   "frames": 8,
+   "fw": 77,
+   "src": "棒槌史莱姆攻击.png"
+  },
+  "char": "棒槌史莱姆",
+  "portrait": "棒槌史莱姆.png",
+  "walk": {
+   "detect": "auto8",
+   "fh": 55,
+   "frames": 8,
+   "fw": 56,
+   "src": "棒槌史莱姆行走.png"
+  }
+ },
+ "bomber": {
+  "attack": {
+   "detect": "auto8",
+   "fh": 41,
+   "frames": 8,
+   "fw": 70,
+   "src": "猫炮手攻击.png"
+  },
+  "char": "猫炮手",
+  "portrait": "猫炮手.png",
+  "walk": {
+   "detect": "auto8",
+   "fh": 41,
+   "frames": 8,
+   "fw": 59,
+   "src": "猫炮手步行.png"
+  }
+ },
+ "electro_spirit": {
+  "attack": {
+   "detect": "auto8",
+   "fh": 33,
+   "frames": 8,
+   "fw": 29,
+   "src": "雷精灵攻击2.png"
+  },
+  "char": "雷精灵",
+  "portrait": "雷精灵.png",
+  "walk": {
+   "detect": "auto8",
+   "fh": 40,
+   "frames": 8,
+   "fw": 31,
+   "src": "雷精灵移动.png"
+  }
+ },
+ "fire_spirit": {
+  "attack": {
+   "detect": "auto8",
+   "fh": 35,
+   "frames": 8,
+   "fw": 58,
+   "src": "火精灵攻击.png"
+  },
+  "char": "火精灵",
+  "portrait": "火精灵.png",
+  "walk": {
+   "detect": "auto7",
+   "fh": 29,
+   "frames": 7,
+   "fw": 26,
+   "src": "精灵移动_1.png"
+  }
+ },
+ "goblin_gang": {
+  "attack": {
+   "detect": "auto8",
+   "fh": 85,
+   "frames": 8,
+   "fw": 140,
+   "src": "蟑螂恶霸攻击.png"
+  },
+  "char": "蟑螂恶霸",
+  "portrait": "蟑螂恶霸.png",
+  "walk": {
+   "detect": "auto8",
+   "fh": 64,
+   "frames": 8,
+   "fw": 94,
+   "src": "蟑螂恶霸走路.png"
+  }
+ },
+ "goblins": {
+  "attack": {
+   "detect": "auto8",
+   "fh": 42,
+   "frames": 8,
+   "fw": 52,
+   "src": "蟑螂攻击.png"
+  },
+  "char": "蟑螂",
+  "portrait": "蟑螂.png",
+  "walk": {
+   "detect": "auto8",
+   "fh": 37,
+   "frames": 8,
+   "fw": 34,
+   "src": "蟑螂行走.png"
+  }
+ },
+ "golem": {
+  "attack": {
+   "detect": "auto8",
+   "fh": 52,
+   "frames": 8,
+   "fw": 96,
+   "src": "岩石史莱姆攻击.png"
+  },
+  "char": "岩石史莱姆",
+  "portrait": "岩石史莱姆.png",
+  "walk": {
+   "detect": "auto8",
+   "fh": 41,
+   "frames": 8,
+   "fw": 65,
+   "src": "岩石史莱姆行走.png"
+  }
+ },
+ "hog_rider": {
+  "attack": {
+   "detect": "auto8",
+   "fh": 59,
+   "frames": 8,
+   "fw": 83,
+   "src": "猪猪配香菇攻击.png"
+  },
+  "char": "猪猪配香菇",
+  "portrait": "猪猪配香菇.png",
+  "walk": {
+   "detect": "auto8",
+   "fh": 52,
+   "frames": 8,
+   "fw": 48,
+   "src": "猪猪配香菇行走.png"
+  }
+ },
+ "ice_wizard": {
+  "attack": {
+   "detect": "auto8",
+   "fh": 55,
+   "frames": 8,
+   "fw": 74,
+   "src": "蝴蝶仙子攻击.png"
+  },
+  "char": "蝴蝶仙子",
+  "portrait": "蝴蝶仙子.png",
+  "walk": {
+   "detect": "auto8",
+   "fh": 59,
+   "frames": 8,
+   "fw": 60,
+   "src": "蝴蝶仙子移动.png"
+  }
+ },
+ "knight": {
+  "attack": {
+   "detect": "auto8",
+   "fh": 82,
+   "frames": 8,
+   "fw": 104,
+   "src": "小小攻击.png"
+  },
+  "char": "小小",
+  "portrait": "小小.png",
+  "walk": {
+   "detect": "auto8",
+   "fh": 72,
+   "frames": 8,
+   "fw": 79,
+   "src": "小小步行.png"
+  }
+ },
+ "lava_hound": {
+  "attack": {
+   "detect": "auto8",
+   "fh": 167,
+   "frames": 8,
+   "fw": 287,
+   "src": "幺蛾子攻击.png"
+  },
+  "char": "幺蛾子",
+  "portrait": "幺蛾子.png",
+  "walk": {
+   "detect": "auto8",
+   "fh": 125,
+   "frames": 8,
+   "fw": 137,
+   "src": "幺蛾子飞行.png"
+  }
+ },
+ "mega_minion": {
+  "attack": {
+   "detect": "auto8",
+   "fh": 58,
+   "frames": 8,
+   "fw": 88,
+   "src": "8x1@鸦王攻击.png"
+  },
+  "char": "鸦王",
+  "portrait": "鸦王.png",
+  "walk": {
+   "detect": "auto8",
+   "fh": 54,
+   "frames": 8,
+   "fw": 79,
+   "src": "8x1@鸦王行走.png"
+  }
+ },
+ "mini_pekka": {
+  "attack": {
+   "detect": "auto8",
+   "fh": 121,
+   "frames": 8,
+   "fw": 185,
+   "src": "锤锤莱姆攻击.png"
+  },
+  "char": "锤锤莱姆",
+  "portrait": "锤锤莱姆.png",
+  "walk": {
+   "detect": "auto8",
+   "fh": 85,
+   "frames": 8,
+   "fw": 70,
+   "src": "锤锤莱姆走路.png"
+  }
+ },
+ "musketeer": {
+  "attack": {
+   "detect": "auto14",
+   "fh": 63,
+   "frames": 14,
+   "fw": 82,
+   "src": "鼹鼠火枪手攻击.png"
+  },
+  "char": "鼹鼠火枪手",
+  "portrait": "鼹鼠火枪手.png",
+  "walk": {
+   "detect": "auto8",
+   "fh": 44,
+   "frames": 8,
+   "fw": 60,
+   "src": "鼹鼠火枪手走路.png"
+  }
+ },
+ "phoenix": {
+  "attack": {
+   "detect": "auto8",
+   "fh": 164,
+   "frames": 8,
+   "fw": 173,
+   "src": "火又鸟攻击.png"
+  },
+  "char": "火又鸟",
+  "portrait": "火又鸟.png",
+  "walk": {
+   "detect": "auto8",
+   "fh": 147,
+   "frames": 8,
+   "fw": 174,
+   "src": "火又鸟飞行.png"
+  }
+ },
+ "princess": {
+  "attack": {
+   "detect": "auto8",
+   "fh": 63,
+   "frames": 8,
+   "fw": 75,
+   "src": "8x1@女主攻击.png"
+  },
+  "char": "女主",
+  "portrait": "女主.png",
+  "walk": {
+   "detect": "auto8",
+   "fh": 64,
+   "frames": 8,
+   "fw": 62,
+   "src": "8x1@女主行走.png"
+  }
+ },
+ "royal_giant": {
+  "attack": {
+   "detect": "auto8",
+   "fh": 85,
+   "frames": 8,
+   "fw": 136,
+   "src": "瓜牛炮开炮.png"
+  },
+  "char": "瓜牛炮",
+  "portrait": "瓜牛炮.png",
+  "walk": {
+   "detect": "auto8",
+   "fh": 67,
+   "frames": 8,
+   "fw": 84,
+   "src": "瓜牛炮移动.png"
+  }
+ },
+ "valkyrie": {
+  "attack": {
+   "detect": "auto8",
+   "fh": 90,
+   "frames": 8,
+   "fw": 67,
+   "src": "双斧火钳攻击.png"
+  },
+  "char": "双斧火钳",
+  "portrait": "双斧火钳.png",
+  "walk": {
+   "detect": "auto7",
+   "fh": 59,
+   "frames": 7,
+   "fw": 67,
+   "src": "双斧火钳行走.png"
+  }
+ }
+}
