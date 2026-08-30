@@ -123,29 +123,7 @@ const WATER_N := 12
 const WATER_FPS := 5.0
 
 # 兵种白膜回退外形（无精灵时；按 owner 队伍色填）。精灵渲染框也以 r 为基（×SpriteDB scale）。
-const UNIT_VIS := {
-	"giant_body":      {"r": 0.85},
-	"knight_body":     {"r": 0.55},
-	"mini_pekka_body": {"r": 0.6},
-	"musketeer_body":  {"r": 0.5},
-	"archer_body":     {"r": 0.45},
-	"baby_dragon_body":{"r": 0.75},
-	"minion_body":     {"r": 0.45},
-	"goblin_body":     {"r": 0.4},
-	"skeleton_body":   {"r": 0.38},
-	"golem_body":      {"r": 0.85},
-	# A2.5 三国占位（2026-07-04）：新单位半径按体型档（极小0.35/小0.4/中0.5/大0.62/巨0.85）。与 battle_scene 同表。
-	"spear_goblin_body": {"r": 0.38}, "bat_body": {"r": 0.32}, "barbarian_body": {"r": 0.5},
-	"ice_spirit_body": {"r": 0.35}, "fire_spirit_body": {"r": 0.35}, "electro_spirit_body": {"r": 0.35},
-	"squire_body": {"r": 0.45}, "axe_thrower_body": {"r": 0.42}, "cave_spider_body": {"r": 0.35},
-	"bone_ram_body": {"r": 0.62}, "royal_giant_body": {"r": 0.8}, "hog_rider_body": {"r": 0.55},
-	"valkyrie_body": {"r": 0.55}, "bomber_body": {"r": 0.4}, "mega_minion_body": {"r": 0.48},
-	"battle_ram_body": {"r": 0.6}, "wizard_body": {"r": 0.48}, "executioner_body": {"r": 0.52},
-	"balloon_body": {"r": 0.65}, "phoenix_body": {"r": 0.5}, "phoenix_reborn_body": {"r": 0.45},
-	"lava_hound_body": {"r": 0.85}, "lava_pup_body": {"r": 0.35}, "ice_wizard_body": {"r": 0.45},
-	"electro_wizard_body": {"r": 0.48}, "princess_body": {"r": 0.42}, "inferno_dragon_body": {"r": 0.52},
-	"golemite_body": {"r": 0.5}, "fire_pup_body": {"r": 0.35},
-}
+const UNIT_VIS := SpriteDB.UNIT_VIS   # 决策 49：体型表收口 sprite_db 单一真相源（手动调大小去那改）
 
 var _loader
 var _session

@@ -320,6 +320,37 @@ const DB := {
 	},
 }
 
+
+# ═══════ 单位体型表（决策 49 起收口本文件单一真相源；battle_scene/net_battle_scene 共享）═══════
+# 【手动调单位大小看这里】r = 视觉半径（tile 格）：**显示身高 = r × 2 × 格(25px) × CARTOON_H_MULT(1.75)**
+#   → r=0.4 ≈ 1.4 格小兵、r=0.55 ≈ 1.9 格中型、r=0.85 ≈ 3.0 格巨型。
+#   改某单位大小：改它的 r（纯视觉，血条/影子/帧动画同步跟随；不影响战斗数值与碰撞）。
+#   整体全变大/变小：改上方 CARTOON_H_MULT。改完 F5 即生效（无需重启 docker/重导素材）。
+#   卡→单位 id 对照见 CARTOON_UNIT_OF_CARD（如 马蜂王=balloon_body、幺蛾子=lava_hound_body）。
+const UNIT_VIS := {
+	"giant_body":      {"r": 0.85},
+	"knight_body":     {"r": 0.55},
+	"mini_pekka_body": {"r": 0.6},
+	"musketeer_body":  {"r": 0.5},
+	"archer_body":     {"r": 0.45},
+	"baby_dragon_body":{"r": 0.75},
+	"minion_body":     {"r": 0.45},
+	"goblin_body":     {"r": 0.4},
+	"skeleton_body":   {"r": 0.38},
+	"golem_body":      {"r": 0.85},
+	# A2.5 三国占位（2026-07-04）：新单位半径按体型档（极小0.35/小0.4/中0.5/大0.62/巨0.85）。
+	"spear_goblin_body": {"r": 0.38}, "bat_body": {"r": 0.32}, "barbarian_body": {"r": 0.5},
+	"ice_spirit_body": {"r": 0.35}, "fire_spirit_body": {"r": 0.35}, "electro_spirit_body": {"r": 0.35},
+	"squire_body": {"r": 0.45}, "axe_thrower_body": {"r": 0.42}, "cave_spider_body": {"r": 0.35},
+	"bone_ram_body": {"r": 0.62}, "royal_giant_body": {"r": 0.8}, "hog_rider_body": {"r": 0.55},
+	"valkyrie_body": {"r": 0.55}, "bomber_body": {"r": 0.4}, "mega_minion_body": {"r": 0.48},
+	"battle_ram_body": {"r": 0.6}, "wizard_body": {"r": 0.48}, "executioner_body": {"r": 0.52},
+	"balloon_body": {"r": 0.65}, "phoenix_body": {"r": 0.5}, "phoenix_reborn_body": {"r": 0.45},
+	"lava_hound_body": {"r": 0.85}, "lava_pup_body": {"r": 0.35}, "ice_wizard_body": {"r": 0.45},
+	"electro_wizard_body": {"r": 0.48}, "princess_body": {"r": 0.42}, "inferno_dragon_body": {"r": 0.52},
+	"golemite_body": {"r": 0.5}, "fire_pup_body": {"r": 0.35},
+}
+
 static func has_sprite(unit_id: String) -> bool:
 	return _cartoon_db().has(unit_id) or DB.has(unit_id)
 
