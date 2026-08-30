@@ -357,6 +357,7 @@ static func frame(unit_id: String, state: String, owner_id: int, t: float, face_
 			"base_scale": float(u.get("scale", 1.2)),
 			"mirror": bool(u.get("mirror", false)),
 			"px": bool(u.get("px", false)),
+			"base_fh": int(u.get("base_fh", fh)),
 			"tint": u.get("tint", Color.WHITE), "shadow": bool(u.get("shadow", false)),
 			"natural": bool(u.get("natural", false))}
 
@@ -415,9 +416,9 @@ static func card_portrait_tex(card_id: String, loader) -> Texture2D:
 	for sk in loader.get_card(card_id).get("skills", []):
 		if typeof(sk) == TYPE_DICTIONARY and str(sk.get("type")) == "spawn_unit":
 			var uid := str(sk.get("unit_id"))
-			if not DB.has(uid):
+			var u: Dictionary = _cartoon_db().get(uid, DB.get(uid, {}))   # 决策 49：卡通层优先
+			if u.is_empty():
 				return null
-			var u: Dictionary = DB[uid]
 			if u.has("portrait"):
 				return u["portrait"]
 			var w: Dictionary = u["walk"]
@@ -459,10 +460,13 @@ static func make_card_portrait(card_id: String, loader, pos: Vector2, size: Vect
 
 # ═══════ 决策 49 卡通素材层（0830 批，tools/slice_cartoon_frames.py 产出）═══════
 # lazy 构建：首访读 cartoon_frames.json + load() 贴图，生成与 DB 同构条目、查询优先于 DB。
-# 条目特有 px=true：帧非方形，绘制侧按「帧像素 × (ur/PX_TILE) × scale」直画 + 底边贴脚线
-# （美术 2 倍交付÷2 后 @25px/格 1:1，交付即所得），不再拉伸进方形 box。
+# 条目特有 px=true：帧非方形 → **体型驱动等比适配**（0830 真人验收定稿，取代首版"交付即所得"
+# 直画——美术各角色源图分辨率不统一，直画致马蜂王 9 格巨蜂）：显示身高 = UNIT_VIS 半径
+# ×2×格×scale（体型与数值表挂钩），像素比例 k = 身高/walk 帧高（base_fh），attack 帧按同一 k
+# 放大画布（挥击范围自然外扩、角色本体不忽大忽小），底边贴脚线；素材高清仅作超采样。
 # 朝向约定：正面 3/4 微朝左单行帧 → mirror（向右走/砍时水平翻转），取代旧 row/row_up 双行。
 const PX_TILE := 25.0
+const CARTOON_H_MULT := 1.75  # 正面 Q 版身高倍率：r=0.4 小兵 → 35px≈1.4 格（真人验收可调）
 const CARTOON_META := "res://assets/units_cartoon/cartoon_frames.json"
 const CARTOON_DIR := "res://assets/units_cartoon"
 const CARTOON_PORTRAIT_DIR := "res://assets/portraits_cartoon"
@@ -478,10 +482,10 @@ const CARTOON_UNIT_OF_CARD := {
 	"barbarians": "barbarian_body", "goblin_gang": "spear_goblin_body",
 	"royal_giant": "royal_giant_body", "ice_wizard": "ice_wizard_body",
 }
-# 派生形态（亡语裂兵）：无专属素材 → 复用父卡贴图 + scale 缩小。
+# 派生形态（亡语裂兵）：无专属素材 → 复用父卡贴图（体型差由 UNIT_VIS 半径表达，scale 恒 1）。
 const CARTOON_DERIVED := {
-	"phoenix_reborn_body": {"card": "phoenix", "scale": 0.72},
-	"lava_pup_body": {"card": "lava_hound", "scale": 0.4},
+	"phoenix_reborn_body": {"card": "phoenix", "scale": 1.0},
+	"lava_pup_body": {"card": "lava_hound", "scale": 1.0},
 }
 static var _cartoon: Dictionary = {}
 static var _cartoon_ready := false
@@ -509,7 +513,7 @@ static func _cartoon_db() -> Dictionary:
 static func _cartoon_entry(card: String, m: Dictionary, k: float) -> Dictionary:
 	if m.is_empty():
 		return {}
-	var entry := {"scale": k, "px": true, "natural": true, "mirror": true, "shadow": true}
+	var entry := {"scale": k * CARTOON_H_MULT, "px": true, "natural": true, "mirror": true, "shadow": true}
 	for kind in ["walk", "attack"]:
 		var s: Dictionary = m.get(kind, {})
 		var path := "%s/%s_%s.png" % [CARTOON_DIR, card, kind]
@@ -521,4 +525,6 @@ static func _cartoon_entry(card: String, m: Dictionary, k: float) -> Dictionary:
 	var pp := "%s/%s.png" % [CARTOON_PORTRAIT_DIR, card]
 	if ResourceLoader.exists(pp):
 		entry["portrait"] = load(pp)
+	if entry.has("walk"):
+		entry["base_fh"] = int((entry["walk"] as Dictionary)["fh"])   # 身高基准=walk 帧高
 	return entry if entry.has("walk") else {}

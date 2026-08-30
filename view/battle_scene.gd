@@ -94,8 +94,11 @@ const PROJ_KIND := {"archer_body": "arrow", "musketeer_body": "bolt", "baby_drag
 # 特征对齐：以「双桥中心定 x 缩放 + 河中心锚 y」等比取源贴 _field_rect（直接拉伸会变形、桥错位），
 # 特征像素为 python 测量值（水带行/桥木色列质心）。0715 新 BG 720×1502：黄土路正好绕六塔逻辑位画。
 const TEX_BATTLE_BG := preload("res://assets/map/cartoon_battle_bg.png")
-# 卡通 BG 750×1625 原生竖屏横板构图：战斗区（30×26 格 @25px）在图上的矩形——顶 y=(1625-650)/2。
-const CARTOON_BG_FIELD := Rect2(0.0, 487.5, 750.0, 650.0)
+# 卡通 BG 750×1625 原生竖屏横板构图：战斗区（30×26 格 @25px）在图上的矩形。
+# 顶 y=425 = pillow 实测（格子示意罩层边界 + 双桥格反解：上桥 BG y[500,575]→x∈[3,6)、
+# 下桥 y[925,1000]→x∈[20,23)，误差 <3px）——**非**图面垂直居中（居中假设曾错位 2.4 格，
+# 单位走逻辑桥时画面在河上，0830 真人验收实锤）。
+const CARTOON_BG_FIELD := Rect2(0.0, 425.0, 750.0, 650.0)
 const BG_ENABLED := true
 const BG_BRIDGE1_PX := 160.0   # 图上左桥中心 x（px，0721 绿地图实测）
 const BG_BRIDGE2_PX := 543.0   # 图上右桥中心 x（px）
@@ -614,14 +617,17 @@ func _draw_unit_one(u, ur: float) -> void:
 		var dst := Vector2(box, box)
 		var dst_rect := Rect2(-dst * 0.5, dst)
 		if px:
-			dst = (spr["src"] as Rect2).size * (ur / SpriteDB.PX_TILE) * float(spr["scale"])
+			# 体型驱动等比适配：像素比例 k = box(=2r×ur×scale，身高) / walk 帧高基准；
+			# attack 帧同 k 放大画布（本体不跳变、武器外扩），底边贴脚线。
+			var k: float = box / maxf(1.0, float(spr.get("base_fh", 1)))
+			dst = (spr["src"] as Rect2).size * k
 			dst_rect = Rect2(Vector2(-dst.x * 0.5, rad - dst.y), dst)
 		if spr.get("shadow", false) and not flying:   # 正式素材配套脚下椭圆影（贴地、不染队伍色）
 			# 自带 30% alpha 太淡 → 叠两遍 ≈51% 黑、宽 0.9 基准框压脚线。⚠️ 基准用 base_scale
 			# （不含状态 sc）：攻击大方格若用 box，阴影会放大下坠（0715 验收实测偏离）。px 模式
 			# 用帧宽做基准、影心压脚线。
 			var sbox: float = rad * 2.0 * float(spr.get("base_scale", spr["scale"]))
-			var sw: float = (dst.x if px else sbox) * 0.9
+			var sw: float = (box if px else sbox) * 0.9
 			var sh: float = sw * 0.4
 			var sy: float = (rad - sh * 0.5) if px else (sbox * 0.5 - sh * 0.5)
 			var srect := Rect2(c + Vector2(-sw * 0.5, sy), Vector2(sw, sh))

@@ -60,12 +60,15 @@ func test_placeholder_inventory() -> void:
 # —— 0715 正式素材全家桶（knight 试点：立绘肖像 + 配套战斗特效）——
 
 func test_portrait_override_for_knight() -> void:
-	# 有 "portrait" 字段的单位卡面应直接用立绘原图（322×346），而非走帧 col0 的 AtlasTexture。
+	# 决策 49：卡面肖像走卡通层立绘（portraits_cartoon/knight.png），而非走帧 col0 的 AtlasTexture；
+	# 尺寸以立绘文件本身为真相源对比（0830 组卡页旧图事故=替换静默失败的回归锁）。
 	var tex := SpriteDB.card_portrait_tex("knight", _loaded())
 	assert_not_null(tex, "knight 卡应有肖像")
-	if tex != null:
-		assert_eq(tex.get_width(), 322, "knight 肖像应为立绘原图宽 322")
-		assert_eq(tex.get_height(), 346, "knight 肖像应为立绘原图高 346")
+	var want: Texture2D = load("res://assets/portraits_cartoon/knight.png")
+	if tex != null and want != null:
+		assert_eq(tex.get_width(), want.get_width(), "knight 肖像=卡通立绘宽")
+		assert_eq(tex.get_height(), want.get_height(), "knight 肖像=卡通立绘高")
+		assert_true(tex is CompressedTexture2D, "肖像为立绘原图而非 Atlas 帧")
 
 func test_unit_fx_manifest_valid() -> void:
 	# 决策 49：knight_body 被卡通层接管（无 fx）→ 用仍走旧 DB 的 giant_body（0721 素材）验 manifest；
@@ -101,7 +104,7 @@ func test_knight_attack_cell_and_sc() -> void:
 		assert_true(src.end.x <= float(tex.get_width()), "帧在条带内")
 		assert_true(bool(spr["px"]), "卡通层标 px 直画")
 		assert_true(bool(spr["mirror"]), "卡通层标 mirror")
-		assert_true(absf(float(spr["scale"]) - 1.0) < 0.001, "卡通主体 scale=1（交付即所得）")
+		assert_true(absf(float(spr["scale"]) - SpriteDB.CARTOON_H_MULT) < 0.001, "卡通主体 scale=身高倍率（体型驱动）")
 
 
 func test_cartoon_layer_covers_21_cards() -> void:
@@ -121,4 +124,6 @@ func test_cartoon_layer_covers_21_cards() -> void:
 		var spr: Dictionary = SpriteDB.frame(uid, "walk", 0, 0.0)
 		assert_false(spr.is_empty(), "派生形态 %s 有帧（复用父贴图）" % uid)
 		if not spr.is_empty():
-			assert_true(float(spr["scale"]) < 1.0, "派生形态 %s 缩小号" % uid)
+			# 体型驱动定稿：派生条目 scale=统一身高倍率，体型差由 UNIT_VIS 半径表达（pup r0.35/reborn r0.45）。
+			assert_true(absf(float(spr["scale"]) - SpriteDB.CARTOON_H_MULT) < 0.001,
+					"派生形态 %s scale=身高倍率" % uid)

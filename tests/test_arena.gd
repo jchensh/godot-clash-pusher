@@ -1,6 +1,6 @@
 # V3-1a 测试：Arena 2D 场地 —— 地形（地面/水/桥）、塔占位、落点合法性。
-# 坐标 = tile 空间；arena.json default（决策 49 卡通改版盘面）：26×30、河 y[14,16)、
-# 桥 x[0,3)&[23,26)、落点 玩家 y>=16 / 对手 y<=14、塔位见 config/arena.json。
+# 坐标 = tile 空间；arena.json default（决策 49 卡通改版盘面，0830 验收后按 BG 实测对齐）：
+# 26×30、河 y[14,16)、桥 x[3,6)&[20,23)、落点 玩家 y>=16 / 对手 y<=14、塔位见 config/arena.json。
 extends "res://tests/test_case.gd"
 
 const ArenaScript = preload("res://logic/arena.gd")
@@ -42,11 +42,11 @@ func test_river_water_blocks_ground() -> void:
 
 func test_bridges_are_walkable() -> void:
 	var a = _terrain()
-	# 左桥 x∈[0,3)、右桥 x∈[23,26)，在河行内应为地面可走。
-	assert_eq(a.tile_type(1, 14), ArenaScript.TILE_GROUND, "左桥为地面")
-	assert_true(a.is_ground_walkable(2, 15), "左桥可走")
-	assert_eq(a.tile_type(24, 14), ArenaScript.TILE_GROUND, "右桥为地面")
-	assert_true(a.is_ground_walkable(25, 15), "右桥可走")
+	# 左桥 x∈[3,6)、右桥 x∈[20,23)（BG 实测对齐，关于 x=13 镜像对称），河行内应为地面可走。
+	assert_eq(a.tile_type(4, 14), ArenaScript.TILE_GROUND, "左桥为地面")
+	assert_true(a.is_ground_walkable(5, 15), "左桥可走")
+	assert_eq(a.tile_type(21, 14), ArenaScript.TILE_GROUND, "右桥为地面")
+	assert_true(a.is_ground_walkable(22, 15), "右桥可走")
 
 func test_plain_ground_walkable() -> void:
 	var a = _terrain()
@@ -66,7 +66,7 @@ func test_tower_footprints_block() -> void:
 	var arena = _battle_arena()[1]
 	assert_eq(arena.tile_type(13, 27), ArenaScript.TILE_TOWER, "玩家王塔中心为塔占位")
 	assert_eq(arena.tile_type(13, 3), ArenaScript.TILE_TOWER, "敌方王塔中心为塔占位")
-	assert_eq(arena.tile_type(1, 21), ArenaScript.TILE_TOWER, "玩家左公主塔占位")
+	assert_eq(arena.tile_type(4, 21), ArenaScript.TILE_TOWER, "玩家左公主塔占位")
 	assert_false(arena.is_ground_walkable(13, 27), "塔占位不可走")
 
 func test_build_arena_six_towers() -> void:
@@ -127,7 +127,7 @@ func test_ground_unit_reaches_enemy_tower_and_stops() -> void:
 	arena.add_unit(u)
 	for i in 300:
 		battle.step(0.1)
-	var princess := Vector2(1.5, 8.0)   # 敌方左公主塔
+	var princess := Vector2(4.5, 8.0)   # 敌方左公主塔
 	assert_true(u.pos.distance_to(princess) <= 3.0,
 		"停在敌方左公主塔攻击距离内; dist=%.2f pos=(%.1f,%.1f)" % [u.pos.distance_to(princess), u.pos.x, u.pos.y])
 	var before: Vector2 = u.pos
@@ -280,9 +280,9 @@ func test_units_separate_when_overlapping() -> void:
 
 func test_unit_attacks_enemy_unit() -> void:
 	var arena = _battle_arena()[1]
-	# 放在中场无塔火区(y17 两侧塔都够不到)，纯测单位互攻。
-	var atk = _fighter(arena, UnitScript.OWNER_PLAYER, Vector2(9, 17.0), 50.0, 100.0, 1.0, 5.0, 0.0, 0.0)
-	var foe = _fighter(arena, UnitScript.OWNER_OPPONENT, Vector2(9, 17.5), 0.0, 300.0, 1.0, 0.0, 0.0, 0.0)  # 不还手
+	# 放在中线无塔火区((13,17) 距各塔 ≥9.9，均出射程)，纯测单位互攻。
+	var atk = _fighter(arena, UnitScript.OWNER_PLAYER, Vector2(13, 17.0), 50.0, 100.0, 1.0, 5.0, 0.0, 0.0)
+	var foe = _fighter(arena, UnitScript.OWNER_OPPONENT, Vector2(13, 17.5), 0.0, 300.0, 1.0, 0.0, 0.0, 0.0)  # 不还手
 	arena.tick(0.1)
 	assert_eq(atk.current_target, foe, "锁定该敌兵")
 	assert_almost_eq(foe.hp, 250.0, 0.0001, "接敌首击免费，敌兵 -50")
@@ -291,8 +291,8 @@ func test_unit_attacks_enemy_tower() -> void:
 	var ctx = _battle_arena()
 	var battle = ctx[0]
 	var arena = ctx[1]
-	# 站在敌方左公主塔(1.5,8)前、射程内、无敌兵 → 锁塔攻击。
-	var atk = _fighter(arena, UnitScript.OWNER_PLAYER, Vector2(1.5, 10.0), 50.0, 100.0, 1.0, 5.0, 0.0, 0.0)
+	# 站在敌方左公主塔(4.5,8)前、射程内、无敌兵 → 锁塔攻击。
+	var atk = _fighter(arena, UnitScript.OWNER_PLAYER, Vector2(4.5, 10.0), 50.0, 100.0, 1.0, 5.0, 0.0, 0.0)
 	var before: float = battle.total_tower_hp(battle.opponent_towers)
 	arena.tick(0.1)
 	assert_true(arena.towers.has(atk.current_target), "无敌兵 → 锁敌塔")
@@ -300,8 +300,8 @@ func test_unit_attacks_enemy_tower() -> void:
 
 func test_mutual_attack_resolves_simultaneously() -> void:
 	var arena = _battle_arena()[1]
-	var p = _fighter(arena, UnitScript.OWNER_PLAYER, Vector2(9, 17.0), 50.0, 100.0, 1.0, 5.0, 0.0, 0.0)
-	var o = _fighter(arena, UnitScript.OWNER_OPPONENT, Vector2(9, 17.5), 40.0, 300.0, 1.0, 5.0, 0.0, 0.0)
+	var p = _fighter(arena, UnitScript.OWNER_PLAYER, Vector2(13, 17.0), 50.0, 100.0, 1.0, 5.0, 0.0, 0.0)
+	var o = _fighter(arena, UnitScript.OWNER_OPPONENT, Vector2(13, 17.5), 40.0, 300.0, 1.0, 5.0, 0.0, 0.0)
 	arena.tick(0.1)
 	assert_almost_eq(p.hp, 60.0, 0.0001, "玩家兵被敌兵 -40（同 tick 同步结算）")
 	assert_almost_eq(o.hp, 250.0, 0.0001, "敌兵被玩家兵 -50")
@@ -310,7 +310,7 @@ func test_mutual_attack_resolves_simultaneously() -> void:
 
 func test_tower_attacks_enemy_unit_in_range() -> void:
 	var arena = _battle_arena()[1]
-	# 玩家左公主塔(1.5,22)旁放一个静止不还手的敌兵，进塔射程(7.5)。
+	# 玩家左公主塔(4.5,22)旁放一个静止不还手的敌兵，进塔射程(7.5)。
 	var e = _fighter(arena, UnitScript.OWNER_OPPONENT, Vector2(4.5, 27.0), 0.0, 300.0, 1.0, 0.0, 0.0, 0.0)
 	arena.tick(0.1)
 	assert_true(e.hp < 300.0, "塔反击射程内敌兵（掉血）; hp=%.0f" % e.hp)
@@ -318,7 +318,7 @@ func test_tower_attacks_enemy_unit_in_range() -> void:
 func test_tower_ignores_own_and_out_of_range() -> void:
 	var arena = _battle_arena()[1]
 	var own = _fighter(arena, UnitScript.OWNER_PLAYER, Vector2(4.5, 27.0), 0.0, 300.0, 1.0, 0.0, 0.0, 0.0)
-	var far = _fighter(arena, UnitScript.OWNER_OPPONENT, Vector2(9.0, 17.0), 0.0, 300.0, 1.0, 0.0, 0.0, 0.0)
+	var far = _fighter(arena, UnitScript.OWNER_OPPONENT, Vector2(13.0, 17.0), 0.0, 300.0, 1.0, 0.0, 0.0, 0.0)
 	arena.tick(0.1)
 	assert_almost_eq(own.hp, 300.0, 0.0001, "塔不打己方单位")
 	assert_almost_eq(far.hp, 300.0, 0.0001, "塔不打射程外敌兵（中场）")
@@ -329,13 +329,13 @@ func test_tower_death_frees_footprint_and_rebuilds_flow() -> void:
 	var arena = ctx[1]
 	var prin = null
 	for t in battle.player_towers:
-		if not t.is_king() and (t.pos as Vector2).distance_to(Vector2(1.5, 22.0)) < 0.6:
+		if not t.is_king() and (t.pos as Vector2).distance_to(Vector2(4.5, 22.0)) < 0.6:
 			prin = t
 	assert_true(prin != null, "找到玩家左公主塔")
-	assert_eq(arena.tile_type(1, 21), ArenaScript.TILE_TOWER, "死前占位为塔")
+	assert_eq(arena.tile_type(4, 21), ArenaScript.TILE_TOWER, "死前占位为塔")
 	prin.take_damage(prin.max_hp)
 	arena.tick(0.1)
-	assert_eq(arena.tile_type(1, 21), ArenaScript.TILE_GROUND, "塔毁后占位释放为地面（流场重算）")
+	assert_eq(arena.tile_type(4, 21), ArenaScript.TILE_GROUND, "塔毁后占位释放为地面（流场重算）")
 
 # —— 空军：飞兵越河 + 对空克制（V3-2）——
 
@@ -364,8 +364,8 @@ func test_flying_unit_crosses_water_directly() -> void:
 func test_ground_only_cannot_target_air() -> void:
 	var arena = _battle_arena()[1]
 	# g：attack_targets 默认 ground（_fighter 不设 → ground）。
-	var g = _fighter(arena, UnitScript.OWNER_PLAYER, Vector2(9, 17), 50.0, 100.0, 1.0, 5.0, 0.0, 0.0)
-	var air = UnitScript.new("air", UnitScript.OWNER_OPPONENT, _fly_cfg(0.0, "both", 0.0, 300.0), Vector2(9, 17.5))
+	var g = _fighter(arena, UnitScript.OWNER_PLAYER, Vector2(13, 17), 50.0, 100.0, 1.0, 5.0, 0.0, 0.0)
+	var air = UnitScript.new("air", UnitScript.OWNER_OPPONENT, _fly_cfg(0.0, "both", 0.0, 300.0), Vector2(13, 17.5))
 	arena.add_unit(air)
 	arena.tick(0.1)
 	assert_true(g.current_target != air, "纯地面兵不锁空军（打不到）")
@@ -377,10 +377,10 @@ func test_anti_air_unit_hits_air() -> void:
 		"hp": 100.0, "damage": 50.0, "attack_speed": 1.0, "move_speed": 0.0, "attack_range": 2.0,
 		"aggro_radius": 5.0, "body_radius": 0.0, "target_type": "ground", "attack_targets": "both",
 	}
-	var aa = UnitScript.new("aa", UnitScript.OWNER_PLAYER, cfg, Vector2(9, 17.0))
+	var aa = UnitScript.new("aa", UnitScript.OWNER_PLAYER, cfg, Vector2(13, 17.0))
 	arena.add_unit(aa)
-	# air 放 (9,17.5)：在 aa 射程(2.0)内，但在双方塔火射程外（避免塔火干扰）。
-	var air = UnitScript.new("air", UnitScript.OWNER_OPPONENT, _fly_cfg(0.0, "ground", 0.0, 300.0), Vector2(9, 17.5))
+	# air 放 (13,17.5)：在 aa 射程(2.0)内，但在双方塔火射程外（避免塔火干扰）。
+	var air = UnitScript.new("air", UnitScript.OWNER_OPPONENT, _fly_cfg(0.0, "ground", 0.0, 300.0), Vector2(13, 17.5))
 	arena.add_unit(air)
 	arena.tick(0.1)
 	assert_eq(aa.current_target, air, "对空兵(both)锁定空军")
