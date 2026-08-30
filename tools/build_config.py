@@ -50,6 +50,7 @@ UNIT_HEADERS = [
     "on_hit_status_mag",
     "death_spawn_unit",
     "death_spawn_count",
+    "vis_height_px",
     "notes",
 ]
 CARD_HEADERS = ["card_id", "name", "faction", "elixir_cost", "category", "enabled", "notes"]
@@ -232,6 +233,14 @@ def build_json_from_workbook(workbook_path: Path = WORKBOOK_PATH) -> tuple[dict[
             if target_priority not in TARGET_PRIORITIES:
                 raise ConfigError(f"unit {unit_id} target_priority must be one of {TARGET_PRIORITIES}")
             units[unit_id]["target_priority"] = target_priority
+        # 决策 49（KAN-121）：单位屏幕身高（像素，@25px/格 基准视口）——纯表现层，
+        # 血条/影子/体型全由此驱动；不影响战斗数值/碰撞/lockstep。策划直接改此列调单位大小。
+        vis_h = row.get("vis_height_px")
+        if not _is_blank(vis_h):
+            vis_height = _number(vis_h, f"unit {unit_id}.vis_height_px")
+            if vis_height <= 0:
+                raise ConfigError(f"unit {unit_id}.vis_height_px must be > 0")
+            units[unit_id]["vis_height_px"] = vis_height
         # T3 命中状态（可选）：kind 非空才写入；slow 带 mag、stun/freeze 不带。
         ohs_kind = _text(row.get("on_hit_status_kind"))
         if ohs_kind:
@@ -439,6 +448,7 @@ def workbook_from_json(workbook_path: Path = WORKBOOK_PATH) -> None:
                 (unit.get("on_hit_status") or {}).get("mag", ""),
                 unit.get("death_spawn_unit", ""),
                 unit.get("death_spawn_count", ""),
+                unit.get("vis_height_px", ""),
                 "",
             ]
         )

@@ -338,6 +338,17 @@ func _local_player():
 # —— 坐标映射（side 2 整场翻转：本方半场永远在屏幕下方）——
 # 竖版 32×32 正方形屏幕格（KAN-107，与单机 battle_scene 同款）：格边长取整数、letterbox 居中——
 # 720×1280 基准下 = 32px/格、场地 576×1024，两侧各 72px 装饰边栏（露 COL_BG 深底）。
+
+# 单位视觉半径（血条/影子/浮空/Y-sort/体型基准）——决策 49 起配置驱动：
+# units.json 的 vis_height_px（屏幕身高像素 @25px/格 基准）→ 半径 = 身高/(2×1.75)，
+# 视口缩放随 ur 跟随；缺字段回退 UNIT_VIS 代码表。**策划调单位大小改 Excel Units 表
+# vis_height_px 列（或 units.json），跑 build_config 后 F5 即生效。**
+func _vis_rad(unit_id: String, ur: float) -> float:
+	var vh: float = float(_loader.get_unit(unit_id).get("vis_height_px", 0.0))
+	if vh > 0.0:
+		return vh / (2.0 * SpriteDB.CARTOON_H_MULT) * (ur / SpriteDB.PX_TILE)
+	return float(UNIT_VIS.get(unit_id, {"r": 0.5})["r"]) * ur
+
 func _field_rect() -> Rect2:
 	var zone := Rect2(0.0, TOPBAR_H, _vw, _vh - TOPBAR_H - HUD_BOTTOM_H)
 	var a = _client.match_obj.battle.arena
@@ -558,7 +569,7 @@ func _draw_world(a) -> void:
 		cur[id] = true
 		if not _seen.has(id):
 			_seen[id] = _elapsed
-		var gy: float = _t2s(_disp_pos(u)).y + float(UNIT_VIS.get(u.unit_id, {"r": 0.5})["r"]) * ur  # 脚线近似
+		var gy: float = _t2s(_disp_pos(u)).y + _vis_rad(u.unit_id, ur)  # 脚线近似
 		items.append([gy + (100000.0 if u.target_type == "air" else 0.0), items.size(), true, u])
 	items.sort_custom(func(p, q): return p[0] < q[0] if p[0] != q[0] else p[1] < q[1])
 	for it in items:
@@ -621,8 +632,7 @@ func _draw_unit_one(u, ur: float) -> void:
 	var mine: bool = _is_mine(u.owner_id)
 	var base: Color = COL_SELF if mine else COL_FOE
 	var c := _t2s(_disp_pos(u))
-	var vis: Dictionary = UNIT_VIS.get(u.unit_id, {"r": 0.5})
-	var rad: float = float(vis["r"]) * ur * _pop_scale(id)
+	var rad: float = _vis_rad(u.unit_id, ur) * _pop_scale(id)
 	var flying: bool = u.target_type == "air"
 	if flying:
 		draw_circle(c + Vector2(0, ur * 0.5), rad * 0.6, Color(0, 0, 0, 0.25))  # 地面影子
@@ -853,7 +863,7 @@ func _draw_drag_ghost(a) -> void:
 	draw_arc(c, ur * 0.9, 0.0, TAU, 28, col, 2.5)
 	if info["spawn"]:
 		var n: int = maxi(1, int(info["count"]))
-		var vr: float = float(UNIT_VIS.get(info["unit_id"], {"r": 0.5})["r"]) * ur
+		var vr: float = _vis_rad(str(info["unit_id"]), ur)
 		for i in n:
 			var off := Vector2.ZERO
 			if n > 1:

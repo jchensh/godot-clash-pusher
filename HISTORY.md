@@ -859,3 +859,11 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
 - **二轮复验通过（用户确认）**：A 竖屏壳 / B 战斗横板 / C 缩池锁卡全组通过（首轮三修复——BG 实测对齐/体型表驱动/肖像补丁——生效）；D-1 两机联机留后补（并 KAN-76 台账口径）。KAN-121 → Done。
 - **顺手收敛**：UNIT_VIS 体型表两场景副本 → sprite_db 单一真相源（配合用户后续手动调体型：改 `view/sprite_db.gd` UNIT_VIS 的 r 或全局 CARTOON_H_MULT，F5 即生效；表头注释即调参指南）。448/448 绿。
 - **P1 一句话总账**：竖屏 750×1334 横板战斗（26×30 盘面 BG 实测对齐）+ 21 卡通角色（切帧管线+体型驱动渲染）+ 缩池 31/48 双端闭环，8 步 + 2 轮验收修复，全程单测/集成绿。下一步 P2（文案换皮 KAN-122）/ P3（王国重摆 KAN-123）待排期。
+
+### V5 · 卡通改版跟进：单位体型配置化 vis_height_px（🚧 450 绿待用户确认提交，2026-08-30，KAN-121 后续）
+
+- **用户需求**：调单位大小是重要调优流程，须策划可手改 → 从代码常量搬进配置表。
+- **机制**：units.json 每单位新增 `vis_height_px`（**屏幕身高像素**，@25px/格 基准视口，视口缩放自动跟随）；Excel Units sheet 同名新列（build_config 解析/写回/往返 --check 过，填 ≤0 拒绝）；39 单位初值 = 旧 UNIT_VIS r×87.5 **精确换算=零观感回归**（迁移恒等由 test_unit_vis_config 锁定：全单位必填+区间[15,200]+±60% 量纲防呆带）。
+- **绘制端**：两场景 3 处 UNIT_VIS 引用（体型半径/Y-sort 脚线/部署预览幽灵）收敛进 `_vis_rad()`——配置优先、UNIT_VIS 代码表降级缺省兜底；血条/影子/浮空全由身高派生。纯表现层：不动战斗数值/碰撞/lockstep。
+- **策划工作流**：改 `GameConfig.xlsx` Units 表 `vis_height_px` 列 → `uv run --with openpyxl python tools/build_config.py`（或直接改 units.json → `--from-json`）→ 重启 api/gateway/verifier（bundle 铁律）→ F5 生效。
+- 客户端 **450/450**；gdlint 绿；容器已重启。
