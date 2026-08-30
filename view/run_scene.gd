@@ -308,9 +308,10 @@ func _clear(c: Control) -> void:
 		n.free()
 
 func _gold_title(parent: Control, text: String, y: float, fs: int) -> void:
-	for off in [Vector2(3, 3), Vector2(-3, 3), Vector2(3, -3), Vector2(-3, -3)]:
-		_label(parent, text, Vector2(off.x, y + off.y), Vector2(720, fs + 16), fs, PixelUI.COL_OUTLINE, HORIZONTAL_ALIGNMENT_CENTER)
-	_label(parent, text, Vector2(0, y), Vector2(720, fs + 16), fs, PixelUI.COL_GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+	# 决策 49 换肤：原生 outline 取代 4-label 偏移描边（圆体字下偏移法成重影；白边保对比）
+	var l := _label(parent, text, Vector2(0, y), Vector2(720, fs + 16), fs, PixelUI.COL_GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+	l.add_theme_color_override("font_outline_color", Color.WHITE)
+	l.add_theme_constant_override("outline_size", 10)
 
 func _panel(parent: Control, pos: Vector2, size: Vector2, bg: Color, border: Color, bw: int) -> Control:
 	var p := Panel.new()

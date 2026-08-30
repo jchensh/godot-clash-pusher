@@ -15,53 +15,92 @@ const SpriteDB := preload("res://view/sprite_db.gd")
 const BuildingModal := preload("res://view/ui/kingdom_building_modal.gd")
 
 # —— 场景整图（0726 城建正式素材）——
-const TEX_BG := preload("res://assets/kingdom/kingdom_bg.png")
-const TEX_PLOT := preload("res://assets/kingdom/kingdom_plot.png")   # 「未建造」空地占位图
+# 「未建造」空地：卡通版（KAN-124，tools/gen_kingdom_plot.py 程序生成，色板取自 0830 城建件）。
+const TEX_PLOT := preload("res://assets/kingdom_cartoon/plot.png")
 const TEX_UNIT_SHADOW := preload("res://assets/units/unit_shadow.png")
-const BG_SIZE := Vector2(1440.0, 1830.0)
+const BG_SIZE := Vector2(1440.0, 1830.0)   # 场景坐标系尺寸（沿用 0726 口径；示意图同尺寸）
 
-# —— 建筑贴图（0726 批次；watchtower 沿用 0721 defenseTower，用户拍板）——
+# —— 决策 49 P3（0830 城建批次）：BG 整图下线 → 拼接式场景（地表错位平铺+围墙+路+装饰，
+# 对齐美术《城建资源说明》「均由独立物件拼接」）；建筑贴图全换卡通件、布局按示意图落位。——
+const TEX_GROUND := preload("res://assets/kingdom_cartoon/ground.png")   # 2×4 色块 tile，非四方连续
+const TEX_ROAD := preload("res://assets/kingdom_cartoon/road.png")
+const TEX_WALL_H := preload("res://assets/kingdom_cartoon/wall_a.png")   # 横墙段 167×107
+const TEX_WALL_V := preload("res://assets/kingdom_cartoon/wall_b.png")   # 竖墙段 74×107
+const TEX_WALL_POST := preload("res://assets/kingdom_cartoon/wall_d.png")  # 绿旗角柱 99×160
+const DECO_TEX := {
+	"tree1": preload("res://assets/kingdom_cartoon/tree1.png"),
+	"tree2": preload("res://assets/kingdom_cartoon/tree2.png"),
+	"tree3": preload("res://assets/kingdom_cartoon/tree3.png"),
+	"flower1": preload("res://assets/kingdom_cartoon/flower1.png"),
+	"flower2": preload("res://assets/kingdom_cartoon/flower2.png"),
+	"bamboo": preload("res://assets/kingdom_cartoon/bamboo.png"),
+	"barrel": preload("res://assets/kingdom_cartoon/barrel_wood.png"),
+	"pumpkin": preload("res://assets/kingdom_cartoon/resident.png"),   # 南瓜居民屋=大型装饰（无槽位）
+}
 const BUILDING_TEX := {
-	"keep": preload("res://assets/kingdom/kingdom_palace.png"),
-	"farm": preload("res://assets/kingdom/kingdom_farm.png"),
-	"workshop": preload("res://assets/kingdom/kingdom_workshop.png"),
-	"watchtower": preload("res://assets/kingdom/kingdom_watchtower.png"),
-	"granary": preload("res://assets/kingdom/kingdom_granary.png"),
-	"mint": preload("res://assets/kingdom/kingdom_mint.png"),
-	"wall": preload("res://assets/kingdom/kingdom_wall.png"),
-	"quarry": preload("res://assets/kingdom/kingdom_quarry.png"),
-	"stoneworks": preload("res://assets/kingdom/kingdom_stoneworks.png"),
-	"ironworks": preload("res://assets/kingdom/kingdom_ironworks.png"),
-	"ranch": preload("res://assets/kingdom/kingdom_ranch.png"),
-	"shop": preload("res://assets/kingdom/kingdom_shop.png"),
-	"camp_infantry": preload("res://assets/kingdom/kingdom_camp_infantry.png"),
-	"camp_spear": preload("res://assets/kingdom/kingdom_camp_spear.png"),
-	"camp_crossbow": preload("res://assets/kingdom/kingdom_camp_crossbow.png"),
-	"camp_cavalry": preload("res://assets/kingdom/kingdom_camp_cavalry.png"),
+	"keep": preload("res://assets/kingdom_cartoon/keep.png"),
+	"farm": preload("res://assets/kingdom_cartoon/farm.png"),
+	"workshop": preload("res://assets/kingdom_cartoon/magic_lab.png"),      # 顶替：紫蘑菇魔法工坊（产木料语义）
+	"watchtower": preload("res://assets/towers/cartoon_tower_arrow.png"),   # 顶替：战斗箭塔复用（风格统一）
+	"granary": preload("res://assets/kingdom_cartoon/granary.png"),
+	"mint": preload("res://assets/kingdom_cartoon/mint.png"),               # 顶替：药剂工坊（卖药剂产金币）
+	"wall": preload("res://assets/kingdom_cartoon/gate.png"),               # wall 槽=城门（沿 0726 先例）
+	"quarry": preload("res://assets/kingdom_cartoon/quarry.png"),
+	"stoneworks": preload("res://assets/kingdom_cartoon/stoneworks.png"),   # 顶替：科研所（天文台）
+	"ironworks": preload("res://assets/kingdom_cartoon/ironworks.png"),
+	"ranch": preload("res://assets/kingdom_cartoon/ranch.png"),
+	"shop": preload("res://assets/kingdom_cartoon/shop.png"),
+	"camp_infantry": preload("res://assets/kingdom_cartoon/camp_infantry.png"),  # 顶替：魔法书院（法师营）
+	"camp_spear": preload("res://assets/kingdom_cartoon/camp_spear.png"),
+	"camp_crossbow": preload("res://assets/kingdom_cartoon/camp_crossbow.png"),
+	"camp_cavalry": preload("res://assets/kingdom_cartoon/camp_cavalry.png"),
 }
 # 槽位（BG 像素系，pos=建筑底边中心；按美术示意图落位）。w 缺省 = 贴图原生宽
 # （0726 素材与示意图同比例）；watchtower 老素材过大需显式压宽。
-const SLOTS := {
-	"keep": {"pos": Vector2(715, 690)},
-	"farm": {"pos": Vector2(1090, 480)},
-	"workshop": {"pos": Vector2(1135, 1215)},
-	"granary": {"pos": Vector2(480, 800)},
-	"mint": {"pos": Vector2(565, 1010)},
-	"wall": {"pos": Vector2(702, 1558)},   # 旗杆(贴图x102)对准土路中心708.5、门体微超墙基线（0726 三轮真人校准）
-	"watchtower": {"pos": Vector2(88, 1618), "w": 80.0},
-	"quarry": {"pos": Vector2(395, 470)},
-	"stoneworks": {"pos": Vector2(950, 720)},
-	"ironworks": {"pos": Vector2(1128, 800)},
-	"ranch": {"pos": Vector2(932, 965)},
-	"shop": {"pos": Vector2(295, 1215)},
-	"camp_infantry": {"pos": Vector2(280, 680)},
-	"camp_spear": {"pos": Vector2(290, 985)},
-	"camp_crossbow": {"pos": Vector2(570, 1225)},
-	"camp_cavalry": {"pos": Vector2(885, 1230)},
+const SLOTS := {   # 0830 卡通示意图落位（pos=建筑底边中心，BG 像素系；真人验收可调）
+	"keep": {"pos": Vector2(705, 660)},
+	"farm": {"pos": Vector2(1115, 455)},
+	"workshop": {"pos": Vector2(280, 650)},
+	"granary": {"pos": Vector2(828, 1000)},
+	"mint": {"pos": Vector2(1130, 1215)},
+	"wall": {"pos": Vector2(710, 1552)},   # 城门骑底墙中央（墙带中心 y≈1500）
+	"watchtower": {"pos": Vector2(150, 1420), "w": 82.0},
+	"quarry": {"pos": Vector2(370, 455)},
+	"stoneworks": {"pos": Vector2(480, 790)},
+	"ironworks": {"pos": Vector2(1140, 790)},
+	"ranch": {"pos": Vector2(950, 610)},
+	"shop": {"pos": Vector2(570, 1010)},
+	"camp_infantry": {"pos": Vector2(287, 940)},
+	"camp_spear": {"pos": Vector2(287, 1190)},
+	"camp_crossbow": {"pos": Vector2(560, 1230)},
+	"camp_cavalry": {"pos": Vector2(872, 1215)},
 }
-# 箭塔四角（0726 验收反馈）：主槽=左下角；其余三角视觉复刻（建成才画）；右下角与主槽同为交互入口。
-const WT_CLICK_EXTRA := Vector2(1352, 1618)
-const WT_VISUAL_EXTRA := [Vector2(1352, 1618), Vector2(88, 305), Vector2(1352, 305)]
+# 箭塔四角：主槽=左下（贴墙内侧）；其余三角视觉复刻（建成才画）；右下角与主槽同为交互入口。
+const WT_CLICK_EXTRA := Vector2(1290, 1420)
+const WT_VISUAL_EXTRA := [Vector2(1290, 1420), Vector2(150, 330), Vector2(1290, 330)]
+# —— 拼接场景布局（BG 像素系）——
+const WALL_TOP_Y := 230.0      # 顶墙中线
+const WALL_BOT_Y := 1500.0     # 底墙中线
+const WALL_LEFT_X := 90.0      # 左墙中线
+const WALL_RIGHT_X := 1350.0   # 右墙中线
+const GATE_GAP := 220.0        # 底墙城门开口宽（< 城门贴图宽 253，门体骑缝盖住接缝）
+# 路网＝运行时按 SLOTS 生成（0830 验收反馈：手标表与建筑对不齐）——
+# 干线（竖主干 城堡→城门 + 中/下横干）+ 每建筑门口垂直支路；建筑挪位路自动跟随。
+const ROAD_W := 64.0
+const ROAD_MID_Y := 850.0      # 中横干中线
+const ROAD_LOW_Y := 1198.0     # 下横干中线（下排四营/药剂工坊门口贴线，无需支路）
+const ROAD_SPUR_BUILDINGS := ["quarry", "farm", "workshop", "ranch", "stoneworks",
+		"ironworks", "camp_infantry", "granary", "shop"]
+# 装饰散点（kind, pos=底边中心；示意图角落感）
+const DECO_ITEMS := [
+	["tree1", Vector2(180, 350)], ["tree2", Vector2(1260, 320)], ["tree3", Vector2(1300, 560)],
+	["tree1", Vector2(160, 1330)], ["tree2", Vector2(1280, 1340)], ["tree3", Vector2(620, 380)],
+	["tree2", Vector2(200, 780)], ["tree1", Vector2(1310, 1000)],
+	["flower1", Vector2(500, 620)], ["flower2", Vector2(940, 1100)], ["flower1", Vector2(1200, 640)],
+	["bamboo", Vector2(420, 1330)], ["bamboo", Vector2(1050, 380)],
+	["barrel", Vector2(760, 400)], ["barrel", Vector2(340, 1080)],
+	["pumpkin", Vector2(905, 785)],   # 南瓜居民屋（大型装饰，占示意图原位）
+]
 var _land := false
 # —— 视野（_k2s 单点收敛；横竖同缩放，竖屏双向拖动）——
 var _scale := 1.0
@@ -91,8 +130,9 @@ var _collect_btn: Button
 func _ready() -> void:
 	_land = GameStateScript.ui_layout() == "landscape"
 	AudioManager.play_music("music_main_menu")
-	_font = load("res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf")
+	_font = load("res://assets/fonts/ZCOOLKuaiLe-Regular.ttf")
 	_init_view()
+	_build_roads()
 	_spawn_walkers()
 	_build_hud()
 	Events.kingdom_changed.connect(_on_kingdom_changed)
@@ -104,7 +144,7 @@ func _ready() -> void:
 
 # ---------- 视野/小人（纯表现）----------
 func _init_view() -> void:
-	var vs := Vector2(1280, 720) if _land else Vector2(720, 1280)
+	var vs := get_viewport_rect().size   # 0830 修复：跟随实际视口（P1-3 改 750×1334 后旧硬编码致边缘露底）
 	_scale = 1280.0 / BG_SIZE.x   # 横竖同缩放（0726 验收：竖屏拉近对齐横屏观感，双向拖动）
 	_pan_max = (BG_SIZE * _scale - vs).max(Vector2.ZERO)
 	var keep_pos: Vector2 = SLOTS["keep"]["pos"]   # 初始视野对准主公府一带
@@ -142,9 +182,117 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 # ---------- 绘制（地形 → 路 → 空地 → 建筑+小人 Y-sort → 顶饰）----------
+# —— 决策 49 拼接式场景（P3/KAN-123）：地表错位平铺 → 路网 → 围墙 → 装饰。
+# 全部经 _k2s 变换（视野拖动/缩放自动跟随）；建筑/小人仍走原 Y-sort 通道画在其上。
+var _roads: Array = []   # Rect2 路段缓存（_ready 生成）
+
+func _build_roads() -> void:
+	var keep_pos: Vector2 = SLOTS["keep"]["pos"]
+	var trunk_x: float = keep_pos.x - ROAD_W * 0.5
+	_roads = [
+		Rect2(trunk_x, keep_pos.y - 10.0, ROAD_W, 1560.0 - (keep_pos.y - 10.0)),
+		Rect2(248.0, ROAD_MID_Y - ROAD_W * 0.5, 924.0, ROAD_W),
+		Rect2(248.0, ROAD_LOW_Y - ROAD_W * 0.5, 924.0, ROAD_W),
+	]
+	for b in ROAD_SPUR_BUILDINGS:
+		var bp: Vector2 = SLOTS[b]["pos"]
+		var x: float = bp.x - ROAD_W * 0.5
+		if bp.y < ROAD_MID_Y:
+			_roads.append(Rect2(x, bp.y - 14.0, ROAD_W, ROAD_MID_Y - bp.y + 14.0))
+		else:
+			_roads.append(Rect2(x, ROAD_MID_Y, ROAD_W, bp.y - ROAD_MID_Y + 14.0))
+
+func _draw_tiled_scene() -> void:
+	_draw_ground_tiles()
+	for seg in _roads:
+		_draw_road_seg(seg as Rect2)
+	_draw_walls()
+	for it in DECO_ITEMS:
+		var tex: Texture2D = DECO_TEX[it[0]]
+		var p: Vector2 = it[1]
+		var sz := Vector2(tex.get_width(), tex.get_height())
+		draw_texture_rect(tex,
+				Rect2(_k2s(Vector2(p.x - sz.x * 0.5, p.y - sz.y)), sz * _scale), false)
+
+func _draw_ground_tiles() -> void:
+	# 地表 tile 256×512：非四方连续 → 奇数列上移半块（美术《城建资源说明》「错位一格再复制」）。
+	var tw := 256.0
+	var th := 512.0
+	var col := 0
+	var x := 0.0
+	while x < BG_SIZE.x:
+		var y := (-th * 0.5) if col % 2 == 1 else 0.0
+		while y < BG_SIZE.y:
+			draw_texture_rect_region(TEX_GROUND,
+					Rect2(_k2s(Vector2(x, y)), Vector2(tw, th) * _scale), Rect2(0, 0, tw, th))
+			y += th
+		x += tw
+		col += 1
+
+func _draw_road_seg(r: Rect2) -> void:
+	# 路素材 99×420 竖条：竖段直接沿 y 平铺；横段绕段中心转 90° 后在局部系铺
+	# （0830 修复：局部系原点已是段中心屏幕点，只乘 _scale——先前又叠加中心平移致路随镜头漂）。
+	if r.size.y >= r.size.x:
+		var block: float = r.size.x * (420.0 / 99.0)
+		var y := 0.0
+		while y < r.size.y:
+			var h: float = minf(block, r.size.y - y)
+			draw_texture_rect_region(TEX_ROAD,
+					Rect2(_k2s(r.position + Vector2(0, y)), Vector2(r.size.x, h) * _scale),
+					Rect2(0, 0, 99, 420.0 * h / block))
+			y += h
+	else:
+		draw_set_transform(_k2s(r.get_center()), PI / 2.0, Vector2.ONE)
+		var w: float = r.size.y
+		var length: float = r.size.x
+		var block: float = w * (420.0 / 99.0)
+		var y := -length * 0.5
+		while y < length * 0.5:
+			var h: float = minf(block, length * 0.5 - y)
+			draw_texture_rect_region(TEX_ROAD,
+					Rect2(Vector2(-w * 0.5, y) * _scale, Vector2(w, h) * _scale),
+					Rect2(0, 0, 99, 420.0 * h / block))
+			y += h
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+func _draw_walls() -> void:
+	var hw := Vector2(167.0, 107.0)   # 横墙段
+	var vw := Vector2(74.0, 107.0)    # 竖墙段
+	var post := Vector2(99.0, 160.0)  # 绿旗角柱
+	var gate_l: float = 710.0 - GATE_GAP * 0.5
+	var gate_r: float = 710.0 + GATE_GAP * 0.5
+	var x := WALL_LEFT_X
+	while x < WALL_RIGHT_X:
+		var seg_w: float = minf(hw.x, WALL_RIGHT_X - x)
+		draw_texture_rect_region(TEX_WALL_H,
+				Rect2(_k2s(Vector2(x, WALL_TOP_Y - hw.y * 0.5)), Vector2(seg_w, hw.y) * _scale),
+				Rect2(0, 0, seg_w, hw.y))
+		# 底墙：与城门开口重叠部分精确裁掉（0830 修复：整段跳过致缺口远大于门体）——
+		# 段可能被开口切成左右两截，src x 随裁剪偏移保纹理连续；开口 220 < 门贴图 253 骑缝盖住。
+		for piece in [Vector2(x, minf(x + seg_w, gate_l)), Vector2(maxf(x, gate_r), x + seg_w)]:
+			var pw: float = piece.y - piece.x
+			if pw <= 0.5:
+				continue
+			draw_texture_rect_region(TEX_WALL_H,
+					Rect2(_k2s(Vector2(piece.x, WALL_BOT_Y - hw.y * 0.5)), Vector2(pw, hw.y) * _scale),
+					Rect2(piece.x - x, 0, pw, hw.y))
+		x += hw.x
+	for wx in [WALL_LEFT_X, WALL_RIGHT_X]:
+		var y := WALL_TOP_Y
+		while y < WALL_BOT_Y:
+			var seg_h: float = minf(vw.y, WALL_BOT_Y - y)
+			draw_texture_rect_region(TEX_WALL_V,
+					Rect2(_k2s(Vector2(wx - vw.x * 0.5, y)), Vector2(vw.x, seg_h) * _scale),
+					Rect2(0, 0, vw.x, seg_h))
+			y += vw.y
+	for corner in [Vector2(WALL_LEFT_X, WALL_TOP_Y), Vector2(WALL_RIGHT_X, WALL_TOP_Y),
+			Vector2(WALL_LEFT_X, WALL_BOT_Y), Vector2(WALL_RIGHT_X, WALL_BOT_Y)]:
+		draw_texture_rect(TEX_WALL_POST,
+				Rect2(_k2s(corner - Vector2(post.x * 0.5, post.y * 0.62)), post * _scale), false)
+
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, Vector2(1280, 1280)), Color("100c18"))   # 图外露夜色底
-	draw_texture_rect(TEX_BG, Rect2(-_pan, BG_SIZE * _scale), false)
+	draw_rect(Rect2(Vector2.ZERO, Vector2(1280, 1280)), Color("d8ecfa"))   # 图外露夜色底
+	_draw_tiled_scene()
 	var kd = GameStateScript.kingdom()
 	var items: Array = []   # [screen_ground_y, seq, kind, payload]
 	for b in SLOTS:
@@ -311,7 +459,7 @@ func _build_hud() -> void:
 	var bar := Panel.new()
 	bar.position = Vector2(0, 0)
 	bar.size = Vector2(1280, 92) if _land else Vector2(720, 118)
-	bar.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color(0.07, 0.06, 0.10, 0.86), 3, Color("2b1e12")))
+	bar.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color(1.0, 1.0, 1.0, 0.9), 3, Color("a9d3ee")))
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bar)
 	_pin_label("王国领地", Vector2(28, 12) if _land else Vector2(28, 12), 26, PixelUI.COL_GOLD)

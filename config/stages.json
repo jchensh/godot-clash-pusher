@@ -25,14 +25,14 @@
       "gold": 300,
       "gems": 5,
       "shards": {
-        "skeletons": 4
+        "electro_spirit": 4
       }
     },
     "repeat": {
       "gold": 30
     },
     "shard_drop": {
-      "skeletons": {
+      "electro_spirit": {
         "chance": 0.34,
         "amount": 1
       }
@@ -63,14 +63,14 @@
       "gold": 300,
       "gems": 5,
       "shards": {
-        "electro_spirit": 4
+        "goblins": 4
       }
     },
     "repeat": {
       "gold": 30
     },
     "shard_drop": {
-      "electro_spirit": {
+      "goblins": {
         "chance": 0.34,
         "amount": 1
       }
@@ -101,14 +101,14 @@
       "gold": 300,
       "gems": 5,
       "shards": {
-        "bone_ram": 4
+        "knight": 4
       }
     },
     "repeat": {
       "gold": 30
     },
     "shard_drop": {
-      "bone_ram": {
+      "knight": {
         "chance": 0.34,
         "amount": 1
       }
@@ -139,14 +139,14 @@
       "gold": 300,
       "gems": 5,
       "shards": {
-        "minion_horde": 4
+        "electro_spirit": 4
       }
     },
     "repeat": {
       "gold": 30
     },
     "shard_drop": {
-      "minion_horde": {
+      "electro_spirit": {
         "chance": 0.34,
         "amount": 1
       }
@@ -177,14 +177,14 @@
       "gold": 300,
       "gems": 5,
       "shards": {
-        "skeletons": 4
+        "goblins": 4
       }
     },
     "repeat": {
       "gold": 30
     },
     "shard_drop": {
-      "skeletons": {
+      "goblins": {
         "chance": 0.34,
         "amount": 1
       }
@@ -215,14 +215,14 @@
       "gold": 300,
       "gems": 5,
       "shards": {
-        "electro_spirit": 4
+        "knight": 4
       }
     },
     "repeat": {
       "gold": 30
     },
     "shard_drop": {
-      "electro_spirit": {
+      "knight": {
         "chance": 0.34,
         "amount": 1
       }
@@ -253,14 +253,14 @@
       "gold": 300,
       "gems": 5,
       "shards": {
-        "bone_ram": 4
+        "electro_spirit": 4
       }
     },
     "repeat": {
       "gold": 30
     },
     "shard_drop": {
-      "bone_ram": {
+      "electro_spirit": {
         "chance": 0.34,
         "amount": 1
       }
@@ -291,14 +291,14 @@
       "gold": 300,
       "gems": 5,
       "shards": {
-        "minion_horde": 4
+        "goblins": 4
       }
     },
     "repeat": {
       "gold": 30
     },
     "shard_drop": {
-      "minion_horde": {
+      "goblins": {
         "chance": 0.34,
         "amount": 1
       }
@@ -329,14 +329,14 @@
       "gold": 300,
       "gems": 5,
       "shards": {
-        "skeletons": 4
+        "knight": 4
       }
     },
     "repeat": {
       "gold": 30
     },
     "shard_drop": {
-      "skeletons": {
+      "knight": {
         "chance": 0.34,
         "amount": 1
       }
@@ -367,14 +367,14 @@
       "gold": 450,
       "gems": 25,
       "shards": {
-        "minion_horde": 8
+        "knight": 8
       }
     },
     "repeat": {
       "gold": 45
     },
     "shard_drop": {
-      "minion_horde": {
+      "knight": {
         "chance": 0.34,
         "amount": 1
       }
@@ -405,14 +405,14 @@
       "gold": 570,
       "gems": 5,
       "shards": {
-        "squire": 4
+        "barbarians": 4
       }
     },
     "repeat": {
       "gold": 57
     },
     "shard_drop": {
-      "squire": {
+      "barbarians": {
         "chance": 0.34,
         "amount": 1
       }
@@ -443,14 +443,14 @@
       "gold": 570,
       "gems": 5,
       "shards": {
-        "barbarians": 4
+        "arrows": 4
       }
     },
     "repeat": {
       "gold": 57
     },
     "shard_drop": {
-      "barbarians": {
+      "arrows": {
         "chance": 0.34,
         "amount": 1
       }
@@ -481,14 +481,14 @@
       "gold": 570,
       "gems": 5,
       "shards": {
-        "arrows": 4
+        "log": 4
       }
     },
     "repeat": {
       "gold": 57
     },
     "shard_drop": {
-      "arrows": {
+      "log": {
         "chance": 0.34,
         "amount": 1
       }
@@ -519,14 +519,14 @@
       "gold": 570,
       "gems": 5,
       "shards": {
-        "log": 4
+        "barbarians": 4
       }
     },
     "repeat": {
       "gold": 57
     },
     "shard_drop": {
-      "log": {
+      "barbarians": {
         "chance": 0.34,
         "amount": 1
       }
@@ -557,14 +557,14 @@
       "gold": 570,
       "gems": 5,
       "shards": {
-        "squire": 4
+        "arrows": 4
       }
     },
     "repeat": {
       "gold": 57
     },
     "shard_drop": {
-      "squire": {
+      "arrows": {
         "chance": 0.34,
         "amount": 1
       }
@@ -595,14 +595,14 @@
       "gold": 570,
       "gems": 5,
       "shards": {
-        "barbarians": 4
+        "log": 4
       }
     },
     "repeat": {
       "gold": 57
     },
     "shard_drop": {
-      "barbarians": {
+      "log": {
         "chance": 0.34,
         "amount": 1
       }
@@ -633,14 +633,14 @@
       "gold": 570,
       "gems": 5,
       "shards": {
-        "arrows": 4
+        "barbarians": 4
       }
     },
     "repeat": {
       "gold": 57
     },
     "shard_drop": {
-      "arrows": {
+      "barbarians": {
         "chance": 0.34,
         "amount": 1
       }
@@ -671,14 +671,14 @@
       "gold": 570,
       "gems": 5,
       "shards": {
-        "log": 4
+        "arrows": 4
       }
     },
     "repeat": {
       "gold": 57
     },
     "shard_drop": {
-      "log": {
+      "arrows": {
         "chance": 0.34,
         "amount": 1
       }
@@ -709,14 +709,14 @@
       "gold": 570,
       "gems": 5,
       "shards": {
-        "squire": 4
+        "log": 4
       }
     },
     "repeat": {
       "gold": 57
     },
     "shard_drop": {
-      "squire": {
+      "log": {
         "chance": 0.34,
         "amount": 1
       }
@@ -785,14 +785,14 @@
       "gold": 840,
       "gems": 5,
       "shards": {
-        "spear_goblins": 4
+        "fire_spirit": 4
       }
     },
     "repeat": {
       "gold": 84
     },
     "shard_drop": {
-      "spear_goblins": {
+      "fire_spirit": {
         "chance": 0.34,
         "amount": 1
       }
@@ -823,14 +823,14 @@
       "gold": 840,
       "gems": 5,
       "shards": {
-        "bats": 4
+        "goblin_gang": 4
       }
     },
     "repeat": {
       "gold": 84
     },
     "shard_drop": {
-      "bats": {
+      "goblin_gang": {
         "chance": 0.34,
         "amount": 1
       }
@@ -861,14 +861,14 @@
       "gold": 840,
       "gems": 5,
       "shards": {
-        "fire_spirit": 4
+        "mini_pekka": 4
       }
     },
     "repeat": {
       "gold": 84
     },
     "shard_drop": {
-      "fire_spirit": {
+      "mini_pekka": {
         "chance": 0.34,
         "amount": 1
       }
@@ -899,14 +899,14 @@
       "gold": 840,
       "gems": 5,
       "shards": {
-        "goblin_gang": 4
+        "fire_spirit": 4
       }
     },
     "repeat": {
       "gold": 84
     },
     "shard_drop": {
-      "goblin_gang": {
+      "fire_spirit": {
         "chance": 0.34,
         "amount": 1
       }
@@ -937,14 +937,14 @@
       "gold": 840,
       "gems": 5,
       "shards": {
-        "mini_pekka": 4
+        "goblin_gang": 4
       }
     },
     "repeat": {
       "gold": 84
     },
     "shard_drop": {
-      "mini_pekka": {
+      "goblin_gang": {
         "chance": 0.34,
         "amount": 1
       }
@@ -975,14 +975,14 @@
       "gold": 840,
       "gems": 5,
       "shards": {
-        "spear_goblins": 4
+        "mini_pekka": 4
       }
     },
     "repeat": {
       "gold": 84
     },
     "shard_drop": {
-      "spear_goblins": {
+      "mini_pekka": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1013,14 +1013,14 @@
       "gold": 840,
       "gems": 5,
       "shards": {
-        "bats": 4
+        "fire_spirit": 4
       }
     },
     "repeat": {
       "gold": 84
     },
     "shard_drop": {
-      "bats": {
+      "fire_spirit": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1051,14 +1051,14 @@
       "gold": 840,
       "gems": 5,
       "shards": {
-        "fire_spirit": 4
+        "goblin_gang": 4
       }
     },
     "repeat": {
       "gold": 84
     },
     "shard_drop": {
-      "fire_spirit": {
+      "goblin_gang": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1089,14 +1089,14 @@
       "gold": 840,
       "gems": 5,
       "shards": {
-        "goblin_gang": 4
+        "mini_pekka": 4
       }
     },
     "repeat": {
       "gold": 84
     },
     "shard_drop": {
-      "goblin_gang": {
+      "mini_pekka": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1203,14 +1203,14 @@
       "gold": 1110,
       "gems": 5,
       "shards": {
-        "battle_ram": 4
+        "hog_rider": 4
       }
     },
     "repeat": {
       "gold": 111
     },
     "shard_drop": {
-      "battle_ram": {
+      "hog_rider": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1241,14 +1241,14 @@
       "gold": 1110,
       "gems": 5,
       "shards": {
-        "hog_rider": 4
+        "heal": 4
       }
     },
     "repeat": {
       "gold": 111
     },
     "shard_drop": {
-      "hog_rider": {
+      "heal": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1317,14 +1317,14 @@
       "gold": 1110,
       "gems": 5,
       "shards": {
-        "heal": 4
+        "giant_snowball": 4
       }
     },
     "repeat": {
       "gold": 111
     },
     "shard_drop": {
-      "heal": {
+      "giant_snowball": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1355,14 +1355,14 @@
       "gold": 1110,
       "gems": 5,
       "shards": {
-        "giant_snowball": 4
+        "hog_rider": 4
       }
     },
     "repeat": {
       "gold": 111
     },
     "shard_drop": {
-      "giant_snowball": {
+      "hog_rider": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1393,14 +1393,14 @@
       "gold": 1110,
       "gems": 5,
       "shards": {
-        "battle_ram": 4
+        "heal": 4
       }
     },
     "repeat": {
       "gold": 111
     },
     "shard_drop": {
-      "battle_ram": {
+      "heal": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1431,14 +1431,14 @@
       "gold": 1110,
       "gems": 5,
       "shards": {
-        "hog_rider": 4
+        "royal_giant": 4
       }
     },
     "repeat": {
       "gold": 111
     },
     "shard_drop": {
-      "hog_rider": {
+      "royal_giant": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1469,14 +1469,14 @@
       "gold": 1110,
       "gems": 5,
       "shards": {
-        "royal_giant": 4
+        "giant_snowball": 4
       }
     },
     "repeat": {
       "gold": 111
     },
     "shard_drop": {
-      "royal_giant": {
+      "giant_snowball": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1507,14 +1507,14 @@
       "gold": 1665,
       "gems": 25,
       "shards": {
-        "heal": 8
+        "royal_giant": 8
       }
     },
     "repeat": {
       "gold": 166
     },
     "shard_drop": {
-      "heal": {
+      "royal_giant": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1583,14 +1583,14 @@
       "gold": 1380,
       "gems": 5,
       "shards": {
-        "cave_spiders": 4
+        "rock_shower": 4
       }
     },
     "repeat": {
       "gold": 138
     },
     "shard_drop": {
-      "cave_spiders": {
+      "rock_shower": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1621,14 +1621,14 @@
       "gold": 1380,
       "gems": 5,
       "shards": {
-        "ice_spirit": 4
+        "musketeer": 4
       }
     },
     "repeat": {
       "gold": 138
     },
     "shard_drop": {
-      "ice_spirit": {
+      "musketeer": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1659,14 +1659,14 @@
       "gold": 1380,
       "gems": 5,
       "shards": {
-        "rock_shower": 4
+        "axe_thrower": 4
       }
     },
     "repeat": {
       "gold": 138
     },
     "shard_drop": {
-      "rock_shower": {
+      "axe_thrower": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1697,14 +1697,14 @@
       "gold": 1380,
       "gems": 5,
       "shards": {
-        "musketeer": 4
+        "rock_shower": 4
       }
     },
     "repeat": {
       "gold": 138
     },
     "shard_drop": {
-      "musketeer": {
+      "rock_shower": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1735,14 +1735,14 @@
       "gold": 1380,
       "gems": 5,
       "shards": {
-        "axe_thrower": 4
+        "musketeer": 4
       }
     },
     "repeat": {
       "gold": 138
     },
     "shard_drop": {
-      "axe_thrower": {
+      "musketeer": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1773,14 +1773,14 @@
       "gold": 1380,
       "gems": 5,
       "shards": {
-        "cave_spiders": 4
+        "axe_thrower": 4
       }
     },
     "repeat": {
       "gold": 138
     },
     "shard_drop": {
-      "cave_spiders": {
+      "axe_thrower": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1811,14 +1811,14 @@
       "gold": 1380,
       "gems": 5,
       "shards": {
-        "ice_spirit": 4
+        "rock_shower": 4
       }
     },
     "repeat": {
       "gold": 138
     },
     "shard_drop": {
-      "ice_spirit": {
+      "rock_shower": {
         "chance": 0.34,
         "amount": 1
       }
@@ -1849,14 +1849,14 @@
       "gold": 1380,
       "gems": 5,
       "shards": {
-        "rock_shower": 4
+        "musketeer": 4
       }
     },
     "repeat": {
       "gold": 138
     },
     "shard_drop": {
-      "rock_shower": {
+      "musketeer": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2039,14 +2039,14 @@
       "gold": 1650,
       "gems": 5,
       "shards": {
-        "baby_dragon": 4
+        "fireball": 4
       }
     },
     "repeat": {
       "gold": 165
     },
     "shard_drop": {
-      "baby_dragon": {
+      "fireball": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2077,14 +2077,14 @@
       "gold": 1650,
       "gems": 5,
       "shards": {
-        "wizard": 4
+        "valkyrie": 4
       }
     },
     "repeat": {
       "gold": 165
     },
     "shard_drop": {
-      "wizard": {
+      "valkyrie": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2115,14 +2115,14 @@
       "gold": 1650,
       "gems": 5,
       "shards": {
-        "fireball": 4
+        "goblin_barrel": 4
       }
     },
     "repeat": {
       "gold": 165
     },
     "shard_drop": {
-      "fireball": {
+      "goblin_barrel": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2153,14 +2153,14 @@
       "gold": 1650,
       "gems": 5,
       "shards": {
-        "valkyrie": 4
+        "fireball": 4
       }
     },
     "repeat": {
       "gold": 165
     },
     "shard_drop": {
-      "valkyrie": {
+      "fireball": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2191,14 +2191,14 @@
       "gold": 1650,
       "gems": 5,
       "shards": {
-        "goblin_barrel": 4
+        "valkyrie": 4
       }
     },
     "repeat": {
       "gold": 165
     },
     "shard_drop": {
-      "goblin_barrel": {
+      "valkyrie": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2229,14 +2229,14 @@
       "gold": 1650,
       "gems": 5,
       "shards": {
-        "baby_dragon": 4
+        "goblin_barrel": 4
       }
     },
     "repeat": {
       "gold": 165
     },
     "shard_drop": {
-      "baby_dragon": {
+      "goblin_barrel": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2267,14 +2267,14 @@
       "gold": 2475,
       "gems": 25,
       "shards": {
-        "wizard": 8
+        "goblin_barrel": 8
       }
     },
     "repeat": {
       "gold": 248
     },
     "shard_drop": {
-      "wizard": {
+      "goblin_barrel": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2343,14 +2343,14 @@
       "gold": 1920,
       "gems": 5,
       "shards": {
-        "mega_minion": 4
+        "freeze": 4
       }
     },
     "repeat": {
       "gold": 192
     },
     "shard_drop": {
-      "mega_minion": {
+      "freeze": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2381,14 +2381,14 @@
       "gold": 1920,
       "gems": 5,
       "shards": {
-        "executioner": 4
+        "mega_minion": 4
       }
     },
     "repeat": {
       "gold": 192
     },
     "shard_drop": {
-      "executioner": {
+      "mega_minion": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2419,14 +2419,14 @@
       "gold": 1920,
       "gems": 5,
       "shards": {
-        "freeze": 4
+        "bomber": 4
       }
     },
     "repeat": {
       "gold": 192
     },
     "shard_drop": {
-      "freeze": {
+      "bomber": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2457,14 +2457,14 @@
       "gold": 1920,
       "gems": 5,
       "shards": {
-        "balloon": 4
+        "freeze": 4
       }
     },
     "repeat": {
       "gold": 192
     },
     "shard_drop": {
-      "balloon": {
+      "freeze": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2495,14 +2495,14 @@
       "gold": 1920,
       "gems": 5,
       "shards": {
-        "bomber": 4
+        "mega_minion": 4
       }
     },
     "repeat": {
       "gold": 192
     },
     "shard_drop": {
-      "bomber": {
+      "mega_minion": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2533,14 +2533,14 @@
       "gold": 1920,
       "gems": 5,
       "shards": {
-        "mega_minion": 4
+        "bomber": 4
       }
     },
     "repeat": {
       "gold": 192
     },
     "shard_drop": {
-      "mega_minion": {
+      "bomber": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2571,14 +2571,14 @@
       "gold": 1920,
       "gems": 5,
       "shards": {
-        "executioner": 4
+        "freeze": 4
       }
     },
     "repeat": {
       "gold": 192
     },
     "shard_drop": {
-      "executioner": {
+      "freeze": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2609,14 +2609,14 @@
       "gold": 1920,
       "gems": 5,
       "shards": {
-        "freeze": 4
+        "mega_minion": 4
       }
     },
     "repeat": {
       "gold": 192
     },
     "shard_drop": {
-      "freeze": {
+      "mega_minion": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2647,14 +2647,14 @@
       "gold": 2880,
       "gems": 25,
       "shards": {
-        "balloon": 8
+        "mega_minion": 8
       }
     },
     "repeat": {
       "gold": 288
     },
     "shard_drop": {
-      "balloon": {
+      "mega_minion": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2685,14 +2685,14 @@
       "gold": 2190,
       "gems": 5,
       "shards": {
-        "knight": 4
+        "archers": 4
       }
     },
     "repeat": {
       "gold": 219
     },
     "shard_drop": {
-      "knight": {
+      "archers": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2723,14 +2723,14 @@
       "gold": 2190,
       "gems": 5,
       "shards": {
-        "archers": 4
+        "lightning": 4
       }
     },
     "repeat": {
       "gold": 219
     },
     "shard_drop": {
-      "archers": {
+      "lightning": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2761,14 +2761,14 @@
       "gold": 2190,
       "gems": 5,
       "shards": {
-        "skeleton_army": 4
+        "phoenix": 4
       }
     },
     "repeat": {
       "gold": 219
     },
     "shard_drop": {
-      "skeleton_army": {
+      "phoenix": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2799,14 +2799,14 @@
       "gold": 2190,
       "gems": 5,
       "shards": {
-        "lightning": 4
+        "archers": 4
       }
     },
     "repeat": {
       "gold": 219
     },
     "shard_drop": {
-      "lightning": {
+      "archers": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2837,14 +2837,14 @@
       "gold": 2190,
       "gems": 5,
       "shards": {
-        "phoenix": 4
+        "lightning": 4
       }
     },
     "repeat": {
       "gold": 219
     },
     "shard_drop": {
-      "phoenix": {
+      "lightning": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2875,14 +2875,14 @@
       "gold": 2190,
       "gems": 5,
       "shards": {
-        "knight": 4
+        "phoenix": 4
       }
     },
     "repeat": {
       "gold": 219
     },
     "shard_drop": {
-      "knight": {
+      "phoenix": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2951,14 +2951,14 @@
       "gold": 2190,
       "gems": 5,
       "shards": {
-        "skeleton_army": 4
+        "lightning": 4
       }
     },
     "repeat": {
       "gold": 219
     },
     "shard_drop": {
-      "skeleton_army": {
+      "lightning": {
         "chance": 0.34,
         "amount": 1
       }
@@ -2989,14 +2989,14 @@
       "gold": 2190,
       "gems": 5,
       "shards": {
-        "lightning": 4
+        "phoenix": 4
       }
     },
     "repeat": {
       "gold": 219
     },
     "shard_drop": {
-      "lightning": {
+      "phoenix": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3065,14 +3065,14 @@
       "gold": 2460,
       "gems": 5,
       "shards": {
-        "goblins": 4
+        "golem": 4
       }
     },
     "repeat": {
       "gold": 246
     },
     "shard_drop": {
-      "goblins": {
+      "golem": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3103,14 +3103,14 @@
       "gold": 2460,
       "gems": 5,
       "shards": {
-        "minions": 4
+        "lava_hound": 4
       }
     },
     "repeat": {
       "gold": 246
     },
     "shard_drop": {
-      "minions": {
+      "lava_hound": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3141,14 +3141,14 @@
       "gold": 2460,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "princess": 4
       }
     },
     "repeat": {
       "gold": 246
     },
     "shard_drop": {
-      "golem": {
+      "princess": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3179,14 +3179,14 @@
       "gold": 2460,
       "gems": 5,
       "shards": {
-        "lava_hound": 4
+        "golem": 4
       }
     },
     "repeat": {
       "gold": 246
     },
     "shard_drop": {
-      "lava_hound": {
+      "golem": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3217,14 +3217,14 @@
       "gold": 2460,
       "gems": 5,
       "shards": {
-        "princess": 4
+        "lava_hound": 4
       }
     },
     "repeat": {
       "gold": 246
     },
     "shard_drop": {
-      "princess": {
+      "lava_hound": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3255,14 +3255,14 @@
       "gold": 2460,
       "gems": 5,
       "shards": {
-        "goblins": 4
+        "princess": 4
       }
     },
     "repeat": {
       "gold": 246
     },
     "shard_drop": {
-      "goblins": {
+      "princess": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3293,14 +3293,14 @@
       "gold": 2460,
       "gems": 5,
       "shards": {
-        "minions": 4
+        "golem": 4
       }
     },
     "repeat": {
       "gold": 246
     },
     "shard_drop": {
-      "minions": {
+      "golem": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3331,14 +3331,14 @@
       "gold": 2460,
       "gems": 5,
       "shards": {
-        "golem": 4
+        "lava_hound": 4
       }
     },
     "repeat": {
       "gold": 246
     },
     "shard_drop": {
-      "golem": {
+      "lava_hound": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3369,14 +3369,14 @@
       "gold": 2460,
       "gems": 5,
       "shards": {
-        "lava_hound": 4
+        "princess": 4
       }
     },
     "repeat": {
       "gold": 246
     },
     "shard_drop": {
-      "lava_hound": {
+      "princess": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3483,14 +3483,14 @@
       "gold": 2730,
       "gems": 5,
       "shards": {
-        "giant": 4
+        "ice_wizard": 4
       }
     },
     "repeat": {
       "gold": 273
     },
     "shard_drop": {
-      "giant": {
+      "ice_wizard": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3521,14 +3521,14 @@
       "gold": 2730,
       "gems": 5,
       "shards": {
-        "ice_wizard": 4
+        "balloon": 4
       }
     },
     "repeat": {
       "gold": 273
     },
     "shard_drop": {
-      "ice_wizard": {
+      "balloon": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3559,14 +3559,14 @@
       "gold": 2730,
       "gems": 5,
       "shards": {
-        "electro_wizard": 4
+        "zap": 4
       }
     },
     "repeat": {
       "gold": 273
     },
     "shard_drop": {
-      "electro_wizard": {
+      "zap": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3597,14 +3597,14 @@
       "gold": 2730,
       "gems": 5,
       "shards": {
-        "inferno_dragon": 4
+        "ice_wizard": 4
       }
     },
     "repeat": {
       "gold": 273
     },
     "shard_drop": {
-      "inferno_dragon": {
+      "ice_wizard": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3635,14 +3635,14 @@
       "gold": 2730,
       "gems": 5,
       "shards": {
-        "zap": 4
+        "balloon": 4
       }
     },
     "repeat": {
       "gold": 273
     },
     "shard_drop": {
-      "zap": {
+      "balloon": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3673,14 +3673,14 @@
       "gold": 2730,
       "gems": 5,
       "shards": {
-        "giant": 4
+        "zap": 4
       }
     },
     "repeat": {
       "gold": 273
     },
     "shard_drop": {
-      "giant": {
+      "zap": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3749,14 +3749,14 @@
       "gold": 2730,
       "gems": 5,
       "shards": {
-        "electro_wizard": 4
+        "balloon": 4
       }
     },
     "repeat": {
       "gold": 273
     },
     "shard_drop": {
-      "electro_wizard": {
+      "balloon": {
         "chance": 0.34,
         "amount": 1
       }
@@ -3787,14 +3787,14 @@
       "gold": 4095,
       "gems": 25,
       "shards": {
-        "inferno_dragon": 8
+        "balloon": 8
       }
     },
     "repeat": {
       "gold": 410
     },
     "shard_drop": {
-      "inferno_dragon": {
+      "balloon": {
         "chance": 0.34,
         "amount": 1
       }

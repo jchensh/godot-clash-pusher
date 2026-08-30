@@ -25,12 +25,12 @@ const PveRecorderScript = preload("res://net/pve_recorder.gd")         # KAN-79 
 const TOPBAR_H := 54.0
 const HUD_BOTTOM_H := 176.0
 
-const COL_BG := Color(0.10, 0.12, 0.11)
-const COL_PLAYER := Color(0.35, 0.60, 1.0)
-const COL_OPPONENT := Color(1.0, 0.42, 0.38)
+const COL_BG := Color(0.85, 0.93, 0.98)
+const COL_PLAYER := Color(0.13, 0.42, 0.78)
+const COL_OPPONENT := Color(0.82, 0.24, 0.20)
 const COL_ELIXIR := Color(0.80, 0.33, 0.96)
-const COL_PANEL := Color(0.10, 0.08, 0.14, 0.96)   # HUD 底，对齐 PixelUI 夜色石板
-const COL_PANEL_EDGE := Color(0.34, 0.30, 0.45)    # HUD 底板像素高光描边
+const COL_PANEL := Color(0.93, 0.97, 1.0, 0.96)   # HUD 底（决策 49 换肤：天空牧场淡色）
+const COL_PANEL_EDGE := Color(0.66, 0.83, 0.93)    # HUD 底板像素高光描边
 const COL_OK := Color(0.45, 1.0, 0.55)        # 落点合法（ghost/高亮）
 const COL_BAD := Color(1.0, 0.42, 0.40)       # 落点非法
 
@@ -54,8 +54,8 @@ const HITSTOP_DMG := 200.0                      # 触发顿帧的单次伤害阈
 const HITSTOP_DUR := 0.06                       # 顿帧（冻结 sim）时长
 
 # —— V3-6c HUD 反馈 ——
-const COL_CARD_BG := Color(0.23, 0.21, 0.32, 0.96)    # 卡面底 = PixelUI 石板
-const COL_CARD_SEL := Color(0.40, 0.33, 0.16, 0.97)   # 选中卡 = 暗金
+const COL_CARD_BG := Color(0.86, 0.93, 0.99, 0.96)    # 卡面底 = PixelUI 石板
+const COL_CARD_SEL := Color(1.0, 0.87, 0.45, 0.97)   # 选中卡 = 暗金
 const COL_CROWN := Color(0.925, 0.725, 0.305)         # 王冠/强调金 = PixelUI COL_GOLD
 
 # —— V3-6d 胜负演出 ——
@@ -64,13 +64,17 @@ const END_BTN_DELAY := 0.85                     # 结算按钮淡入延迟（先
 # —— V3-7 精灵贴图（架构 A：immediate _draw + draw_texture；逻辑零改）——
 # 单位精灵走 SpriteDB(manifest，含帧网格/走攻行/朝向)；塔/落地 FX 仍在此 preload（塔皮 7b-2、FX 7b-3 再细化）。
 # 三国正式塔（0715）：阵营分色贴图（我=蓝顶/敌=红顶）；素材自带配色 → natural 轻染 22% 不再乘 0.5 队伍色。
-const TEX_TOWER_KING_MINE := preload("res://assets/towers/sanguo_tower_king_mine.png")
-const TEX_TOWER_KING_ENEMY := preload("res://assets/towers/sanguo_tower_king_enemy.png")
-const TEX_TOWER_ARROW_MINE := preload("res://assets/towers/sanguo_tower_arrow_mine.png")
-const TEX_TOWER_ARROW_ENEMY := preload("res://assets/towers/sanguo_tower_arrow_enemy.png")
-const TEX_TOWER_KING_MINE_BROKEN := preload("res://assets/towers/sanguo_tower_king_mine_broken.png")
-const TEX_TOWER_KING_ENEMY_BROKEN := preload("res://assets/towers/sanguo_tower_king_enemy_broken.png")
-const TEX_TOWER_ARROW_BROKEN := preload("res://assets/towers/sanguo_tower_arrow_broken.png")
+# 决策 49 卡通塔（0830 素材 2 倍交付，footprint 驱动缩放）。
+# KAN-124：美术只交付一套（红顶），蓝顶套由 tools/gen_cartoon_towers.py 离线派生
+# （红色系像素旋成蓝色系，石墙木头不动）→ 经典红蓝对立，运行时不再整体乘红。
+# 阵营指派（0830 用户拍板）：我方=蓝 / 敌方=红，与 HUD 的 COL_PLAYER/COL_OPPONENT 统一。
+# 废墟无阵营色（全是石砾）→ 双方共用一张，归属靠左右半场位置读。
+const TEX_TOWER_KING_MINE := preload("res://assets/towers/cartoon_tower_king_blue.png")
+const TEX_TOWER_KING_ENEMY := preload("res://assets/towers/cartoon_tower_king.png")
+const TEX_TOWER_ARROW_MINE := preload("res://assets/towers/cartoon_tower_arrow_blue.png")
+const TEX_TOWER_ARROW_ENEMY := preload("res://assets/towers/cartoon_tower_arrow.png")
+const TEX_TOWER_ARROW_BROKEN := preload("res://assets/towers/cartoon_tower_arrow_broken.png")
+const TEX_TOWER_KING_BROKEN := preload("res://assets/towers/cartoon_tower_king_broken.png")
 const TEX_EXPLOSION := preload("res://assets/fx/Fire_Explosion_28x28.png")
 const EXPLOSION_FPX := 28
 const EXPLOSION_N := 12
@@ -91,7 +95,12 @@ const PROJ_KIND := {"archer_body": "arrow", "musketeer_body": "bolt", "baby_drag
 # —— 战场整图背景（三国美术；BG_ENABLED=false 回退 tile 铺地）——
 # 特征对齐：以「双桥中心定 x 缩放 + 河中心锚 y」等比取源贴 _field_rect（直接拉伸会变形、桥错位），
 # 特征像素为 python 测量值（水带行/桥木色列质心）。0715 新 BG 720×1502：黄土路正好绕六塔逻辑位画。
-const TEX_BATTLE_BG := preload("res://assets/map/battle_bg_green.png")
+const TEX_BATTLE_BG := preload("res://assets/map/cartoon_battle_bg.png")
+# 卡通 BG 750×1625 原生竖屏横板构图：战斗区（30×26 格 @25px）在图上的矩形。
+# 顶 y=425 = pillow 实测（格子示意罩层边界 + 双桥格反解：上桥 BG y[500,575]→x∈[3,6)、
+# 下桥 y[925,1000]→x∈[20,23)，误差 <3px）——**非**图面垂直居中（居中假设曾错位 2.4 格，
+# 单位走逻辑桥时画面在河上，0830 真人验收实锤）。
+const CARTOON_BG_FIELD := Rect2(0.0, 425.0, 750.0, 650.0)
 const BG_ENABLED := true
 const BG_BRIDGE1_PX := 160.0   # 图上左桥中心 x（px，0721 绿地图实测）
 const BG_BRIDGE2_PX := 543.0   # 图上右桥中心 x（px）
@@ -110,29 +119,7 @@ const WATER_N := 12
 const WATER_FPS := 5.0
 
 # 兵种白膜外形（半径 tile，按队伍色填充；空军画环标记）。精灵渲染框也以 r 为基（×SpriteDB scale）。
-const UNIT_VIS := {
-	"giant_body":      {"r": 0.85},
-	"knight_body":     {"r": 0.55},
-	"mini_pekka_body": {"r": 0.6},
-	"musketeer_body":  {"r": 0.5},
-	"archer_body":     {"r": 0.45},
-	"baby_dragon_body":{"r": 0.75},
-	"minion_body":     {"r": 0.45},
-	"goblin_body":     {"r": 0.4},
-	"skeleton_body":   {"r": 0.38},
-	"golem_body":      {"r": 0.85},
-	# A2.5 三国占位（2026-07-04）：新单位半径按体型档（极小0.35/小0.4/中0.5/大0.62/巨0.85）。
-	"spear_goblin_body": {"r": 0.38}, "bat_body": {"r": 0.32}, "barbarian_body": {"r": 0.5},
-	"ice_spirit_body": {"r": 0.35}, "fire_spirit_body": {"r": 0.35}, "electro_spirit_body": {"r": 0.35},
-	"squire_body": {"r": 0.45}, "axe_thrower_body": {"r": 0.42}, "cave_spider_body": {"r": 0.35},
-	"bone_ram_body": {"r": 0.62}, "royal_giant_body": {"r": 0.8}, "hog_rider_body": {"r": 0.55},
-	"valkyrie_body": {"r": 0.55}, "bomber_body": {"r": 0.4}, "mega_minion_body": {"r": 0.48},
-	"battle_ram_body": {"r": 0.6}, "wizard_body": {"r": 0.48}, "executioner_body": {"r": 0.52},
-	"balloon_body": {"r": 0.65}, "phoenix_body": {"r": 0.5}, "phoenix_reborn_body": {"r": 0.45},
-	"lava_hound_body": {"r": 0.85}, "lava_pup_body": {"r": 0.35}, "ice_wizard_body": {"r": 0.45},
-	"electro_wizard_body": {"r": 0.48}, "princess_body": {"r": 0.42}, "inferno_dragon_body": {"r": 0.52},
-	"golemite_body": {"r": 0.5}, "fire_pup_body": {"r": 0.35},
-}
+const UNIT_VIS := SpriteDB.UNIT_VIS   # 决策 49：体型表收口 sprite_db 单一真相源（手动调大小去那改）
 
 var match_obj
 var loader
@@ -193,7 +180,7 @@ func _ready() -> void:
 	# 但 player/battle 要等 await 后的 setup_stage 才建。处理默认开启会让 _process 在 await 窗口跑到
 	# _sync_cards 访问 match_obj.player(Nil) 每帧报错卡死。故先关处理，末尾 setup 完再 set_process(true)。
 	set_process(false)
-	_font = load("res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf")
+	_font = load("res://assets/fonts/ZCOOLKuaiLe-Regular.ttf")
 	loader = GameStateScript.config()
 	match_obj = MatchScript.new(loader)
 	var run = GameStateScript.run
@@ -253,8 +240,8 @@ func _ready() -> void:
 	# H2 横版实验开关：仅 PvE 生效；L3 全局横屏模式下战斗一律真横版投影——
 	# 唯新手教程锁竖版（高亮矩形是竖版语义；Router 会给教程战斗包 fit 壳保竖版画布）。
 	var pve_free: bool = (campaign == null or campaign.is_over()) and not GameStateScript.tutorial
-	_landscape = ((GameStateScript.ui_layout() == "landscape" and not GameStateScript.tutorial)
-			or (pve_free and GameStateScript.battle_layout() == "landscape"))
+	# 决策 49：战斗恒竖屏横板（横版投影，含教程/战役）；竖版投影分支封存（变换层保留）。
+	_landscape = true
 	Log.i("[V5][battle] 版式=%s" % ("横版(实验·我左敌右)" if _landscape else "竖版"))
 	# 0716 首批 BGM：普通战斗 = 双曲轮播集（曲终随机换）；boss 关保留专属曲意图（素材未到位时自动落轮播）
 	if battle_music_id != "music_battle_boss" or not AudioManager.play_music(battle_music_id):
@@ -310,6 +297,17 @@ func _hud_w() -> float:
 
 func _hud_x0() -> float:
 	return (_vw - _hud_w()) * 0.5
+
+
+# 单位视觉半径（血条/影子/浮空/Y-sort/体型基准）——决策 49 起配置驱动：
+# units.json 的 vis_height_px（屏幕身高像素 @25px/格 基准）→ 半径 = 身高/(2×1.75)，
+# 视口缩放随 ur 跟随；缺字段回退 UNIT_VIS 代码表。**策划调单位大小改 Excel Units 表
+# vis_height_px 列（或 units.json），跑 build_config 后 F5 即生效。**
+func _vis_rad(unit_id: String, ur: float) -> float:
+	var vh: float = float(loader.get_unit(unit_id).get("vis_height_px", 0.0))
+	if vh > 0.0:
+		return vh / (2.0 * SpriteDB.CARTOON_H_MULT) * (ur / SpriteDB.PX_TILE)
+	return float(UNIT_VIS.get(unit_id, {"r": 0.5})["r"]) * ur
 
 func _field_rect() -> Rect2:
 	var zone := Rect2(0.0, TOPBAR_H, _vw, _vh - TOPBAR_H - HUD_BOTTOM_H)
@@ -446,14 +444,14 @@ func _draw_bg_image(a) -> void:
 	var b2: float = (a.bridges[1]["x_min"] + a.bridges[1]["x_max"]) * 0.5 / float(a.grid_w)
 	var rv: float = (a.river_y_min + a.river_y_max) * 0.5 / float(a.grid_h)
 	if _landscape:
-		draw_set_transform(fr.get_center() + _shake, PI / 2)
-		var vfr := Rect2(-fr.size.y * 0.5, -fr.size.x * 0.5, fr.size.y, fr.size.x)   # 局部竖版画布
-		var off: Vector2 = Vector2(_vw, _vh) * 0.5 - fr.get_center()   # 屏幕视口映射进局部坐标（绕场心转 -90°），场外也铺 BG
-		var vpl := Rect2(Vector2(off.y, -off.x) - Vector2(_vh, _vw) * 0.5, Vector2(_vh, _vw))
-		var pl := _bg_full(vfr, vpl, _bg_src(vfr, b1, b2, rv))
-		draw_texture_rect_region(TEX_BATTLE_BG, pl[0], pl[1])
-		draw_set_transform(Vector2.ZERO)
+		# 决策 49：卡通 BG 原生竖屏横板构图（河纵向/上下桥）——直贴不旋转，图上战斗区对齐场区，
+		# 上（雪山）下（瀑布）装饰区随比例向视口延伸、超出自动裁剪。
+		var k: float = fr.size.x / CARTOON_BG_FIELD.size.x
+		var dest := Rect2(fr.position - CARTOON_BG_FIELD.position * k + _shake,
+				Vector2(TEX_BATTLE_BG.get_size()) * k)
+		draw_texture_rect(TEX_BATTLE_BG, dest, false)
 	else:
+		# 竖版分支（决策 49 封存，_landscape 恒 true 走不到）：旧三国 BG 特征反解对齐。
 		var pp := _bg_full(fr, Rect2(0.0, 0.0, _vw, _vh), _bg_src(fr, b1, b2, rv))
 		draw_texture_rect_region(TEX_BATTLE_BG, Rect2((pp[0] as Rect2).position + _shake, (pp[0] as Rect2).size), pp[1])
 
@@ -491,9 +489,9 @@ func _draw_water_tile(rect: Rect2) -> void:
 	var fr: int = int(_elapsed * WATER_FPS) % WATER_N
 	_blit_tile(TEX_WATER, Vector2i(fr % WATER_COLS, fr / WATER_COLS), rect, Color.WHITE)
 
-# 塔绘制纯视觉 y 偏移（tile，+朝己方底线；逻辑塔位不动）：与 BG 路环节点对齐（0715 验收反馈，
-# 二验追加：我王塔从 +0.5 上移一格 → -0.5）。
-const TOWER_YOFF_TILE := {"king_p": -0.5, "arrow_e": -0.5}
+# 塔绘制纯视觉 y 偏移（tile；逻辑塔位不动）：旧三国 BG 路环对齐偏移随决策 49 清零——
+# 卡通 BG 塔不入图（独立贴图落格），无需迁就图上路环。
+const TOWER_YOFF_TILE := {}
 
 # 塔绘制用屏幕锚点：中心 c（含 TOWER_YOFF_TILE 视觉偏移）；接地线 = c.y + footprint 高一半。
 func _tower_anchor(t) -> Vector2:
@@ -519,7 +517,7 @@ func _draw_world(a) -> void:
 		cur[id] = true
 		if not _seen.has(id):
 			_seen[id] = _elapsed
-		var gy: float = _t2s(_disp_pos(u)).y + float(UNIT_VIS.get(u.unit_id, {"r": 0.5})["r"]) * ur  # 脚线近似
+		var gy: float = _t2s(_disp_pos(u)).y + _vis_rad(u.unit_id, ur)  # 脚线近似
 		items.append([gy + (100000.0 if u.target_type == "air" else 0.0), items.size(), true, u])
 	items.sort_custom(func(p, q): return p[0] < q[0] if p[0] != q[0] else p[1] < q[1])
 	for it in items:
@@ -549,18 +547,17 @@ func _draw_tower_one(t) -> void:
 	else:
 		tex = TEX_TOWER_ARROW_MINE if mine else TEX_TOWER_ARROW_ENEMY
 	var ts: Vector2 = tex.get_size()
-	# 保持长宽比、底部贴地；0715 中式塔纵高 → 系数比旧城堡压小防过高（真人验收可调）。
-	var draw_w: float = fp.x * (0.95 if king else 0.85)
+	# 保持长宽比、底部贴地；卡通塔 2 倍素材 ÷2 后与 footprint 基本 1:1（真人验收可调）。
+	var draw_w: float = fp.x * (1.0 if king else 1.05)
 	var draw_h: float = draw_w * ts.y / ts.x
 	var rx: float = c.x - draw_w * 0.5
 	var ry: float = foot_bottom - draw_h
-	if t.is_destroyed():                                  # 摧毁：0721 正式废墟素材（同宽贴地，比例自算；箭塔破共用）
-		var btex: Texture2D = (TEX_TOWER_KING_MINE_BROKEN if mine
-				else TEX_TOWER_KING_ENEMY_BROKEN) if king else TEX_TOWER_ARROW_BROKEN
+	if t.is_destroyed():                                  # 摧毁：废墟素材（同宽贴地，比例自算；敌我共用）
+		var btex: Texture2D = TEX_TOWER_KING_BROKEN if king else TEX_TOWER_ARROW_BROKEN
 		var bh: float = draw_w * btex.get_size().y / btex.get_size().x
 		draw_texture_rect(btex, Rect2(rx, foot_bottom - bh, draw_w, bh), false, Color.WHITE)
 		return
-	var fill: Color = Color.WHITE.lerp(base, 0.22)       # 正式素材自带阵营配色 → natural 轻染
+	var fill: Color = Color.WHITE.lerp(base, 0.12)   # 敌我各有配色套 → 双方同为轻染（阵营靠贴图红/蓝读）
 	var fend: float = _flash.get(t.get_instance_id(), 0.0)
 	if fend > _elapsed:
 		fill = fill.lerp(Color.WHITE, ((fend - _elapsed) / FLASH_DUR) * 0.85)
@@ -577,8 +574,7 @@ func _draw_unit_one(u, ur: float) -> void:
 	var id: int = u.get_instance_id()
 	var base: Color = COL_PLAYER if u.owner_id == 0 else COL_OPPONENT
 	var c := _t2s(_disp_pos(u))
-	var vis: Dictionary = UNIT_VIS.get(u.unit_id, {"r": 0.5})
-	var rad: float = float(vis["r"]) * ur * _pop_scale(id)
+	var rad: float = _vis_rad(u.unit_id, ur) * _pop_scale(id)
 	var flying: bool = u.target_type == "air"
 	if flying:
 		draw_circle(c + Vector2(0, ur * 0.5), rad * 0.6, Color(0, 0, 0, 0.25))  # 地面影子
@@ -604,13 +600,26 @@ func _draw_unit_one(u, ur: float) -> void:
 	var spr: Dictionary = SpriteDB.frame(u.unit_id, st, u.owner_id, _elapsed, face_up)
 	if not spr.is_empty():   # 精灵帧（modulate=fill 染队伍色+受击闪白，×占位 tint 区分共享贴图）
 		var box: float = rad * 2.0 * float(spr["scale"])
+		# 决策 49 px 直画（卡通层）：帧非方形——dst=帧像素×(ur/25)×scale、底边贴脚线(c.y+rad)，
+		# 不拉伸进方形 box（美术 2 倍交付÷2 后 @25px/格 交付即所得）。旧素材沿用方形 box 路径。
+		var px: bool = bool(spr.get("px", false))
+		var dst := Vector2(box, box)
+		var dst_rect := Rect2(-dst * 0.5, dst)
+		if px:
+			# 体型驱动等比适配：像素比例 k = box(=2r×ur×scale，身高) / walk 帧高基准；
+			# attack 帧同 k 放大画布（本体不跳变、武器外扩），底边贴脚线。
+			var k: float = box / maxf(1.0, float(spr.get("base_fh", 1)))
+			dst = (spr["src"] as Rect2).size * k
+			dst_rect = Rect2(Vector2(-dst.x * 0.5, rad - dst.y), dst)
 		if spr.get("shadow", false) and not flying:   # 正式素材配套脚下椭圆影（贴地、不染队伍色）
 			# 自带 30% alpha 太淡 → 叠两遍 ≈51% 黑、宽 0.9 基准框压脚线。⚠️ 基准用 base_scale
-			# （不含状态 sc）：攻击大方格若用 box，阴影会放大下坠（0715 验收实测偏离）。
+			# （不含状态 sc）：攻击大方格若用 box，阴影会放大下坠（0715 验收实测偏离）。px 模式
+			# 用帧宽做基准、影心压脚线。
 			var sbox: float = rad * 2.0 * float(spr.get("base_scale", spr["scale"]))
-			var sw: float = sbox * 0.9
+			var sw: float = (box if px else sbox) * 0.9
 			var sh: float = sw * 0.4
-			var srect := Rect2(c + Vector2(-sw * 0.5, sbox * 0.5 - sh * 0.5), Vector2(sw, sh))
+			var sy: float = (rad - sh * 0.5) if px else (sbox * 0.5 - sh * 0.5)
+			var srect := Rect2(c + Vector2(-sw * 0.5, sy), Vector2(sw, sh))
 			draw_texture_rect(TEX_UNIT_SHADOW, srect, false)
 			draw_texture_rect(TEX_UNIT_SHADOW, srect, false)
 		var spr_mod: Color = fill * spr.get("tint", Color.WHITE)
@@ -626,8 +635,7 @@ func _draw_unit_one(u, ur: float) -> void:
 				_face[id] = c.x > float(_facex.get(id, c.x))
 			_facex[id] = c.x
 		draw_set_transform(c, 0.0, Vector2(-1.0 if _face.get(id, false) else 1.0, 1.0))
-		draw_texture_rect_region(spr["tex"], Rect2(-Vector2(box, box) * 0.5, Vector2(box, box)),
-				spr["src"], spr_mod)
+		draw_texture_rect_region(spr["tex"], dst_rect, spr["src"], spr_mod)
 		draw_set_transform(Vector2.ZERO)
 	else:                    # 无精灵 → 白膜回退
 		draw_circle(c, rad, fill)
@@ -651,7 +659,7 @@ func _draw_topbar() -> void:
 	_draw_crowns(Vector2(_vw - 150, 8), o_crowns, COL_OPPONENT)
 	# 倒计时：低于 30s 红色脉动强调
 	var t: float = match_obj.battle.remaining_time()
-	var tcol := Color.WHITE
+	var tcol := Color(0.20, 0.33, 0.45)
 	var tsize := 24
 	if t <= 30.0:
 		var pulse: float = 0.5 + 0.5 * sin(_elapsed * 6.0)
@@ -771,7 +779,7 @@ func _draw_drag_ghost(a) -> void:
 	draw_arc(c, ur * 0.9, 0.0, TAU, 28, col, 2.5)   # 落点标记环
 	if info["spawn"]:
 		var n: int = maxi(1, int(info["count"]))
-		var vr: float = float(UNIT_VIS.get(info["unit_id"], {"r": 0.5})["r"]) * ur
+		var vr: float = _vis_rad(str(info["unit_id"]), ur)
 		for i in n:
 			var off := Vector2.ZERO
 			if n > 1:
@@ -1150,7 +1158,7 @@ func _draw_cards() -> void:
 			_draw_card_art(cid, pos + Vector2(sz.x * 0.5, sz.y * 0.54), minf(sz.x, sz.y) * 0.66)
 			var cost: int = match_obj.player.card_cost(cid)
 			var affordable: bool = e.get_int() >= cost
-			_text(pos + Vector2(7, 22), _short(tr("card_" + cid), 10), Color.WHITE if affordable else Color(0.62, 0.62, 0.66), 14)
+			_text(pos + Vector2(7, 22), _short(tr("card_" + cid), 10), Color(0.16, 0.28, 0.40) if affordable else Color(0.42, 0.50, 0.58), 15)
 			draw_circle(pos + Vector2(15, sz.y - 15), 11.0, COL_ELIXIR)
 			_text(pos + Vector2(11, sz.y - 10), "%d" % cost, Color.WHITE, 14)
 			if not affordable:

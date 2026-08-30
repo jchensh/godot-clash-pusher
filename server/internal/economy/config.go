@@ -65,6 +65,7 @@ type CardMeta struct {
 	Rarity    string
 	Starter   bool
 	BasePower int
+	Locked    bool // 决策 49 缩池（KAN-121）：锁定卡不可解锁/GM unlock_all 跳过/掉落配置禁入
 }
 
 // Idle is the offline-gold config (parsed from economy.json idle 段)。挂机金币
@@ -177,11 +178,15 @@ func ParseConfig(b *gameconfig.Bundle) (*Config, error) {
 			Rarity    string `json:"rarity"`
 			Starter   bool   `json:"starter"`
 			BasePower int    `json:"base_power"`
+			Locked    bool   `json:"locked"`
 		}
 		if json.Unmarshal(raw, &cm) != nil {
 			continue
 		}
-		cfg.Cards[id] = CardMeta{Rarity: cm.Rarity, Starter: cm.Starter, BasePower: cm.BasePower}
+		if cm.Starter && cm.Locked {
+			return nil, fmt.Errorf("card_progression.json: card %q is both starter and locked", id)
+		}
+		cfg.Cards[id] = CardMeta{Rarity: cm.Rarity, Starter: cm.Starter, BasePower: cm.BasePower, Locked: cm.Locked}
 	}
 	if len(cfg.Cards) == 0 {
 		return nil, fmt.Errorf("card_progression.json has no cards")
@@ -261,6 +266,23 @@ func ParseConfig(b *gameconfig.Bundle) (*Config, error) {
 		cfg.orderedStages = ids
 	}
 
+	// 决策 49 缩池 fail-fast：锁定卡不得出现在任何 stage 掉落配置（固定碎片/概率掉落）——
+	// 配错即拒启动（对齐 kingdom validate「配置铁门」风格），防锁卡经掉落攒碎片旁路。
+	for sid, st := range cfg.Stages {
+		for _, shards := range []map[string]int{st.FirstClear.Shards, st.Repeat.Shards} {
+			for cid := range shards {
+				if c := cfg.Cards[cid]; c.Locked {
+					return nil, fmt.Errorf("stages.json: stage %s rewards shards of locked card %q", sid, cid)
+				}
+			}
+		}
+		for cid := range st.ShardDrop {
+			if c := cfg.Cards[cid]; c.Locked {
+				return nil, fmt.Errorf("stages.json: stage %s shard_drop has locked card %q", sid, cid)
+			}
+		}
+	}
+
 	return cfg, nil
 }
 
@@ -306,6 +328,22 @@ func (c *Config) UnlockCost(rarity string) (int, bool) {
 func (c *Config) Rarity(cardID string) (string, bool) {
 	cm, ok := c.Cards[cardID]
 	return cm.Rarity, ok
+}
+
+// IsLocked reports whether the card is pool-locked (决策 49 缩池：等卡通素材的 17 张)。
+func (c *Config) IsLocked(cardID string) bool {
+	return c.Cards[cardID].Locked
+}
+
+// LockedCardIDs returns all pool-locked card ids (order unspecified; for SQL filters).
+func (c *Config) LockedCardIDs() []string {
+	out := []string{}
+	for id, cm := range c.Cards {
+		if cm.Locked {
+			out = append(out, id)
+		}
+	}
+	return out
 }
 
 // —— Stage 查询（N5 通关发奖 / 防跳关用） ——

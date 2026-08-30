@@ -1,597 +1,597 @@
 {
-  "knight": {
-    "name": "虎贲校尉",
-    "faction": "wei",
-    "elixir_cost": 3,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "knight_body",
-        "count": 1
-      }
-    ]
-  },
-  "archers": {
-    "name": "魏武强弩手",
-    "faction": "wei",
-    "elixir_cost": 3,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "archer_body",
-        "count": 2
-      }
-    ]
-  },
-  "giant": {
-    "name": "黄巾攻城力士",
-    "faction": "qun",
-    "elixir_cost": 5,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "giant_body",
-        "count": 1
-      }
-    ]
-  },
-  "goblins": {
-    "name": "归附山越短刀兵",
-    "faction": "wu",
-    "elixir_cost": 2,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "goblin_body",
-        "count": 3
-      }
-    ]
-  },
-  "minions": {
-    "name": "魂鸦",
-    "faction": "qun",
-    "elixir_cost": 3,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "minion_body",
-        "count": 3
-      }
-    ]
-  },
-  "fireball": {
-    "name": "赤壁火攻",
-    "faction": "wu",
-    "elixir_cost": 4,
-    "skills": [
-      {
-        "type": "aoe_damage",
-        "radius": 3.0,
-        "damage": 300
-      }
-    ]
-  },
-  "arrows": {
-    "name": "魏武箭阵",
-    "faction": "wei",
-    "elixir_cost": 3,
-    "skills": [
-      {
-        "type": "aoe_damage",
-        "radius": 2.5,
-        "damage": 140
-      }
-    ]
-  },
-  "zap": {
-    "name": "掌心雷",
-    "faction": "qun",
-    "elixir_cost": 2,
-    "skills": [
-      {
-        "type": "direct_damage",
-        "damage": 75,
-        "target": "first_enemy_in_lane"
-      }
-    ]
-  },
-  "mini_pekka": {
-    "name": "黑甲周仓",
-    "faction": "shu",
-    "elixir_cost": 4,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "mini_pekka_body",
-        "count": 1
-      }
-    ]
-  },
-  "musketeer": {
-    "name": "神射黄忠",
-    "faction": "shu",
-    "elixir_cost": 4,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "musketeer_body",
-        "count": 1
-      }
-    ]
-  },
-  "skeletons": {
-    "name": "黄巾阴兵",
-    "faction": "qun",
-    "elixir_cost": 2,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "skeleton_body",
-        "count": 4
-      }
-    ]
-  },
-  "baby_dragon": {
-    "name": "黄盖火龙鸢",
-    "faction": "wu",
-    "elixir_cost": 4,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "baby_dragon_body",
-        "count": 1
-      }
-    ]
-  },
-  "lightning": {
-    "name": "于吉·五雷法",
-    "faction": "qun",
-    "elixir_cost": 4,
-    "skills": [
-      {
-        "type": "direct_damage",
-        "damage": 280,
-        "target": "first_enemy_in_lane"
-      }
-    ]
-  },
-  "log": {
-    "name": "剑阁滚木",
-    "faction": "shu",
-    "elixir_cost": 2,
-    "skills": [
-      {
-        "type": "aoe_damage",
-        "radius": 2.0,
-        "damage": 130
-      }
-    ]
-  },
-  "golem": {
-    "name": "江东镇岳巨械",
-    "faction": "wu",
-    "elixir_cost": 7,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "golem_body",
-        "count": 1
-      }
-    ]
-  },
-  "heal": {
-    "name": "荀彧·安军策",
-    "faction": "wei",
-    "elixir_cost": 3,
-    "skills": [
-      {
-        "type": "aoe_heal",
-        "radius": 3.0,
-        "damage": 150
-      }
-    ]
-  },
-  "spear_goblins": {
-    "name": "归附山越投矛兵",
-    "faction": "wu",
-    "elixir_cost": 2,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "spear_goblin_body",
-        "count": 3
-      }
-    ]
-  },
-  "bats": {
-    "name": "江东机关蜂",
-    "faction": "wu",
-    "elixir_cost": 2,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "bat_body",
-        "count": 5
-      }
-    ]
-  },
-  "barbarians": {
-    "name": "青州悍卒",
-    "faction": "wei",
-    "elixir_cost": 5,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "barbarian_body",
-        "count": 5
-      }
-    ]
-  },
-  "minion_horde": {
-    "name": "魂鸦大军",
-    "faction": "qun",
-    "elixir_cost": 5,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "minion_body",
-        "count": 6
-      }
-    ]
-  },
-  "ice_spirit": {
-    "name": "寒山符童",
-    "faction": "shu",
-    "elixir_cost": 1,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "ice_spirit_body",
-        "count": 1
-      }
-    ]
-  },
-  "fire_spirit": {
-    "name": "赤焰符童",
-    "faction": "wu",
-    "elixir_cost": 1,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "fire_spirit_body",
-        "count": 1
-      }
-    ]
-  },
-  "electro_spirit": {
-    "name": "雷符童子",
-    "faction": "qun",
-    "elixir_cost": 1,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "electro_spirit_body",
-        "count": 1
-      }
-    ]
-  },
-  "squire": {
-    "name": "虎贲新兵",
-    "faction": "wei",
-    "elixir_cost": 2,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "squire_body",
-        "count": 1
-      }
-    ]
-  },
-  "axe_thrower": {
-    "name": "巴郡飞斧手",
-    "faction": "shu",
-    "elixir_cost": 3,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "axe_thrower_body",
-        "count": 1
-      }
-    ]
-  },
-  "cave_spiders": {
-    "name": "巴蜀毒蛛",
-    "faction": "shu",
-    "elixir_cost": 3,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "cave_spider_body",
-        "count": 4
-      }
-    ]
-  },
-  "rock_shower": {
-    "name": "剑阁落石阵",
-    "faction": "shu",
-    "elixir_cost": 2,
-    "skills": [
-      {
-        "type": "aoe_damage",
-        "radius": 2.2,
-        "damage": 125
-      }
-    ]
-  },
-  "bone_ram": {
-    "name": "阴兵撞车",
-    "faction": "qun",
-    "elixir_cost": 4,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "bone_ram_body",
-        "count": 1
-      }
-    ]
-  },
-  "royal_giant": {
-    "name": "刘晔霹雳车",
-    "faction": "wei",
-    "elixir_cost": 5,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "royal_giant_body",
-        "count": 1
-      }
-    ]
-  },
-  "hog_rider": {
-    "name": "虎豹破城骑",
-    "faction": "wei",
-    "elixir_cost": 4,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "hog_rider_body",
-        "count": 1
-      }
-    ]
-  },
-  "valkyrie": {
-    "name": "山越旋刃卫",
-    "faction": "wu",
-    "elixir_cost": 4,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "valkyrie_body",
-        "count": 1
-      }
-    ]
-  },
-  "bomber": {
-    "name": "无当火油手",
-    "faction": "shu",
-    "elixir_cost": 2,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "bomber_body",
-        "count": 1
-      }
-    ]
-  },
-  "mega_minion": {
-    "name": "重甲机关隼",
-    "faction": "shu",
-    "elixir_cost": 3,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "mega_minion_body",
-        "count": 1
-      }
-    ]
-  },
-  "goblin_gang": {
-    "name": "山越混编队",
-    "faction": "wu",
-    "elixir_cost": 3,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "goblin_body",
-        "count": 3
-      },
-      {
-        "type": "spawn_unit",
-        "unit_id": "spear_goblin_body",
-        "count": 2
-      }
-    ]
-  },
-  "battle_ram": {
-    "name": "青州撞城队",
-    "faction": "wei",
-    "elixir_cost": 4,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "battle_ram_body",
-        "count": 1
-      }
-    ]
-  },
-  "giant_snowball": {
-    "name": "北地霜石",
-    "faction": "qun",
-    "elixir_cost": 2,
-    "skills": [
-      {
-        "type": "aoe_damage",
-        "radius": 2.0,
-        "damage": 110,
-        "status": {
-          "kind": "slow",
-          "dur": 1.5,
-          "mag": 0.35
-        }
-      }
-    ]
-  },
-  "goblin_barrel": {
-    "name": "山越奇袭坛",
-    "faction": "wu",
-    "elixir_cost": 3,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "goblin_body",
-        "count": 3
-      }
-    ]
-  },
-  "wizard": {
-    "name": "都督周瑜",
-    "faction": "wu",
-    "elixir_cost": 4,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "wizard_body",
-        "count": 1
-      }
-    ]
-  },
-  "executioner": {
-    "name": "恶来典韦",
-    "faction": "wei",
-    "elixir_cost": 5,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "executioner_body",
-        "count": 1
-      }
-    ]
-  },
-  "balloon": {
-    "name": "孔明轰天灯",
-    "faction": "shu",
-    "elixir_cost": 5,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "balloon_body",
-        "count": 1
-      }
-    ]
-  },
-  "skeleton_army": {
-    "name": "左慈·阴兵阵",
-    "faction": "qun",
-    "elixir_cost": 4,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "skeleton_body",
-        "count": 14
-      }
-    ]
-  },
-  "phoenix": {
-    "name": "庞统火鸾",
-    "faction": "shu",
-    "elixir_cost": 4,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "phoenix_body",
-        "count": 1
-      }
-    ]
-  },
-  "freeze": {
-    "name": "郭嘉·寒江计",
-    "faction": "wei",
-    "elixir_cost": 4,
-    "skills": [
-      {
-        "type": "aoe_damage",
-        "radius": 3.0,
-        "damage": 0,
-        "status": {
-          "kind": "freeze",
-          "dur": 2.5
-        }
-      }
-    ]
-  },
-  "lava_hound": {
-    "name": "南蛮火鸢母兽",
-    "faction": "qun",
-    "elixir_cost": 7,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "lava_hound_body",
-        "count": 1
-      }
-    ]
-  },
-  "ice_wizard": {
-    "name": "冢虎司马懿",
-    "faction": "wei",
-    "elixir_cost": 3,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "ice_wizard_body",
-        "count": 1
-      }
-    ]
-  },
-  "electro_wizard": {
-    "name": "天公将军张角",
-    "faction": "qun",
-    "elixir_cost": 4,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "electro_wizard_body",
-        "count": 1
-      },
-      {
-        "type": "aoe_damage",
-        "radius": 2.0,
-        "damage": 90
-      }
-    ]
-  },
-  "princess": {
-    "name": "枭姬孙尚香",
-    "faction": "wu",
-    "elixir_cost": 3,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "princess_body",
-        "count": 1
-      }
-    ]
-  },
-  "inferno_dragon": {
-    "name": "蜀汉火脉机关龙",
-    "faction": "shu",
-    "elixir_cost": 4,
-    "skills": [
-      {
-        "type": "spawn_unit",
-        "unit_id": "inferno_dragon_body",
-        "count": 1
-      }
-    ]
-  }
+ "knight": {
+  "name": "小小",
+  "faction": "wei",
+  "elixir_cost": 3,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "knight_body",
+    "count": 1
+   }
+  ]
+ },
+ "archers": {
+  "name": "兔射手",
+  "faction": "wei",
+  "elixir_cost": 3,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "archer_body",
+    "count": 2
+   }
+  ]
+ },
+ "giant": {
+  "name": "大块头",
+  "faction": "qun",
+  "elixir_cost": 5,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "giant_body",
+    "count": 1
+   }
+  ]
+ },
+ "goblins": {
+  "name": "蟑螂小队",
+  "faction": "wu",
+  "elixir_cost": 2,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "goblin_body",
+    "count": 3
+   }
+  ]
+ },
+ "minions": {
+  "name": "小乌鸦",
+  "faction": "qun",
+  "elixir_cost": 3,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "minion_body",
+    "count": 3
+   }
+  ]
+ },
+ "fireball": {
+  "name": "大火球",
+  "faction": "wu",
+  "elixir_cost": 4,
+  "skills": [
+   {
+    "type": "aoe_damage",
+    "radius": 3.0,
+    "damage": 300
+   }
+  ]
+ },
+ "arrows": {
+  "name": "箭雨",
+  "faction": "wei",
+  "elixir_cost": 3,
+  "skills": [
+   {
+    "type": "aoe_damage",
+    "radius": 2.5,
+    "damage": 140
+   }
+  ]
+ },
+ "zap": {
+  "name": "电击术",
+  "faction": "qun",
+  "elixir_cost": 2,
+  "skills": [
+   {
+    "type": "direct_damage",
+    "damage": 75,
+    "target": "first_enemy_in_lane"
+   }
+  ]
+ },
+ "mini_pekka": {
+  "name": "锤锤莱姆",
+  "faction": "shu",
+  "elixir_cost": 4,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "mini_pekka_body",
+    "count": 1
+   }
+  ]
+ },
+ "musketeer": {
+  "name": "鼹鼠火枪手",
+  "faction": "shu",
+  "elixir_cost": 4,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "musketeer_body",
+    "count": 1
+   }
+  ]
+ },
+ "skeletons": {
+  "name": "小骷髅",
+  "faction": "qun",
+  "elixir_cost": 2,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "skeleton_body",
+    "count": 4
+   }
+  ]
+ },
+ "baby_dragon": {
+  "name": "龙宝宝",
+  "faction": "wu",
+  "elixir_cost": 4,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "baby_dragon_body",
+    "count": 1
+   }
+  ]
+ },
+ "lightning": {
+  "name": "落雷",
+  "faction": "qun",
+  "elixir_cost": 4,
+  "skills": [
+   {
+    "type": "direct_damage",
+    "damage": 280,
+    "target": "first_enemy_in_lane"
+   }
+  ]
+ },
+ "log": {
+  "name": "滚木",
+  "faction": "shu",
+  "elixir_cost": 2,
+  "skills": [
+   {
+    "type": "aoe_damage",
+    "radius": 2.0,
+    "damage": 130
+   }
+  ]
+ },
+ "golem": {
+  "name": "岩石史莱姆",
+  "faction": "wu",
+  "elixir_cost": 7,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "golem_body",
+    "count": 1
+   }
+  ]
+ },
+ "heal": {
+  "name": "治疗术",
+  "faction": "wei",
+  "elixir_cost": 3,
+  "skills": [
+   {
+    "type": "aoe_heal",
+    "radius": 3.0,
+    "damage": 150
+   }
+  ]
+ },
+ "spear_goblins": {
+  "name": "投矛蟑螂",
+  "faction": "wu",
+  "elixir_cost": 2,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "spear_goblin_body",
+    "count": 3
+   }
+  ]
+ },
+ "bats": {
+  "name": "蝙蝠群",
+  "faction": "wu",
+  "elixir_cost": 2,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "bat_body",
+    "count": 5
+   }
+  ]
+ },
+ "barbarians": {
+  "name": "棒槌史莱姆",
+  "faction": "wei",
+  "elixir_cost": 5,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "barbarian_body",
+    "count": 5
+   }
+  ]
+ },
+ "minion_horde": {
+  "name": "乌鸦大军",
+  "faction": "qun",
+  "elixir_cost": 5,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "minion_body",
+    "count": 6
+   }
+  ]
+ },
+ "ice_spirit": {
+  "name": "冰精灵",
+  "faction": "shu",
+  "elixir_cost": 1,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "ice_spirit_body",
+    "count": 1
+   }
+  ]
+ },
+ "fire_spirit": {
+  "name": "火精灵",
+  "faction": "wu",
+  "elixir_cost": 1,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "fire_spirit_body",
+    "count": 1
+   }
+  ]
+ },
+ "electro_spirit": {
+  "name": "雷精灵",
+  "faction": "qun",
+  "elixir_cost": 1,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "electro_spirit_body",
+    "count": 1
+   }
+  ]
+ },
+ "squire": {
+  "name": "见习骑士",
+  "faction": "wei",
+  "elixir_cost": 2,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "squire_body",
+    "count": 1
+   }
+  ]
+ },
+ "axe_thrower": {
+  "name": "飞斧汪",
+  "faction": "shu",
+  "elixir_cost": 3,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "axe_thrower_body",
+    "count": 1
+   }
+  ]
+ },
+ "cave_spiders": {
+  "name": "洞穴蜘蛛",
+  "faction": "shu",
+  "elixir_cost": 3,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "cave_spider_body",
+    "count": 4
+   }
+  ]
+ },
+ "rock_shower": {
+  "name": "落石",
+  "faction": "shu",
+  "elixir_cost": 2,
+  "skills": [
+   {
+    "type": "aoe_damage",
+    "radius": 2.2,
+    "damage": 125
+   }
+  ]
+ },
+ "bone_ram": {
+  "name": "骨头撞车",
+  "faction": "qun",
+  "elixir_cost": 4,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "bone_ram_body",
+    "count": 1
+   }
+  ]
+ },
+ "royal_giant": {
+  "name": "瓜牛炮",
+  "faction": "wei",
+  "elixir_cost": 5,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "royal_giant_body",
+    "count": 1
+   }
+  ]
+ },
+ "hog_rider": {
+  "name": "猪猪配香菇",
+  "faction": "wei",
+  "elixir_cost": 4,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "hog_rider_body",
+    "count": 1
+   }
+  ]
+ },
+ "valkyrie": {
+  "name": "双斧火钳",
+  "faction": "wu",
+  "elixir_cost": 4,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "valkyrie_body",
+    "count": 1
+   }
+  ]
+ },
+ "bomber": {
+  "name": "猫炮手",
+  "faction": "shu",
+  "elixir_cost": 2,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "bomber_body",
+    "count": 1
+   }
+  ]
+ },
+ "mega_minion": {
+  "name": "鸦王",
+  "faction": "shu",
+  "elixir_cost": 3,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "mega_minion_body",
+    "count": 1
+   }
+  ]
+ },
+ "goblin_gang": {
+  "name": "蟑螂恶霸帮",
+  "faction": "wu",
+  "elixir_cost": 3,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "goblin_body",
+    "count": 3
+   },
+   {
+    "type": "spawn_unit",
+    "unit_id": "spear_goblin_body",
+    "count": 2
+   }
+  ]
+ },
+ "battle_ram": {
+  "name": "攻城槌小队",
+  "faction": "wei",
+  "elixir_cost": 4,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "battle_ram_body",
+    "count": 1
+   }
+  ]
+ },
+ "giant_snowball": {
+  "name": "大雪球",
+  "faction": "qun",
+  "elixir_cost": 2,
+  "skills": [
+   {
+    "type": "aoe_damage",
+    "radius": 2.0,
+    "damage": 110,
+    "status": {
+     "kind": "slow",
+     "dur": 1.5,
+     "mag": 0.35
+    }
+   }
+  ]
+ },
+ "goblin_barrel": {
+  "name": "蟑螂空投",
+  "faction": "wu",
+  "elixir_cost": 3,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "goblin_body",
+    "count": 3
+   }
+  ]
+ },
+ "wizard": {
+  "name": "火法师",
+  "faction": "wu",
+  "elixir_cost": 4,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "wizard_body",
+    "count": 1
+   }
+  ]
+ },
+ "executioner": {
+  "name": "回旋斧手",
+  "faction": "wei",
+  "elixir_cost": 5,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "executioner_body",
+    "count": 1
+   }
+  ]
+ },
+ "balloon": {
+  "name": "马蜂王",
+  "faction": "shu",
+  "elixir_cost": 5,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "balloon_body",
+    "count": 1
+   }
+  ]
+ },
+ "skeleton_army": {
+  "name": "骷髅大军",
+  "faction": "qun",
+  "elixir_cost": 4,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "skeleton_body",
+    "count": 14
+   }
+  ]
+ },
+ "phoenix": {
+  "name": "火又鸟",
+  "faction": "shu",
+  "elixir_cost": 4,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "phoenix_body",
+    "count": 1
+   }
+  ]
+ },
+ "freeze": {
+  "name": "冰冻术",
+  "faction": "wei",
+  "elixir_cost": 4,
+  "skills": [
+   {
+    "type": "aoe_damage",
+    "radius": 3.0,
+    "damage": 0,
+    "status": {
+     "kind": "freeze",
+     "dur": 2.5
+    }
+   }
+  ]
+ },
+ "lava_hound": {
+  "name": "幺蛾子",
+  "faction": "qun",
+  "elixir_cost": 7,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "lava_hound_body",
+    "count": 1
+   }
+  ]
+ },
+ "ice_wizard": {
+  "name": "蝴蝶仙子",
+  "faction": "wei",
+  "elixir_cost": 3,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "ice_wizard_body",
+    "count": 1
+   }
+  ]
+ },
+ "electro_wizard": {
+  "name": "雷法师",
+  "faction": "qun",
+  "elixir_cost": 4,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "electro_wizard_body",
+    "count": 1
+   },
+   {
+    "type": "aoe_damage",
+    "radius": 2.0,
+    "damage": 90
+   }
+  ]
+ },
+ "princess": {
+  "name": "小公主",
+  "faction": "wu",
+  "elixir_cost": 3,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "princess_body",
+    "count": 1
+   }
+  ]
+ },
+ "inferno_dragon": {
+  "name": "熔岩龙",
+  "faction": "shu",
+  "elixir_cost": 4,
+  "skills": [
+   {
+    "type": "spawn_unit",
+    "unit_id": "inferno_dragon_body",
+    "count": 1
+   }
+  ]
+ }
 }

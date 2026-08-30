@@ -1,4 +1,7 @@
-# PixelUI —— V3 像素 UI 设计系统：色板常量 + 9-slice 按钮/面板样式工厂。
+# PixelUI —— UI 设计系统：色板常量 + 9-slice 按钮/面板样式工厂。
+# 决策 49 UI 换肤（2026-08-30 用户拍板方案 B「天空牧场」）：夜色像素系 → 淡色卡通系
+# （淡天蓝底/白卡面板/暖黄 CTA/圆角立体边；设计稿 artifact a5e00b52 方案 B 同色值）。
+# 文件名沿用 pixel_ui（引用面 20+ 文件不动）；"像素"仅是历史名。
 #
 # 用 assets/ui/ 的 9-slice 贴图（tools/gen_ui_assets.py 生成）建 StyleBoxTexture。
 # 各场景 `const PixelUI := preload(".../pixel_ui.gd")` 后调 PixelUI.style_button(btn, kind)
@@ -15,16 +18,18 @@
 #    锚点且保留当前矩形（新节点=0×0 隐形不拦输入，2026-07-06 P0 教训），view 层已单测封禁。
 extends RefCounted
 
-# —— 色板（黑暗中世纪夜色，权威常量；改色重跑 gen_ui_assets.py）——
-const COL_PARCHMENT := Color("e7decb")   # 主文字（羊皮纸）
-const COL_MUTED := Color("a79fc0")       # 次文字
-const COL_GOLD := Color("ecb94e")        # 标题/强调金
-const COL_GOLD_INK := Color("2c1f06")    # 金按钮上的深字
-const COL_HINT := Color("6f6888")        # 脚注/弱提示
-const COL_OUTLINE := Color("3a2a08")     # 标题描边深金
+# —— 色板（天空牧场淡色卡通，权威常量；改色重跑 gen_ui_assets.py）——
+const COL_PARCHMENT := Color("3a5a74")   # 主文字（深青蓝；浅底深字，常量名沿用）
+const COL_MUTED := Color("7f9cb3")       # 次文字
+const COL_GOLD := Color("3d9be0")        # 标题/强调（天空蓝；常量名沿用）
+const COL_GOLD_INK := Color("5c430e")    # 黄 CTA 按钮上的深字
+const COL_HINT := Color("9ab4c8")        # 脚注/弱提示
+const COL_OUTLINE := Color("1f5c8c")     # 标题描边深蓝
+const COL_PANEL_BG := Color("ffffff")    # 白卡面板底（换肤新增：散装深底的替代语义）
+const COL_INSET_BG := Color("ddeefb")    # 凹槽/列表底
 
-const _BTN_MARGIN := 5    # 按钮 9-slice 边距 = gen 脚本 e(2)+b(3)
-const _PANEL_MARGIN := 7  # 面板 9-slice 边距 = e(3)+b(4)
+const _BTN_MARGIN := 14   # 按钮 9-slice 边距 = 圆角半径 12 + 2（圆角区不拉伸）
+const _PANEL_MARGIN := 18  # 面板 9-slice 边距 = 圆角半径 16 + 2
 
 static func _btn_box(path: String) -> StyleBoxTexture:
 	var sb := StyleBoxTexture.new()
@@ -49,6 +54,8 @@ static func style_button(btn: Button, kind: String = "stone", font_size: int = 3
 	btn.add_theme_color_override("font_hover_color", fc)
 	btn.add_theme_color_override("font_pressed_color", fc)
 	btn.add_theme_color_override("font_focus_color", fc)
+	# 决策 49 换肤修复：disabled 字色显式定义（引擎默认半透明白在淡底上不可见）
+	btn.add_theme_color_override("font_disabled_color", Color(fc.r, fc.g, fc.b, 0.45))
 
 # 容器面板 StyleBox（对话框/卡槽）。kind = "stone"(凸) | "inset"(凹槽)。
 static func panel_box(kind: String = "stone") -> StyleBoxTexture:
@@ -63,9 +70,9 @@ static func panel_box(kind: String = "stone") -> StyleBoxTexture:
 static func sbpixel(bg: Color, border_w: int = 3, border_col: Color = Color(0, 0, 0, 0)) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = bg
-	sb.set_corner_radius_all(0)   # 无圆角 = 像素方块
+	sb.set_corner_radius_all(10)   # 决策 49 换肤：圆角卡通（原像素方块 0）
 	sb.set_border_width_all(border_w)
-	sb.border_color = border_col if border_col.a > 0.0 else bg.lightened(0.3)
+	sb.border_color = border_col if border_col.a > 0.0 else bg.darkened(0.18)
 	return sb
 
 # 给场景铺夜色战场背景（已加为 parent 第一个 child，返回该 TextureRect）。

@@ -16,7 +16,7 @@ const BG_TEX := preload("res://assets/ui/menu_bg.png")
 
 const RARITY_COL := {
 	"common": Color("9aa0ad"), "rare": Color("4a6db0"),
-	"epic": Color("7c5ea8"), "legendary": Color("d8a23a"),
+	"epic": Color("7c5ea8"), "legendary": Color("2e8fd4"),
 }
 const SORT_PREF_PATH := "user://settings.cfg"
 const SORT_LABELS := {"rarity": "稀有度", "cost": "费", "level": "等级", "actionable": "可养成"}
@@ -56,7 +56,7 @@ func _build_static() -> void:
 	_wallet_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_wallet_holder)
 	_title("养成", 84, 52)
-	_status = _center_label("连接中…", 128, 18, PixelUI.COL_HINT)
+	_status = _center_label("连接中…", 152, 18, PixelUI.COL_MUTED)   # 决策 49：下移避快乐体标题行高 + 提对比
 	_build_sort_bar(160)
 
 	var scroll := ScrollContainer.new()
@@ -78,7 +78,7 @@ func _build_static() -> void:
 func _build_static_land() -> void:
 	var strip := Panel.new()
 	strip.size = Vector2(1280, 72)
-	strip.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("16110c"), 3, Color("2b1e12")))
+	strip.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("ffffff"), 3, Color("a9d3ee")))
 	strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(strip)
 	var back := Button.new()
@@ -226,9 +226,9 @@ func _card_tile(cid: String, cache, config) -> Control:
 	var tile := Button.new()
 	tile.custom_minimum_size = Vector2(300, 150)
 	tile.focus_mode = Control.FOCUS_NONE
-	tile.add_theme_stylebox_override("normal", PixelUI.sbpixel(Color("1f1830"), 3, bd))
-	tile.add_theme_stylebox_override("hover", PixelUI.sbpixel(Color("271f3a"), 3, bd.lightened(0.2)))
-	tile.add_theme_stylebox_override("pressed", PixelUI.sbpixel(Color("191322"), 3, bd))
+	tile.add_theme_stylebox_override("normal", PixelUI.sbpixel(Color("ffffff"), 3, bd))
+	tile.add_theme_stylebox_override("hover", PixelUI.sbpixel(Color("f4faff"), 3, bd.lightened(0.2)))
+	tile.add_theme_stylebox_override("pressed", PixelUI.sbpixel(Color("e8f2fa"), 3, bd))
 	tile.pressed.connect(_open_detail.bind(cid))
 	# 肖像
 	var port := SpriteDB.make_card_portrait(cid, config, Vector2(18, 22), Vector2(96, 96))
@@ -258,9 +258,12 @@ func _card_tile(cid: String, cache, config) -> Control:
 		if _actionable(cache, config, cid):
 			tile.add_child(_red_dot(Vector2(276, 10)))
 	else:
-		var ov := HudWidgets.locked_overlay("碎片 %d/%d" % [int(st.get("shards", 0)), _unlock_need(config, rarity)], 300, 150)
+		# 决策 49 缩池：locked 卡（等卡通素材）显示"敬请期待"，不展示碎片进度/解锁红点。
+		var pool_locked := bool(config.get_card_progression(cid).get("locked", false))
+		var ov_text := "敬请期待" if pool_locked else "碎片 %d/%d" % [int(st.get("shards", 0)), _unlock_need(config, rarity)]
+		var ov := HudWidgets.locked_overlay(ov_text, 300, 150)
 		tile.add_child(ov)
-		if cache.can_unlock(cid, config):
+		if not pool_locked and cache.can_unlock(cid, config):
 			tile.add_child(_red_dot(Vector2(276, 10)))
 	return tile
 
@@ -302,7 +305,7 @@ func _red_dot(pos: Vector2) -> Panel:
 	var d := Panel.new()
 	d.position = pos
 	d.size = Vector2(16, 16)
-	d.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("ecb94e"), 0, Color("2c1f06")))
+	d.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("3d9be0"), 0, Color("2c1f06")))
 	d.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return d
 
@@ -322,10 +325,10 @@ func _tile_label(text: String, pos: Vector2, fs: int, col: Color, w: float) -> L
 	return l
 
 func _title(text: String, y: float, fs: int) -> void:
-	for off in [Vector2(3, 3), Vector2(-3, 3), Vector2(3, -3), Vector2(-3, -3)]:
-		var s := _center_label(text, y, fs, PixelUI.COL_OUTLINE)
-		s.position += off
-	_center_label(text, y, fs, PixelUI.COL_GOLD)
+	# 决策 49 换肤：原生 outline 取代 4-label 偏移描边（圆体字下偏移法成重影；白边保对比）
+	var l := _center_label(text, y, fs, PixelUI.COL_GOLD)
+	l.add_theme_color_override("font_outline_color", Color.WHITE)
+	l.add_theme_constant_override("outline_size", 10)
 
 func _center_label(text: String, y: float, fs: int, col: Color) -> Label:
 	var l := Label.new()

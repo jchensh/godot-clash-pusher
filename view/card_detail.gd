@@ -13,7 +13,7 @@ const BG_TEX := preload("res://assets/ui/menu_bg.png")
 
 const RARITY_COL := {
 	"common": Color("9aa0ad"), "rare": Color("4a6db0"),
-	"epic": Color("7c5ea8"), "legendary": Color("d8a23a"),
+	"epic": Color("7c5ea8"), "legendary": Color("2e8fd4"),
 }
 
 var _http: HTTPRequest
@@ -104,7 +104,7 @@ func _populate() -> void:
 	var frame := Panel.new()
 	frame.position = Vector2(70, 188)
 	frame.size = Vector2(190, 230)
-	frame.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("1f1830"), 4, bd))
+	frame.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("ffffff"), 4, bd))
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_content.add_child(frame)
 	var port := SpriteDB.make_card_portrait(_cid, _config, Vector2(86, 210), Vector2(158, 158))
@@ -239,7 +239,7 @@ func _action_btn2(label: String, _kind: String, shards: int, gold: int, ok: bool
 	btn.size = Vector2(w, 84)
 	btn.focus_mode = Control.FOCUS_NONE
 	PixelUI.style_button(btn, "stone", 26)
-	btn.add_theme_stylebox_override("normal", PixelUI.sbpixel(Color("2a2240"), 3, Color("7c5ea8")))
+	btn.add_theme_stylebox_override("normal", PixelUI.sbpixel(Color("eef6fc"), 3, Color("7c5ea8")))
 	btn.pressed.connect(func():
 		if ok: cb.call()
 		else: _toast("货币不足"))
@@ -262,7 +262,7 @@ func _skill_hint(text: String, y: float) -> void:
 	var p := Panel.new()
 	p.position = Vector2(60, y)
 	p.size = Vector2(600, 44)
-	p.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("1a2414"), 0, Color("1a2414")))
+	p.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("e4f4dc"), 0, Color("e4f4dc")))
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_content.add_child(p)
 	var bar := ColorRect.new()
@@ -342,10 +342,10 @@ func _center_label(text: String, y: float, fs: int, col: Color, parent: Control)
 	return l
 
 func _title(text: String, y: float, fs: int) -> void:
-	for off in [Vector2(3, 3), Vector2(-3, 3), Vector2(3, -3), Vector2(-3, -3)]:
-		var s := _center_label(text, y, fs, PixelUI.COL_OUTLINE, _content)
-		s.position += off
-	_center_label(text, y, fs, PixelUI.COL_GOLD, _content)
+	# 决策 49 换肤：原生 outline 取代 4-label 偏移描边（圆体字下偏移法成重影；白边保对比）
+	var l := _center_label(text, y, fs, PixelUI.COL_GOLD, _content)
+	l.add_theme_color_override("font_outline_color", Color.WHITE)
+	l.add_theme_constant_override("outline_size", 10)
 
 func _back_button(y: float) -> void:
 	var bw := 240.0

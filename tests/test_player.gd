@@ -54,10 +54,10 @@ func test_play_spends_elixir_and_spawns() -> void:
 func test_play_rotates_deck() -> void:
 	var ctx = _setup()
 	var p = _player(ctx[0], ctx[2], 10.0)
-	var hand_before = p.deck.get_hand()             # [knight, archers, giant, goblins]
+	var hand_before = p.deck.get_hand()             # [knight, archers, royal_giant, goblins]
 	p.try_play_card(0, PLAYER_SPOT)
 	var hand_after = p.deck.get_hand()
-	assert_eq(hand_after[0], "minions", "队首补入第 0 格")
+	assert_eq(hand_after[0], "mega_minion", "队首补入第 0 格")
 	assert_ne(hand_after[0], hand_before[0], "第 0 格已替换")
 	assert_eq(p.deck.total(), 8, "牌组总数不变")
 

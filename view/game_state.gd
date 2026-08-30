@@ -33,13 +33,10 @@ static var campaign_last_result := 0   # 上一场战役战斗结果（Battle.RE
 # battle_scene 读取；战役/新手引导强制竖版（门控在 battle_scene）。联机 net_battle 暂不支持（H6）。
 const _SETTINGS_PATH := "user://settings.cfg"
 static var _battle_layout := ""        # 内存缓存；"" = 未从盘加载
-static func battle_layout() -> String:   # "portrait"(默认) / "landscape"(横版实验)
-	if _battle_layout == "":
-		_battle_layout = "portrait"
-		var c := ConfigFile.new()
-		if c.load(_SETTINGS_PATH) == OK:
-			_battle_layout = String(c.get_value("battle", "layout", "portrait"))
-	return _battle_layout
+static func battle_layout() -> String:
+	# 决策 49（2026-08-30）：战斗恒竖屏横板（横版投影），版式开关封存——恒返 landscape。
+	# 旧持久化读取逻辑随横屏线封存进 git 历史；set_battle_layout 保留（无入口）。
+	return "landscape"
 
 static func set_battle_layout(v: String) -> void:
 	_battle_layout = v
@@ -51,13 +48,10 @@ static func set_battle_layout(v: String) -> void:
 # —— 全局横屏模式（L1，2026-07-26 用户拍板：竖屏保留为默认，设置页开关切换）——
 # 纯表现层偏好，存 settings.cfg [display]；窗口/方向的实际切换收口 Router.apply_ui_layout()。
 static var _ui_layout := ""            # 内存缓存；"" = 未从盘加载
-static func ui_layout() -> String:     # "portrait"(默认) / "landscape"(全局横屏)
-	if _ui_layout == "":
-		_ui_layout = "portrait"
-		var c := ConfigFile.new()
-		if c.load(_SETTINGS_PATH) == OK:
-			_ui_layout = String(c.get_value("display", "layout", "portrait"))
-	return _ui_layout
+static func ui_layout() -> String:
+	# 决策 49（2026-08-30）：全局回归竖屏，横屏线（L1~L4/H5 壳）封存——恒返 portrait。
+	# 各页 _land 分支与 Router 横屏路径自然失活（代码留 git 可回溯）；set_ui_layout 保留（无入口）。
+	return "portrait"
 
 static func set_ui_layout(v: String) -> void:
 	_ui_layout = v

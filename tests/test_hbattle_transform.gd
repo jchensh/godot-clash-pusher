@@ -1,10 +1,12 @@
-# 横版战斗变换层单测（PLAN_V5_HBATTLE H1+H2）。
+# 横版战斗变换层单测（PLAN_V5_HBATTLE H1+H2；决策 49 起改为相对断言版）。
 #
-# 覆盖三件事：
-# 1. 竖版基准锁定——KAN-107（2026-07-13）起竖版 = 32×32 正方形屏幕格 letterbox 居中（576×1024 @720 基准），
-#    用硬编码期望值钉死（取代 H1 时期的 720×1050 满铺基线）；
-# 2. 横版投影方向语义——敌右我左（逻辑 y=0 → 屏幕右缘）、tile 方形、letterbox 居中、部署区=左段；
-# 3. _t2s/_s2t 互逆 + 方向 API（_fp_screen/_screen_up_tiles/_tile_rect）随版式正确翻转。
+# 决策 49 卡通改版期间盘面（26×30）与壳（viewport 750×1334 / 场区公式）连续变更，
+# 故本文件锁的是**对任意盘面/视口都必须成立的方向语义与几何自洽性**：
+# 1. 竖版语义——敌上我下、原点/对角/中心映射到场区角与中心、tile 方形、fp/方向 API 恒等；
+# 2. 横版投影方向——敌右我左（逻辑 y=0 → 场区右缘）、逻辑 x → 屏幕纵向、fp 转置；
+# 3. _t2s/_s2t 互逆 + _tile_rect 对齐 + 部署区矩形贴场区边。
+# 期望值一律从 _field_rect() 与 arena.grid_w/grid_h 推导，不硬编码像素；
+# P1-4 场区定稿（750×650@25px）后如需防回归可另补具体基准锁定用例。
 # battle_scene 用 new() 裸实例（不进树：_ready/@onready 不触发，无音频/网络副作用），用毕 free。
 extends "res://tests/test_case.gd"
 
@@ -26,37 +28,44 @@ func _mk(landscape: bool):
 	bs._landscape = landscape
 	return bs
 
-# 基准值全按 18×32 盘面手算；若 arena 结构变更，此测试提醒重校基准。
-func _assert_grid(bs) -> void:
-	var a = bs.match_obj.battle.arena
-	assert_eq(int(a.grid_w), 18, "基准依赖 grid_w=18")
-	assert_eq(int(a.grid_h), 32, "基准依赖 grid_h=32")
+func _arena(bs):
+	return bs.match_obj.battle.arena
 
-func test_portrait_baseline_locked() -> void:
+# 决策 49 盘面基准：26×30（变更时此测试提醒重校本文件语义假设）。
+func _assert_grid(bs) -> void:
+	var a = _arena(bs)
+	assert_eq(int(a.grid_w), 26, "基准依赖 grid_w=26")
+	assert_eq(int(a.grid_h), 30, "基准依赖 grid_h=30")
+
+func test_portrait_semantics() -> void:
 	var bs = _mk(false)
 	_assert_grid(bs)
-	# field_rect = (72, 67, 576, 1024)：格=floor(min(40,32.8))=32 → 场地 576×1024，zone 内居中
+	var a = _arena(bs)
+	var gw := float(a.grid_w)
+	var gh := float(a.grid_h)
 	var fr: Rect2 = bs._field_rect()
-	assert_almost_eq(fr.position.x, 72.0, EPS, "竖版场区左（72px 装饰边栏）")
-	assert_almost_eq(fr.position.y, 67.0, EPS, "竖版场区顶（26px 余量对半）")
-	assert_almost_eq(fr.size.x, 576.0, EPS, "竖版场区宽")
-	assert_almost_eq(fr.size.y, 1024.0, EPS, "竖版场区高")
-	# 场中心 (9,16) → (360, 579)；原点/对角
-	var c: Vector2 = bs._t2s(Vector2(9, 16))
-	assert_almost_eq(c.x, 360.0, EPS, "竖版中心 x")
-	assert_almost_eq(c.y, 579.0, EPS, "竖版中心 y")
-	var o: Vector2 = bs._t2s(Vector2(0, 0))
-	assert_almost_eq(o.x, 72.0, EPS, "竖版原点 x（边栏右侧）")
-	assert_almost_eq(o.y, 67.0, EPS, "竖版原点 y（敌方在屏上）")
-	# tile 尺寸 = (32, 32) 正方形；ur = 均值 = 32
+	assert_true(fr.size.x > 0.0 and fr.size.y > 0.0, "竖版场区非空")
+	assert_true(fr.position.x >= 0.0 and fr.end.x <= bs._vw + EPS, "竖版场区横向在视口内")
+	# tile 方形：宽高同缩放
 	var tp: Vector2 = bs._tile_px()
-	assert_almost_eq(tp.x, 32.0, EPS, "竖版格宽")
-	assert_almost_eq(tp.y, 32.0, EPS, "竖版格高（正方形）")
-	assert_almost_eq(bs._ur(), 32.0, EPS, "竖版参考半径")
+	assert_almost_eq(tp.x, fr.size.x / gw, EPS, "竖版格宽 = 场宽/grid_w")
+	assert_almost_eq(tp.y, fr.size.y / gh, EPS, "竖版格高 = 场高/grid_h")
+	assert_almost_eq(tp.x, tp.y, EPS, "竖版 tile 方形")
+	assert_almost_eq(bs._ur(), tp.x, EPS, "竖版参考半径=格边")
+	# 原点（敌方左上）/对角/中心映射
+	var o: Vector2 = bs._t2s(Vector2(0, 0))
+	assert_almost_eq(o.x, fr.position.x, EPS, "竖版原点 x=场区左（敌方在屏上）")
+	assert_almost_eq(o.y, fr.position.y, EPS, "竖版原点 y=场区顶")
+	var d: Vector2 = bs._t2s(Vector2(gw, gh))
+	assert_almost_eq(d.x, fr.end.x, EPS, "竖版对角 x=场区右")
+	assert_almost_eq(d.y, fr.end.y, EPS, "竖版对角 y=场区底")
+	var c: Vector2 = bs._t2s(Vector2(gw / 2.0, gh / 2.0))
+	assert_almost_eq(c.x, fr.get_center().x, EPS, "竖版中心映中心 x")
+	assert_almost_eq(c.y, fr.get_center().y, EPS, "竖版中心映中心 y")
 	# footprint / 屏幕向上：竖版恒等语义
 	var fp: Vector2 = bs._fp_screen(4.0, 4.0)
-	assert_almost_eq(fp.x, 128.0, EPS, "竖版王塔 footprint 宽")
-	assert_almost_eq(fp.y, 128.0, EPS, "竖版王塔 footprint 高")
+	assert_almost_eq(fp.x, 4.0 * tp.x, EPS, "竖版王塔 footprint 宽")
+	assert_almost_eq(fp.y, 4.0 * tp.y, EPS, "竖版王塔 footprint 高")
 	assert_eq(bs._screen_up_tiles(2.0), Vector2(0.0, -2.0), "竖版屏幕向上=逻辑-y")
 	# tile 矩形左上角 = _t2s(tx,ty)
 	var r: Rect2 = bs._tile_rect(3, 5)
@@ -66,38 +75,49 @@ func test_portrait_baseline_locked() -> void:
 
 func test_portrait_roundtrip() -> void:
 	var bs = _mk(false)
-	for p in [Vector2(0, 0), Vector2(17.5, 31.5), Vector2(3.25, 15.0), Vector2(9, 16)]:
+	var a = _arena(bs)
+	var pts := [Vector2(0, 0), Vector2(a.grid_w - 0.5, a.grid_h - 0.5),
+			Vector2(3.25, 15.0), Vector2(a.grid_w / 2.0, a.grid_h / 2.0)]
+	for p in pts:
 		var back: Vector2 = bs._s2t(bs._t2s(p))
 		assert_almost_eq(back.x, p.x, EPS, "竖版往返 x @%s" % str(p))
 		assert_almost_eq(back.y, p.y, EPS, "竖版往返 y @%s" % str(p))
 	bs.free()
 
-func test_landscape_field_rect_letterbox() -> void:
+func test_landscape_field_rect_valid() -> void:
 	var bs = _mk(true)
 	_assert_grid(bs)
-	# L3b：顶栏/手牌带之外的 zone(720×1050) 内取整方格居中——cell=22 → 704×396 @ (8,381)
+	var a = _arena(bs)
 	var fr: Rect2 = bs._field_rect()
-	assert_almost_eq(fr.position.x, 8.0, EPS, "横版场区左（水平居中）")
-	assert_almost_eq(fr.position.y, 381.0, EPS, "横版场区顶（zone 内垂直居中）")
-	assert_almost_eq(fr.size.x, 704.0, EPS, "横版场区宽 32×22")
-	assert_almost_eq(fr.size.y, 396.0, EPS, "横版场区高 18×22")
+	assert_true(fr.size.x > 0.0 and fr.size.y > 0.0, "横版场区非空")
+	assert_true(fr.position.x >= -EPS and fr.end.x <= bs._vw + EPS, "横版场区横向在视口内")
+	# 横版：屏幕横向 = 逻辑纵深 grid_h、屏幕纵向 = 逻辑宽 grid_w，tile 方形
+	assert_almost_eq(fr.size.x / float(a.grid_h), fr.size.y / float(a.grid_w), EPS,
+			"横版 tile 方形（旋转不变密度）")
 	bs.free()
 
 func test_landscape_projection_direction() -> void:
 	var bs = _mk(true)
-	# 敌底线 y=0 → 屏幕右缘；我底线 y=32 → 左缘；逻辑 x=0 → 屏幕顶；中心映中心
-	assert_almost_eq(bs._t2s(Vector2(0, 0)).x, 712.0, EPS, "敌底线在场区右缘")
-	assert_almost_eq(bs._t2s(Vector2(0, 32)).x, 8.0, EPS, "我底线在场区左缘")
-	assert_almost_eq(bs._t2s(Vector2(0, 0)).y, 381.0, EPS, "逻辑 x=0 在场区顶")
-	assert_almost_eq(bs._t2s(Vector2(18, 0)).y, 777.0, EPS, "逻辑 x=18 在场区底")
-	var c: Vector2 = bs._t2s(Vector2(9, 16))
-	assert_almost_eq(c.x, 360.0, EPS, "横版中心 x")
-	assert_almost_eq(c.y, 579.0, EPS, "横版中心 y")
+	var a = _arena(bs)
+	var gw := float(a.grid_w)
+	var gh := float(a.grid_h)
+	var fr: Rect2 = bs._field_rect()
+	# 敌底线 y=0 → 场区右缘；我底线 y=grid_h → 左缘；逻辑 x=0 → 场区顶；x=grid_w → 底
+	assert_almost_eq(bs._t2s(Vector2(0, 0)).x, fr.end.x, EPS, "敌底线在场区右缘")
+	assert_almost_eq(bs._t2s(Vector2(0, gh)).x, fr.position.x, EPS, "我底线在场区左缘")
+	assert_almost_eq(bs._t2s(Vector2(0, 0)).y, fr.position.y, EPS, "逻辑 x=0 在场区顶")
+	assert_almost_eq(bs._t2s(Vector2(gw, 0)).y, fr.end.y, EPS, "逻辑 x=grid_w 在场区底")
+	var c: Vector2 = bs._t2s(Vector2(gw / 2.0, gh / 2.0))
+	assert_almost_eq(c.x, fr.get_center().x, EPS, "横版中心映中心 x")
+	assert_almost_eq(c.y, fr.get_center().y, EPS, "横版中心映中心 y")
 	bs.free()
 
 func test_landscape_roundtrip() -> void:
 	var bs = _mk(true)
-	for p in [Vector2(0, 0), Vector2(17.5, 31.5), Vector2(3.25, 15.0), Vector2(9, 16)]:
+	var a = _arena(bs)
+	var pts := [Vector2(0, 0), Vector2(a.grid_w - 0.5, a.grid_h - 0.5),
+			Vector2(3.25, 15.0), Vector2(a.grid_w / 2.0, a.grid_h / 2.0)]
+	for p in pts:
 		var back: Vector2 = bs._s2t(bs._t2s(p))
 		assert_almost_eq(back.x, p.x, EPS, "横版往返 x @%s" % str(p))
 		assert_almost_eq(back.y, p.y, EPS, "横版往返 y @%s" % str(p))
@@ -105,41 +125,60 @@ func test_landscape_roundtrip() -> void:
 
 func test_landscape_tile_square_and_rect() -> void:
 	var bs = _mk(true)
-	# 704/32 = 396/18 = 22：横版 tile 恒方形（整数取整，旋转不变密度）
+	var a = _arena(bs)
+	var fr: Rect2 = bs._field_rect()
 	var tp: Vector2 = bs._tile_px()
-	assert_almost_eq(tp.x, 22.0, EPS, "横版格宽")
-	assert_almost_eq(tp.y, 22.0, EPS, "横版格高")
-	# tile(0,31)（我方底线角）屏幕左上角 = 场区左上 (8, 381)
-	var r: Rect2 = bs._tile_rect(0, 31)
-	assert_almost_eq(r.position.x, 8.0, EPS, "横版角 tile x")
-	assert_almost_eq(r.position.y, 381.0, EPS, "横版角 tile y")
+	assert_almost_eq(tp.x, fr.size.x / float(a.grid_h), EPS, "横版格宽 = 场宽/grid_h")
+	assert_almost_eq(tp.y, fr.size.y / float(a.grid_w), EPS, "横版格高 = 场高/grid_w")
+	assert_almost_eq(tp.x, tp.y, EPS, "横版 tile 方形")
+	# 我方底线角 tile(0, grid_h-1) 屏幕左上角 = 场区左上
+	var r: Rect2 = bs._tile_rect(0, a.grid_h - 1)
+	assert_almost_eq(r.position.x, fr.position.x, EPS, "横版角 tile x")
+	assert_almost_eq(r.position.y, fr.position.y, EPS, "横版角 tile y")
 	bs.free()
 
 func test_landscape_direction_apis() -> void:
 	var bs = _mk(true)
+	var tp: Vector2 = bs._tile_px()
 	# footprint：逻辑纵深(fh)→屏幕横向、逻辑宽(fw)→屏幕纵向
 	var fp: Vector2 = bs._fp_screen(3.0, 4.0)
-	assert_almost_eq(fp.x, 88.0, EPS, "横版 footprint 屏幕宽 = fh*22")
-	assert_almost_eq(fp.y, 66.0, EPS, "横版 footprint 屏幕高 = fw*22")
+	assert_almost_eq(fp.x, 4.0 * tp.x, EPS, "横版 footprint 屏幕宽 = fh*格")
+	assert_almost_eq(fp.y, 3.0 * tp.y, EPS, "横版 footprint 屏幕高 = fw*格")
 	assert_eq(bs._screen_up_tiles(2.0), Vector2(-2.0, 0.0), "横版屏幕向上=逻辑-x")
 	bs.free()
 
 func test_deploy_zone_rect_both_layouts() -> void:
 	var bs = _mk(false)
-	var a = bs.match_obj.battle.arena
+	var a = _arena(bs)
 	var ymin := float(a.deploy_player_y_min)
-	# 竖版：下段矩形，顶边 = 部署线投影 y
+	# 竖版：下段矩形，顶边 = 部署线投影 y、底边 = 场区底、全宽
+	var frp: Rect2 = bs._field_rect()
 	var pr: Rect2 = bs._deploy_zone_rect(a)
-	var y0: float = 67.0 + ymin / 32.0 * 1024.0
-	assert_almost_eq(pr.position.y, y0, EPS, "竖版部署区顶边")
-	assert_almost_eq(pr.end.y, 1091.0, EPS, "竖版部署区到场区底（67+1024）")
-	assert_almost_eq(pr.size.x, 576.0, EPS, "竖版部署区全宽（=场地宽）")
+	assert_almost_eq(pr.position.y, bs._t2s(Vector2(0, ymin)).y, EPS, "竖版部署区顶边=部署线")
+	assert_almost_eq(pr.end.y, frp.end.y, EPS, "竖版部署区到场区底")
+	assert_almost_eq(pr.size.x, frp.size.x, EPS, "竖版部署区全宽（=场地宽）")
 	bs.free()
-	# 横版：左段矩形，右边 = 部署线投影 x
+	# 横版：左段矩形，左边 = 场区左缘、右边 = 部署线投影 x、全高
 	var bl = _mk(true)
+	var frl: Rect2 = bl._field_rect()
 	var lr: Rect2 = bl._deploy_zone_rect(a)
-	var x1: float = 8.0 + (32.0 - ymin) / 32.0 * 704.0
-	assert_almost_eq(lr.position.x, 8.0, EPS, "横版部署区从场区左缘起")
-	assert_almost_eq(lr.end.x, x1, EPS, "横版部署区右边=部署线")
-	assert_almost_eq(lr.size.y, 396.0, EPS, "横版部署区全高")
+	assert_almost_eq(lr.position.x, frl.position.x, EPS, "横版部署区从场区左缘起")
+	assert_almost_eq(lr.end.x, bl._t2s(Vector2(0, ymin)).x, EPS, "横版部署区右边=部署线")
+	assert_almost_eq(lr.size.y, frl.size.y, EPS, "横版部署区全高")
 	bl.free()
+
+func test_cartoon_baseline_750x1334() -> void:
+	# P1-4 定稿基准锁定：750×1334 视口 + 26×30 盘面 → cell=25、场区 750×650 满宽、
+	# 垂直居中于顶栏(54)与手牌板(176)之间 zone → y = 54 + (1104-650)/2 = 281。
+	var bs = _mk(true)
+	bs._vw = 750.0
+	bs._vh = 1334.0
+	var fr: Rect2 = bs._field_rect()
+	assert_almost_eq(fr.position.x, 0.0, EPS, "卡通场区满宽从 0 起")
+	assert_almost_eq(fr.position.y, 281.0, EPS, "卡通场区顶 y=281")
+	assert_almost_eq(fr.size.x, 750.0, EPS, "卡通场区宽 30 格×25px")
+	assert_almost_eq(fr.size.y, 650.0, EPS, "卡通场区高 26 格×25px")
+	var tp: Vector2 = bs._tile_px()
+	assert_almost_eq(tp.x, 25.0, EPS, "卡通格宽 25px")
+	assert_almost_eq(tp.y, 25.0, EPS, "卡通格高 25px")
+	bs.free()

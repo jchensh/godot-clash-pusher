@@ -42,17 +42,10 @@ func _build() -> void:
 		_back_button(590)
 		return
 	_title(tr("settings_title"), 150, 60)
-	# H2 横版战斗实验开关（PLAN_V5_HBATTLE；文案暂硬编码中文对齐 GM 区先例，H5 正式化再进 i18n）
-	_center_label("战斗版式（实验 · 仅 PvE）", 222, 28, PixelUI.COL_MUTED)
-	_layout_button("竖版（默认）", "portrait", 150, 260, lay != "landscape")
-	_layout_button("横版（实验）", "landscape", 390, 260, lay == "landscape")
-	# L1 全局横屏模式（2026-07-26 用户拍板：竖屏保留默认，切换即改窗口方向并重建页面）
-	_center_label("屏幕方向（实验 · 全局）", 384, 28, PixelUI.COL_MUTED)
-	_ui_layout_button("竖屏（默认）", "portrait", 150, 422, ui_lay != "landscape")
-	_ui_layout_button("横屏（实验）", "landscape", 390, 422, ui_lay == "landscape")
-	_center_label(tr("settings_language"), 546, 34, PixelUI.COL_MUTED)
-	_lang_button(tr("lang_zh"), "zh", 150, 584, cur.begins_with("zh"))
-	_lang_button(tr("lang_en"), "en", 390, 584, cur.begins_with("en"))
+	# 决策 49：战斗版式/屏幕方向两组实验开关随横屏线封存下线（battle 恒横板投影、全局恒竖屏）。
+	_center_label(tr("settings_language"), 280, 34, PixelUI.COL_MUTED)
+	_lang_button(tr("lang_zh"), "zh", 150, 330, cur.begins_with("zh"))
+	_lang_button(tr("lang_en"), "en", 390, 330, cur.begins_with("en"))
 	_logout_button(1170)   # KAN-109：登出 → 回登录页换号/创新号
 	_back_button(1080)
 
@@ -93,7 +86,7 @@ func _on_logout() -> void:
 	var panel := Panel.new()
 	panel.position = Vector2(80, 480)
 	panel.size = Vector2(560, 330)
-	panel.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("241c30"), 4, PixelUI.COL_GOLD))
+	panel.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("f0f7fd"), 4, PixelUI.COL_GOLD))
 	m.add_child(panel)
 	var t := Label.new()
 	t.text = "确定登出？"
@@ -209,10 +202,10 @@ func _scale_to(c: Control, s: float) -> void:
 	create_tween().tween_property(c, "scale", Vector2(s, s), 0.07)
 
 func _title(text: String, y: float, fs: int) -> void:
-	for off in [Vector2(3, 3), Vector2(-3, 3), Vector2(3, -3), Vector2(-3, -3)]:
-		var s := _center_label(text, y, fs, PixelUI.COL_OUTLINE)
-		s.position += off
-	_center_label(text, y, fs, PixelUI.COL_GOLD)
+	# 决策 49 换肤：原生 outline 取代 4-label 偏移描边（圆体字下偏移法成重影；白边保对比）
+	var l := _center_label(text, y, fs, PixelUI.COL_GOLD)
+	l.add_theme_color_override("font_outline_color", Color.WHITE)
+	l.add_theme_constant_override("outline_size", 10)
 
 func _center_label(text: String, y: float, font_size: int, color: Color) -> Label:
 	var l := Label.new()

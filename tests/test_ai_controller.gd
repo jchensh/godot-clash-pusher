@@ -90,11 +90,11 @@ func test_defends_threat_in_own_half() -> void:
 func test_smart_targets_weakest_tower_side() -> void:
 	var m = _match()
 	_set_opp_elixir(m, 10.0)
-	# 削弱玩家右公主塔(13.5,24) → 智能 AI 集火该侧。
+	# 削弱玩家右公主塔(21.5,22) → 智能 AI 集火该侧。
 	for t in m.battle.player_towers:
-		if not t.is_king() and absf(t.pos.x - 13.5) < 0.6:
+		if not t.is_king() and absf(t.pos.x - 21.5) < 0.6:
 			t.take_damage(t.max_hp - 100.0)
 	var ai = AIControllerScript.new(m, _loader, "hard")
 	ai.tick(0.1)
 	assert_eq(_opp_units(m).size(), 1, "进攻出兵")
-	assert_true(absf(_opp_units(m)[0].pos.x - 13.5) < 1.5, "集火最弱塔侧(x≈13.5)部署")
+	assert_true(absf(_opp_units(m)[0].pos.x - 21.5) < 2.5, "集火最弱塔侧(x≈21.5)部署")

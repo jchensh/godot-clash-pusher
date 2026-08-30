@@ -20,7 +20,8 @@ func TestSignAccessRoundtrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewIssuer: %v", err)
 	}
-	now := time.Date(2026, 6, 24, 0, 0, 0, 0, time.UTC)
+	// 固定历史时钟会随真实时间流逝令 token 过期（2026-08-30 时间炸弹实锤）→ 用当前时钟。
+	now := time.Now().UTC()
 	tok, err := iss.SignAccess(42, now)
 	if err != nil {
 		t.Fatalf("SignAccess: %v", err)

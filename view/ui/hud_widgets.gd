@@ -102,7 +102,7 @@ static func nameplate(nickname: String, avatar_card_id: String, loader, trophies
 	var frame := Panel.new()
 	frame.position = Vector2(fx, 0)
 	frame.size = Vector2(av, av)
-	frame.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("1c1626"), 2, PixelUI.COL_GOLD))
+	frame.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("f4faff"), 2, PixelUI.COL_GOLD))
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(frame)
 	var tex := SpriteDB.card_portrait_tex(avatar_card_id, loader)

@@ -19,11 +19,11 @@ func test_new_player_defaults() -> void:
 	assert_eq(p.gold, 0, "新档金币 0")
 	assert_eq(p.gems, 0, "新档宝石 0")
 	assert_eq(p.cards.size(), ids.size(), "每张卡都有条目")
-	# 初始解锁恰好 8 张（starter）。
+	# 初始解锁恰好 8 张（starter；决策 49 缩池后 giant/minions→royal_giant/mega_minion）。
 	assert_eq(p.unlocked_card_ids().size(), 8, "初始解锁 8 张")
-	for cid in ["knight", "archers", "giant", "goblins", "minions", "fireball", "arrows", "zap"]:
+	for cid in ["knight", "archers", "royal_giant", "goblins", "mega_minion", "fireball", "arrows", "zap"]:
 		assert_true(p.is_unlocked(cid), "%s 应解锁" % cid)
-	for cid in ["golem", "musketeer", "skeletons", "lightning"]:
+	for cid in ["golem", "musketeer", "skeletons", "lightning", "giant", "minions"]:
 		assert_false(p.is_unlocked(cid), "%s 应锁定" % cid)
 	# 默认 level1 / rank1。
 	assert_eq(int(p.card_state("knight").get("level")), 1, "默认 level 1")

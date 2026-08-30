@@ -60,18 +60,23 @@ func test_placeholder_inventory() -> void:
 # —— 0715 正式素材全家桶（knight 试点：立绘肖像 + 配套战斗特效）——
 
 func test_portrait_override_for_knight() -> void:
-	# 有 "portrait" 字段的单位卡面应直接用立绘原图（322×346），而非走帧 col0 的 AtlasTexture。
+	# 决策 49：卡面肖像走卡通层立绘（portraits_cartoon/knight.png），而非走帧 col0 的 AtlasTexture；
+	# 尺寸以立绘文件本身为真相源对比（0830 组卡页旧图事故=替换静默失败的回归锁）。
 	var tex := SpriteDB.card_portrait_tex("knight", _loaded())
 	assert_not_null(tex, "knight 卡应有肖像")
-	if tex != null:
-		assert_eq(tex.get_width(), 322, "knight 肖像应为立绘原图宽 322")
-		assert_eq(tex.get_height(), 346, "knight 肖像应为立绘原图高 346")
+	var want: Texture2D = load("res://assets/portraits_cartoon/knight.png")
+	if tex != null and want != null:
+		assert_eq(tex.get_width(), want.get_width(), "knight 肖像=卡通立绘宽")
+		assert_eq(tex.get_height(), want.get_height(), "knight 肖像=卡通立绘高")
+		assert_true(tex is CompressedTexture2D, "肖像为立绘原图而非 Atlas 帧")
 
 func test_unit_fx_manifest_valid() -> void:
-	# knight 三种配套特效齐全且条带边界合法；未配置单位/未知 kind 返回空字典。
-	for kind in ["attack", "hit", "death"]:
-		var fx: Dictionary = SpriteDB.unit_fx("knight_body", kind)
-		assert_false(fx.is_empty(), "knight_body 应有 %s 特效" % kind)
+	# 决策 49：knight_body 被卡通层接管（无 fx）→ 用仍走旧 DB 的 giant_body（0721 素材）验 manifest；
+	# 特效条带边界合法；未配置单位/未知 kind 返回空字典。
+	assert_true(SpriteDB.unit_fx("knight_body", "attack").is_empty(), "卡通层接管的 knight 无旧 fx")
+	for kind in ["attack", "hit"]:
+		var fx: Dictionary = SpriteDB.unit_fx("giant_body", kind)
+		assert_false(fx.is_empty(), "giant_body 应有 %s 特效" % kind)
 		if fx.is_empty():
 			continue
 		var tex: Texture2D = fx["tex"]
@@ -81,20 +86,44 @@ func test_unit_fx_manifest_valid() -> void:
 		assert_true(int(fx["fh"]) <= tex.get_height(), "%s 帧高应在贴图内" % kind)
 		assert_true(float(fx["dur"]) > 0.0 and float(fx["size"]) > 0.0, "%s dur/size 为正" % kind)
 	assert_true(SpriteDB.unit_fx("goblin_body", "attack").is_empty(), "未配置单位返回空")
-	assert_true(SpriteDB.unit_fx("knight_body", "nope").is_empty(), "未知 kind 返回空")
+	assert_true(SpriteDB.unit_fx("giant_body", "nope").is_empty(), "未知 kind 返回空")
 
 func test_knight_attack_cell_and_sc() -> void:
-	# 0721 更新版：攻击帧 200 方格 + sc=200/160 补偿（走↔攻切换脚底不跳的前提）；8 帧全部在条带边界内。
-	var spr: Dictionary = SpriteDB.frame("knight_body", "attack", 0, 7.0 / 12.0 + 0.001)  # 最后一帧
+	# 决策 49：knight_body=卡通层（小小）。帧尺寸以 cartoon_frames.json 为真相源对比（美术重切自动跟随）；
+	# px 直画标记 + mirror（正面微朝左单行帧）+ scale=1.0（交付即所得）。
+	var meta = JSON.parse_string(FileAccess.get_file_as_string("res://assets/units_cartoon/cartoon_frames.json"))
+	assert_true(typeof(meta) == TYPE_DICTIONARY and (meta as Dictionary).has("knight"), "帧元数据含 knight")
+	var am: Dictionary = (meta as Dictionary).get("knight", {}).get("attack", {})
+	var spr: Dictionary = SpriteDB.frame("knight_body", "attack", 0, 0.001)
 	assert_false(spr.is_empty(), "knight attack 帧非空")
-	if not spr.is_empty():
+	if not spr.is_empty() and not am.is_empty():
 		var src: Rect2 = spr["src"]
-		assert_eq(int(src.size.x), 200, "攻击帧宽 200")
-		assert_eq(int(src.size.y), 200, "攻击帧高 200")
+		assert_eq(int(src.size.x), int(am["fw"]), "攻击帧宽=元数据 fw")
+		assert_eq(int(src.size.y), int(am["fh"]), "攻击帧高=元数据 fh")
 		var tex: Texture2D = spr["tex"]
-		assert_true(src.end.x <= float(tex.get_width()), "末帧在条带内")
-		# scale = 条目 1.7 × sc 1.25（浮点近似）
-		assert_true(absf(float(spr["scale"]) - 1.7 * 1.25) < 0.01, "攻击态 scale 含 sc 补偿")
-		# 0715 验收反馈修复：base_scale 不含 sc（阴影身体基准）；mirror 单方向素材按朝向翻转
-		assert_true(absf(float(spr["base_scale"]) - 1.7) < 0.001, "base_scale 应为条目 scale（不含 sc）")
-		assert_true(bool(spr["mirror"]), "knight 为单方向素材应标 mirror")
+		assert_true(src.end.x <= float(tex.get_width()), "帧在条带内")
+		assert_true(bool(spr["px"]), "卡通层标 px 直画")
+		assert_true(bool(spr["mirror"]), "卡通层标 mirror")
+		assert_true(absf(float(spr["scale"]) - SpriteDB.CARTOON_H_MULT) < 0.001, "卡通主体 scale=身高倍率（体型驱动）")
+
+
+func test_cartoon_layer_covers_21_cards() -> void:
+	# 决策 49 P1-6：21 张可玩卡的 spawn 单位 + 派生形态（凤凰重生/幼蛾）全被卡通层接管；
+	# walk/attack 双态可取帧、px 标记、立绘就位。
+	for card in SpriteDB.CARTOON_UNIT_OF_CARD:
+		var uid: String = SpriteDB.CARTOON_UNIT_OF_CARD[card]
+		for st in ["walk", "attack"]:
+			var spr: Dictionary = SpriteDB.frame(uid, st, 0, 0.0)
+			assert_false(spr.is_empty(), "%s(%s) %s 帧非空" % [card, uid, st])
+			if not spr.is_empty():
+				assert_true(bool(spr["px"]), "%s %s 走 px 直画" % [uid, st])
+				var src: Rect2 = spr["src"]
+				var tex: Texture2D = spr["tex"]
+				assert_true(src.end.x <= float(tex.get_width()) + 0.001, "%s %s 帧在条带内" % [uid, st])
+	for uid in SpriteDB.CARTOON_DERIVED:
+		var spr: Dictionary = SpriteDB.frame(uid, "walk", 0, 0.0)
+		assert_false(spr.is_empty(), "派生形态 %s 有帧（复用父贴图）" % uid)
+		if not spr.is_empty():
+			# 体型驱动定稿：派生条目 scale=统一身高倍率，体型差由 UNIT_VIS 半径表达（pup r0.35/reborn r0.45）。
+			assert_true(absf(float(spr["scale"]) - SpriteDB.CARTOON_H_MULT) < 0.001,
+					"派生形态 %s scale=身高倍率" % uid)

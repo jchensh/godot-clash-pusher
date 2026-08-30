@@ -77,7 +77,7 @@ func _build_idle_card(y: float) -> void:
 	var card := Panel.new()
 	card.position = Vector2(80, y)
 	card.size = Vector2(560, 132)
-	card.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("1c1626"), 3, Color("4a3a14")))
+	card.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("f4faff"), 3, Color("a87b1a")))
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(card)
 	_pin_label("挂机收益", Vector2(104, y + 18), 28, PixelUI.COL_PARCHMENT)

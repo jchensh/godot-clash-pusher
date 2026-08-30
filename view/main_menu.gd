@@ -140,7 +140,7 @@ func _build_top_row() -> void:
 	if _land:   # 横屏：72px 顶带一行放齐（名片左 · 货币右 · 公告/设置角落）
 		var strip := Panel.new()
 		strip.size = Vector2(1280, 72)
-		strip.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("16110c"), 3, Color("2b1e12")))
+		strip.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("ffffff"), 3, Color("a9d3ee")))
 		strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(strip)
 	var np := HudWidgets.nameplate(session.nickname(), session.avatar_card_id(),
@@ -168,7 +168,7 @@ func _build_rails() -> void:
 			card.position = Vector2(930, card_y)
 			card.size = Vector2(330, 280 if card_y < 200.0 else 270)
 			card.add_theme_stylebox_override("panel",
-					PixelUI.sbpixel(Color(0.09, 0.08, 0.06, 0.66), 3, Color("2b1e12")))
+					PixelUI.sbpixel(Color(0.09, 0.08, 0.06, 0.66), 3, Color("a9d3ee")))
 			card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			add_child(card)
 		_idle_btn = _pin_button("挂机金库", Vector2(958, 128), Vector2(274, 88), _on_collect_idle, "gold", 24)
@@ -202,11 +202,11 @@ func _build_showpiece() -> void:
 	art.size = Vector2(760, 352) if _land else Vector2(480, 300)
 	art.focus_mode = Control.FOCUS_NONE
 	art.add_theme_stylebox_override("normal",
-			PixelUI.sbpixel(Color(0.16, 0.12, 0.20, 0.72), 3, Color("4a3a14")))
+			PixelUI.sbpixel(Color(0.16, 0.12, 0.20, 0.72), 3, Color("a87b1a")))
 	art.add_theme_stylebox_override("hover",
-			PixelUI.sbpixel(Color(0.20, 0.15, 0.24, 0.78), 3, Color("6a5424")))
+			PixelUI.sbpixel(Color(0.20, 0.15, 0.24, 0.78), 3, Color("96701e")))
 	art.add_theme_stylebox_override("pressed",
-			PixelUI.sbpixel(Color(0.12, 0.09, 0.16, 0.78), 3, Color("4a3a14")))
+			PixelUI.sbpixel(Color(0.12, 0.09, 0.16, 0.78), 3, Color("a87b1a")))
 	art.pressed.connect(_on_pressed.bind(_on_stage))
 	add_child(art)
 	_chapter_lbl = _child_label(art, "第 — 章", 110 if _land else 96, 44, PixelUI.COL_GOLD)
@@ -214,7 +214,7 @@ func _build_showpiece() -> void:
 	var bar := Panel.new()
 	bar.position = Vector2(250, 466) if _land else Vector2(160, 660)
 	bar.size = Vector2(560, 26) if _land else Vector2(400, 26)
-	bar.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("241c14"), 3, Color("2b1e12")))
+	bar.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("bcd9ef"), 3, Color("a9d3ee")))
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bar)
 	_prog_fill = ColorRect.new()
@@ -235,7 +235,7 @@ func _build_cluster() -> void:
 	panel.position = Vector2(138, 524) if _land else Vector2(26, 900)
 	panel.size = Vector2(784, 186) if _land else Vector2(668, 210)
 	panel.add_theme_stylebox_override("panel",
-			PixelUI.sbpixel(Color(0.09, 0.08, 0.06, 0.66), 3, Color("2b1e12")))
+			PixelUI.sbpixel(Color(0.09, 0.08, 0.06, 0.66), 3, Color("a9d3ee")))
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(panel)
 	# 0718 用户定稿：布阵(原卡组) | 国王征途(原闯关，主 CTA) | 对战(天梯)。
@@ -257,7 +257,7 @@ func _build_tabbar() -> void:
 	var bar := Panel.new()
 	bar.position = Vector2(0, 1156)
 	bar.size = Vector2(720, 124)
-	bar.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("16110c"), 3, Color("2b1e12")))
+	bar.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("ffffff"), 3, Color("a9d3ee")))
 	add_child(bar)
 	var defs: Array = [
 		["商店", "shop", _noop, true], ["卡牌", "cards", _on_progression, false],
@@ -277,7 +277,7 @@ func _build_navrail() -> void:
 	var rail := Panel.new()
 	rail.position = Vector2(0, 72)
 	rail.size = Vector2(120, 648)
-	rail.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("16110c"), 3, Color("2b1e12")))
+	rail.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("ffffff"), 3, Color("a9d3ee")))
 	add_child(rail)
 	var defs: Array = [
 		["商店", "shop", _noop, true], ["卡牌", "cards", _on_progression, false],
@@ -419,7 +419,7 @@ func _badge(host: Control, text: String) -> Label:
 	var p := Panel.new()
 	p.position = Vector2(host.size.x - 26, -14)
 	p.size = Vector2(46, 40)
-	p.add_theme_stylebox_override("panel", PixelUI.sbpixel(COL_BADGE, 3, Color("2b1e12")))
+	p.add_theme_stylebox_override("panel", PixelUI.sbpixel(COL_BADGE, 3, Color("a9d3ee")))
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	host.add_child(p)
 	var l := Label.new()
@@ -446,9 +446,10 @@ func _child_label(host: Control, text: String, y: float, font_size: int, color: 
 	return l
 
 func _title(text: String, y: float, font_size: int) -> void:
-	for off in [Vector2(3, 3), Vector2(-3, 3), Vector2(3, -3), Vector2(-3, -3)]:
-		_mk_label(text, y, font_size, PixelUI.COL_OUTLINE).position += off
-	_mk_label(text, y, font_size, PixelUI.COL_GOLD)
+	# 决策 49 换肤：原生 outline 取代 4-label 偏移描边（圆体字下偏移法成重影；白边保对比）
+	var l := _mk_label(text, y, font_size, PixelUI.COL_GOLD)
+	l.add_theme_color_override("font_outline_color", Color.WHITE)
+	l.add_theme_constant_override("outline_size", 10)
 
 func _mk_label(text: String, y: float, font_size: int, color: Color) -> Label:
 	var l := Label.new()

@@ -7,7 +7,7 @@
 extends Control
 
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
-const FONT := preload("res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf")
+const FONT := preload("res://assets/fonts/ZCOOLKuaiLe-Regular.ttf")
 
 # 语义色（PixelUI 未涵盖的动态色）
 const COL_GREEN := Color("7cc36a")
@@ -18,11 +18,11 @@ const COL_RARE := Color("7c94c8")
 const GOLD_FACE := Color("cda743"); const GOLD_LITE := Color("f0d480")
 const GOLD_DARK := Color("8a6418"); const GOLD_EDGE := Color("3a2a08")
 # 钱包/cost 芯片（暗紫凸块）
-const CHIP_FACE := Color("1c1626"); const CHIP_LITE := Color("2a2440")
-const CHIP_DARK := Color("100d18"); const CHIP_EDGE := Color("0c0a14")
+const CHIP_FACE := Color("f4faff"); const CHIP_LITE := Color("eef6fc")
+const CHIP_DARK := Color("d8ecfa"); const CHIP_EDGE := Color("cfe3f2")
 # 凹槽（数值条）
-const GROOVE_FACE := Color("18141f"); const GROOVE_LITE := Color("12101a")
-const GROOVE_DARK := Color("3a3450"); const GROOVE_EDGE := Color("0c0a14")
+const GROOVE_FACE := Color("eaf4fb"); const GROOVE_LITE := Color("e2eff9")
+const GROOVE_DARK := Color("dceefc"); const GROOVE_EDGE := Color("cfe3f2")
 
 var kind := ""
 var data := {}
@@ -76,8 +76,8 @@ func _draw_pips() -> void:
 	for i in range(cap):
 		var on := i < rank
 		var br := Rect2(step * i + (step - s) / 2.0, (size.y - s) / 2.0, s, s)
-		draw_rect(br, PixelUI.COL_GOLD if on else Color("2a2436"), true)
-		_outline(br, PixelUI.COL_GOLD_INK if on else Color("46406a"))
+		draw_rect(br, PixelUI.COL_GOLD if on else Color("eef6fc"), true)
+		_outline(br, PixelUI.COL_GOLD_INK if on else Color("c8e0f4"))
 
 func _draw_statbar() -> void:
 	var fill: Color = data.get("fill", PixelUI.COL_GOLD)
@@ -161,14 +161,14 @@ func _star(center: Vector2, r: float, c: Color) -> void:
 func _lock(center: Vector2, s: float) -> void:
 	var body := Rect2(center.x - s * 0.6, center.y, s * 1.2, s * 0.9)
 	draw_rect(body, PixelUI.COL_HINT, true)
-	_outline(body, Color("0c0a14"))
+	_outline(body, Color("cfe3f2"))
 	# 锁梁（方拱）
 	var aw := s * 0.7
 	_vline(center.x - aw / 2.0, center.y - s * 0.6, s * 0.6, PixelUI.COL_HINT)
 	_vline(center.x + aw / 2.0, center.y - s * 0.6, s * 0.6, PixelUI.COL_HINT)
 	_hline(center.x - aw / 2.0, center.y - s * 0.6, aw, PixelUI.COL_HINT)
 	# 锁孔
-	draw_rect(Rect2(center.x - 1.5, center.y + s * 0.28, 3, s * 0.34), Color("0c0a14"), true)
+	draw_rect(Rect2(center.x - 1.5, center.y + s * 0.28, 3, s * 0.34), Color("cfe3f2"), true)
 
 func _text(s: String, x: float, y_top: float, fsize: int, c: Color, align := HORIZONTAL_ALIGNMENT_LEFT, w := -1.0) -> void:
 	draw_string(FONT, Vector2(x, y_top + FONT.get_ascent(fsize)), s, align, w, fsize, c)

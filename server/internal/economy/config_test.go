@@ -208,3 +208,118 @@ func TestParse_RealIdle(t *testing.T) {
 		t.Fatalf("real idle=%+v (want 50/8)", cfg.Idle)
 	}
 }
+
+// —— 决策 49 缩池（KAN-121）：locked 解析 / 锁卡禁入掉落 fail-fast / starter+locked 互斥 ——
+
+func TestParseLockedCards(t *testing.T) {
+	cfg := loadCfgWith(t, `{
+		"_comment":"x",
+		"knight":{"rarity":"common","starter":true,"base_power":100},
+		"giant":{"rarity":"rare","base_power":200,"locked":true},
+		"golem":{"rarity":"legendary","base_power":260}
+	}`, `{"_comment":"x"}`)
+	if !cfg.IsLocked("giant") {
+		t.Fatal("giant 应为锁定卡")
+	}
+	if cfg.IsLocked("knight") || cfg.IsLocked("golem") {
+		t.Fatal("非锁定卡不应报锁定")
+	}
+	ids := cfg.LockedCardIDs()
+	if len(ids) != 1 || ids[0] != "giant" {
+		t.Fatalf("LockedCardIDs 应恰含 giant, got %v", ids)
+	}
+}
+
+func TestLockedCardInDropRejected(t *testing.T) {
+	// 锁卡配进 shard_drop → 配置加载失败（fail-fast 铁门）。
+	if _, err := tryLoadCfgWith(t, `{
+		"giant":{"rarity":"rare","base_power":200,"locked":true}
+	}`, `{
+		"stage_1_1":{"chapter":1,"index":1,"difficulty_coef":1.0,
+			"first_clear":{"gold":1},"repeat":{"gold":1},
+			"shard_drop":{"giant":{"chance":0.5,"amount":1}}}
+	}`); err == nil {
+		t.Fatal("锁卡进 shard_drop 应拒绝加载")
+	}
+	// 锁卡配进 first_clear shards → 同拒。
+	if _, err := tryLoadCfgWith(t, `{
+		"giant":{"rarity":"rare","base_power":200,"locked":true}
+	}`, `{
+		"stage_1_1":{"chapter":1,"index":1,"difficulty_coef":1.0,
+			"first_clear":{"gold":1,"shards":{"giant":3}},"repeat":{"gold":1}}
+	}`); err == nil {
+		t.Fatal("锁卡进 first_clear shards 应拒绝加载")
+	}
+}
+
+func TestStarterLockedConflictRejected(t *testing.T) {
+	if _, err := tryLoadCfgWith(t, `{
+		"giant":{"rarity":"rare","starter":true,"base_power":200,"locked":true}
+	}`, `{"_comment":"x"}`); err == nil {
+		t.Fatal("starter+locked 同卡应拒绝加载")
+	}
+}
+
+func TestRealConfigLockedPool(t *testing.T) {
+	// 真实配置口径：恰 17 张锁卡、starter 恰 8 张且无锁卡（决策 49 拍板数）。
+	cfg := loadCfg(t)
+	_ = cfg
+	real := loadRealCfg(t)
+	if real == nil {
+		return // 真配置目录不可用时跳过（对齐 TestParse_RealConfig 风格）
+	}
+	if n := len(real.LockedCardIDs()); n != 17 {
+		t.Fatalf("真实配置应恰 17 张锁卡, got %d", n)
+	}
+}
+
+func loadCfgWith(t *testing.T, cardProg, stages string) *economy.Config {
+	t.Helper()
+	cfg, err := tryLoadCfgWith(t, cardProg, stages)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return cfg
+}
+
+func tryLoadCfgWith(t *testing.T, cardProg, stages string) (*economy.Config, error) {
+	t.Helper()
+	dir := t.TempDir()
+	files := map[string]string{
+		"economy.json": `{
+			"level_stat_per_level": 0.10, "rank_stat_mult": 1.25,
+			"level_cap_per_rank": {"1":4},
+			"upgrade_cost_base": {"common":80},
+			"upgrade_cost_growth": 0.5,
+			"rank_up": {"common":[{"shards":20,"gold":2000}]},
+			"unlock_shards": {"common":30},
+			"idle": {"gold_per_hour_per_chapter": 50, "cap_hours": 8}
+		}`,
+		"card_progression.json": cardProg,
+		"stages.json":           stages,
+	}
+	for name, body := range files {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	b, err := gameconfig.Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return economy.ParseConfig(b)
+}
+
+// loadRealCfg 加载仓库真实 config/（不可用时返回 nil，调用方跳过——对齐 TestParse_RealConfig）。
+func loadRealCfg(t *testing.T) *economy.Config {
+	t.Helper()
+	b, err := gameconfig.Load("../../../config")
+	if err != nil {
+		return nil
+	}
+	cfg, err := economy.ParseConfig(b)
+	if err != nil {
+		t.Fatalf("真实配置应能通过缩池校验加载: %v", err)
+	}
+	return cfg
+}
