@@ -23,7 +23,7 @@
  "chapters": [
   {
    "chapter": 1,
-   "name": "黄巾之乱",
+   "name": "绿绿草原",
    "base_level": "ladder_01",
    "ai_base": "rookie",
    "ai_boss": "easy",
@@ -40,7 +40,7 @@
   },
   {
    "chapter": 2,
-   "name": "虎牢讨董",
+   "name": "蘑菇森林",
    "base_level": "ladder_01",
    "ai_base": "easy",
    "ai_boss": "normal",
@@ -57,7 +57,7 @@
   },
   {
    "chapter": 3,
-   "name": "群雄割据",
+   "name": "潺潺河谷",
    "base_level": "ladder_01",
    "ai_base": "easy",
    "ai_boss": "normal",
@@ -74,7 +74,7 @@
   },
   {
    "chapter": 4,
-   "name": "官渡之战",
+   "name": "花花平原",
    "base_level": "ladder_01",
    "ai_base": "normal",
    "ai_boss": "hard",
@@ -92,7 +92,7 @@
   },
   {
    "chapter": 5,
-   "name": "荆州风云",
+   "name": "迷雾沼泽",
    "base_level": "ladder_01",
    "ai_base": "normal",
    "ai_boss": "hard",
@@ -109,7 +109,7 @@
   },
   {
    "chapter": 6,
-   "name": "赤壁之战",
+   "name": "石头山道",
    "base_level": "ladder_01",
    "ai_base": "normal",
    "ai_boss": "hard",
@@ -126,7 +126,7 @@
   },
   {
    "chapter": 7,
-   "name": "汉中争锋",
+   "name": "松林雪线",
    "base_level": "ladder_01",
    "ai_base": "hard",
    "ai_boss": "hard",
@@ -143,7 +143,7 @@
   },
   {
    "chapter": 8,
-   "name": "荆襄烽火",
+   "name": "雪山之巅",
    "base_level": "ladder_01",
    "ai_base": "hard",
    "ai_boss": "extreme",
@@ -160,7 +160,7 @@
   },
   {
    "chapter": 9,
-   "name": "夷陵之火",
+   "name": "熔岩边境",
    "base_level": "ladder_01",
    "ai_base": "hard",
    "ai_boss": "extreme",
@@ -177,7 +177,7 @@
   },
   {
    "chapter": 10,
-   "name": "三分天下",
+   "name": "王城决战",
    "base_level": "ladder_01",
    "ai_base": "extreme",
    "ai_boss": "extreme",
