@@ -7,15 +7,15 @@
 extends "res://view/ui/modal.gd"
 
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
-const FONT := preload("res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf")
+const FONT := preload("res://assets/fonts/ZCOOLKuaiLe-Regular.ttf")
 
 const T_OPEN := 0.6     # 抖动→弹开
 const T_STARS := 0.85   # 星级开始
 const T_REWARD := 1.45  # 奖励滚动开始
 const T_BTN := 2.05     # 继续按钮出现
 
-const CHEST_BODY := Color("6b4a2a"); const CHEST_LITE := Color("8a6336")
-const CHEST_DARK := Color("3f2c19"); const CHEST_EDGE := Color("1d130a")
+const CHEST_BODY := Color("7fa8c8"); const CHEST_LITE := Color("7fb4d9")
+const CHEST_DARK := Color("8fb8d8"); const CHEST_EDGE := Color("bcd9ef")
 
 var _t := 0.0
 var _stars := 0

@@ -15,9 +15,9 @@ const RewardChestScript := preload("res://view/ui/reward_chest.gd")
 const BG_TEX := preload("res://assets/ui/menu_bg.png")
 
 
-const ROW_CLEARED_BG := Color("1f2a24"); const ROW_CLEARED_BD := Color("3b6d3a")
-const ROW_CURRENT_BG := Color("2a2110"); const ROW_CURRENT_BD := Color("ecb94e")
-const ROW_LOCKED_BG := Color("1a1622");  const ROW_LOCKED_BD := Color("38324e")
+const ROW_CLEARED_BG := Color("e4f4dc"); const ROW_CLEARED_BD := Color("7cc36a")
+const ROW_CURRENT_BG := Color("96701e"); const ROW_CURRENT_BD := Color("3d9be0")
+const ROW_LOCKED_BG := Color("eef6fc");  const ROW_LOCKED_BD := Color("dceefc")
 
 var _http: HTTPRequest
 var _wallet_holder: Control
@@ -80,7 +80,7 @@ func _build_static() -> void:
 func _build_static_land() -> void:
 	var strip := Panel.new()
 	strip.size = Vector2(1280, 72)
-	strip.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("16110c"), 3, Color("2b1e12")))
+	strip.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("ffffff"), 3, Color("a9d3ee")))
 	strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(strip)
 	var back := Button.new()
@@ -105,7 +105,7 @@ func _build_static_land() -> void:
 	var rail := Panel.new()
 	rail.position = Vector2(0, 72)
 	rail.size = Vector2(300, 648)
-	rail.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("16110c"), 3, Color("2b1e12")))
+	rail.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("ffffff"), 3, Color("a9d3ee")))
 	add_child(rail)
 	var cscroll := ScrollContainer.new()
 	cscroll.position = Vector2(14, 90)
@@ -332,7 +332,7 @@ func _stage_card(sid: String, st: Dictionary, state: String, cache) -> Control:
 	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(badge)
 	card.add_child(_row_label("%d-%d" % [int(st.get("chapter", 0)), int(st.get("index", 0))],
-			Vector2(14, 30), 20, Color("141019") if state == "current" else PixelUI.COL_PARCHMENT,
+			Vector2(14, 30), 20, Color("e2eff9") if state == "current" else PixelUI.COL_PARCHMENT,
 			HORIZONTAL_ALIGNMENT_CENTER, 56))
 	card.add_child(_row_label(_stage_name(st), Vector2(84, 26), 20,
 			PixelUI.COL_GOLD if state == "current" else PixelUI.COL_PARCHMENT, HORIZONTAL_ALIGNMENT_LEFT, 130))
@@ -398,7 +398,7 @@ func _stage_row(sid: String, st: Dictionary, state: String, cache) -> Control:
 	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(badge)
 	row.add_child(_row_label("%d-%d" % [int(st.get("chapter", 0)), int(st.get("index", 0))],
-			Vector2(14, 30), 20, Color("141019") if state == "current" else PixelUI.COL_PARCHMENT, HORIZONTAL_ALIGNMENT_CENTER, 52))
+			Vector2(14, 30), 20, Color("e2eff9") if state == "current" else PixelUI.COL_PARCHMENT, HORIZONTAL_ALIGNMENT_CENTER, 52))
 	# 名 + 副
 	row.add_child(_row_label(_stage_name(st), Vector2(84, 14), 22,
 			PixelUI.COL_GOLD if state == "current" else PixelUI.COL_PARCHMENT, HORIZONTAL_ALIGNMENT_LEFT, 340))
@@ -489,10 +489,10 @@ func _icon_label(text: String, pos: Vector2, fs: int, col: Color) -> Label:
 	return _row_label(text, pos, fs, col, HORIZONTAL_ALIGNMENT_CENTER, 100)
 
 func _title(text: String, y: float, fs: int) -> void:
-	for off in [Vector2(3, 3), Vector2(-3, 3), Vector2(3, -3), Vector2(-3, -3)]:
-		var s := _center_label(text, y, fs, PixelUI.COL_OUTLINE)
-		s.position += off
-	_center_label(text, y, fs, PixelUI.COL_GOLD)
+	# 决策 49 换肤：原生 outline 取代 4-label 偏移描边（圆体字下偏移法成重影；白边保对比）
+	var l := _center_label(text, y, fs, PixelUI.COL_GOLD)
+	l.add_theme_color_override("font_outline_color", Color.WHITE)
+	l.add_theme_constant_override("outline_size", 10)
 
 func _center_label(text: String, y: float, fs: int, col: Color) -> Label:
 	var l := Label.new()

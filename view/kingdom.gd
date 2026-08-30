@@ -129,7 +129,7 @@ var _collect_btn: Button
 func _ready() -> void:
 	_land = GameStateScript.ui_layout() == "landscape"
 	AudioManager.play_music("music_main_menu")
-	_font = load("res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf")
+	_font = load("res://assets/fonts/ZCOOLKuaiLe-Regular.ttf")
 	_init_view()
 	_build_roads()
 	_spawn_walkers()
@@ -290,7 +290,7 @@ func _draw_walls() -> void:
 				Rect2(_k2s(corner - Vector2(post.x * 0.5, post.y * 0.62)), post * _scale), false)
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, Vector2(1280, 1280)), Color("100c18"))   # 图外露夜色底
+	draw_rect(Rect2(Vector2.ZERO, Vector2(1280, 1280)), Color("d8ecfa"))   # 图外露夜色底
 	_draw_tiled_scene()
 	var kd = GameStateScript.kingdom()
 	var items: Array = []   # [screen_ground_y, seq, kind, payload]
@@ -458,7 +458,7 @@ func _build_hud() -> void:
 	var bar := Panel.new()
 	bar.position = Vector2(0, 0)
 	bar.size = Vector2(1280, 92) if _land else Vector2(720, 118)
-	bar.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color(0.07, 0.06, 0.10, 0.86), 3, Color("2b1e12")))
+	bar.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color(1.0, 1.0, 1.0, 0.9), 3, Color("a9d3ee")))
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bar)
 	_pin_label("王国领地", Vector2(28, 12) if _land else Vector2(28, 12), 26, PixelUI.COL_GOLD)

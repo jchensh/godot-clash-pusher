@@ -104,9 +104,10 @@ func _center_label(text: String, y: float, fs: int, col: Color) -> Label:
 	return _pin(self, text, Vector2(0, y), Vector2(720, float(fs) + 16.0), fs, col, HORIZONTAL_ALIGNMENT_CENTER)
 
 func _title(text: String, y: float, fs: int) -> void:
-	for off in [Vector2(3, 3), Vector2(-3, 3), Vector2(3, -3), Vector2(-3, -3)]:
-		_pin(self, text, Vector2(off.x, y + off.y), Vector2(720, float(fs) + 16.0), fs, PixelUI.COL_OUTLINE, HORIZONTAL_ALIGNMENT_CENTER)
-	_pin(self, text, Vector2(0, y), Vector2(720, float(fs) + 16.0), fs, PixelUI.COL_GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+	# 决策 49 换肤：原生 outline 取代 4-label 偏移描边（圆体字下偏移法成重影；白边保对比）
+	var l := _pin(self, text, Vector2(0, y), Vector2(720, float(fs) + 16.0), fs, PixelUI.COL_GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+	l.add_theme_color_override("font_outline_color", Color.WHITE)
+	l.add_theme_constant_override("outline_size", 10)
 
 func _button(text: String, pos: Vector2, size: Vector2, kind: String, cb: Callable) -> Button:
 	var b := Button.new()

@@ -32,16 +32,16 @@ const HUD_BOTTOM_H := 176.0
 const DROP_LIFT_TILES := 1.6                    # 落点抬到手指上方（拇指不遮挡，CR 式）
 
 # —— 色板（对齐 PixelUI 夜色石板）——
-const COL_BG := Color(0.10, 0.12, 0.11)
-const COL_SELF := Color(0.35, 0.60, 1.0)        # 本方（不论 side，颜色统一蓝）
-const COL_FOE := Color(1.0, 0.42, 0.38)         # 敌方
+const COL_BG := Color(0.85, 0.93, 0.98)
+const COL_SELF := Color(0.13, 0.42, 0.78)        # 本方（不论 side，颜色统一蓝）
+const COL_FOE := Color(0.82, 0.24, 0.20)         # 敌方
 const COL_ELIXIR := Color(0.80, 0.33, 0.96)
-const COL_PANEL := Color(0.10, 0.08, 0.14, 0.96)
-const COL_PANEL_EDGE := Color(0.34, 0.30, 0.45)
+const COL_PANEL := Color(0.93, 0.97, 1.0, 0.96)
+const COL_PANEL_EDGE := Color(0.66, 0.83, 0.93)
 const COL_OK := Color(0.45, 1.0, 0.55)
 const COL_BAD := Color(1.0, 0.42, 0.40)
-const COL_CARD_BG := Color(0.23, 0.21, 0.32, 0.96)
-const COL_CARD_SEL := Color(0.40, 0.33, 0.16, 0.97)
+const COL_CARD_BG := Color(0.86, 0.93, 0.99, 0.96)
+const COL_CARD_SEL := Color(1.0, 0.87, 0.45, 0.97)
 const COL_CROWN := Color(0.925, 0.725, 0.305)
 const COL_MUTED := Color(0.7, 0.7, 0.75)
 
@@ -182,7 +182,7 @@ var _end_buttons_added := false
 func _ready() -> void:
 	_landscape = true   # 决策 49：联机战斗恒竖屏横板（横版投影 × side2 复合保留）
 	Log.i("[net] 版式=%s" % ("横版(H6·我左敌右)" if _landscape else "竖版"))
-	_font = load("res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf")
+	_font = load("res://assets/fonts/ZCOOLKuaiLe-Regular.ttf")
 	_loader = GameStateScript.config()
 	_http = HTTPRequest.new()
 	add_child(_http)
@@ -724,7 +724,7 @@ func _draw_topbar() -> void:
 	_draw_crowns(Vector2(_vw - 150, 8), foe_crowns, COL_FOE)
 	# 倒计时：低于 30s 红色脉动强调
 	var t: float = _client.match_obj.battle.remaining_time()
-	var tcol := Color.WHITE
+	var tcol := Color(0.20, 0.33, 0.45)
 	var tsize := 24
 	if t <= 30.0:
 		var pulse: float = 0.5 + 0.5 * sin(_elapsed * 6.0)
@@ -1308,7 +1308,7 @@ func _draw_cards() -> void:
 			_draw_card_art(cid, pos + Vector2(sz.x * 0.5, sz.y * 0.54), minf(sz.x, sz.y) * 0.66)
 			var cost: int = lp.card_cost(cid)
 			var affordable: bool = e.get_int() >= cost
-			_text(pos + Vector2(7, 22), _short(tr("card_" + cid), 10), Color.WHITE if affordable else Color(0.62, 0.62, 0.66), 14)
+			_text(pos + Vector2(7, 22), _short(tr("card_" + cid), 10), Color(0.16, 0.28, 0.40) if affordable else Color(0.42, 0.50, 0.58), 15)
 			draw_circle(pos + Vector2(15, sz.y - 15), 11.0, COL_ELIXIR)
 			_text(pos + Vector2(11, sz.y - 10), "%d" % cost, Color.WHITE, 14)
 			if not affordable:

@@ -31,7 +31,7 @@ func _build() -> void:
 	var panel := Panel.new()
 	panel.position = Vector2(60, 420)
 	panel.size = Vector2(600, 380)
-	panel.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color(0.10, 0.08, 0.14, 0.97), 3, Color("4a3a14")))
+	panel.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color(0.10, 0.08, 0.14, 0.97), 3, Color("a87b1a")))
 	add_child(panel)
 	_title = _lbl(panel, Vector2(0, 22), 30, PixelUI.COL_GOLD)
 	_lv = _lbl(panel, Vector2(0, 66), 22, PixelUI.COL_PARCHMENT)

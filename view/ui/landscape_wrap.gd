@@ -112,13 +112,13 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _draw() -> void:
 	var vs := size
-	draw_rect(Rect2(Vector2.ZERO, vs), Color("100c18"))   # 夜色底（两侧边距/缩放留边）
+	draw_rect(Rect2(Vector2.ZERO, vs), Color("d8ecfa"))   # 夜色底（两侧边距/缩放留边）
 	if _mode != "scroll":
 		return
 	var x0: float = (vs.x - CANVAS.x) * 0.5
 	# 立柱两缘细描边（分隔装饰边与页面）
-	draw_rect(Rect2(x0 - 3.0, 0.0, 3.0, vs.y), Color("3a3352"))
-	draw_rect(Rect2(x0 + CANVAS.x, 0.0, 3.0, vs.y), Color("3a3352"))
+	draw_rect(Rect2(x0 - 3.0, 0.0, 3.0, vs.y), Color("dceefc"))
+	draw_rect(Rect2(x0 + CANVAS.x, 0.0, 3.0, vs.y), Color("dceefc"))
 	if _max_scroll() > 0.0:   # 右缘滚动指示条
 		var track_h: float = vs.y - 16.0
 		var bar_h: float = maxf(40.0, track_h * vs.y / CANVAS.y)

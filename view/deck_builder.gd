@@ -15,7 +15,7 @@ const TROOP_BG := Color(0.20, 0.30, 0.42)
 const TROOP_BORDER := Color(0.45, 0.62, 0.85)
 const SPELL_BG := Color(0.34, 0.22, 0.44)
 const SPELL_BORDER := Color(0.74, 0.55, 0.95)
-const GOLD := Color("ecb94e")
+const GOLD := Color("3d9be0")
 const SLOT_FILLED_BG := Color(0.18, 0.24, 0.20)
 const SLOT_EMPTY_BG := Color(0.12, 0.14, 0.13)
 
@@ -160,7 +160,7 @@ func _build() -> void:
 func _build_land(subtitle: String) -> void:
 	var strip := Panel.new()
 	strip.size = Vector2(1280, 72)
-	strip.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("16110c"), 3, Color("2b1e12")))
+	strip.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("ffffff"), 3, Color("a9d3ee")))
 	strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(strip)
 	var back := Button.new()
@@ -178,7 +178,7 @@ func _build_land(subtitle: String) -> void:
 	var rail := Panel.new()
 	rail.position = Vector2(0, 72)
 	rail.size = Vector2(360, 648)
-	rail.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("16110c"), 3, Color("2b1e12")))
+	rail.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("ffffff"), 3, Color("a9d3ee")))
 	add_child(rail)
 	_pin_label(tr("deck_your"), Vector2(20, 84), Vector2(320, 28), 24, PixelUI.COL_PARCHMENT,
 			HORIZONTAL_ALIGNMENT_LEFT)
@@ -390,10 +390,10 @@ func _scale_to(c: Control, s: float) -> void:
 	create_tween().tween_property(c, "scale", Vector2(s, s), 0.07)
 
 func _title(text: String, y: float, fs: int) -> void:
-	for off in [Vector2(3, 3), Vector2(-3, 3), Vector2(3, -3), Vector2(-3, -3)]:
-		var s := _center_label(text, y, fs, PixelUI.COL_OUTLINE)
-		s.position += off
-	_center_label(text, y, fs, PixelUI.COL_GOLD)
+	# 决策 49 换肤：原生 outline 取代 4-label 偏移描边（圆体字下偏移法成重影；白边保对比）
+	var l := _center_label(text, y, fs, PixelUI.COL_GOLD)
+	l.add_theme_color_override("font_outline_color", Color.WHITE)
+	l.add_theme_constant_override("outline_size", 10)
 
 func _center_label(text: String, y: float, font_size: int, color: Color) -> Label:
 	return _pin_label(text, Vector2(0, y), Vector2(720, float(font_size) + 16.0), font_size, color, HORIZONTAL_ALIGNMENT_CENTER)

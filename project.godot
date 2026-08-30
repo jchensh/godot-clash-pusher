@@ -40,7 +40,7 @@ enabled=PackedStringArray("res://addons/godot_ai/plugin.cfg")
 
 [gui]
 
-theme/custom_font="res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf"
+theme/custom_font="res://assets/fonts/ZCOOLKuaiLe-Regular.ttf"
 
 [rendering]
 

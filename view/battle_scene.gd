@@ -25,12 +25,12 @@ const PveRecorderScript = preload("res://net/pve_recorder.gd")         # KAN-79 
 const TOPBAR_H := 54.0
 const HUD_BOTTOM_H := 176.0
 
-const COL_BG := Color(0.10, 0.12, 0.11)
-const COL_PLAYER := Color(0.35, 0.60, 1.0)
-const COL_OPPONENT := Color(1.0, 0.42, 0.38)
+const COL_BG := Color(0.85, 0.93, 0.98)
+const COL_PLAYER := Color(0.13, 0.42, 0.78)
+const COL_OPPONENT := Color(0.82, 0.24, 0.20)
 const COL_ELIXIR := Color(0.80, 0.33, 0.96)
-const COL_PANEL := Color(0.10, 0.08, 0.14, 0.96)   # HUD 底，对齐 PixelUI 夜色石板
-const COL_PANEL_EDGE := Color(0.34, 0.30, 0.45)    # HUD 底板像素高光描边
+const COL_PANEL := Color(0.93, 0.97, 1.0, 0.96)   # HUD 底（决策 49 换肤：天空牧场淡色）
+const COL_PANEL_EDGE := Color(0.66, 0.83, 0.93)    # HUD 底板像素高光描边
 const COL_OK := Color(0.45, 1.0, 0.55)        # 落点合法（ghost/高亮）
 const COL_BAD := Color(1.0, 0.42, 0.40)       # 落点非法
 
@@ -54,8 +54,8 @@ const HITSTOP_DMG := 200.0                      # 触发顿帧的单次伤害阈
 const HITSTOP_DUR := 0.06                       # 顿帧（冻结 sim）时长
 
 # —— V3-6c HUD 反馈 ——
-const COL_CARD_BG := Color(0.23, 0.21, 0.32, 0.96)    # 卡面底 = PixelUI 石板
-const COL_CARD_SEL := Color(0.40, 0.33, 0.16, 0.97)   # 选中卡 = 暗金
+const COL_CARD_BG := Color(0.86, 0.93, 0.99, 0.96)    # 卡面底 = PixelUI 石板
+const COL_CARD_SEL := Color(1.0, 0.87, 0.45, 0.97)   # 选中卡 = 暗金
 const COL_CROWN := Color(0.925, 0.725, 0.305)         # 王冠/强调金 = PixelUI COL_GOLD
 
 # —— V3-6d 胜负演出 ——
@@ -178,7 +178,7 @@ func _ready() -> void:
 	# 但 player/battle 要等 await 后的 setup_stage 才建。处理默认开启会让 _process 在 await 窗口跑到
 	# _sync_cards 访问 match_obj.player(Nil) 每帧报错卡死。故先关处理，末尾 setup 完再 set_process(true)。
 	set_process(false)
-	_font = load("res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf")
+	_font = load("res://assets/fonts/ZCOOLKuaiLe-Regular.ttf")
 	loader = GameStateScript.config()
 	match_obj = MatchScript.new(loader)
 	var run = GameStateScript.run
@@ -658,7 +658,7 @@ func _draw_topbar() -> void:
 	_draw_crowns(Vector2(_vw - 150, 8), o_crowns, COL_OPPONENT)
 	# 倒计时：低于 30s 红色脉动强调
 	var t: float = match_obj.battle.remaining_time()
-	var tcol := Color.WHITE
+	var tcol := Color(0.20, 0.33, 0.45)
 	var tsize := 24
 	if t <= 30.0:
 		var pulse: float = 0.5 + 0.5 * sin(_elapsed * 6.0)
@@ -1157,7 +1157,7 @@ func _draw_cards() -> void:
 			_draw_card_art(cid, pos + Vector2(sz.x * 0.5, sz.y * 0.54), minf(sz.x, sz.y) * 0.66)
 			var cost: int = match_obj.player.card_cost(cid)
 			var affordable: bool = e.get_int() >= cost
-			_text(pos + Vector2(7, 22), _short(tr("card_" + cid), 10), Color.WHITE if affordable else Color(0.62, 0.62, 0.66), 14)
+			_text(pos + Vector2(7, 22), _short(tr("card_" + cid), 10), Color(0.16, 0.28, 0.40) if affordable else Color(0.42, 0.50, 0.58), 15)
 			draw_circle(pos + Vector2(15, sz.y - 15), 11.0, COL_ELIXIR)
 			_text(pos + Vector2(11, sz.y - 10), "%d" % cost, Color.WHITE, 14)
 			if not affordable:

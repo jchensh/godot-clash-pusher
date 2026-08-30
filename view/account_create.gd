@@ -72,8 +72,8 @@ func _build() -> void:
 		_name_edit.max_length = 40   # 粗上限（真正限制走宽度校验）；防超长粘贴
 		_name_edit.add_theme_font_size_override("font_size", 36)
 		_name_edit.add_theme_color_override("font_color", Color(1, 1, 1))
-		_name_edit.add_theme_stylebox_override("normal", PixelUI.sbpixel(Color("1c1626"), 3, Color("4a3a14")))
-		_name_edit.add_theme_stylebox_override("focus", PixelUI.sbpixel(Color("241c30"), 3, PixelUI.COL_GOLD))
+		_name_edit.add_theme_stylebox_override("normal", PixelUI.sbpixel(Color("f4faff"), 3, Color("a87b1a")))
+		_name_edit.add_theme_stylebox_override("focus", PixelUI.sbpixel(Color("f0f7fd"), 3, PixelUI.COL_GOLD))
 		_name_edit.text_changed.connect(_on_name_changed)
 		add_child(_name_edit)
 		_counter = _center_label("0 / 10", 408, 22, PixelUI.COL_HINT)
@@ -233,10 +233,10 @@ func _on_confirm() -> void:
 
 # ---------- ui builders（沿用 base_camp 范式）----------
 func _title(text: String, y: float, fs: int) -> void:
-	for off in [Vector2(3, 3), Vector2(-3, 3), Vector2(3, -3), Vector2(-3, -3)]:
-		var s := _center_label(text, y, fs, PixelUI.COL_OUTLINE)
-		s.position += off
-	_center_label(text, y, fs, PixelUI.COL_GOLD)
+	# 决策 49 换肤：原生 outline 取代 4-label 偏移描边（圆体字下偏移法成重影；白边保对比）
+	var l := _center_label(text, y, fs, PixelUI.COL_GOLD)
+	l.add_theme_color_override("font_outline_color", Color.WHITE)
+	l.add_theme_constant_override("outline_size", 10)
 
 func _center_label(text: String, y: float, font_size: int, color: Color) -> Label:
 	var l := Label.new()
