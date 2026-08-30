@@ -1285,6 +1285,19 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
   - Web 前端生产包已部署完成，访问 `https://tower-push-godot.web.app` 可直接实测 0726 王国 16 建筑与 H6 横版 PVP。
 
 
+### V5-E2 / Release d257282 — 决策 49 卡通改版全线上线部署与真人验收 (2026-08-30)
+- **部署内容**：
+  - 合并 `master` 决策 49 卡通改版全线（提交 `d257282`）：P1 竖屏横板战斗（26×30 新盘面、21 套卡通角色切帧、31/48 锁卡闭环）+ P2 题材文本换皮（定名《萌萌对垒 / Cuddly Clash》、48 卡名重构）+ P3 王国拼接城建（16 卡通建筑）+ UI 天空牧场换肤（站酷快乐体）+ P4 红蓝阵营塔/王塔废墟。
+  - 服务端升级：卡池锁定 fail-fast 校验门禁、GM 跳过锁卡逻辑；数据库 schema 维持在 v9（无需跑新 migration）。
+- **部署过程**：
+  - **云端后端**：通过 IAP SSH 连入 GCP VM `towerpush-backend` 同步代码，`docker compose up -d --build` 重建镜像并拉起容器；遵守反作弊铁律执行 `docker restart server-verifier-1` 重启验签服务。
+  - **前端分发**：本地运行 `tools/build_web.ps1` 导出 Web 客户端并注入生产端点，通过 `firebase deploy` 发布至 `https://tower-push-godot.web.app`。
+  - **健康度与探活**：`https://towerpushserver.jeffgame.tech/healthz` 响应 200 OK，Caddy TLS 与 WS 网关正常；Web 前端成功加载。
+- **验收结果**：
+  - **真人实机在 Web 前端全流程验收通过**，前后端联调稳定，正式线上环境发布完成。
+
+
+
 
 
 
