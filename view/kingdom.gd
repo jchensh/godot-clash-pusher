@@ -82,19 +82,14 @@ const WALL_TOP_Y := 230.0      # 顶墙中线
 const WALL_BOT_Y := 1500.0     # 底墙中线
 const WALL_LEFT_X := 90.0      # 左墙中线
 const WALL_RIGHT_X := 1350.0   # 右墙中线
-const GATE_GAP := 220.0        # 底墙城门开口宽（城门贴图骑缝）
-# 路网段（BG 系矩形，按示意图复刻主干；真人验收可调）
-const ROAD_SEGS := [
-	Rect2(678, 880, 64, 660),     # 主干：城门→中横
-	Rect2(340, 830, 720, 64),     # 中横：采石场支→炼铁厂支
-	Rect2(348, 450, 64, 380),     # 左上支：采石场→中横
-	Rect2(678, 650, 64, 230),     # keep 支：城堡门→中横
-	Rect2(1083, 440, 64, 454),    # 右支：农田→炼铁厂→中横
-	Rect2(248, 700, 64, 530),     # 左支：魔法工坊→魔法书院→枪兵营
-	Rect2(312, 1166, 366, 64),    # 左下横：枪兵营→弩兵营→主干
-	Rect2(742, 1166, 420, 64),    # 右下横：主干→骑兵营→药剂工坊
-	Rect2(880, 590, 64, 240),     # 牧场支：牧场→中横
-]
+const GATE_GAP := 220.0        # 底墙城门开口宽（< 城门贴图宽 253，门体骑缝盖住接缝）
+# 路网＝运行时按 SLOTS 生成（0830 验收反馈：手标表与建筑对不齐）——
+# 干线（竖主干 城堡→城门 + 中/下横干）+ 每建筑门口垂直支路；建筑挪位路自动跟随。
+const ROAD_W := 64.0
+const ROAD_MID_Y := 850.0      # 中横干中线
+const ROAD_LOW_Y := 1198.0     # 下横干中线（下排四营/药剂工坊门口贴线，无需支路）
+const ROAD_SPUR_BUILDINGS := ["quarry", "farm", "workshop", "ranch", "stoneworks",
+		"ironworks", "camp_infantry", "granary", "shop"]
 # 装饰散点（kind, pos=底边中心；示意图角落感）
 const DECO_ITEMS := [
 	["tree1", Vector2(180, 350)], ["tree2", Vector2(1260, 320)], ["tree3", Vector2(1300, 560)],
@@ -136,6 +131,7 @@ func _ready() -> void:
 	AudioManager.play_music("music_main_menu")
 	_font = load("res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf")
 	_init_view()
+	_build_roads()
 	_spawn_walkers()
 	_build_hud()
 	Events.kingdom_changed.connect(_on_kingdom_changed)
@@ -147,7 +143,7 @@ func _ready() -> void:
 
 # ---------- 视野/小人（纯表现）----------
 func _init_view() -> void:
-	var vs := Vector2(1280, 720) if _land else Vector2(720, 1280)
+	var vs := get_viewport_rect().size   # 0830 修复：跟随实际视口（P1-3 改 750×1334 后旧硬编码致边缘露底）
 	_scale = 1280.0 / BG_SIZE.x   # 横竖同缩放（0726 验收：竖屏拉近对齐横屏观感，双向拖动）
 	_pan_max = (BG_SIZE * _scale - vs).max(Vector2.ZERO)
 	var keep_pos: Vector2 = SLOTS["keep"]["pos"]   # 初始视野对准主公府一带
@@ -187,9 +183,27 @@ func _process(delta: float) -> void:
 # ---------- 绘制（地形 → 路 → 空地 → 建筑+小人 Y-sort → 顶饰）----------
 # —— 决策 49 拼接式场景（P3/KAN-123）：地表错位平铺 → 路网 → 围墙 → 装饰。
 # 全部经 _k2s 变换（视野拖动/缩放自动跟随）；建筑/小人仍走原 Y-sort 通道画在其上。
+var _roads: Array = []   # Rect2 路段缓存（_ready 生成）
+
+func _build_roads() -> void:
+	var keep_pos: Vector2 = SLOTS["keep"]["pos"]
+	var trunk_x: float = keep_pos.x - ROAD_W * 0.5
+	_roads = [
+		Rect2(trunk_x, keep_pos.y - 10.0, ROAD_W, 1560.0 - (keep_pos.y - 10.0)),
+		Rect2(248.0, ROAD_MID_Y - ROAD_W * 0.5, 924.0, ROAD_W),
+		Rect2(248.0, ROAD_LOW_Y - ROAD_W * 0.5, 924.0, ROAD_W),
+	]
+	for b in ROAD_SPUR_BUILDINGS:
+		var bp: Vector2 = SLOTS[b]["pos"]
+		var x: float = bp.x - ROAD_W * 0.5
+		if bp.y < ROAD_MID_Y:
+			_roads.append(Rect2(x, bp.y - 14.0, ROAD_W, ROAD_MID_Y - bp.y + 14.0))
+		else:
+			_roads.append(Rect2(x, ROAD_MID_Y, ROAD_W, bp.y - ROAD_MID_Y + 14.0))
+
 func _draw_tiled_scene() -> void:
 	_draw_ground_tiles()
-	for seg in ROAD_SEGS:
+	for seg in _roads:
 		_draw_road_seg(seg as Rect2)
 	_draw_walls()
 	for it in DECO_ITEMS:
@@ -215,29 +229,30 @@ func _draw_ground_tiles() -> void:
 		col += 1
 
 func _draw_road_seg(r: Rect2) -> void:
-	# 路素材 99×420 竖条：竖段直接沿 y 平铺；横段绕段中心转 90° 后按竖段铺。
+	# 路素材 99×420 竖条：竖段直接沿 y 平铺；横段绕段中心转 90° 后在局部系铺
+	# （0830 修复：局部系原点已是段中心屏幕点，只乘 _scale——先前又叠加中心平移致路随镜头漂）。
 	if r.size.y >= r.size.x:
-		_road_strip(r.position, r.size.x, r.size.y, Vector2.ZERO, 0.0)
+		var block: float = r.size.x * (420.0 / 99.0)
+		var y := 0.0
+		while y < r.size.y:
+			var h: float = minf(block, r.size.y - y)
+			draw_texture_rect_region(TEX_ROAD,
+					Rect2(_k2s(r.position + Vector2(0, y)), Vector2(r.size.x, h) * _scale),
+					Rect2(0, 0, 99, 420.0 * h / block))
+			y += h
 	else:
-		var c := _k2s(r.get_center())
-		draw_set_transform(c, PI / 2.0, Vector2.ONE)
-		_road_strip(Vector2(-r.size.y * 0.5, -r.size.x * 0.5), r.size.y, r.size.x, c, -1.0)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-
-func _road_strip(origin: Vector2, w: float, length: float, local_off: Vector2, local_mode: float) -> void:
-	# local_mode<0 = 已处于旋转局部系（origin 为局部坐标，仅乘缩放）；否则 BG 系经 _k2s。
-	var block: float = w * (420.0 / 99.0)
-	var y := 0.0
-	while y < length:
-		var h: float = minf(block, length - y)
-		var src := Rect2(0, 0, 99, 420.0 * h / block)
-		var dst_pos: Vector2
-		if local_mode < 0.0:
-			dst_pos = local_off + (origin + Vector2(0, y)) * _scale
-		else:
-			dst_pos = _k2s(origin + Vector2(0, y))
-		draw_texture_rect_region(TEX_ROAD, Rect2(dst_pos, Vector2(w, h) * _scale), src)
-		y += h
+		draw_set_transform(_k2s(r.get_center()), PI / 2.0, Vector2.ONE)
+		var w: float = r.size.y
+		var length: float = r.size.x
+		var block: float = w * (420.0 / 99.0)
+		var y := -length * 0.5
+		while y < length * 0.5:
+			var h: float = minf(block, length * 0.5 - y)
+			draw_texture_rect_region(TEX_ROAD,
+					Rect2(Vector2(-w * 0.5, y) * _scale, Vector2(w, h) * _scale),
+					Rect2(0, 0, 99, 420.0 * h / block))
+			y += h
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _draw_walls() -> void:
 	var hw := Vector2(167.0, 107.0)   # 横墙段
@@ -248,12 +263,18 @@ func _draw_walls() -> void:
 	var x := WALL_LEFT_X
 	while x < WALL_RIGHT_X:
 		var seg_w: float = minf(hw.x, WALL_RIGHT_X - x)
-		var src := Rect2(0, 0, hw.x * seg_w / hw.x, hw.y)
 		draw_texture_rect_region(TEX_WALL_H,
-				Rect2(_k2s(Vector2(x, WALL_TOP_Y - hw.y * 0.5)), Vector2(seg_w, hw.y) * _scale), src)
-		if x + seg_w <= gate_l or x >= gate_r:   # 底墙城门开口跳过（粗粒度按整段）
+				Rect2(_k2s(Vector2(x, WALL_TOP_Y - hw.y * 0.5)), Vector2(seg_w, hw.y) * _scale),
+				Rect2(0, 0, seg_w, hw.y))
+		# 底墙：与城门开口重叠部分精确裁掉（0830 修复：整段跳过致缺口远大于门体）——
+		# 段可能被开口切成左右两截，src x 随裁剪偏移保纹理连续；开口 220 < 门贴图 253 骑缝盖住。
+		for piece in [Vector2(x, minf(x + seg_w, gate_l)), Vector2(maxf(x, gate_r), x + seg_w)]:
+			var pw: float = piece.y - piece.x
+			if pw <= 0.5:
+				continue
 			draw_texture_rect_region(TEX_WALL_H,
-					Rect2(_k2s(Vector2(x, WALL_BOT_Y - hw.y * 0.5)), Vector2(seg_w, hw.y) * _scale), src)
+					Rect2(_k2s(Vector2(piece.x, WALL_BOT_Y - hw.y * 0.5)), Vector2(pw, hw.y) * _scale),
+					Rect2(piece.x - x, 0, pw, hw.y))
 		x += hw.x
 	for wx in [WALL_LEFT_X, WALL_RIGHT_X]:
 		var y := WALL_TOP_Y
