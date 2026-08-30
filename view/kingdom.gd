@@ -15,7 +15,8 @@ const SpriteDB := preload("res://view/sprite_db.gd")
 const BuildingModal := preload("res://view/ui/kingdom_building_modal.gd")
 
 # —— 场景整图（0726 城建正式素材）——
-const TEX_PLOT := preload("res://assets/kingdom/kingdom_plot.png")   # 「未建造」空地占位图（过渡沿用，KAN-124 欠卡通版）
+# 「未建造」空地：卡通版（KAN-124，tools/gen_kingdom_plot.py 程序生成，色板取自 0830 城建件）。
+const TEX_PLOT := preload("res://assets/kingdom_cartoon/plot.png")
 const TEX_UNIT_SHADOW := preload("res://assets/units/unit_shadow.png")
 const BG_SIZE := Vector2(1440.0, 1830.0)   # 场景坐标系尺寸（沿用 0726 口径；示意图同尺寸）
 

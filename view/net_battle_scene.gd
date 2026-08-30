@@ -69,15 +69,17 @@ const END_BTN_DELAY := 0.85
 
 # —— V3-7 精灵贴图（架构 A：immediate _draw + draw_texture；逻辑零改）——
 # 0721 塔换正式我/敌素材（_flip 已保证本方在下半场；摧毁态另有废墟贴图，箭塔破双方共用）。
-# 决策 49 卡通塔（0830 素材 2 倍交付，footprint 驱动缩放）：单套素材敌我共用、阵营程序调色
-# （美术欠账 KAN-124：敌方配色套 + 王塔废墟——暂以箭塔破共用）。常量名保持 mine/enemy 引用面不动。
-const TEX_TOWER_KING_MINE := preload("res://assets/towers/cartoon_tower_king.png")
-const TEX_TOWER_KING_ENEMY := TEX_TOWER_KING_MINE
-const TEX_TOWER_ARROW_MINE := preload("res://assets/towers/cartoon_tower_arrow.png")
-const TEX_TOWER_ARROW_ENEMY := TEX_TOWER_ARROW_MINE
+# 决策 49 卡通塔（0830 素材 2 倍交付，footprint 驱动缩放）。
+# KAN-124：美术只交付一套（红顶），蓝顶套由 tools/gen_cartoon_towers.py 离线派生
+# （红色系像素旋成蓝色系，石墙木头不动）→ 经典红蓝对立，运行时不再整体乘红。
+# 阵营指派（0830 用户拍板）：我方=蓝 / 敌方=红，与 HUD 的 COL_SELF/COL_FOE 统一。
+# 废墟无阵营色（全是石砾）→ 双方共用一张，归属靠左右半场位置读。
+const TEX_TOWER_KING_MINE := preload("res://assets/towers/cartoon_tower_king_blue.png")
+const TEX_TOWER_KING_ENEMY := preload("res://assets/towers/cartoon_tower_king.png")
+const TEX_TOWER_ARROW_MINE := preload("res://assets/towers/cartoon_tower_arrow_blue.png")
+const TEX_TOWER_ARROW_ENEMY := preload("res://assets/towers/cartoon_tower_arrow.png")
 const TEX_TOWER_ARROW_BROKEN := preload("res://assets/towers/cartoon_tower_arrow_broken.png")
-const TEX_TOWER_KING_MINE_BROKEN := TEX_TOWER_ARROW_BROKEN
-const TEX_TOWER_KING_ENEMY_BROKEN := TEX_TOWER_ARROW_BROKEN
+const TEX_TOWER_KING_BROKEN := preload("res://assets/towers/cartoon_tower_king_broken.png")
 const TEX_EXPLOSION := preload("res://assets/fx/Fire_Explosion_28x28.png")
 const EXPLOSION_FPX := 28
 const EXPLOSION_N := 12
@@ -605,15 +607,13 @@ func _draw_tower_one(t) -> void:
 	var draw_h: float = draw_w * ts.y / ts.x
 	var rx: float = c.x - draw_w * 0.5
 	var ry: float = foot_bottom - draw_h
-	if t.is_destroyed():                                  # 摧毁：0721 正式废墟素材（同宽贴地，比例自算）
-		var btex: Texture2D = TEX_TOWER_ARROW_BROKEN
-		if king:
-			btex = TEX_TOWER_KING_MINE_BROKEN if mine else TEX_TOWER_KING_ENEMY_BROKEN
+	if t.is_destroyed():                                  # 摧毁：废墟素材（同宽贴地，比例自算；敌我共用）
+		var btex: Texture2D = TEX_TOWER_KING_BROKEN if king else TEX_TOWER_ARROW_BROKEN
 		var bts: Vector2 = btex.get_size()
 		var bh: float = draw_w * bts.y / bts.x
 		draw_texture_rect(btex, Rect2(rx, foot_bottom - bh, draw_w, bh), false, Color.WHITE)
 		return
-	var fill: Color = Color.WHITE.lerp(base, 0.12 if mine else 0.40)   # 单套卡通素材：敌方染红加重辨阵营（KAN-124 待正式配色套）
+	var fill: Color = Color.WHITE.lerp(base, 0.12)   # 敌我各有配色套 → 双方同为轻染（阵营靠贴图红/蓝读）
 	var fend: float = _flash.get(t.get_instance_id(), 0.0)
 	if fend > _elapsed:
 		fill = fill.lerp(Color.WHITE, ((fend - _elapsed) / FLASH_DUR) * 0.85)
