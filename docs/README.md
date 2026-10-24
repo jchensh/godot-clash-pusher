@@ -15,7 +15,7 @@
 | [../PLAN_V5_SANGUO.md](../PLAN_V5_SANGUO.md) | 三国题材改版轨道A 施工图（A1~A4） | 🟢 活跃（A4 进行中） |
 | [../PLAN_V5_HBATTLE.md](../PLAN_V5_HBATTLE.md) | 横版战斗施工图（H1~H6） | 🟡 H1/H2 完，H3~H6 未开工 |
 | [../PLAN_V5_UIFRAME.md](../PLAN_V5_UIFRAME.md) | UI 层级骨架改造施工图（F1~F3） | 🟡 代码全完，欠 F 组真人验收 |
-| [../PLAN_V5_3D.md](../PLAN_V5_3D.md) | 全 3D 表现迁移 D0~D9，保留平面 sim 与 2D HUD | 🟢 D0 用户验收通过；D1~D9 未开工；Jira 待补 |
+| [../PLAN_V5_3D.md](../PLAN_V5_3D.md) | 全 3D 表现迁移 D0~D9，保留平面 sim 与 2D HUD | 🟢 D0 用户验收通过；🟢 D1 真人验收通过；D2~D9 未开工；Jira 待补 |
 | [../README.md](../README.md) | 仓库门面（对外简介） | 🟢 |
 
 ## 已收官规划（存档备查，不再更新）
@@ -61,6 +61,7 @@
 | 文档 | 一句话 | 状态 |
 |---|---|---|
 | [ACCEPTANCE_SANGUO.md](ACCEPTANCE_SANGUO.md) | **验收欠账总台账**：三国化 A~F 六组 + 跨线索引 | 🔴 多组欠验收 |
+| [ACCEPTANCE_3D_D1.md](ACCEPTANCE_3D_D1.md) | 3D 战斗 presenter 预览 B1~B10（单位/塔/死亡/翻转/暂停倍速） | ✅ B1~B10 全过；Jira 待补 |
 | [ACCEPTANCE_XIAOXIAO_3D.md](ACCEPTANCE_XIAOXIAO_3D.md) | 小小 3D 骨骼动画与独立展示台（待机/行走/攻击） | 🟡 自动检查通过，待真人验收；Jira 待补 |
 | [ACCEPTANCE_V5_S8.md](ACCEPTANCE_V5_S8.md) | S8e 100 关难度曲线手感（KAN-59） | 🔴 欠验收 |
 | [ACCEPTANCE_V5_PVP_PROGRESSION.md](ACCEPTANCE_V5_PVP_PROGRESSION.md) | PVP 养成同步两机验收（KAN-76/77） | 🔴 欠验收 |
@@ -92,7 +93,7 @@
 | 文档 | 一句话 |
 |---|---|
 | [ENVIRONMENT.md](ENVIRONMENT.md) | 环境搭建 + MCP 安装注册 + 画面验收协议 |
-| [HANDOFF_3D_D1_2026-10-24.md](HANDOFF_3D_D1_2026-10-24.md) | D0 已合入 master；新 agent 从 master 新建工作树继续 D1 的交接 prompt |
+| [HANDOFF_3D_D1_2026-10-24.md](HANDOFF_3D_D1_2026-10-24.md) | D0→D1 交接 prompt（D1 已在 master 实施，见 HISTORY；其中建工作树的要求已按用户新指示作废） |
 | [adr/0004-3d-presentation-flat-simulation.md](adr/0004-3d-presentation-flat-simulation.md) | 用户确认的 3D 表现/平面确定性逻辑边界 |
 | [AGENT_BLENDER_GODOT_WORKFLOW.md](AGENT_BLENDER_GODOT_WORKFLOW.md) | Agent 经 Blender MCP 建模、骨骼动画、GLB 导出和 Godot 展示验收的实作指南 |
 | [HANDOFF_MAC_2026-07-16.md](HANDOFF_MAC_2026-07-16.md) | Windows→Mac 换机交接快照：环境搭建步骤 + 项目状态 + 已知欠账（写作当天快照，以 HISTORY.md 为准） |

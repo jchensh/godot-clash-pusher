@@ -950,3 +950,18 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
 - 更新 PLAN_V5_3D、验收台账和 [D1 handoff](docs/HANDOFF_3D_D1_2026-10-24.md)：下一 session 从最新 master 新建独立 worktree。正式 PvE/PvP/王国仍是原 2D 路径；D0 用户验收通过，D1~D9 未开工，Jira 待连接恢复后补记。
 - 本次 managed worktree 已归档移除（保留可恢复快照，包含本轮未跟踪缓存），验证原路径不存在、worktree 列表已移除；已合并的本地 `codex/xiaoxiao-animation` 分支已删除，远端历史分支保留。其他 worktree 未改动。
 - 合并后 master 导入通过、客户端 **456/456**、小小展示台冒烟及 D0 场地 headless 启动通过；退出资源提示与原基线一致。文档收尾另做 docs commit 后随 master 推送。
+
+### 全 3D 表现迁移 D1 战斗 presenter（2026-10-24，代码+自动检查通过，待真人验收；Jira 待补；未提交）
+
+- 用户指示：D1 **直接在 master 目录开发、不建 worktree**（取代 handoff 中的工作树要求）；同时清理掉 master/release 以外的全部分支与 worktree（`featureZAi`、Codex 临时 worktree、远端 `codex/*`）。`master-zaiDev` 中 master 没有的两个未跟踪文件先备份到 `F:/godotTowerPush/_backup_zaiDev_untracked/`。
+- 新增 `view/three_d/battle_presenter.gd`：只读 Battle 状态，按 Unit/Tower **对象实例 ID** 管理节点（逻辑层 Unit 无唯一 ID，与 2D 战斗同口径）；新单位建节点、消失转死亡表现、播完 free；`setup` 重复调用先清空（重放恢复/重连换局不残留）。`local_owner`+`flipped` 对应联机 side2：本方恒蓝、整场 180°。
+- 单位 `battle_unit_actor.gd`：与 2D 同口径指数平滑（SMOOTH_K=18）插值、朝向跟移动/攻击目标、冷却上升沿识别出手、血条（受伤才显示）、受击闪白、空军纯表现悬空。小小（`knight_body`）播 GLB 的 Idle/Walk/Attack（攻击按攻击间隔加速）；其余单位为标「代理 · 名字」的胶囊代理，程序化颠步/前冲；死亡统一程序化回退（小小无 Death 片段）。
+- 塔 `battle_tower_actor.gd`：沿用 D0 几何代理，加血条、受击闪白、开火脉冲、摧毁换灰色废墟。`arena_presenter.gd` 小重构：`build(config, include_towers)` + 塔代理/盒子/材质提成静态函数供复用，D0 预览行为不变。
+- 预览 `view/labs/battle_3d_preview.tscn`：本地 AI 对 AI 天梯局，空格暂停（presenter 子树禁用 → 动画一并定格）、R 重开、F 翻转视角、1/2/3 倍速（走 `Engine.time_scale`，离开场景复原）。不联网、不写经济/进度、不进 Router。真人用例见 [docs/ACCEPTANCE_3D_D1.md](docs/ACCEPTANCE_3D_D1.md)。
+- 踩坑：①Idle 初始状态与默认值相同导致首个片段没播（强制首次切换修复，单测抓到）；②暂停只停 sim 时骨骼动画仍在原地播、倍速时动画不跟 sim（改为禁用子树 + time_scale）。
+- 验证：新增 `tests/test_3d_battle_presenter.gd` 8 项，含「同一 AI 对局挂/不挂 presenter 600 tick 每 25 tick hash 全等」；新增 `tools/check_battle_3d_preview.gd` 冒烟（暂停冻结、4 倍速完整局、中途翻转、重开，每步节点数=存活单位数）通过。客户端 **464/464**，小小展示台冒烟、全库 gdlint、文档检查通过。未改 logic/config/net/server/proto。
+- 同期环境：Claude Code 侧装好 Blender 技能（EL4CTEO 22 个 + blender-image-to-3d）与 Blender 官方 MCP 插件（自动启动，127.0.0.1:9876）。godot-ai 插件被编辑器自动升级 3.0.7→3.2.5，改动单独处理、不混入 D1。
+
+### D1 用户验收（2026-10-24）
+
+- 用户回报 D1 真人用例 **B1~B10 全部通过**；以上 D1 条目的「待真人验收」由本条更新为已验收。Jira 仍待 Atlassian 重新授权后补记（D0~D9 建单、D1 改 Done 需用户确认）。D2 未开工。
