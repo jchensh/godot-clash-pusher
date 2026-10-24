@@ -29,7 +29,8 @@ Godot 编辑器打开 `res://view/labs/battle_3d_preview.tscn` 后按 F6；或�
 godot --path . res://view/labs/battle_3d_preview.tscn
 ```
 
-预览是本地 AI 对 AI 的天梯局（`ladder_01`），不联网、不写经济/进度。按键：空格 暂停，R 重开，F 翻转视角，1/2/3 切 1/2/4 倍速。
+预览是本地 AI 对 AI 的天梯局（`ladder_01`），不联网、不写经济/进度。
+（D2 起预览默认改为真人拖卡操作本方，按 **T** 回到本页的双 AI 观战，用例见 [ACCEPTANCE_3D_D2.md](ACCEPTANCE_3D_D2.md)。）按键：空格 暂停，R 重开，F 翻转视角，1/2/3 切 1/2/4 倍速。
 
 ## 真人用例
 

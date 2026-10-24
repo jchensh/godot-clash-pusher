@@ -965,3 +965,16 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
 ### D1 用户验收（2026-10-24）
 
 - 用户回报 D1 真人用例 **B1~B10 全部通过**；以上 D1 条目的「待真人验收」由本条更新为已验收。Jira 仍待 Atlassian 重新授权后补记（D0~D9 建单、D1 改 Done 需用户确认）。D2 未开工。
+
+### 全 3D 表现迁移 D2 出牌输入（2026-10-24，代码+自动检查通过，待真人验收；未提交）
+
+- 用户要求一口气完成 D2、小问题自行决策。新增 `view/three_d/deploy_input_3d.gd`：屏幕点 → 正交相机射线 → 地平面 → tile，落点上抬 1.6 格（与 2D `DROP_LIFT_TILES` 同值，按镜头把「屏幕向上 1.6 格地面距离」换算成像素）。兵牌合法性走 `Arena.can_deploy`，法术场内任意点；场外/松手在顶栏或手牌栏 = 取消。合法松手只发 `deploy_requested(手牌格, tile)`，调用方走既有权威入口（PvE `try_play_card`；PvP 留到 D5 改发 DeployCmd）。
+- 拖拽 ghost：落点环、按卡牌数量的兵位圆盘、己方半场脉动高亮、AOE 配置半径范围圈、直伤准星，合法绿/非法红（与 2D `_draw_drag_ghost` 同口径；`card_info` 在 3D 侧另存一份，2D 文件不动，D9 清旧代码时收敛）。
+- 新增 `view/three_d/battle_camera.gd`：竖屏 750×1334 下 55° 俯角正交，场地撑满宽度、居中于顶栏与手牌栏之间，我左敌右；另提供与 Camera3D 同义的纯数学 `screen_ray`/`world_to_screen`。
+- 预览升级为真人拖卡打本方、AI 打对方（T 切回双 AI 观战）；F 翻转时真人改操作 side2。简易手牌栏为预览专用，正式 HUD 随 D4。
+- 决策/踩坑：①测试 runner 在主循环前执行，节点无视口 → 投影改纯数学，测试固定 750×1334；②headless 窗口是 64×64 退化尺寸，`Camera3D.project_ray_*` 叠加失真 stretch 变换（`project_position` 不受影响）→ 冒烟改用 project_position 比对，真实窗口 keep 等比拉伸下一致；③**test runner 遇 SCRIPT ERROR 仍判 PASS**（既有行为），本轮每次另行 grep SCRIPT ERROR 为 0；④换牌重拖未释放上一张 ghost（单测抓到，begin_drag 先 cancel）。
+- 验证：新增 `tests/test_3d_deploy_input.gd` 7 项（河/桥/塔/半场线 ±0.01 格往返误差 < 0.002 且合法性一致、全场扫点、同牌同点 3D/2D 两路径 60 tick hash 相同、抬手方向随视角、取消、ghost、竖屏构图）；`tools/check_battle_3d_preview.gd` 扩展为真实场景树内投影与引擎一致、双视角真人拖卡出兵、暂停、观战完整局。客户端 **471/471**（SCRIPT ERROR 0），小小展示台冒烟、全库 gdlint、文档检查通过；另用临时窗口截图自检构图与 ghost。未改 logic/config/net/server/proto。
+
+### D2 用户验收（2026-10-24）
+
+- 用户回报 D2 真人用例 **C1~C10 全部通过**；以上 D2 条目的「待真人验收」由本条更新为已验收。D3 未开工。

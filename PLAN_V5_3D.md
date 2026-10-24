@@ -8,7 +8,9 @@
 
 > **合并更新**：D0 与小小资产已通过 `8e35087` 合入 master。正式入口仍是原 2D 流程。
 
-> **D1 状态（2026-10-24）**：用户指示直接在 master 开发、不建 worktree。共用 presenter 代码 + 单测 + 预览已完成，自动检查通过，**用户真人验收 B1~B10 全部通过**，用例见 [ACCEPTANCE_3D_D1.md](docs/ACCEPTANCE_3D_D1.md)。D2 未开工。
+> **D1 状态（2026-10-24）**：用户指示直接在 master 开发、不建 worktree。共用 presenter 代码 + 单测 + 预览已完成，自动检查通过，**用户真人验收 B1~B10 全部通过**，用例见 [ACCEPTANCE_3D_D1.md](docs/ACCEPTANCE_3D_D1.md)。
+
+> **D2 状态（2026-10-24）**：3D 出牌输入 + 竖屏镜头构图 + 预览真人拖卡完成，自动检查通过，**用户真人验收 C1~C10 全部通过**，用例见 [ACCEPTANCE_3D_D2.md](docs/ACCEPTANCE_3D_D2.md)。D3 未开工。
 
 ## 目标与不变项
 
