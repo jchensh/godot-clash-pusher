@@ -19,11 +19,8 @@ const ModalScript = preload("res://view/ui/modal.gd")   # F2：奖励/结算覆�
 
 const OFFER_COUNT := 3
 
-const GOLD := Color(1.0, 0.84, 0.36)
-const C_DONE := Color(0.30, 0.46, 0.32)
-const C_CURRENT := Color(0.95, 0.78, 0.30)
-const C_FUTURE := Color(0.30, 0.34, 0.40)
-const C_BOSS := Color(0.85, 0.35, 0.32)
+# UI 偏离修复⑤：夜色常量退役，节点/卡/文字统一走 PixelUI 天空牧场令牌。
+const GOLD := PixelUI.COL_GOLD
 
 var _loader
 var _content: Control          # 地图/卡组/按钮层（状态变化时重建）
@@ -111,20 +108,22 @@ func _refresh_content() -> void:
 	var prog := tr("run_progress") % [mini(run.cursor + 1, run.map.size()), run.map.size(), run.wins]
 	_label(_content, prog, Vector2(0, 80), Vector2(720, 26), 20, PixelUI.COL_MUTED, HORIZONTAL_ALIGNMENT_CENTER)
 
-	# 节点链（线性）：完成=暗绿、当前=金、未来=灰、boss 红描边。
+	# 节点链（线性）：完成=浅绿、当前=暖黄、未来=淡蓝、boss 红描边。
 	var y := 120.0
 	for i in run.map.size():
 		var node: Dictionary = run.map.node_at(i)
 		var ntype := String(node.get("type", "battle"))
 		var done: bool = i < run.cursor
 		var current: bool = i == run.cursor and not run.is_over()
-		var base: Color = C_DONE if done else (C_CURRENT if current else C_FUTURE)
-		var border: Color = C_BOSS if ntype == RunMapScript.TYPE_BOSS else base.lightened(0.2)
+		var is_boss: bool = ntype == RunMapScript.TYPE_BOSS
+		var bg: Color = PixelUI.COL_NODE_DONE_BG if done else (PixelUI.COL_NODE_CURRENT_BG if current else PixelUI.COL_NODE_FUTURE_BG)
+		var border: Color = PixelUI.COL_NODE_DONE_BD if done else (PixelUI.COL_NODE_CURRENT_BD if current else PixelUI.COL_NODE_FUTURE_BD)
+		if is_boss:
+			border = PixelUI.COL_NODE_BOSS_BD
 		var mark := "✓" if done else ("▶" if current else "·")
 		var txt := tr("run_node_row") % [mark, int(node.get("act", 0)) + 1, tr("node_" + ntype), String(node.get("level_id"))]
-		var row := _panel(_content, Vector2(40, y), Vector2(640, 52), base.darkened(0.35), border,
-				3 if (current or ntype == RunMapScript.TYPE_BOSS) else 1)
-		_label(row, txt, Vector2(16, 0), Vector2(610, 52), 20, Color.WHITE if not done else Color(0.7, 0.8, 0.7), HORIZONTAL_ALIGNMENT_LEFT)
+		var row := _panel(_content, Vector2(40, y), Vector2(640, 52), bg, border, 3 if (current or is_boss) else 2)
+		_label(row, txt, Vector2(16, 0), Vector2(610, 52), 20, PixelUI.COL_PARCHMENT, HORIZONTAL_ALIGNMENT_LEFT)
 		y += 60.0
 
 	# run 卡组 + relic 摘要
@@ -132,12 +131,12 @@ func _refresh_content() -> void:
 	for cid in run.deck:
 		deck_names.append(tr("card_" + str(cid)))
 	_label(_content, tr("run_deck") % [run.deck.size(), ", ".join(deck_names)], Vector2(40, y + 6),
-			Vector2(640, 48), 16, Color(0.80, 0.86, 0.92), HORIZONTAL_ALIGNMENT_LEFT)
+			Vector2(640, 48), 16, PixelUI.COL_PARCHMENT, HORIZONTAL_ALIGNMENT_LEFT)
 	var relic_names: Array = []
 	for rid in run.relics:
 		relic_names.append(tr("relic_" + str(rid) + "_name"))
 	var rtext: String = ", ".join(relic_names) if not relic_names.is_empty() else tr("run_relics_none")
-	_label(_content, tr("run_relics") % rtext, Vector2(40, y + 56), Vector2(640, 44), 16, Color(0.95, 0.85, 0.55), HORIZONTAL_ALIGNMENT_LEFT)
+	_label(_content, tr("run_relics") % rtext, Vector2(40, y + 56), Vector2(640, 44), 16, GOLD, HORIZONTAL_ALIGNMENT_LEFT)
 
 	# 底部按钮
 	var disabled: bool = _mode != "none" or GameStateScript.run.is_over()
@@ -159,7 +158,7 @@ func _refresh_overlay() -> void:
 		_build_summary()
 
 func _new_overlay() -> Control:
-	var m := ModalScript.new()   # 基类自带 0.72 暗幕 + 全屏 STOP（原 _dim 的职责）
+	var m := ModalScript.new()   # 基类自带令牌暗幕 + 全屏 STOP（原 _dim 的职责）
 	UI.modal(m)
 	return m
 
@@ -168,6 +167,7 @@ func _build_reward() -> void:
 	var is_relic: bool = _reward_kind == "relic"
 	AudioManager.play_sfx("relic_reveal" if is_relic else "reward_panel_open")
 	var title := tr("reward_relic_title") if is_relic else tr("reward_card_title")
+	_backing(Vector2(80, 226), Vector2(560, 400 + 130.0 * float(_offers.size() - 1)))   # 白卡垫底：暗幕上直接写字不可读
 	var tlbl := _label(_overlay, title, Vector2(0, 250), Vector2(720, 50), 38, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
 	_anim_pop(tlbl, 0.0, -24.0)
 	var y := 360.0
@@ -186,8 +186,8 @@ func _build_reward() -> void:
 			var port := SpriteDB.make_card_portrait(str(id), _loader, Vector2(16, 14), Vector2(82, 82))
 			if port != null:
 				card.add_child(port)
-		_label(card, name_txt, Vector2(20, 18), Vector2(460, 40), 28, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
-		_label(card, sub_txt, Vector2(20, 64), Vector2(460, 30), 18, Color(0.8, 0.85, 0.9), HORIZONTAL_ALIGNMENT_CENTER)
+		_label(card, name_txt, Vector2(20, 18), Vector2(460, 40), 28, PixelUI.COL_PARCHMENT, HORIZONTAL_ALIGNMENT_CENTER)
+		_label(card, sub_txt, Vector2(20, 64), Vector2(460, 30), 18, PixelUI.COL_MUTED, HORIZONTAL_ALIGNMENT_CENTER)
 		_offer_nodes[id] = card
 		_anim_pop(card, 0.12 + idx * 0.10, 40.0)   # 逐张错峰揭示
 		idx += 1
@@ -198,14 +198,15 @@ func _build_reward() -> void:
 func _build_summary() -> void:
 	var run = GameStateScript.run
 	var won: bool = run.status == RunStateScript.RUN_WON
+	_backing(Vector2(60, 336), Vector2(600, 384))   # 白卡垫底：暗幕上直接写字不可读
 	_anim_pop(_label(_overlay, tr("run_cleared") if won else tr("run_over"), Vector2(0, 360),
-			Vector2(720, 70), 56, (C_CURRENT if won else C_BOSS), HORIZONTAL_ALIGNMENT_CENTER), 0.0, -30.0)
+			Vector2(720, 70), 56, (GOLD if won else PixelUI.COL_NODE_BOSS_BD), HORIZONTAL_ALIGNMENT_CENTER), 0.0, -30.0)
 	var line := (tr("run_summary_win") % run.wins) if won else (tr("run_summary_lose") % run.wins)
-	_anim_pop(_label(_overlay, line, Vector2(0, 450), Vector2(720, 30), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER), 0.18, 20.0)
+	_anim_pop(_label(_overlay, line, Vector2(0, 450), Vector2(720, 30), 22, PixelUI.COL_PARCHMENT, HORIZONTAL_ALIGNMENT_CENTER), 0.18, 20.0)
 	if GameStateScript.meta != null:
 		var m = GameStateScript.meta
 		var ms := tr("meta_stats") % [m.runs_won, m.bosses_defeated]
-		_anim_pop(_label(_overlay, ms, Vector2(0, 500), Vector2(720, 28), 18, Color(0.8, 0.85, 0.8), HORIZONTAL_ALIGNMENT_CENTER), 0.30, 20.0)
+		_anim_pop(_label(_overlay, ms, Vector2(0, 500), Vector2(720, 28), 18, PixelUI.COL_MUTED, HORIZONTAL_ALIGNMENT_CENTER), 0.30, 20.0)
 		var newly: Array = m.unlocked_ids(_loader.relics)
 		if not newly.is_empty():
 			var names: Array = []
@@ -345,26 +346,35 @@ func _button(parent: Control, text: String, pos: Vector2, size: Vector2, kind: S
 	b.pivot_offset = size * 0.5
 	b.focus_mode = Control.FOCUS_NONE
 	PixelUI.style_button(b, kind, 28)
-	b.add_theme_stylebox_override("disabled", PixelUI.sbpixel(Color(0.18, 0.20, 0.18), 3, Color(0.30, 0.33, 0.30)))
-	b.add_theme_color_override("font_disabled_color", Color(0.5, 0.5, 0.55))
+	b.add_theme_stylebox_override("disabled", PixelUI.sbpixel(PixelUI.COL_DISABLED_BG, 3, PixelUI.COL_DISABLED_BD))
+	b.add_theme_color_override("font_disabled_color", Color(PixelUI.COL_PARCHMENT, 0.45))
 	b.pressed.connect(cb)
 	b.button_down.connect(_scale_to.bind(b, 0.96))
 	b.button_up.connect(_scale_to.bind(b, 1.0))
 	parent.add_child(b)
 	return b
 
-# 奖励候选卡：可点像素方块（蓝面 + 金边，内部叠肖像/文字），选中 flourish 由 _on_pick 接管。
+# 奖励候选卡：可点方块（淡蓝面 + 天空蓝边，内部叠肖像/文字），选中 flourish 由 _on_pick 接管。
 func _reward_card(pos: Vector2, size: Vector2, cb: Callable) -> Button:
 	var b := Button.new()
 	b.position = pos
 	b.size = size
 	b.focus_mode = Control.FOCUS_NONE
-	b.add_theme_stylebox_override("normal", PixelUI.sbpixel(Color(0.16, 0.20, 0.30), 3, GOLD))
-	b.add_theme_stylebox_override("hover", PixelUI.sbpixel(Color(0.21, 0.26, 0.39), 3, GOLD))
-	b.add_theme_stylebox_override("pressed", PixelUI.sbpixel(Color(0.12, 0.15, 0.24), 3, GOLD))
+	b.add_theme_stylebox_override("normal", PixelUI.sbpixel(PixelUI.COL_TROOP_BG, 3, GOLD))
+	b.add_theme_stylebox_override("hover", PixelUI.sbpixel(PixelUI.COL_TROOP_BG.lightened(0.4), 3, GOLD))
+	b.add_theme_stylebox_override("pressed", PixelUI.sbpixel(PixelUI.COL_INSET_BG, 3, GOLD))
 	b.pressed.connect(cb)
 	_overlay.add_child(b)
 	return b
+
+# 覆盖层白卡底板（须在覆盖层内容之前加入 → 垫在最下，暗幕之上）。
+func _backing(pos: Vector2, size: Vector2) -> void:
+	var p := Panel.new()
+	p.position = pos
+	p.size = size
+	p.add_theme_stylebox_override("panel", PixelUI.panel_box("stone"))
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_overlay.add_child(p)
 
 func _scale_to(c: Control, s: float) -> void:
 	create_tween().tween_property(c, "scale", Vector2(s, s), 0.07)

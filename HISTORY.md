@@ -921,6 +921,161 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
 - **验收结果**：G 组 G-1~G-6 功能逻辑真人验收通过（G-7 联机并入 D-1 后补）；阵营色按拍板对调后复跑全绿。
 - 客户端 **450/450**；gdlint 绿；check_docs 18 文件过；headless import 零错（3 张新贴图 `.import` 已生成）。台账追加 G 组 7 例。
 - **剩余 KAN-124 欠账**（仍待素材）：17 锁卡素材、死亡帧、法术 FX/图标、多场地 BG、卡通音频、闯关图/主菜单美术。
+
+### 小小 3D 动画展示实验（2026-10-24，待真人验收；Jira 待补）
+
+- 用户明确授权本步先完成、Jira 恢复后补记（两条 Atlassian 连接均需重新认证）。独立 worktree 制作，仅新增资产/展示场景，不进入在线游戏主流程；未提交推送。
+- 新增 `assets/models/xiaoxiao/`（带蒙皮 GLB + `.gdignore` 隔离的 Blender 源文件）、`view/labs/xiaoxiao_showcase.{gd,tscn}`、`tests/test_xiaoxiao_model.gd`、`tools/check_xiaoxiao_showcase.gd`。4,040 三角面/一个材质；Blender 15 骨、Godot 导入 14 变形骨；Idle/Walk 循环、Attack 单次回待机；暂停续播、调速、旋转缩放。
+- 骨骼权重检查通过；行走逐帧支撑脚贴地补偿；Godot 自动用例 **453/453**，独立展示台冒烟通过。细节与 A1~A7 人工用例见 [docs/ACCEPTANCE_XIAOXIAO_3D.md](docs/ACCEPTANCE_XIAOXIAO_3D.md)；动作手感仍待真人验收。
+- 同日按用户要求补 [Agent → Blender → Godot 工作流](docs/AGENT_BLENDER_GODOT_WORKFLOW.md)：记录本机连接方式、建模/骨骼/动画/导出/引擎验证步骤及小小实作注意事项，已登记文档索引。
+
+### 全 3D 表现迁移 D0（2026-10-24，代码通过，待真人验收；Jira 待补）
+
+- 用户明确全项目转真正 3D，同时保留平面玩法与 2D 菜单/HUD。[施工图](PLAN_V5_3D.md) 和 [ADR 0004](docs/adr/0004-3d-presentation-flat-simulation.md) 记录边界；后续 D1~D9 尚未实现。
+- 本步新增 `view/three_d/{field_projection,arena_presenter}.gd`、`view/labs/arena_3d_preview.{gd,tscn}`、`tests/test_3d_projection.gd`：复用 arena 配置生成河/双桥/六塔几何代理，tile↔XZ/翻转/射线落点，点击只预览原 Arena 部署合法性；两只小小作比例样板，不发指令、不接经济。逻辑/服务端未修改。
+- 新旧自动用例 **456/456**，独立场景 headless 启动通过；塔为施工代理，构图/点选仍待真人按施工图 D0 用例确认。Jira 连接仍需重新认证，当前对话先做后补；未提交推送。
+
+### D0 用户验收与提交交接（2026-10-24）
+
+- 用户明确“这一步 ok”，D0 真人验收通过，更新施工图与索引当前状态；以上“待验收/未推送”是当时施工记录，由本条更新其当前状态。小小动画台账细项未逐条回报，不扩大验收结论。
+- 用户要求整理全部文档并 push 到 GitHub，明确 **本 session 不做 D1**。本次将小小资产/动画样板、D0 地基和文档作为 D0 交付提交到 `codex/xiaoxiao-animation`，未合入 master/release。
+- 新增 [D1 交接说明与 prompt](docs/HANDOFF_3D_D1_2026-10-24.md)，记录分支、资产路径、已知基线退出提示、Jira 欠账及下一步边界。D1~D9 均未开工，需新 session 按一步一确认推进。
+- 收尾复查 Jira 仍需重新认证，沿用用户本轮先做后补授权；未伪造 issue 或标 Done。提交前检查结果见本次交付，推送成功以远端分支校验为准。
+- 提交前复跑：客户端 **456/456**、小小展示台冒烟、全部新增 GDScript lint、18 文件文档检查及新增 3D 文档链接检查通过；未修改 logic/config/net/server/proto。ObjectDB/24 resources 退出提示与原 master 基线一致。
+
+### D0 合入 master 与工作区收尾（2026-10-24）
+
+- 用户明确要求把当前成果合入 master、清理本次 worktree，并更新文档与交接 prompt；继续明确不做 D1。
+- fetch 后核对 master 与 origin/master 一致，功能分支 rebase master 无需改写；随后 `--no-ff` 合并 `76a8672`，merge commit **`8e35087`**。此条取代上条“未合入 master”的交付状态；release 未同步。
+- 更新 PLAN_V5_3D、验收台账和 [D1 handoff](docs/HANDOFF_3D_D1_2026-10-24.md)：下一 session 从最新 master 新建独立 worktree。正式 PvE/PvP/王国仍是原 2D 路径；D0 用户验收通过，D1~D9 未开工，Jira 待连接恢复后补记。
+- 本次 managed worktree 已归档移除（保留可恢复快照，包含本轮未跟踪缓存），验证原路径不存在、worktree 列表已移除；已合并的本地 `codex/xiaoxiao-animation` 分支已删除，远端历史分支保留。其他 worktree 未改动。
+- 合并后 master 导入通过、客户端 **456/456**、小小展示台冒烟及 D0 场地 headless 启动通过；退出资源提示与原基线一致。文档收尾另做 docs commit 后随 master 推送。
+
+### 全 3D 表现迁移 D1 战斗 presenter（2026-10-24，代码+自动检查通过，待真人验收；Jira 待补；未提交）
+
+- 用户指示：D1 **直接在 master 目录开发、不建 worktree**（取代 handoff 中的工作树要求）；同时清理掉 master/release 以外的全部分支与 worktree（`featureZAi`、Codex 临时 worktree、远端 `codex/*`）。`master-zaiDev` 中 master 没有的两个未跟踪文件先备份到 `F:/godotTowerPush/_backup_zaiDev_untracked/`。
+- 新增 `view/three_d/battle_presenter.gd`：只读 Battle 状态，按 Unit/Tower **对象实例 ID** 管理节点（逻辑层 Unit 无唯一 ID，与 2D 战斗同口径）；新单位建节点、消失转死亡表现、播完 free；`setup` 重复调用先清空（重放恢复/重连换局不残留）。`local_owner`+`flipped` 对应联机 side2：本方恒蓝、整场 180°。
+- 单位 `battle_unit_actor.gd`：与 2D 同口径指数平滑（SMOOTH_K=18）插值、朝向跟移动/攻击目标、冷却上升沿识别出手、血条（受伤才显示）、受击闪白、空军纯表现悬空。小小（`knight_body`）播 GLB 的 Idle/Walk/Attack（攻击按攻击间隔加速）；其余单位为标「代理 · 名字」的胶囊代理，程序化颠步/前冲；死亡统一程序化回退（小小无 Death 片段）。
+- 塔 `battle_tower_actor.gd`：沿用 D0 几何代理，加血条、受击闪白、开火脉冲、摧毁换灰色废墟。`arena_presenter.gd` 小重构：`build(config, include_towers)` + 塔代理/盒子/材质提成静态函数供复用，D0 预览行为不变。
+- 预览 `view/labs/battle_3d_preview.tscn`：本地 AI 对 AI 天梯局，空格暂停（presenter 子树禁用 → 动画一并定格）、R 重开、F 翻转视角、1/2/3 倍速（走 `Engine.time_scale`，离开场景复原）。不联网、不写经济/进度、不进 Router。真人用例见 [docs/ACCEPTANCE_3D_D1.md](docs/ACCEPTANCE_3D_D1.md)。
+- 踩坑：①Idle 初始状态与默认值相同导致首个片段没播（强制首次切换修复，单测抓到）；②暂停只停 sim 时骨骼动画仍在原地播、倍速时动画不跟 sim（改为禁用子树 + time_scale）。
+- 验证：新增 `tests/test_3d_battle_presenter.gd` 8 项，含「同一 AI 对局挂/不挂 presenter 600 tick 每 25 tick hash 全等」；新增 `tools/check_battle_3d_preview.gd` 冒烟（暂停冻结、4 倍速完整局、中途翻转、重开，每步节点数=存活单位数）通过。客户端 **464/464**，小小展示台冒烟、全库 gdlint、文档检查通过。未改 logic/config/net/server/proto。
+- 同期环境：Claude Code 侧装好 Blender 技能（EL4CTEO 22 个 + blender-image-to-3d）与 Blender 官方 MCP 插件（自动启动，127.0.0.1:9876）。godot-ai 插件被编辑器自动升级 3.0.7→3.2.5，改动单独处理、不混入 D1。
+
+### D1 用户验收（2026-10-24）
+
+- 用户回报 D1 真人用例 **B1~B10 全部通过**；以上 D1 条目的「待真人验收」由本条更新为已验收。Jira 仍待 Atlassian 重新授权后补记（D0~D9 建单、D1 改 Done 需用户确认）。D2 未开工。
+
+### 全 3D 表现迁移 D2 出牌输入（2026-10-24，代码+自动检查通过，待真人验收；未提交）
+
+- 用户要求一口气完成 D2、小问题自行决策。新增 `view/three_d/deploy_input_3d.gd`：屏幕点 → 正交相机射线 → 地平面 → tile，落点上抬 1.6 格（与 2D `DROP_LIFT_TILES` 同值，按镜头把「屏幕向上 1.6 格地面距离」换算成像素）。兵牌合法性走 `Arena.can_deploy`，法术场内任意点；场外/松手在顶栏或手牌栏 = 取消。合法松手只发 `deploy_requested(手牌格, tile)`，调用方走既有权威入口（PvE `try_play_card`；PvP 留到 D5 改发 DeployCmd）。
+- 拖拽 ghost：落点环、按卡牌数量的兵位圆盘、己方半场脉动高亮、AOE 配置半径范围圈、直伤准星，合法绿/非法红（与 2D `_draw_drag_ghost` 同口径；`card_info` 在 3D 侧另存一份，2D 文件不动，D9 清旧代码时收敛）。
+- 新增 `view/three_d/battle_camera.gd`：竖屏 750×1334 下 55° 俯角正交，场地撑满宽度、居中于顶栏与手牌栏之间，我左敌右；另提供与 Camera3D 同义的纯数学 `screen_ray`/`world_to_screen`。
+- 预览升级为真人拖卡打本方、AI 打对方（T 切回双 AI 观战）；F 翻转时真人改操作 side2。简易手牌栏为预览专用，正式 HUD 随 D4。
+- 决策/踩坑：①测试 runner 在主循环前执行，节点无视口 → 投影改纯数学，测试固定 750×1334；②headless 窗口是 64×64 退化尺寸，`Camera3D.project_ray_*` 叠加失真 stretch 变换（`project_position` 不受影响）→ 冒烟改用 project_position 比对，真实窗口 keep 等比拉伸下一致；③**test runner 遇 SCRIPT ERROR 仍判 PASS**（既有行为），本轮每次另行 grep SCRIPT ERROR 为 0；④换牌重拖未释放上一张 ghost（单测抓到，begin_drag 先 cancel）。
+- 验证：新增 `tests/test_3d_deploy_input.gd` 7 项（河/桥/塔/半场线 ±0.01 格往返误差 < 0.002 且合法性一致、全场扫点、同牌同点 3D/2D 两路径 60 tick hash 相同、抬手方向随视角、取消、ghost、竖屏构图）；`tools/check_battle_3d_preview.gd` 扩展为真实场景树内投影与引擎一致、双视角真人拖卡出兵、暂停、观战完整局。客户端 **471/471**（SCRIPT ERROR 0），小小展示台冒烟、全库 gdlint、文档检查通过；另用临时窗口截图自检构图与 ghost。未改 logic/config/net/server/proto。
+
+### D2 用户验收（2026-10-24）
+
+- 用户回报 D2 真人用例 **C1~C10 全部通过**；以上 D2 条目的「待真人验收」由本条更新为已验收。D3 未开工。
+
+### UI 偏离修复 ① 色板令牌 + 对比度单测（2026-10-24，代码通过待用户确认提交；Jira 待补）
+
+- **来由**：同日从代码提取「天空牧场」设计系统（[设计系统页](https://claude.ai/code/artifact/ac8e5f64-afaf-4702-8ae8-a8cbfc432cf7)），审计出两条高优先级偏离——`campaign_scene`/`run_scene`/`deck_builder` 仍是夜色深底常量、`modal.gd:39`/`reward_chest.gd:65` 暗幕仍是夜色紫黑。拆 5 步修：①令牌 ②暗幕 ③组卡 ④闯关路线 ⑤run（可选：run 场景当前无入口，只有自身会建 run 状态）。worktree 分支 `feat/ui-drift-fix`。
+- **本步（只加令牌，不动任何界面）**：`view/ui/pixel_ui.gd` 新增暗幕 `COL_DIM #1f3a52`+`DIM_ALPHA 0.5`（替代紫黑 0.72）、路线节点四态 底/描边（已过 `e4f4dc/7cc36a`·当前 `fff8e1/3d9be0`·未到 `eef6fc/cfe3f2`·Boss `fde3e2/e24b4a`）、组卡 兵种 `dceefc/7fb4d9`·法术 `efe4fb/b48fe0`·已填槽 `ffffff/a9d3ee`·空槽 `ddeefb/cfe3f2`·禁用 `cfdde9/8aa4ba`。
+- **新增 `tests/test_pixel_ui_palette.gd`（5 例）**：WCAG 对比度计算自校（黑白 21:1）；主文字 `COL_PARCHMENT` 压 9 个新底色均 ≥ 4.5:1（实测最低禁用底 5.24:1）；新底色亮度 > 0.6 防夜色回流；描边比底色深；暗幕不透明度 < 0.72 且偏青蓝。
+- 客户端 **461/461**（456 + 新 5）；改动两文件 gdlint 绿。新 worktree 首次 headless import 报一次快乐体 fontdata 未就绪，属首次导入先后顺序，导入后跑测试字体正常。Atlassian MCP 本会话未授权，Jira 待补；未提交推送。
+
+### UI 偏离修复 ② 弹窗暗幕换色板令牌（✅ 真人验收通过，2026-10-24）
+
+- `view/ui/modal.gd`：默认暗幕由夜色紫黑 `(0.04,0.03,0.07,0.72)` 改为 `COL_DIM #1f3a52 @ DIM_ALPHA 0.5`；`dim_alpha` 默认值直接取令牌。实际吃默认暗幕的弹窗 = 设置·登出确认、王国·建筑弹窗（run 场景覆盖层当前无入口）；战斗结算/教程层 dim=0 不受影响。
+- **踩坑**：基类先用 `const PixelUI` 引色板 → 子类 `reward_chest`/`kingdom_building_modal` 已各自声明 `PixelUI`，GDScript 报「member already exists in parent class」，`test_view_scripts_compile` 当场拦下。改私有名 `_PALETTE` 解决。
+- `tests/test_ui_layers.gd::test_modal_dim_assembly` 补断言：暗幕色 = `COL_DIM@DIM_ALPHA`。
+- **宝箱（用户拍板「奖励区垫白卡+暗幕同步换令牌」）**：`reward_chest.gd` 自绘暗幕换 `COL_DIM@DIM_ALPHA`，并用 `panel_box("stone")` 垫白卡。实算发现新暗幕叠在闯关页浅底上≈`#8498a8`，与天空蓝标题/亮星对比≈1:1 会直接消失 → 白卡从「仅奖励区」扩为**罩住标题→星级→宝箱→奖励全程**；尺寸按奖励行数（setup 已知）一次算定，开箱过程不跳动。新增 `card_rect(vp)` + 单测 `test_reward_chest_card_wraps_content`（720×1280/750×1334 × 1/3 行：罩住标题与末行、卡底 < 继续按钮 y=880、水平居中）。
+- **仍待修**：`kingdom_building_modal.gd:34` 面板底仍是夜色 `(0.10,0.08,0.14)`，同属夜色残留。
+- 客户端 **462/462**；改动文件 gdlint 绿；未提交推送。（用户随后决定 ③~⑤ 连做、最后统一真人验收，见下条）
+
+### UI 偏离修复 ③~⑤ 组卡 / 闯关路线 / run 换浅色（✅ 真人验收通过，2026-10-24）
+
+- **节奏变更**：用户表示开引擎验收太麻烦，要求剩余步骤一次做完、最后统一看；②~⑤ 同在 `feat/ui-drift-fix` 未提交。
+- **③ `deck_builder.gd`**（竖屏+横屏两套布局）：删夜色常量 `TROOP_/SPELL_/SLOT_*`，卡池卡底/描边、已填/空卡槽、禁用出战按钮全改走 PixelUI 令牌；卡名/费用/槽位字白 → 主文字深青；分隔线 → `#a9d3ee`；满 8 张计数 → `#7cc36a`；槽按下态 = 凹槽色。
+- **④ `campaign_scene.gd`**：8 个节点常量改为 `COL_NODE_*` 令牌别名（常量名保留，引用面不动）；行字一律主文字色（已过/当前靠 ✓▶ 与底色区分）。
+- **⑤ `run_scene.gd`**（当前无入口，按用户「全部做完」一并改）：路线行同 ④ 令牌；卡组/遗物摘要行改深青/天空蓝；奖励候选卡淡蓝面+天空蓝边；禁用按钮令牌化；奖励选择与结算两个覆盖层加 `_backing()` 白卡垫底（与宝箱同理：令牌暗幕上直接写字不可读）。
+- **守门单测** `test_no_night_literals_in_migrated_views`：扫描 5 个已迁移文件不得再有三通道 < 0.4 的 `Color(...)` 字面量。**反证**：换回旧版 deck_builder 即红并点名 `Color(0.18, 0.24, 0.20`，换回新版转绿。
+- **踩坑**：正则首版写普通字符串 `"Color\("`，经 heredoc 落盘成 `\(` → GDScript「Invalid escape in string」整文件解析失败，且让第一次反证失真（红是因为解析错不是因为夜色）；改 GDScript 原始字符串 `r"..."` 后重做反证。
+- 客户端 **463/463**；全量 gdlint 绿。剩余夜色残留（不在本线范围）：`kingdom_building_modal.gd:34` 面板底、`main_menu` 两处标签底板、`kingdom` 三处自绘标签底、`hud_widget` 锁罩。
+- **统一真人验收通过**（用户 2026-10-24 回报）：组卡、领奖宝箱白卡、登出确认框、闯关路线、王国建筑弹窗暗幕 5 条全过；run 界面无入口未实机验。②~⑤ 合并为一次提交推送 `feat/ui-drift-fix`，尚未合回 master。
+
+### 「天空牧场」UI 设计系统文档入库（2026-10-24，文档改动待用户确认提交）
+
+- 用户从 claude.ai 导出设计系统页的 md/html，要求放进主干并让后续 agent 都能读到。导出的 md 有损（按钮四色组只剩标题、HUD 样张成碎字），两份都停在修复前，故**按 `3d6a018` 修复后的现状重写**而非原样入库。
+- 新增 `docs/design/UI_DESIGN_SYSTEM.md`（agent 读的文字版：真相源声明 = `pixel_ui.gd`、色板/状态底色/暗幕、按钮面板 HUD、字号阶梯、层级、改界面 5 条规则、待统一清单）与 `docs/design/ui_design_system.html`（人看的可视化页，同步更新 artifact 第 2 版）。
+- 指引：CLAUDE.md 与 AGENTS.md「架构铁律」各加一条「界面配色/组件走天空牧场设计系统」；`docs/README.md` 设计区登记两份；`pixel_ui.gd` 文件头加文档指针。check_docs 18 文件过，pixel_ui.gd gdlint 绿；未改任何运行逻辑。
+
+### 全 3D 表现迁移 D3 样板批次（2026-10-24，自动检查通过，待用户风格确认；未提交）
+
+- 用户决策（D3 规划讨论）：锁定单位热门 4 种（小乌鸦/大块头/小骷髅/龙宝宝）自行设计建模、其余 14 种借用池内模型；画风 = 卡通描边 + 色阶光；每个角色都做死亡动作；先做 3 个样板 + 塔停下看风格，再一口气做完。详见 PLAN_V5_3D D3 段。
+- 生成管线 `tools/blender/`：`toonkit.py`（圆角基本体 + 顶点色 + 刚性分块绑骨 + 世界轴关键帧书写 + GLB 导出；静态资产只导网格；tag=team 部件进 M_Team 材质槽）、`build_asset.py`（后台构建 + 多角度/动作关键帧审图渲染）、`assets/<id>.py` 每资产一份，可重跑。样板：女主 3,674 / 瓜牛炮 3,508 / 火又鸟 3,090 三角面（四段动作），王塔 4,594 / 箭塔 2,914 / 废墟 2,484。
+- Godot：`toon.gdshader`（顶点色 × tint、3 阶色阶光）+ `toon_outline.gdshader`（裁剪空间恒定 2px 反向外壳描边）+ `toon_style.gd`（统一换材质，M_Team 按阵营染色）；`unit_models.gd` 登记表（正式/派生/借用，身高按 vis_height_px/25 归一）替换 presenter 写死的 MODELS；塔节点换正式塔与废墟模型（正面转向镜头）；死亡片段末尾快速缩没防止节点突然消失；`battle_lighting.gd` 共用光照。新增角色图鉴 `view/labs/roster_3d_showcase.tscn`。
+- 踩坑：①Blender 5.2 glTF 后台导出 `export_vertex_color="ACTIVE"` 不带顶点色（Godot 里纯白）→ 改 `NAME` + `Col`，测试断言 COLOR_0；②静态资产审图时空骨架无 pose 崩溃 → 审图对无骨架资产单独处理；③火又鸟首版翅膀是平板加尖刺，不像原画 → 改三片花瓣火羽扇形；④原光照环境 0.65 + 太阳 1.1 约 1.5 倍过曝（D0 起草地就发白）→ 合计调到约 1.0。
+- 验证：新增 `tests/test_3d_models.gd` 3 项（动作/循环/骨架/顶点色/三角面与骨骼预算直接读 GLB、塔阵营材质槽、登记表解析），`tools/check_roster_3d_showcase.gd` 冒烟；D1 塔阵营色测试改为检查模型染色面。客户端 **481/481**（SCRIPT ERROR 0），D1/D2 预览冒烟、小小展示台、全库 gdlint 通过；临时窗口截图自检图鉴与战斗观感。未改 logic/config/net/server/proto。
+
+### 全 3D 表现迁移 D3 主批次（2026-10-24，代码+自动检查通过，待真人验收；未提交）
+
+- 用户确认样板风格 S1~S5，要求一口气做完主批次并用「直播模式」看过程。Blender 经 Codex 的 `start-blender-mcp.ps1` 启动（需 `--online-mode`，普通双击启动 MCP 插件不监听端口），新增 `tools/blender/live_build.py`：在用户开着的 Blender 里每加一个部件刷新一次视口，做完循环播待机；只写本资产场景，不改用户当前文件。
+- 新增通用动作模板 `motions.py`（待机/两足走/史莱姆蹦跳/扇翅/悬停/近战挥砍/射击/扑击/死亡）与史莱姆构件 `slimes.py`。新做 21 个模型：兔射手、鼹鼠火枪手、飞斧汪、双斧火钳、蟑螂、蟑螂恶霸、猫炮手、猪猪配香菇、蝴蝶仙子、岩石史莱姆、锤锤莱姆、棒槌史莱姆、火精灵、雷精灵、幺蛾子、马蜂王、鸦王 + 自行设计的小乌鸦、大块头、小骷髅、龙宝宝（908~4,610 三角面）。小小用 `add_xiaoxiao_death.py` 在原文件上补 Death 并重导（原 3 段与网格逐项比对不变）。
+- 映射 `unit_models.gd`：25 正式 + 3 派生 + 11 借用（带整体色偏，`toon_style` 增 body_tint）→ units.json 39 个单位全部有模型。地形 `arena_presenter.gd` 重写：棋盘格草地（`ground.gdshader`）、流水河道（`water.gdshader`）、石岸、Blender 木桥、场地石沿、木栅栏与树/灌木/石块点缀（MultiMesh 合批）。
+- 踩坑：①直播模式多次构建残留同名动作被改名 .001 且导出混入上一资产 → 构建前清理 LIVE 数据 + 导出限定当前场景 + 动作改名直接报错；入库文件最终全部用后台构建重生成（32 个）；②火精灵、鼹鼠、猪骑士、龙宝宝、小骷髅首版造型/死亡问题按审图逐个修；③场外草甸顶面高于水面把河整条盖住（显示为白带）→ 水面上移；④toon 亮面 = 太阳能量×底色，太阳 0.85 + 环境 0.38 + 补光 0.25 仍过曝 → 0.7 / 0.3 / 0.12；⑤小小有了 Death 后 D1 死亡测试断言更新；兔射手有了模型后 D1 代理测试改用未登记测试 ID。
+- 验证：`tests/test_3d_models.gd` 扩到 6 项（25 单位四段动作与预算、全部 39 单位可解析、借用带色偏、地形件静态、满场最坏 **22.7 万三角面** ≤ 26 万）；图鉴冒烟 28 项；客户端 **484/484**（SCRIPT ERROR 0），D1/D2 预览冒烟、小小展示台、D0 场地预览、全库 gdlint 通过；临时窗口截图自检图鉴与满场战斗观感。未改 logic/config/net/server/proto。真人用例见 [docs/ACCEPTANCE_3D_D3.md](docs/ACCEPTANCE_3D_D3.md) T1~T10。
+
+### D3 用户验收（2026-10-25）
+
+- 用户回报 D3 主批次真人用例 **T1~T10 全部通过**（样板 S1~S5 已于 2026-10-24 确认）；以上 D3 条目的「待真人验收」由本条更新为已验收。D4（PvE 接线）未开工。
+
+### 全 3D 表现迁移 D4 PvE 接线（2026-10-25，代码+自动检查通过，待真人验收；未提交）
+
+- 用户指示：本 session 只做 D4，直接在 master 开发；Jira 不用管；小问题自行决策。
+- 方案：读完 `battle_scene.gd` 后决定**不新建 3D 场景，在原页里替换战场层**——HUD/卡牌/教程/结算/录制/掉线门禁与战场绘制都在同一文件，出牌只经 `try_play_card`、录制器挂在 Match 上与画面无关，原地替换改动面最小。闯关/新手引导/战役/自由对战共用此页，一并变 3D；联机页（D5）不动。
+- 新增 `view/three_d/battle_field_3d.gd`：打包 presenter + 出牌输入 + 镜头 + 光照；`sync()` 每帧只读同步 3D 节点、把 2D 震屏换算成正交相机偏移、让落点 ghost 跟随页面拖拽状态（掉线/分出胜负把 `_dragging` 置否即撤 ghost）；`deploy_half_rect()` 给教程 field 高亮。
+- `battle_scene.gd`：`_t2s`/`_ur` 有 3D 层时改借镜头投影 → 伤害数字、受击火花、法术命中特效、投射物这些 2D 叠加层自动对准 3D 画面（D8 再换 3D 特效）；跳过 2D 地形/单位/塔/ghost 绘制；2D 精灵配套刀光/受击星芒/死亡白烟在 3D 下关掉（模型动作代替）；松手抽成 `_release_card(i, screen)`，3D 落点 = 镜头射线拾取（与 ghost 同点），场外给 null → 无效音效；`_card_info` 收敛为调用 D2 的 `deploy_input_3d.card_info`（同口径，D2 记的待收敛项）。2D 战场绘制保留为回退，D9 清理。
+- 踩坑：首版改完 `battle_scene.gd` 1550 行超 gdlint 1500 上限 → 把 ghost 生命周期、HUD 区域换算收进组件、`_card_info` 去重，压到 1499 行。
+- 验证：新增 `tests/test_3d_battle_field.gd` 3 项（真实闯关局 3D 拾取落点出牌 → 录制 → `pve_replay` 逐 hash 通过；同帧同落点不挂 3D 对照局逐帧 hash 全等；页面投影/特效尺寸/屏幕向上/我左敌右/教程半场高亮；场外无落点、松手落点 = ghost）；新增冒烟 `tools/check_battle_scene_3d.gd`（真实场景树：镜头投影与引擎一致、取消/无效/出兵三种松手、整局节点数恒等于存活单位、结算按钮入弹窗层、新手引导出兵步经 3D 推进）。客户端 **487/487**（SCRIPT ERROR 0；退出时的资源泄漏警告与改动前基线一致），D1/D2 预览冒烟、全库 gdlint 通过；临时窗口截图自检战斗/结算/引导画面。未改 logic/config/server/proto/net。
+- 用户要求真人用例直接在对话里给、不再单独建 md 文档；本步用例 E1~E11 在对话中下发（登录→推关→结算→领奖、拖卡合法/非法/取消、法术、掉线 fail closed 与恢复、新手引导）。D5 未开工。
+
+### D4 用户验收（2026-10-25）
+
+- 用户回报 D4 真人用例 **E1~E11 全部通过**（推关→结算→领奖、拖卡合法/非法/取消、法术、掉线定格与恢复、新手引导）；以上 D4 条目的「待真人验收」由本条更新为已验收。D5（PvP 接线）未开工。
+
+### 全 3D 表现迁移 D5 PvP 接线（2026-10-25，代码+自动检查通过，待真人双机验收；未提交）
+
+- 用户指示「开工」D5。联机页 `net_battle_scene.gd` 是单机页的独立拷贝，按 D4 同法原地换战场层：进房 `_on_joined` 建 3D 层（`local_owner = your_side-1`、side2 `flipped`，本方恒蓝在左）；`_t2s`/`_ur` 借镜头投影（翻转已含在 3D 层里），2D 伤害数字/法术特效/投射物/名片照旧叠加；松手抽成 `_release_card(i, screen)`，落点 = 镜头拾取，**仍只发 `send_deploy`**（等服务端广播同 tick 落子，表现层不落子）；`_card_info` 收敛为 D2 同口径静态函数；结算时撤拖拽。
+- 重连：`BattleClient` 再进房时新建 Match 并从头追帧、再次发 `joined` → 页面对同一个 3D 层再调 `setup` **换绑**：presenter 清空旧局节点按新局重建，镜头/光照/输入复用不重复造。`battle_field_3d.setup` 为此改为可重入，并以 options 传 `lighting/local_owner/flipped`；`deploy_half_rect` 按本方 owner 取半场。
+- 踩坑：①冒烟脚本里内部类 `extends` 联机页在加载期编译，此时 autoload 全局名（Router）未注册 → 改运行时 `GDScript.new()` 编译子类；且脚本中途报错仍打印 PASS → 加「两个视角都跑完」计数断言。②gdlint 解析不了含双引号的单引号字符串 → 改 `"
+".join([...])`。
+- 验证：新增 `tests/test_3d_net_field.gd` 3 项（side1/side2：投影走 3D、本方王塔在左/敌在右、本方蓝敌方红、屏幕向上、本方半场可部署/敌方不可、落点往返；双方各经翻转视角 3D 拾取下兵的指令流，挂 3D 两端与不挂对照逐 tick hash 全等、胜负一致；重连新建 Match 追帧后换绑：复用同一层、子节点不增、单位节点 = 新局存活、无死亡残留）；新增冒烟 `tools/check_net_battle_3d.gd`（真实场景树 + 桩客户端模拟服务端广播，双视角：镜头投影与引擎一致、拖卡只发一条落点正确的指令且广播后本方单位出现、松在手牌栏/敌方半场不发、重连换绑节点数恒等于存活单位且手牌按钮不叠、结算按钮入弹窗层）。客户端 **490/490**（SCRIPT ERROR 0），D4 战斗页冒烟、D1/D2 预览冒烟、全库 gdlint 通过；临时窗口截图自检两视角同一时刻画面互为 180°。未改 logic/config/server/proto/net。
+- 真人用例在对话中下发（双机 F1~F9）。**用户 2026-10-25 表示暂无条件做双机验证 → 记为验收欠账**（F1~F9 未跑；自动检查已覆盖双视角方向/落点、hash 中立、重连换绑）。
+
+### Jira 看板对账与补账（2026-10-25，Atlassian MCP 已恢复授权）
+
+- **状态纠偏**：KAN-50 Epic 待办→进行中；KAN-70/73/74（S9 GM 解禁/新手引导/主菜单重构，HISTORY 记真人验收过）审查中→完成；KAN-76/77（PVP 养成同步，仅欠两机验收）进行中→审查中；KAN-113（PVE 减速残余风险，文档口径=挂账待办）进行中→待办；KAN-124（卡通 P4 美术欠账，程序可补三项已验收、其余等素材）待办→进行中。
+- **题材下架收口**（决策 49 三国下架）：KAN-90/92/93 审查中/进行中→完成（A4 已验收部分保留，余下三国批次取消，各加评论说明）；KAN-108 体型三档被 `vis_height_px` 配置化取代→完成；KAN-116 横屏页面原生化前提消失，保留 Idea 并评论。
+- **补建 21 单**（均挂 KAN-50）：KAN-126 小小 3D 样板+Blender 管线(完成)；KAN-127~132 全 3D 迁移 D0~D5（用户 2026-10-25 确认 D0~D5 全部完成，含 D5，全部已完成）；KAN-133~136 D6~D9（待办；D6 工作区已有未提交 k_gate/k_keep 建模文件，疑似已开工）；KAN-137 UI 偏离修复+设计系统入库(完成)；KAN-138 单机 PvP 陪练机器人(Idea)；KAN-139~145 上线工程 E2~E8(待办)、KAN-146 E9(Idea)。
+- 待用户拍板（未动）：KAN-99 路由欠联机/探险流真人验收；KAN-78/79、KAN-76/77、KAN-112 K5 等两机/真人验收欠账；KAN-59 S8e 难度手感；K7a~d（KAN-117~120）待办未开工。
+
+### 全 3D 表现迁移 D6 王国 3D（2026-10-25，代码+自动检查通过，待真人验收；未提交）
+
+- 用户要求一口气做完 D6；同时把「单机 PvP 陪练机器人」（清 D5 双机欠账用）作为未排期需求记入 PLAN_V5_3D。
+- 资产（Blender 后台程序化，`tools/blender/assets/k_*.py` + 新共用构件 `tools/blender/kbits.py`：拱门/窗/坡屋顶/尖塔/栅栏/旗/盾徽/穹顶肋条）：15 栋建筑（王城、农田、魔法工坊、粮仓、药剂坊、城门、采石场、天文台、铁匠铺、牧场、晶石商店、魔法书院、长枪营、弩手营、骑兵营）+ 南瓜居民屋 + 空地 + 围墙段 + 角楼 + 花/竹/木桶，按 0830 卡通原画补全侧背面；全部静态单材质顶点色，1.2k~5.8k 三角面（≤6k）。箭塔复用战斗箭塔（屋顶染本方蓝），树复用 D3 道具；施工脚手架程序化生成。
+- Godot：`view/three_d/kingdom_camera.gd`（正交 45° 斜俯视纯数学：拖动跟手、以指点为中心缩放、焦点按视野收紧到「画面最多露出墙外 3 米」）；`view/three_d/kingdom_presenter.gd`（沿用王国页 BG 像素槽位表，40 像素 = 1 米；地面/路网/城墙/点缀/16 槽 + 箭塔三处角楼副本；未建 = 空地、施工中 = 外罩脚手架、建成 = 模型；居民 = 战斗单位模型播 Walk 巡游）。`view/kingdom.gd` 2D 世界绘制整块换成 3D（601→约 400 行）：滚轮/触控板/双指缩放，名牌/施工倒计时/待收气泡仍 2D 叠加并改天空牧场白卡深字（原夜色底配深青字几乎看不清）；建造/升级/加速/收取弹窗与服务端读写不动。`ground.gdshader` 加棋盘格边长参数（默认 1 米，战斗场地不变）。
+- 点选（踩坑两轮，单测抓到）：①包围盒投影框会被前排建筑的旗杆/尖顶撑高，罩住后排建筑门口与名牌 → 改为先判名牌（按当前镜头现算，不用上一帧缓存——冒烟抓到移镜头后点到旧名牌位置），再判「视平面凸包」：正交斜视下同一视线上的点 (x, z·sinθ − y·cosθ) 恒等，故每个模型预算一次 2D 凸包轮廓，点在多边形内即命中，尖顶两侧空角不再误判；重叠取前排。②Y 向坡屋顶用三段圆锥拼出来是单坡楔形 → 改显式建点三棱柱。
+- 验证：新增 `tests/test_3d_kingdom.gd` 5 项（镜头往返/拖动跟手/缩放锚点/上下限/边缘限制；模型静态+顶点色+面数预算；16 栋正面贴槽位、宽度按槽、占地互不重叠；每栋门口与名牌都点得中、空地可点、角楼副本建成后可点未建不可点、空白不选中；形态切换）；新增冒烟 `tools/check_kingdom_3d.gd`（真实场景树 + 在线/王国桩：16 槽与居民就绪、投影与引擎一致、空地/脚手架/建成形态随状态更新、点王城弹王城操作窗、拖动平移不弹窗、滚轮缩放有界、居民在走；`--shot` 截图自检）。客户端 **495/495**（SCRIPT ERROR 0），D4/D5/D1~D3 冒烟、全库 gdlint 通过。未改 logic/config/server/proto/net。
+- 旧 2D 王国贴图（`assets/kingdom_cartoon/`）已无脚本引用，留待 D9 统一清理。真人用例在对话中下发（G1~G10）。
+- **用户试看反馈（2026-10-25）**：①居民穿房子走 → 原为门口间直线巡游；改为寻路：新增 `view/three_d/kingdom_nav.gd`（AStarGrid2D 纯算法，非物理：城内 0.5 米格，建筑/空地/角楼/点缀占地外扩 0.35 米为不可走，路面代价 1、草地 4 → 绕开房子且优先走路），居民按路径在 16 个门口之间巡游。②「太艳太亮、饱和度爆炸」→ 先试环境后期调色无效（**项目用 Compatibility 渲染器，不支持 Environment adjustment**，像素实测前后不变）；改为材质级调色：`toon.gdshader`/`ground.gdshader` 加 saturation/brightness 参数（默认 1，战斗与图鉴不变），王国传 `GRADE=(0.72, 0.8)` + 柔和草地/路面色，王国那份太阳/环境光 ×0.8。像素实测草地 (203,229,168)→(148,182,126)。
+- 补测：`test_3d_kingdom.gd` 新增寻路项（16 门口都有落脚点且互通、所有路径采样不进入任何占地、采石场→药剂坊长路线路面占比 >60%、3 名居民巡游 90 秒全程不进占地）。客户端 **496/496**（SCRIPT ERROR 0），王国/D4/D5/D1~D3 冒烟、全库 gdlint 通过。
+
+### D6 用户验收（2026-10-25）
+
+- 用户回报 D6 真人用例 **G1~G10 全部通过**（含居民寻路不穿模、王国调色）；以上 D6 条目的「待真人验收」由本条更新为已验收。D7 未开工。
 ---
 
 ## 发布与打包（release 分支独有记录）

@@ -31,3 +31,8 @@ Thumbs.db
 # Firebase Hosting 部署缓存 + Antigravity IDE 快照（本地产物，不进库）
 .firebase/
 .snapshots/
+
+# Blender 生成管线（tools/blender）：Python 缓存与 Blender 自动备份不入库
+__pycache__/
+*.pyc
+*.blend1

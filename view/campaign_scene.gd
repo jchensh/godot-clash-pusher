@@ -9,14 +9,15 @@ const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const GameStateScript = preload("res://view/game_state.gd")
 const CampaignStateScript = preload("res://logic/campaign_state.gd")
 
-const C_DONE := Color(0.22, 0.40, 0.26)
-const C_CURRENT := Color(0.50, 0.42, 0.16)
-const C_FUTURE := Color(0.20, 0.20, 0.28)
-const C_BOSS := Color(0.46, 0.18, 0.20)
-const BORD_DONE := Color(0.45, 0.78, 0.52)
-const BORD_CURRENT := Color(0.95, 0.78, 0.32)
-const BORD_FUTURE := Color(0.40, 0.42, 0.52)
-const BORD_BOSS := Color(1.0, 0.40, 0.38)
+# 路线节点四态 = PixelUI 色板令牌（UI 偏离修复④：夜色深底 → 天空牧场浅底，字统一主文字色）
+const C_DONE := PixelUI.COL_NODE_DONE_BG
+const C_CURRENT := PixelUI.COL_NODE_CURRENT_BG
+const C_FUTURE := PixelUI.COL_NODE_FUTURE_BG
+const C_BOSS := PixelUI.COL_NODE_BOSS_BG
+const BORD_DONE := PixelUI.COL_NODE_DONE_BD
+const BORD_CURRENT := PixelUI.COL_NODE_CURRENT_BD
+const BORD_FUTURE := PixelUI.COL_NODE_FUTURE_BD
+const BORD_BOSS := PixelUI.COL_NODE_BOSS_BD
 
 var _loader
 
@@ -59,7 +60,7 @@ func _build() -> void:
 		var panel := _panel(Vector2(80, y), Vector2(560, 76), bg, border, bw)
 		var mark := "✓" if done else ("▶" if current else "·")
 		_pin(panel, "%s  %s" % [mark, tr("campaign_node") % [i + 1, tr("focus_" + focus)]],
-			Vector2(24, 0), Vector2(512, 76), 28, Color.WHITE if not done else Color(0.72, 0.86, 0.74), HORIZONTAL_ALIGNMENT_LEFT)
+			Vector2(24, 0), Vector2(512, 76), 28, PixelUI.COL_PARCHMENT, HORIZONTAL_ALIGNMENT_LEFT)
 		y += 92.0
 
 	if camp.is_over():
