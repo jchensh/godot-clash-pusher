@@ -8,6 +8,7 @@ extends "res://tests/test_case.gd"
 
 const UILayersScript = preload("res://view/ui/ui_layers.gd")
 const ModalScript = preload("res://view/ui/modal.gd")
+const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const DragScrollScript = preload("res://view/ui/drag_scroll.gd")
 const RewardChestScript = preload("res://view/ui/reward_chest.gd")
 
@@ -64,10 +65,13 @@ func test_modal_push_open_close() -> void:
 
 func test_modal_dim_assembly() -> void:
 	var ui = _ui()
-	var m = ModalScript.new()   # 默认 dim_alpha=0.72
+	var m = ModalScript.new()   # 默认 dim_alpha=PixelUI.DIM_ALPHA
 	ui.modal(m)
 	assert_eq(m.mouse_filter, Control.MOUSE_FILTER_STOP, "根 STOP 兜底拦截")
 	assert_true(m.get_child_count() > 0 and m.get_child(0) is ColorRect, "默认装暗幕 ColorRect 且垫底")
+	# UI 偏离修复②：暗幕色取色板令牌（深青蓝），不再是夜色紫黑。
+	var dim_col: Color = (m.get_child(0) as ColorRect).color
+	assert_true(dim_col.is_equal_approx(Color(PixelUI.COL_DIM, PixelUI.DIM_ALPHA)), "暗幕色=COL_DIM@DIM_ALPHA（实测=%s）" % dim_col)
 	var dim_vp := (m.get_child(0) as ColorRect).get_viewport()
 	if dim_vp != null and dim_vp.get_visible_rect().size.x > 1.0:
 		var dim_rs: Vector2 = (m.get_child(0) as ColorRect).get_global_rect().size
@@ -152,3 +156,19 @@ func test_reward_chest_migrated_to_modal() -> void:
 	chest._on_bg_click()
 	assert_almost_eq(chest._t, 2.05, 0.001, "点空白跳到 T_BTN 末态")
 	assert_false(chest.is_queued_for_deletion(), "跳过≠关闭")
+
+func test_reward_chest_card_wraps_content() -> void:
+	# UI 偏离修复②：开箱白卡须罩住标题→最后一行奖励，且不压【继续】按钮（设计坐标 y=880）。
+	for vp in [Vector2(720, 1280), Vector2(750, 1334)]:
+		for extra in [[0, 0], [5, 20]]:
+			var chest = RewardChestScript.new()
+			chest.setup(3, 3, 100, extra[0], extra[1], true)
+			var r: Rect2 = chest.card_rect(vp)
+			var lines: int = 1 + int(extra[0] > 0) + int(extra[1] > 0)
+			var title_top: float = vp.y * 0.20 - 56.0
+			var last_line_bottom: float = vp.y * 0.40 + 90.0 + 40.0 * float(lines - 1) + 14.0
+			assert_true(r.position.y < title_top, "卡顶罩住标题 vp=%s" % vp)
+			assert_true(r.end.y > last_line_bottom, "卡底罩住第 %d 行奖励 vp=%s" % [lines, vp])
+			assert_true(r.end.y < 880.0, "卡底不压继续按钮 vp=%s 实测=%.0f" % [vp, r.end.y])
+			assert_almost_eq(r.get_center().x, vp.x / 2.0, 0.01, "白卡水平居中")
+			chest.free()

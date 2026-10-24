@@ -56,3 +56,12 @@ func test_dim_is_lighter_than_night() -> void:
 	# 暗幕换成深青蓝半透：不透明度须低于夜色旧值 0.72，且色相偏蓝（b > r）。
 	assert_true(PixelUI.DIM_ALPHA > 0.0 and PixelUI.DIM_ALPHA < 0.72, "DIM_ALPHA=%.2f 应在 (0, 0.72)" % PixelUI.DIM_ALPHA)
 	assert_true(PixelUI.COL_DIM.b > PixelUI.COL_DIM.r, "暗幕应偏青蓝")
+
+func test_no_night_literals_in_migrated_views() -> void:
+	# 修复③~⑤ 后这些文件不得再出现夜色深底字面量（三通道都 < 0.4 的 Color(r, g, b…)）。
+	var re := RegEx.new()
+	re.compile(r"Color\(0\.[0-3]\d*, *0\.[0-3]\d*, *0\.[0-3]\d*")
+	for path in ["res://view/deck_builder.gd", "res://view/campaign_scene.gd", "res://view/run_scene.gd",
+			"res://view/ui/modal.gd", "res://view/ui/reward_chest.gd"]:
+		var hit := re.search(FileAccess.get_file_as_string(path))
+		assert_null(hit, "%s 仍有夜色字面量 %s" % [path, hit.get_string() if hit != null else ""])

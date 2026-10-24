@@ -11,13 +11,7 @@ const GameStateScript = preload("res://view/game_state.gd")
 const SpriteDB = preload("res://view/sprite_db.gd")
 const DECK_SIZE := 8
 
-const TROOP_BG := Color(0.20, 0.30, 0.42)
-const TROOP_BORDER := Color(0.45, 0.62, 0.85)
-const SPELL_BG := Color(0.34, 0.22, 0.44)
-const SPELL_BORDER := Color(0.74, 0.55, 0.95)
 const GOLD := Color("3d9be0")
-const SLOT_FILLED_BG := Color(0.18, 0.24, 0.20)
-const SLOT_EMPTY_BG := Color(0.12, 0.14, 0.13)
 
 var _loader
 var _selected := []            # 有序 card_id（<= 8）
@@ -108,9 +102,9 @@ func _build() -> void:
 		btn.position = Vector2(x, y)
 		btn.size = Vector2(150, 70)
 		btn.focus_mode = Control.FOCUS_NONE
-		btn.add_theme_stylebox_override("normal", PixelUI.sbpixel(SLOT_FILLED_BG, 2, Color(0.40, 0.55, 0.42)))
-		btn.add_theme_stylebox_override("hover", PixelUI.sbpixel(SLOT_FILLED_BG.lightened(0.12), 2, GOLD))
-		btn.add_theme_stylebox_override("pressed", PixelUI.sbpixel(SLOT_FILLED_BG.darkened(0.1), 2, Color(0.40, 0.55, 0.42)))
+		btn.add_theme_stylebox_override("normal", PixelUI.sbpixel(PixelUI.COL_SLOT_FILLED_BG, 2, PixelUI.COL_SLOT_FILLED_BD))
+		btn.add_theme_stylebox_override("hover", PixelUI.sbpixel(PixelUI.COL_SLOT_FILLED_BG, 2, GOLD))
+		btn.add_theme_stylebox_override("pressed", PixelUI.sbpixel(PixelUI.COL_INSET_BG, 2, PixelUI.COL_SLOT_FILLED_BD))
 		btn.pressed.connect(_remove_at.bind(i))
 		add_child(btn)
 		var port := TextureRect.new()       # 已选槽肖像（_refresh 按选中卡设纹理/隐显）
@@ -121,13 +115,13 @@ func _build() -> void:
 		port.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		port.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(port)
-		var lbl := _pin_label("", Vector2(x, y + 36), Vector2(150, 30), 18, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER)
+		var lbl := _pin_label("", Vector2(x, y + 36), Vector2(150, 30), 18, PixelUI.COL_PARCHMENT, HORIZONTAL_ALIGNMENT_CENTER)
 		_slots.append({"btn": btn, "label": lbl, "portrait": port})
 
 	_count_label = _pin_label("", Vector2(400, 162), Vector2(290, 28), 24, GOLD, HORIZONTAL_ALIGNMENT_RIGHT)
 
 	# 分隔线 + 卡池（ScrollContainer：滚轮 + 手指/鼠标按住拖动滑动——48 卡超屏必滚）
-	_rect(Color(0.30, 0.34, 0.30, 0.8), Vector2(30, 386), Vector2(660, 3))
+	_rect(Color("a9d3ee"), Vector2(30, 386), Vector2(660, 3))
 	_pin_label(tr("deck_pool"), Vector2(30, 398), Vector2(660, 26), 20, PixelUI.COL_MUTED, HORIZONTAL_ALIGNMENT_LEFT)
 	var ids: Array = _card_pool()
 	var rows: int = int(ceil(ids.size() / 4.0))
@@ -152,8 +146,8 @@ func _build() -> void:
 	_action_button(tr("btn_back"), 70, 988, 240, "dark", _on_back)
 	var confirm_label: String = "保存" if _mode == "edit" else ("出征" if _mode == "ladder" else tr("btn_battle"))
 	_battle_btn = _action_button(confirm_label, 410, 988, 240, "gold", _on_battle)
-	_battle_btn.add_theme_stylebox_override("disabled", PixelUI.sbpixel(Color(0.18, 0.18, 0.20), 3, Color(0.30, 0.30, 0.33)))
-	_battle_btn.add_theme_color_override("font_disabled_color", Color(0.5, 0.5, 0.55))
+	_battle_btn.add_theme_stylebox_override("disabled", PixelUI.sbpixel(PixelUI.COL_DISABLED_BG, 3, PixelUI.COL_DISABLED_BD))
+	_battle_btn.add_theme_color_override("font_disabled_color", Color(PixelUI.COL_PARCHMENT, 0.45))
 	_center_label(tr("deck_need8"), 1086, 20, PixelUI.COL_HINT)
 
 # —— L4 横屏布局（mockup 三栏原则）：顶带(返回/标题/副题/计数) + 左卡组面板 360 + 右卡池 5 列 ——
@@ -189,9 +183,9 @@ func _build_land(subtitle: String) -> void:
 		btn.position = Vector2(x, y)
 		btn.size = Vector2(150, 70)
 		btn.focus_mode = Control.FOCUS_NONE
-		btn.add_theme_stylebox_override("normal", PixelUI.sbpixel(SLOT_FILLED_BG, 2, Color(0.40, 0.55, 0.42)))
-		btn.add_theme_stylebox_override("hover", PixelUI.sbpixel(SLOT_FILLED_BG.lightened(0.12), 2, GOLD))
-		btn.add_theme_stylebox_override("pressed", PixelUI.sbpixel(SLOT_FILLED_BG.darkened(0.1), 2, Color(0.40, 0.55, 0.42)))
+		btn.add_theme_stylebox_override("normal", PixelUI.sbpixel(PixelUI.COL_SLOT_FILLED_BG, 2, PixelUI.COL_SLOT_FILLED_BD))
+		btn.add_theme_stylebox_override("hover", PixelUI.sbpixel(PixelUI.COL_SLOT_FILLED_BG, 2, GOLD))
+		btn.add_theme_stylebox_override("pressed", PixelUI.sbpixel(PixelUI.COL_INSET_BG, 2, PixelUI.COL_SLOT_FILLED_BD))
 		btn.pressed.connect(_remove_at.bind(i))
 		add_child(btn)
 		var port := TextureRect.new()
@@ -202,14 +196,14 @@ func _build_land(subtitle: String) -> void:
 		port.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		port.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(port)
-		var lbl := _pin_label("", Vector2(x, y + 36), Vector2(150, 30), 18, Color(1, 1, 1),
+		var lbl := _pin_label("", Vector2(x, y + 36), Vector2(150, 30), 18, PixelUI.COL_PARCHMENT,
 				HORIZONTAL_ALIGNMENT_CENTER)
 		_slots.append({"btn": btn, "label": lbl, "portrait": port})
 	_power_label = _pin_label("", Vector2(20, 476), Vector2(320, 26), 22, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
 	var confirm_label: String = "保存" if _mode == "edit" else ("出征" if _mode == "ladder" else tr("btn_battle"))
 	_battle_btn = _action_button(confirm_label, 50, 520, 260, "gold", _on_battle)
-	_battle_btn.add_theme_stylebox_override("disabled", PixelUI.sbpixel(Color(0.18, 0.18, 0.20), 3, Color(0.30, 0.30, 0.33)))
-	_battle_btn.add_theme_color_override("font_disabled_color", Color(0.5, 0.5, 0.55))
+	_battle_btn.add_theme_stylebox_override("disabled", PixelUI.sbpixel(PixelUI.COL_DISABLED_BG, 3, PixelUI.COL_DISABLED_BD))
+	_battle_btn.add_theme_color_override("font_disabled_color", Color(PixelUI.COL_PARCHMENT, 0.45))
 	_pin_label(tr("deck_need8"), Vector2(20, 616), Vector2(320, 24), 18, PixelUI.COL_HINT,
 			HORIZONTAL_ALIGNMENT_CENTER)
 	# 右：卡池 5 列网格（滚轮/拖动滚动；tile 布局与竖屏同款仅列数不同）
@@ -233,8 +227,8 @@ func _build_land(subtitle: String) -> void:
 
 func _pool_tile(id, x: float, y: float) -> void:
 	var troop := _is_troop(id)
-	var bg: Color = TROOP_BG if troop else SPELL_BG
-	var border: Color = TROOP_BORDER if troop else SPELL_BORDER
+	var bg: Color = PixelUI.COL_TROOP_BG if troop else PixelUI.COL_SPELL_BG
+	var border: Color = PixelUI.COL_TROOP_BD if troop else PixelUI.COL_SPELL_BD
 	var btn := Button.new()
 	btn.position = Vector2(x, y)
 	btn.size = Vector2(150, 84)
@@ -248,10 +242,10 @@ func _pool_tile(id, x: float, y: float) -> void:
 	if port != null:   # 有肖像 → 图在上、名+费在下；无肖像(箭雨/滚石/治疗) → 名+费居中
 		_pool_content.add_child(port)
 		_pin_label("%s\n%d" % [_card_name(id), _cost(id)], Vector2(x, y + 42), Vector2(150, 40),
-				15, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER, _pool_content)
+				15, PixelUI.COL_PARCHMENT, HORIZONTAL_ALIGNMENT_CENTER, _pool_content)
 	else:
 		_pin_label("%s\n%d" % [_card_name(id), _cost(id)], Vector2(x, y), Vector2(150, 84),
-				21, Color(1, 1, 1), HORIZONTAL_ALIGNMENT_CENTER, _pool_content)
+				21, PixelUI.COL_PARCHMENT, HORIZONTAL_ALIGNMENT_CENTER, _pool_content)
 	# 选中金边（默认隐藏，_refresh 控制 visible）
 	var frame := Panel.new()
 	frame.position = Vector2(x - 2, y - 2)
@@ -286,14 +280,14 @@ func _refresh() -> void:
 			s.portrait.texture = SpriteDB.card_portrait_tex(str(id), _loader)
 			s.portrait.modulate = SpriteDB.card_portrait_tint(str(id), _loader)
 			s.portrait.visible = s.portrait.texture != null
-			s.btn.add_theme_stylebox_override("normal", PixelUI.sbpixel(SLOT_FILLED_BG, 2, Color(0.40, 0.55, 0.42)))
+			s.btn.add_theme_stylebox_override("normal", PixelUI.sbpixel(PixelUI.COL_SLOT_FILLED_BG, 2, PixelUI.COL_SLOT_FILLED_BD))
 		else:
 			s.label.text = "+"
 			s.portrait.visible = false
-			s.btn.add_theme_stylebox_override("normal", PixelUI.sbpixel(SLOT_EMPTY_BG, 2, Color(0.28, 0.30, 0.28)))
+			s.btn.add_theme_stylebox_override("normal", PixelUI.sbpixel(PixelUI.COL_SLOT_EMPTY_BG, 2, PixelUI.COL_SLOT_EMPTY_BD))
 	var full := _selected.size() == DECK_SIZE
 	_count_label.text = "%d / %d" % [_selected.size(), DECK_SIZE]
-	_count_label.add_theme_color_override("font_color", Color(0.5, 0.9, 0.55) if full else GOLD)
+	_count_label.add_theme_color_override("font_color", Color("7cc36a") if full else GOLD)
 	if _battle_btn != null:
 		_battle_btn.disabled = not full
 	if _power_label != null:
