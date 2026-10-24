@@ -921,3 +921,24 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
 - **验收结果**：G 组 G-1~G-6 功能逻辑真人验收通过（G-7 联机并入 D-1 后补）；阵营色按拍板对调后复跑全绿。
 - 客户端 **450/450**；gdlint 绿；check_docs 18 文件过；headless import 零错（3 张新贴图 `.import` 已生成）。台账追加 G 组 7 例。
 - **剩余 KAN-124 欠账**（仍待素材）：17 锁卡素材、死亡帧、法术 FX/图标、多场地 BG、卡通音频、闯关图/主菜单美术。
+
+### 小小 3D 动画展示实验（2026-10-24，待真人验收；Jira 待补）
+
+- 用户明确授权本步先完成、Jira 恢复后补记（两条 Atlassian 连接均需重新认证）。独立 worktree 制作，仅新增资产/展示场景，不进入在线游戏主流程；未提交推送。
+- 新增 `assets/models/xiaoxiao/`（带蒙皮 GLB + `.gdignore` 隔离的 Blender 源文件）、`view/labs/xiaoxiao_showcase.{gd,tscn}`、`tests/test_xiaoxiao_model.gd`、`tools/check_xiaoxiao_showcase.gd`。4,040 三角面/一个材质；Blender 15 骨、Godot 导入 14 变形骨；Idle/Walk 循环、Attack 单次回待机；暂停续播、调速、旋转缩放。
+- 骨骼权重检查通过；行走逐帧支撑脚贴地补偿；Godot 自动用例 **453/453**，独立展示台冒烟通过。细节与 A1~A7 人工用例见 [docs/ACCEPTANCE_XIAOXIAO_3D.md](docs/ACCEPTANCE_XIAOXIAO_3D.md)；动作手感仍待真人验收。
+- 同日按用户要求补 [Agent → Blender → Godot 工作流](docs/AGENT_BLENDER_GODOT_WORKFLOW.md)：记录本机连接方式、建模/骨骼/动画/导出/引擎验证步骤及小小实作注意事项，已登记文档索引。
+
+### 全 3D 表现迁移 D0（2026-10-24，代码通过，待真人验收；Jira 待补）
+
+- 用户明确全项目转真正 3D，同时保留平面玩法与 2D 菜单/HUD。[施工图](PLAN_V5_3D.md) 和 [ADR 0004](docs/adr/0004-3d-presentation-flat-simulation.md) 记录边界；后续 D1~D9 尚未实现。
+- 本步新增 `view/three_d/{field_projection,arena_presenter}.gd`、`view/labs/arena_3d_preview.{gd,tscn}`、`tests/test_3d_projection.gd`：复用 arena 配置生成河/双桥/六塔几何代理，tile↔XZ/翻转/射线落点，点击只预览原 Arena 部署合法性；两只小小作比例样板，不发指令、不接经济。逻辑/服务端未修改。
+- 新旧自动用例 **456/456**，独立场景 headless 启动通过；塔为施工代理，构图/点选仍待真人按施工图 D0 用例确认。Jira 连接仍需重新认证，当前对话先做后补；未提交推送。
+
+### D0 用户验收与提交交接（2026-10-24）
+
+- 用户明确“这一步 ok”，D0 真人验收通过，更新施工图与索引当前状态；以上“待验收/未推送”是当时施工记录，由本条更新其当前状态。小小动画台账细项未逐条回报，不扩大验收结论。
+- 用户要求整理全部文档并 push 到 GitHub，明确 **本 session 不做 D1**。本次将小小资产/动画样板、D0 地基和文档作为 D0 交付提交到 `codex/xiaoxiao-animation`，未合入 master/release。
+- 新增 [D1 交接说明与 prompt](docs/HANDOFF_3D_D1_2026-10-24.md)，记录分支、资产路径、已知基线退出提示、Jira 欠账及下一步边界。D1~D9 均未开工，需新 session 按一步一确认推进。
+- 收尾复查 Jira 仍需重新认证，沿用用户本轮先做后补授权；未伪造 issue 或标 Done。提交前检查结果见本次交付，推送成功以远端分支校验为准。
+- 提交前复跑：客户端 **456/456**、小小展示台冒烟、全部新增 GDScript lint、18 文件文档检查及新增 3D 文档链接检查通过；未修改 logic/config/net/server/proto。ObjectDB/24 resources 退出提示与原 master 基线一致。
