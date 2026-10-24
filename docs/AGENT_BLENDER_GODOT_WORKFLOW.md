@@ -84,6 +84,7 @@ MCP 具有执行任意 Python 的能力：只运行审阅过的代码，桥保�
 |---|---|
 | `tools/blender/toonkit.py` | 圆角基本体 + 顶点色（`Col` → glTF COLOR_0）+ 刚性分块绑骨 + 世界轴关键帧 + GLB 导出；静态资产只导网格；`tag="team"` 部件进 `M_Team` 材质槽 |
 | `tools/blender/motions.py` / `slimes.py` | 通用动作模板 / 史莱姆共用构件 |
+| `tools/blender/kbits.py` | 王国建筑（D6）共用构件：拱门、窗、显式三棱柱坡屋顶、尖塔、栅栏、旗、盾徽、穹顶半弧肋条；资产名前缀 `k_` |
 | `tools/blender/assets/<id>.py` | 每个资产一份，暴露 `build(k)` |
 | `tools/blender/build_asset.py` | 后台权威构建：`blender -b --factory-startup --python-exit-code 1 -P tools/blender/build_asset.py -- <id> [--review DIR]` |
 | `tools/blender/live_build.py` | 直播模式：经 MCP 在用户开着的 Blender 里边拼边刷新，供人看过程；入库文件以后台构建为准 |

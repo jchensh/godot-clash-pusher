@@ -7,11 +7,12 @@ const TOON := preload("res://view/three_d/toon.gdshader")
 const OUTLINE := preload("res://view/three_d/toon_outline.gdshader")
 const TEAM_MATERIAL := "M_Team"
 
-static var _cache: Dictionary = {}   # tint.to_html() → ShaderMaterial（同色共用，减少材质实例）
+static var _cache: Dictionary = {}   # tint + 调色 → ShaderMaterial（同参共用，减少材质实例）
 
 
-static func material(tint: Color = Color.WHITE) -> ShaderMaterial:
-	var key := tint.to_html()
+## grade = (饱和度, 亮度)；缺省 (1,1) = 原色（战斗/图鉴），王国页传降饱和/降亮度。
+static func material(tint: Color = Color.WHITE, grade := Vector2.ONE) -> ShaderMaterial:
+	var key := "%s/%s" % [tint.to_html(), grade]
 	if _cache.has(key):
 		return _cache[key]
 	var outline := ShaderMaterial.new()
@@ -19,13 +20,15 @@ static func material(tint: Color = Color.WHITE) -> ShaderMaterial:
 	var mat := ShaderMaterial.new()
 	mat.shader = TOON
 	mat.set_shader_parameter("tint", tint)
+	mat.set_shader_parameter("saturation", grade.x)
+	mat.set_shader_parameter("brightness", grade.y)
 	mat.next_pass = outline
 	_cache[key] = mat
 	return mat
 
 
 ## 返回被换材质的 surface 数（测试/自检用）。
-static func apply(root: Node, team_tint: Color = Color.WHITE, body_tint: Color = Color.WHITE) -> int:
+static func apply(root: Node, team_tint: Color = Color.WHITE, body_tint: Color = Color.WHITE, grade := Vector2.ONE) -> int:
 	var count := 0
 	for node in root.find_children("*", "MeshInstance3D", true, false):
 		var mi := node as MeshInstance3D
@@ -34,6 +37,6 @@ static func apply(root: Node, team_tint: Color = Color.WHITE, body_tint: Color =
 		for s in mi.mesh.get_surface_count():
 			var src := mi.mesh.surface_get_material(s)
 			var team := src != null and src.resource_name == TEAM_MATERIAL
-			mi.set_surface_override_material(s, material(team_tint if team else body_tint))
+			mi.set_surface_override_material(s, material(team_tint if team else body_tint, grade))
 			count += 1
 	return count

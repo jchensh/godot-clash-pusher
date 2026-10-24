@@ -1,9 +1,8 @@
-# Kingdom —— 王国主城（0726 正式城建场景：testAssets/城建0726 整图 BG + 16 建筑落位）。
+# Kingdom —— 王国主城（D6 起 3D：view/three_d/kingdom_presenter.gd 渲染地面/路/城墙/16 建筑/居民）。
 #
-# 场景 = 整图 BG（1440×1830 城内俯视，含围墙/路网/南门开口）+ 槽位表（BG 像素坐标系，
-# 布局按美术「角色大小示意」参考图落位）。横竖屏共用一套槽位，只差视野变换：
-# 竖屏 = 高铺满左右拖动 / 横屏 = 宽铺满上下拖动（_k2s 单点收敛，_pan 钳制在图内）。
-# 纯 _draw 即时渲染（建筑/小人 Y-sort 伪深度），HUD 用 Control 子节点浮在上层；
+# 布局仍以 BG 像素系槽位表为真相源（pos = 建筑正面底边中心，按美术示意图落位；w = 建筑宽度像素），
+# 3D 场景按 40 像素 = 1 米摆放，与 2D 时代布局一致。镜头正交斜俯视：拖动平移、滚轮/双指缩放、焦点钳在城内。
+# 名牌/施工倒计时/待收取气泡仍是 2D 叠加（跟随建筑 3D 位置投影）；HUD 用 Control 子节点浮在上层；
 # 点建筑 → UI.modal(KingdomBuildingModal)；placeholder 建筑（config kind）建成后点击=敬请期待。
 # 决策 48 + 永久原则：服务器权威——本页只收发数据 + 表现；倒计时用服务器时间基准插值。
 extends Control
@@ -11,81 +10,38 @@ extends Control
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const HudWidgets := preload("res://view/ui/hud_widgets.gd")
 const GameStateScript := preload("res://view/game_state.gd")
-const SpriteDB := preload("res://view/sprite_db.gd")
 const BuildingModal := preload("res://view/ui/kingdom_building_modal.gd")
+const KingdomPresenter := preload("res://view/three_d/kingdom_presenter.gd")
 
-# —— 场景整图（0726 城建正式素材）——
-# 「未建造」空地：卡通版（KAN-124，tools/gen_kingdom_plot.py 程序生成，色板取自 0830 城建件）。
-const TEX_PLOT := preload("res://assets/kingdom_cartoon/plot.png")
-const TEX_UNIT_SHADOW := preload("res://assets/units/unit_shadow.png")
 const BG_SIZE := Vector2(1440.0, 1830.0)   # 场景坐标系尺寸（沿用 0726 口径；示意图同尺寸）
-
-# —— 决策 49 P3（0830 城建批次）：BG 整图下线 → 拼接式场景（地表错位平铺+围墙+路+装饰，
-# 对齐美术《城建资源说明》「均由独立物件拼接」）；建筑贴图全换卡通件、布局按示意图落位。——
-const TEX_GROUND := preload("res://assets/kingdom_cartoon/ground.png")   # 2×4 色块 tile，非四方连续
-const TEX_ROAD := preload("res://assets/kingdom_cartoon/road.png")
-const TEX_WALL_H := preload("res://assets/kingdom_cartoon/wall_a.png")   # 横墙段 167×107
-const TEX_WALL_V := preload("res://assets/kingdom_cartoon/wall_b.png")   # 竖墙段 74×107
-const TEX_WALL_POST := preload("res://assets/kingdom_cartoon/wall_d.png")  # 绿旗角柱 99×160
-const DECO_TEX := {
-	"tree1": preload("res://assets/kingdom_cartoon/tree1.png"),
-	"tree2": preload("res://assets/kingdom_cartoon/tree2.png"),
-	"tree3": preload("res://assets/kingdom_cartoon/tree3.png"),
-	"flower1": preload("res://assets/kingdom_cartoon/flower1.png"),
-	"flower2": preload("res://assets/kingdom_cartoon/flower2.png"),
-	"bamboo": preload("res://assets/kingdom_cartoon/bamboo.png"),
-	"barrel": preload("res://assets/kingdom_cartoon/barrel_wood.png"),
-	"pumpkin": preload("res://assets/kingdom_cartoon/resident.png"),   # 南瓜居民屋=大型装饰（无槽位）
-}
-const BUILDING_TEX := {
-	"keep": preload("res://assets/kingdom_cartoon/keep.png"),
-	"farm": preload("res://assets/kingdom_cartoon/farm.png"),
-	"workshop": preload("res://assets/kingdom_cartoon/magic_lab.png"),      # 顶替：紫蘑菇魔法工坊（产木料语义）
-	"watchtower": preload("res://assets/towers/cartoon_tower_arrow.png"),   # 顶替：战斗箭塔复用（风格统一）
-	"granary": preload("res://assets/kingdom_cartoon/granary.png"),
-	"mint": preload("res://assets/kingdom_cartoon/mint.png"),               # 顶替：药剂工坊（卖药剂产金币）
-	"wall": preload("res://assets/kingdom_cartoon/gate.png"),               # wall 槽=城门（沿 0726 先例）
-	"quarry": preload("res://assets/kingdom_cartoon/quarry.png"),
-	"stoneworks": preload("res://assets/kingdom_cartoon/stoneworks.png"),   # 顶替：科研所（天文台）
-	"ironworks": preload("res://assets/kingdom_cartoon/ironworks.png"),
-	"ranch": preload("res://assets/kingdom_cartoon/ranch.png"),
-	"shop": preload("res://assets/kingdom_cartoon/shop.png"),
-	"camp_infantry": preload("res://assets/kingdom_cartoon/camp_infantry.png"),  # 顶替：魔法书院（法师营）
-	"camp_spear": preload("res://assets/kingdom_cartoon/camp_spear.png"),
-	"camp_crossbow": preload("res://assets/kingdom_cartoon/camp_crossbow.png"),
-	"camp_cavalry": preload("res://assets/kingdom_cartoon/camp_cavalry.png"),
-}
-# 槽位（BG 像素系，pos=建筑底边中心；按美术示意图落位）。w 缺省 = 贴图原生宽
-# （0726 素材与示意图同比例）；watchtower 老素材过大需显式压宽。
-const SLOTS := {   # 0830 卡通示意图落位（pos=建筑底边中心，BG 像素系；真人验收可调）
-	"keep": {"pos": Vector2(705, 660)},
-	"farm": {"pos": Vector2(1115, 455)},
-	"workshop": {"pos": Vector2(280, 650)},
-	"granary": {"pos": Vector2(828, 1000)},
-	"mint": {"pos": Vector2(1130, 1215)},
-	"wall": {"pos": Vector2(710, 1552)},   # 城门骑底墙中央（墙带中心 y≈1500）
+# 槽位（BG 像素系，pos=建筑底边中心；按 0830 卡通示意图落位；w=建筑宽度，沿用 2D 贴图原生宽，真人验收可调）。
+const SLOTS := {
+	"keep": {"pos": Vector2(705, 660), "w": 221.0},
+	"farm": {"pos": Vector2(1115, 455), "w": 181.0},
+	"workshop": {"pos": Vector2(280, 650), "w": 128.0},
+	"granary": {"pos": Vector2(828, 1000), "w": 143.0},
+	"mint": {"pos": Vector2(1130, 1215), "w": 170.0},
+	"wall": {"pos": Vector2(710, 1552), "w": 253.0},   # wall 槽=城门，骑底墙中央（墙带中心 y≈1500）
 	"watchtower": {"pos": Vector2(150, 1420), "w": 82.0},
-	"quarry": {"pos": Vector2(370, 455)},
-	"stoneworks": {"pos": Vector2(480, 790)},
-	"ironworks": {"pos": Vector2(1140, 790)},
-	"ranch": {"pos": Vector2(950, 610)},
-	"shop": {"pos": Vector2(570, 1010)},
-	"camp_infantry": {"pos": Vector2(287, 940)},
-	"camp_spear": {"pos": Vector2(287, 1190)},
-	"camp_crossbow": {"pos": Vector2(560, 1230)},
-	"camp_cavalry": {"pos": Vector2(872, 1215)},
+	"quarry": {"pos": Vector2(370, 455), "w": 142.0},
+	"stoneworks": {"pos": Vector2(480, 790), "w": 139.0},
+	"ironworks": {"pos": Vector2(1140, 790), "w": 133.0},
+	"ranch": {"pos": Vector2(950, 610), "w": 148.0},
+	"shop": {"pos": Vector2(570, 1010), "w": 149.0},
+	"camp_infantry": {"pos": Vector2(287, 940), "w": 146.0},
+	"camp_spear": {"pos": Vector2(287, 1190), "w": 148.0},
+	"camp_crossbow": {"pos": Vector2(560, 1230), "w": 161.0},
+	"camp_cavalry": {"pos": Vector2(872, 1215), "w": 139.0},
 }
-# 箭塔四角：主槽=左下（贴墙内侧）；其余三角视觉复刻（建成才画）；右下角与主槽同为交互入口。
-const WT_CLICK_EXTRA := Vector2(1290, 1420)
-const WT_VISUAL_EXTRA := [Vector2(1290, 1420), Vector2(150, 330), Vector2(1290, 330)]
-# —— 拼接场景布局（BG 像素系）——
+# 箭塔四角：主槽=左下（贴墙内侧）；其余三角为视觉复刻（建成才现身，也可点选=箭塔）。
+const WT_EXTRAS := [Vector2(1290, 1420), Vector2(150, 330), Vector2(1290, 330)]
+# —— 城墙/路网布局（BG 像素系）——
 const WALL_TOP_Y := 230.0      # 顶墙中线
 const WALL_BOT_Y := 1500.0     # 底墙中线
 const WALL_LEFT_X := 90.0      # 左墙中线
 const WALL_RIGHT_X := 1350.0   # 右墙中线
-const GATE_GAP := 220.0        # 底墙城门开口宽（< 城门贴图宽 253，门体骑缝盖住接缝）
-# 路网＝运行时按 SLOTS 生成（0830 验收反馈：手标表与建筑对不齐）——
-# 干线（竖主干 城堡→城门 + 中/下横干）+ 每建筑门口垂直支路；建筑挪位路自动跟随。
+const GATE_GAP := 220.0        # 底墙城门开口宽（城门模型骑缝盖住接缝）
+# 路网＝运行时按 SLOTS 生成（干线：竖主干 城堡→城门 + 中/下横干；每建筑门口垂直支路，建筑挪位路自动跟随）。
 const ROAD_W := 64.0
 const ROAD_MID_Y := 850.0      # 中横干中线
 const ROAD_LOW_Y := 1198.0     # 下横干中线（下排四营/药剂工坊门口贴线，无需支路）
@@ -101,26 +57,21 @@ const DECO_ITEMS := [
 	["barrel", Vector2(760, 400)], ["barrel", Vector2(340, 1080)],
 	["pumpkin", Vector2(905, 785)],   # 南瓜居民屋（大型装饰，占示意图原位）
 ]
+# —— 巡游居民（战斗单位 3D 模型播 Walk；数量/速度纯表现，与逻辑无关）——
+const WALKER_IDS := ["squire_body", "goblin_body", "archer_body", "barbarian_body", "knight_body"]
+const DRAG_THRESHOLD := 12.0   # 按下后移动超过此像素 = 拖动平移（不再触发点选）
+const WHEEL_ZOOM := 1.12
+
 var _land := false
-# —— 视野（_k2s 单点收敛；横竖同缩放，竖屏双向拖动）——
-var _scale := 1.0
-var _pan := Vector2.ZERO
-var _pan_max := Vector2.ZERO
-var _press := Vector2.ZERO
-var _press_pan := Vector2.ZERO
+var _world   # KingdomPresenter（3D 场景 + 镜头 + 点选）
 var _pressing := false
 var _dragged := false
-
-# —— 巡游小人（占位=战斗单位走路帧；数量/速度纯表现，与逻辑无关）——
-const WALKER_IDS := ["squire_body", "goblin_body", "archer_body", "barbarian_body", "knight_body"]
-const WALKER_BOX := 46.0
-const WALKER_SPEED_MIN := 34.0
-const WALKER_SPEED_MAX := 58.0
-
+var _press := Vector2.ZERO
+var _last := Vector2.ZERO
+var _touches: Dictionary = {}  # 触点 index → 位置（双指缩放）
 var _font: Font
 var _http: HTTPRequest
 var _elapsed := 0.0
-var _walkers: Array = []       # [{uid, pos(BG系), target(BG系), speed}]
 # —— HUD ——
 var _res_lbl: Label
 var _wallet_holder: Control
@@ -131,9 +82,7 @@ func _ready() -> void:
 	_land = GameStateScript.ui_layout() == "landscape"
 	AudioManager.play_music("music_main_menu")
 	_font = load("res://assets/fonts/ZCOOLKuaiLe-Regular.ttf")
-	_init_view()
-	_build_roads()
-	_spawn_walkers()
+	_init_world()
 	_build_hud()
 	Events.kingdom_changed.connect(_on_kingdom_changed)
 	Events.economy_changed.connect(_on_economy_changed)
@@ -142,54 +91,27 @@ func _ready() -> void:
 	set_process(true)
 	await _bootstrap()
 
-# ---------- 视野/小人（纯表现）----------
-func _init_view() -> void:
-	var vs := get_viewport_rect().size   # 0830 修复：跟随实际视口（P1-3 改 750×1334 后旧硬编码致边缘露底）
-	_scale = 1280.0 / BG_SIZE.x   # 横竖同缩放（0726 验收：竖屏拉近对齐横屏观感，双向拖动）
-	_pan_max = (BG_SIZE * _scale - vs).max(Vector2.ZERO)
-	var keep_pos: Vector2 = SLOTS["keep"]["pos"]   # 初始视野对准主公府一带
-	_set_pan(Vector2(keep_pos.x * _scale - vs.x * 0.5, keep_pos.y * _scale - vs.y * 0.45))
+# ---------- 3D 场景（纯表现）----------
+func _init_world() -> void:
+	_world = KingdomPresenter.new()
+	_world.name = "World3D"
+	add_child(_world)
+	var heights := {}
+	for uid in WALKER_IDS:
+		heights[uid] = float(GameStateScript.config().get_unit(uid).get("vis_height_px", 0.0))
+	_world.setup({
+		"slots": SLOTS, "deco": DECO_ITEMS, "roads": build_roads(), "watchtower_extras": WT_EXTRAS,
+		"walls": {"top": WALL_TOP_Y, "bottom": WALL_BOT_Y, "left": WALL_LEFT_X, "right": WALL_RIGHT_X,
+			"gate_x": float(SLOTS["wall"]["pos"].x), "gate_gap": GATE_GAP},
+		"walkers": WALKER_IDS, "unit_heights": heights,
+	}, get_viewport_rect().size)
+	_sync_world()
+	Log.i("[V5][kingdom] 王国 3D 场景就绪 槽位=%d 居民=%d" % [SLOTS.size(), _world.walker_count()])
 
-func _set_pan(p: Vector2) -> void:
-	_pan = p.clamp(Vector2.ZERO, _pan_max)
-	queue_redraw()
-
-func _k2s(p: Vector2) -> Vector2:   # BG 像素系 → 屏幕
-	return p * _scale - _pan
-
-func _rand_slot_pos() -> Vector2:
-	var b: String = SLOTS.keys()[randi() % SLOTS.size()]
-	return (SLOTS[b]["pos"] as Vector2) + Vector2(randf_range(-30, 30), randf_range(8, 26))
-
-func _spawn_walkers() -> void:
-	for i in WALKER_IDS.size():
-		_walkers.append({
-			"uid": WALKER_IDS[i],
-			"pos": _rand_slot_pos(),
-			"target": _rand_slot_pos(),
-			"speed": randf_range(WALKER_SPEED_MIN, WALKER_SPEED_MAX),
-		})
-
-func _process(delta: float) -> void:
-	_elapsed += delta
-	for w in _walkers:
-		var pos: Vector2 = w["pos"]
-		var d: Vector2 = (w["target"] as Vector2) - pos
-		if d.length() < 8.0:
-			w["target"] = _rand_slot_pos()   # 到站：换个建筑门口继续逛（BG 自带路网，直线巡游观感即可）
-			continue
-		w["pos"] = pos + d.normalized() * float(w["speed"]) * delta
-	queue_redraw()
-
-# ---------- 绘制（地形 → 路 → 空地 → 建筑+小人 Y-sort → 顶饰）----------
-# —— 决策 49 拼接式场景（P3/KAN-123）：地表错位平铺 → 路网 → 围墙 → 装饰。
-# 全部经 _k2s 变换（视野拖动/缩放自动跟随）；建筑/小人仍走原 Y-sort 通道画在其上。
-var _roads: Array = []   # Rect2 路段缓存（_ready 生成）
-
-func _build_roads() -> void:
+static func build_roads() -> Array:
 	var keep_pos: Vector2 = SLOTS["keep"]["pos"]
 	var trunk_x: float = keep_pos.x - ROAD_W * 0.5
-	_roads = [
+	var roads: Array = [
 		Rect2(trunk_x, keep_pos.y - 10.0, ROAD_W, 1560.0 - (keep_pos.y - 10.0)),
 		Rect2(248.0, ROAD_MID_Y - ROAD_W * 0.5, 924.0, ROAD_W),
 		Rect2(248.0, ROAD_LOW_Y - ROAD_W * 0.5, 924.0, ROAD_W),
@@ -198,253 +120,138 @@ func _build_roads() -> void:
 		var bp: Vector2 = SLOTS[b]["pos"]
 		var x: float = bp.x - ROAD_W * 0.5
 		if bp.y < ROAD_MID_Y:
-			_roads.append(Rect2(x, bp.y - 14.0, ROAD_W, ROAD_MID_Y - bp.y + 14.0))
+			roads.append(Rect2(x, bp.y - 14.0, ROAD_W, ROAD_MID_Y - bp.y + 14.0))
 		else:
-			_roads.append(Rect2(x, ROAD_MID_Y, ROAD_W, bp.y - ROAD_MID_Y + 14.0))
+			roads.append(Rect2(x, ROAD_MID_Y, ROAD_W, bp.y - ROAD_MID_Y + 14.0))
+	return roads
 
-func _draw_tiled_scene() -> void:
-	_draw_ground_tiles()
-	for seg in _roads:
-		_draw_road_seg(seg as Rect2)
-	_draw_walls()
-	for it in DECO_ITEMS:
-		var tex: Texture2D = DECO_TEX[it[0]]
-		var p: Vector2 = it[1]
-		var sz := Vector2(tex.get_width(), tex.get_height())
-		draw_texture_rect(tex,
-				Rect2(_k2s(Vector2(p.x - sz.x * 0.5, p.y - sz.y)), sz * _scale), false)
-
-func _draw_ground_tiles() -> void:
-	# 地表 tile 256×512：非四方连续 → 奇数列上移半块（美术《城建资源说明》「错位一格再复制」）。
-	var tw := 256.0
-	var th := 512.0
-	var col := 0
-	var x := 0.0
-	while x < BG_SIZE.x:
-		var y := (-th * 0.5) if col % 2 == 1 else 0.0
-		while y < BG_SIZE.y:
-			draw_texture_rect_region(TEX_GROUND,
-					Rect2(_k2s(Vector2(x, y)), Vector2(tw, th) * _scale), Rect2(0, 0, tw, th))
-			y += th
-		x += tw
-		col += 1
-
-func _draw_road_seg(r: Rect2) -> void:
-	# 路素材 99×420 竖条：竖段直接沿 y 平铺；横段绕段中心转 90° 后在局部系铺
-	# （0830 修复：局部系原点已是段中心屏幕点，只乘 _scale——先前又叠加中心平移致路随镜头漂）。
-	if r.size.y >= r.size.x:
-		var block: float = r.size.x * (420.0 / 99.0)
-		var y := 0.0
-		while y < r.size.y:
-			var h: float = minf(block, r.size.y - y)
-			draw_texture_rect_region(TEX_ROAD,
-					Rect2(_k2s(r.position + Vector2(0, y)), Vector2(r.size.x, h) * _scale),
-					Rect2(0, 0, 99, 420.0 * h / block))
-			y += h
-	else:
-		draw_set_transform(_k2s(r.get_center()), PI / 2.0, Vector2.ONE)
-		var w: float = r.size.y
-		var length: float = r.size.x
-		var block: float = w * (420.0 / 99.0)
-		var y := -length * 0.5
-		while y < length * 0.5:
-			var h: float = minf(block, length * 0.5 - y)
-			draw_texture_rect_region(TEX_ROAD,
-					Rect2(Vector2(-w * 0.5, y) * _scale, Vector2(w, h) * _scale),
-					Rect2(0, 0, 99, 420.0 * h / block))
-			y += h
-		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-
-func _draw_walls() -> void:
-	var hw := Vector2(167.0, 107.0)   # 横墙段
-	var vw := Vector2(74.0, 107.0)    # 竖墙段
-	var post := Vector2(99.0, 160.0)  # 绿旗角柱
-	var gate_l: float = 710.0 - GATE_GAP * 0.5
-	var gate_r: float = 710.0 + GATE_GAP * 0.5
-	var x := WALL_LEFT_X
-	while x < WALL_RIGHT_X:
-		var seg_w: float = minf(hw.x, WALL_RIGHT_X - x)
-		draw_texture_rect_region(TEX_WALL_H,
-				Rect2(_k2s(Vector2(x, WALL_TOP_Y - hw.y * 0.5)), Vector2(seg_w, hw.y) * _scale),
-				Rect2(0, 0, seg_w, hw.y))
-		# 底墙：与城门开口重叠部分精确裁掉（0830 修复：整段跳过致缺口远大于门体）——
-		# 段可能被开口切成左右两截，src x 随裁剪偏移保纹理连续；开口 220 < 门贴图 253 骑缝盖住。
-		for piece in [Vector2(x, minf(x + seg_w, gate_l)), Vector2(maxf(x, gate_r), x + seg_w)]:
-			var pw: float = piece.y - piece.x
-			if pw <= 0.5:
-				continue
-			draw_texture_rect_region(TEX_WALL_H,
-					Rect2(_k2s(Vector2(piece.x, WALL_BOT_Y - hw.y * 0.5)), Vector2(pw, hw.y) * _scale),
-					Rect2(piece.x - x, 0, pw, hw.y))
-		x += hw.x
-	for wx in [WALL_LEFT_X, WALL_RIGHT_X]:
-		var y := WALL_TOP_Y
-		while y < WALL_BOT_Y:
-			var seg_h: float = minf(vw.y, WALL_BOT_Y - y)
-			draw_texture_rect_region(TEX_WALL_V,
-					Rect2(_k2s(Vector2(wx - vw.x * 0.5, y)), Vector2(vw.x, seg_h) * _scale),
-					Rect2(0, 0, vw.x, seg_h))
-			y += vw.y
-	for corner in [Vector2(WALL_LEFT_X, WALL_TOP_Y), Vector2(WALL_RIGHT_X, WALL_TOP_Y),
-			Vector2(WALL_LEFT_X, WALL_BOT_Y), Vector2(WALL_RIGHT_X, WALL_BOT_Y)]:
-		draw_texture_rect(TEX_WALL_POST,
-				Rect2(_k2s(corner - Vector2(post.x * 0.5, post.y * 0.62)), post * _scale), false)
-
-func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, Vector2(1280, 1280)), Color("d8ecfa"))   # 图外露夜色底
-	_draw_tiled_scene()
+# 建筑形态跟服务器缓存：未建=空地、施工中=外罩脚手架、建成=正式模型（每帧比对，施工到点自动拆架）。
+func _sync_world() -> void:
 	var kd = GameStateScript.kingdom()
-	var items: Array = []   # [screen_ground_y, seq, kind, payload]
 	for b in SLOTS:
-		items.append([_k2s(SLOTS[b]["pos"] as Vector2).y, items.size(), "b", b])
-	if _level_of("watchtower", kd) >= 1:   # 箭塔其余三角视觉复刻（建成才现身）
-		for wp in WT_VISUAL_EXTRA:
-			items.append([_k2s(wp as Vector2).y, items.size(), "wt", wp])
-	for w in _walkers:
-		items.append([_k2s(w["pos"] as Vector2).y + WALKER_BOX * 0.4, items.size(), "w", w])
-	items.sort_custom(func(p, q): return p[0] < q[0] if p[0] != q[0] else p[1] < q[1])
-	for it in items:
-		if it[2] == "b":
-			_draw_building(String(it[3]), kd)
-		elif it[2] == "wt":
-			_draw_watchtower_at(it[3] as Vector2, kd)
-		else:
-			_draw_walker(it[3])
+		var building_now: bool = kd != null and kd.is_loaded and int(kd.remaining_s(b)) > 0
+		_world.set_slot_state(b, _level_of(b, kd), building_now)
+
+func _process(delta: float) -> void:
+	_elapsed += delta
+	_world.advance(delta)
+	_sync_world()
+	queue_redraw()
+
+# ---------- 2D 叠加（恒在 3D 之上）：名牌+等级 / 施工倒计时 / 待收取气泡 ----------
+func _draw() -> void:
+	var kd = GameStateScript.kingdom()
 	for b in SLOTS:
 		_draw_building_overlay(String(b), kd)
 
-func _slot_rect(building: String) -> Rect2:   # 屏幕系（BG 槽位经 _k2s 变换）
-	var tex: Texture2D = BUILDING_TEX[building]
-	var w: float = float((SLOTS[building] as Dictionary).get("w", tex.get_width()))
-	var h: float = w * float(tex.get_height()) / float(tex.get_width())
-	var pos: Vector2 = SLOTS[building]["pos"]
-	return Rect2(_k2s(Vector2(pos.x - w * 0.5, pos.y - h)), Vector2(w, h) * _scale)
-
-# 箭塔视觉复刻（角落副本；施工半透明跟随主建筑状态）。
-func _draw_watchtower_at(pos: Vector2, kd) -> void:
-	var tex: Texture2D = BUILDING_TEX["watchtower"]
-	var w := 80.0
-	var h := w * float(tex.get_height()) / float(tex.get_width())
-	var mod := Color.WHITE
-	if kd != null and kd.is_loaded and int(kd.remaining_s("watchtower")) > 0:
-		mod = Color(1, 1, 1, 0.55)
-	draw_texture_rect(tex,
-			Rect2(_k2s(Vector2(pos.x - w * 0.5, pos.y - h)), Vector2(w, h) * _scale), false, mod)
-
-func _draw_building(building: String, kd) -> void:
-	var rect := _slot_rect(building)
-	var lv := _level_of(building, kd)
-	if lv <= 0:
-		# 空地：0726「未建造」占位图（点击建造）。
-		var pos: Vector2 = SLOTS[building]["pos"]
-		var pw := float(TEX_PLOT.get_width())
-		var ph := float(TEX_PLOT.get_height())
-		draw_texture_rect(TEX_PLOT,
-				Rect2(_k2s(Vector2(pos.x - pw * 0.5, pos.y - ph)), Vector2(pw, ph) * _scale), false)
-		return
-	var mod := Color.WHITE
-	if kd != null and kd.is_loaded and int(kd.remaining_s(building)) > 0:
-		mod = Color(1, 1, 1, 0.55)   # 施工中半透明（脚手架感）
-	draw_texture_rect(BUILDING_TEX[building], rect, false, mod)
-
-# 顶饰（恒在建筑/小人之上）：名牌+等级 / 施工倒计时 / 待收取气泡 / 空地提示。
 func _draw_building_overlay(building: String, kd) -> void:
-	var rect := _slot_rect(building)
-	var pos: Vector2 = _k2s(SLOTS[building]["pos"] as Vector2)   # 屏幕系锚点
+	var rect: Rect2 = _world.screen_rect(building)
+	var pos: Vector2 = _world.base_screen(building)
 	var lv := _level_of(building, kd)
-	var bcfg: Dictionary = (GameStateScript.config().kingdom.get("buildings", {}) as Dictionary).get(building, {})
-	var label: String = str(bcfg.get("display_zh", building)) + ((" Lv%d" % lv) if lv > 0 else "")
-	var lw := _font.get_string_size(label, HORIZONTAL_ALIGNMENT_CENTER, -1, 16).x
-	draw_rect(Rect2(pos.x - lw * 0.5 - 6, pos.y + 2, lw + 12, 22), Color(0.06, 0.05, 0.09, 0.72))
-	draw_string(_font, Vector2(pos.x - lw * 0.5, pos.y + 19), label,
-			HORIZONTAL_ALIGNMENT_LEFT, -1, 16, PixelUI.COL_PARCHMENT if lv > 0 else PixelUI.COL_HINT)
-	if lv <= 0:
-		draw_string(_font, Vector2(pos.x - 32, rect.end.y - 14), "空地",
-				HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(0.9, 0.85, 0.6, 0.9))
-		return
-	if kd == null or not kd.is_loaded:
+	_plate(Vector2(pos.x, pos.y + 4.0), _label_of(building, lv), 16, PixelUI.COL_PARCHMENT if lv > 0 else PixelUI.COL_MUTED)
+	if lv <= 0 or kd == null or not kd.is_loaded:
 		return
 	var remain := int(kd.remaining_s(building))
 	if remain > 0:
-		var txt := "施工 %s" % _fmt_dur(remain)
-		var tw := _font.get_string_size(txt, HORIZONTAL_ALIGNMENT_CENTER, -1, 17).x
-		draw_rect(Rect2(pos.x - tw * 0.5 - 6, rect.position.y - 26, tw + 12, 24), Color(0.06, 0.05, 0.09, 0.8))
-		draw_string(_font, Vector2(pos.x - tw * 0.5, rect.position.y - 8), txt,
-				HORIZONTAL_ALIGNMENT_LEFT, -1, 17, PixelUI.COL_GOLD)
+		_plate(Vector2(pos.x, rect.position.y - 28.0), "施工 %s" % _fmt_dur(remain), 17, PixelUI.COL_GOLD)
 	elif _has_pending(building, kd):
 		# 待收取气泡（SLG 式）：建筑头顶金色圆点脉动。
-		var c := Vector2(pos.x, rect.position.y - 18)
+		var c := Vector2(pos.x, rect.position.y - 16.0)
 		var pulse := 0.85 + 0.15 * sin(_elapsed * 5.0)
-		draw_circle(c, 13.0 * pulse, Color(0.06, 0.05, 0.09, 0.85))
-		draw_circle(c, 10.0 * pulse, PixelUI.COL_GOLD)
-		draw_string(_font, c + Vector2(-5, 6), "!", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.25, 0.16, 0.03))
+		draw_circle(c, 14.0 * pulse, Color.WHITE)
+		draw_circle(c, 11.0 * pulse, Color("f6c343"))
+		draw_string(_font, c + Vector2(-5, 6), "!", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, PixelUI.COL_GOLD_INK)
 
-func _draw_walker(w: Dictionary) -> void:
-	var pos: Vector2 = _k2s(w["pos"] as Vector2)
-	var dir: Vector2 = (w["target"] as Vector2) - (w["pos"] as Vector2)
-	# 行向定帧行：向上走用背面行（owner0），向下用正面行（owner1）；横移镜像。
-	var owner := 0 if dir.y < 0.0 else 1
-	var spr: Dictionary = SpriteDB.frame(String(w["uid"]), "walk", owner, _elapsed)
-	if spr.is_empty():
-		draw_circle(pos, 10.0, Color(0.9, 0.9, 0.9, 0.8))
-		return
-	var box: float = WALKER_BOX * float(spr["scale"])
-	if spr.get("shadow", false):
-		var sw := box * 0.8
-		var srect := Rect2(pos + Vector2(-sw * 0.5, box * 0.34), Vector2(sw, sw * 0.4))
-		draw_texture_rect(TEX_UNIT_SHADOW, srect, false)
-		draw_texture_rect(TEX_UNIT_SHADOW, srect, false)
-	var mirror: bool = bool(spr.get("mirror", false)) and dir.x > 0.0
-	draw_set_transform(pos, 0.0, Vector2(-1.0 if mirror else 1.0, 1.0))
-	draw_texture_rect_region(spr["tex"], Rect2(-Vector2(box, box) * 0.5, Vector2(box, box)),
-			spr["src"], spr.get("tint", Color.WHITE) if not spr.get("natural", false) else Color.WHITE)
-	draw_set_transform(Vector2.ZERO)
+# 白卡名牌（天空牧场：浅底深字），top_center 为卡片顶边中点；返回卡片矩形。
+func _plate(top_center: Vector2, text: String, font_size: int, color: Color) -> Rect2:
+	var tw := _font.get_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size).x
+	var r := plate_rect(top_center, tw, font_size)
+	draw_rect(r, Color(1, 1, 1, 0.9))
+	draw_rect(r, PixelUI.COL_SLOT_FILLED_BD, false, 2.0)
+	draw_string(_font, Vector2(r.position.x + 7.0, r.position.y + float(font_size) + 1.0), text,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
+	return r
 
-# ---------- 输入：按住拖动看全城；轻点命中建筑 → 弹操作窗 / placeholder 敬请期待 ----------
+func _label_of(building: String, lv: int) -> String:
+	var bcfg: Dictionary = (GameStateScript.config().kingdom.get("buildings", {}) as Dictionary).get(building, {})
+	return str(bcfg.get("display_zh", building)) + ((" Lv%d" % lv) if lv > 0 else "（空地）")
+
+# 各建筑名牌的当前屏幕矩形（与 _draw 同口径，按当前镜头现算——点选不用上一帧的旧位置）。
+func _name_plates(kd) -> Dictionary:
+	var plates := {}
+	for b in SLOTS:
+		var text := _label_of(b, _level_of(b, kd))
+		var tw := _font.get_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, -1, 16).x
+		plates[b] = plate_rect(_world.base_screen(b) + Vector2(0, 4.0), tw, 16)
+	return plates
+
+static func plate_rect(top_center: Vector2, text_width: float, font_size: int) -> Rect2:
+	return Rect2(top_center.x - text_width * 0.5 - 7.0, top_center.y, text_width + 14.0, float(font_size) + 8.0)
+
+# ---------- 输入：拖动平移 / 滚轮与双指缩放 / 轻点命中建筑 → 弹操作窗或敬请期待 ----------
 func _gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+	if event is InputEventScreenTouch or event is InputEventScreenDrag:
+		_on_touch(event)
+		return
+	if event is InputEventMagnifyGesture:
+		var g := event as InputEventMagnifyGesture
+		_world.zoom_at(g.position, 1.0 / maxf(g.factor, 0.01))
+		return
+	if event is InputEventMouseButton:
 		var e := event as InputEventMouseButton
+		if e.pressed and (e.button_index == MOUSE_BUTTON_WHEEL_UP or e.button_index == MOUSE_BUTTON_WHEEL_DOWN):
+			_world.zoom_at(e.position, 1.0 / WHEEL_ZOOM if e.button_index == MOUSE_BUTTON_WHEEL_UP else WHEEL_ZOOM)
+			return
+		if e.button_index != MOUSE_BUTTON_LEFT:
+			return
 		if e.pressed:
 			_pressing = true
 			_dragged = false
 			_press = e.position
-			_press_pan = _pan
+			_last = e.position
 		else:
 			_pressing = false
-			if not _dragged:
+			if not _dragged and _touches.size() < 2:
 				_click(e.position)
-	elif event is InputEventMouseMotion and _pressing:
-		var d: Vector2 = (event as InputEventMouseMotion).position - _press
-		if _dragged or d.length() > 12.0:   # 阈值内=点选；超出=拖动平移（不再触发点选）
+	elif event is InputEventMouseMotion and _pressing and _touches.size() < 2:
+		var p: Vector2 = (event as InputEventMouseMotion).position
+		if _dragged or p.distance_to(_press) > DRAG_THRESHOLD:
 			_dragged = true
-			_set_pan(_press_pan - d)
+			_world.pan_by(p - _last)
+			_last = p
+
+# 双指缩放：两触点距离变化比 → 以中点为中心缩放；期间不平移、不点选。
+func _on_touch(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		var t := event as InputEventScreenTouch
+		if t.pressed:
+			_touches[t.index] = t.position
+		else:
+			_touches.erase(t.index)
+		if _touches.size() >= 2:
+			_dragged = true
+		return
+	var d := event as InputEventScreenDrag
+	if not _touches.has(d.index):
+		return
+	if _touches.size() < 2:
+		_touches[d.index] = d.position
+		return
+	var keys := _touches.keys()
+	var other: Vector2 = _touches[keys[1] if keys[0] == d.index else keys[0]]
+	var before: float = (_touches[d.index] as Vector2).distance_to(other)
+	_touches[d.index] = d.position
+	var after: float = d.position.distance_to(other)
+	if before > 1.0 and after > 1.0:
+		_world.zoom_at((d.position + other) * 0.5, before / after)
 
 func _click(p: Vector2) -> void:
 	var kd = GameStateScript.kingdom()
 	if kd == null or not kd.is_loaded:
 		return
-	var best := ""
-	var best_y := -INF
-	for b in SLOTS:
-		var rect := _slot_rect(b)
-		rect.position.y -= 8.0   # 顶部留点余量（名牌/气泡也算命中）
-		rect.size.y += 34.0
-		var sy: float = _k2s(SLOTS[b]["pos"] as Vector2).y
-		if rect.has_point(p) and sy > best_y:
-			best = b
-			best_y = sy
+	var best: String = _world.pick(p, _name_plates(kd))
 	if best == "":
-		# 右下角箭塔副本 = 第二交互入口（0726：下方两塔都作为入口）
-		var tex: Texture2D = BUILDING_TEX["watchtower"]
-		var wt_h := 80.0 * float(tex.get_height()) / float(tex.get_width())
-		var wt_rect := Rect2(_k2s(WT_CLICK_EXTRA - Vector2(40.0, wt_h)),
-				Vector2(80.0, wt_h) * _scale)
-		wt_rect.position.y -= 8.0
-		wt_rect.size.y += 34.0
-		if wt_rect.has_point(p):
-			best = "watchtower"
-		else:
-			return
+		return
 	AudioManager.play_sfx("ui_button_press")
 	var bcfg: Dictionary = (GameStateScript.config().kingdom.get("buildings", {}) as Dictionary).get(best, {})
 	if _level_of(best, kd) >= 1 and str(bcfg.get("kind", "")) == "placeholder":

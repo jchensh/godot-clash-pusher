@@ -4,10 +4,13 @@ render_mode specular_disabled;
 
 uniform vec4 color_a : source_color = vec4(0.55, 0.78, 0.38, 1.0);
 uniform vec4 color_b : source_color = vec4(0.5, 0.73, 0.34, 1.0);
+uniform float cell = 1.0;          // 棋盘格边长（米）；战斗场地 1 米=1 格，王国 D6 用 2 米
 uniform float band_hi = 0.45;
 uniform float band_lo = 0.05;
 uniform float mid = 0.6;
 uniform float dark = 0.32;
+uniform float saturation = 1.0;   // 调色（王国 D6 用；默认 1 = 原色，战斗不受影响）。Compatibility 渲染器不支持环境后期调色，故在材质里做
+uniform float brightness = 1.0;
 
 varying vec3 world_pos;
 
@@ -16,8 +19,9 @@ void vertex() {
 }
 
 void fragment() {
-	float checker = mod(floor(world_pos.x) + floor(world_pos.z), 2.0);
-	ALBEDO = mix(color_a.rgb, color_b.rgb, checker);
+	float checker = mod(floor(world_pos.x / cell) + floor(world_pos.z / cell), 2.0);
+	vec3 c = mix(color_a.rgb, color_b.rgb, checker);
+	ALBEDO = mix(vec3(dot(c, vec3(0.299, 0.587, 0.114))), c, saturation) * brightness;
 	ROUGHNESS = 1.0;
 }
 
