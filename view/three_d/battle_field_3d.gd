@@ -1,6 +1,7 @@
 ## D4 正式战斗的 3D 战场层：把 presenter（单位/塔/地形）、出牌输入（落点+ghost）、镜头与光照
 ## 打包给 2D 战斗页（battle_scene）用。2D 页保留 HUD/卡牌/教程/结算/录制，只把「画战场」换成本节点，
-## 再借本节点的投影把 tile → 屏幕像素（伤害数字/法术特效/教程高亮锚点）。
+## 再借本节点的投影把 tile → 屏幕像素（伤害数字/教程高亮锚点）。D8：投射物/法术/受击/死亡/塔毁特效由子节点 fx
+## （battle_fx_3d）在 3D 里画，伤害数字仍是页面的 2D 飘字、锚到 head_screen（角色头顶，跟随移动）。
 ## 只读 Battle：sim 由调用方推进；落点只给 tile，出牌仍由调用方走既有权威入口
 ## （PvE Player.try_play_card；D5 联机 BattleClient.send_deploy）。
 extends Node3D
@@ -10,17 +11,22 @@ const DeployInput := preload("res://view/three_d/deploy_input_3d.gd")
 const BattleCamera := preload("res://view/three_d/battle_camera.gd")
 const BattleLighting := preload("res://view/three_d/battle_lighting.gd")
 const FieldProjection := preload("res://view/three_d/field_projection.gd")
+const Fx := preload("res://view/three_d/battle_fx_3d.gd")
 
 var presenter: Node3D
 var deploy: Node3D
 var camera: Camera3D
+var fx: Node3D
+var presenter_usec := 0         # 最近一帧 presenter / 特效层同步耗时（微秒，性能测量用）
+var fx_usec := 0
 var viewport_size := Vector2.ZERO
 
 var _arena = null
 
 
 ## top_h / hud_h：顶栏与手牌栏高度——场地居中在二者之间，松手在其上 = 取消（与 2D 同口径）。
-## options：{lighting:bool=true, local_owner:int=0（本方=蓝、落点合法性按此方）, flipped:bool=false（联机 side2 整场 180°）}。
+## options：{lighting:bool=true, local_owner:int=0（本方=蓝、落点合法性按此方）, flipped:bool=false（联机 side2 整场 180°）,
+## players:Array（双方 Player：挂法术特效钩子，串在原 play_observer 之后）}。
 ## 可重复调用换绑新的一局（D5 断线重连会新建 Match 再追帧）：presenter 清空旧节点重建，镜头/光照/输入复用不重复造。
 func setup(battle, loader, viewport: Vector2, top_h: float, hud_h: float, options: Dictionary = {}) -> void:
 	_arena = battle.arena
@@ -46,8 +52,12 @@ func setup(battle, loader, viewport: Vector2, top_h: float, hud_h: float, option
 		add_child(camera)
 		if camera.is_inside_tree():
 			camera.make_current()
+		fx = Fx.new()
+		fx.name = "BattleFx"
+		add_child(fx)
 	presenter.setup(battle, loader.get_arena("default"), {"local_owner": local_owner, "flipped": flipped,
 		"unit_names": names, "unit_heights": heights})
+	fx.setup(battle, presenter, loader, camera, options.get("players", []), {"local_owner": local_owner, "flipped": flipped})
 	deploy.configure(camera, _arena, loader, local_owner, flipped, viewport)
 	viewport_size = viewport
 	BattleCamera.fit(camera, presenter.grid_size, viewport, Rect2(0.0, top_h, viewport.x, viewport.y - top_h - hud_h))
@@ -56,7 +66,12 @@ func setup(battle, loader, viewport: Vector2, top_h: float, hud_h: float, option
 
 
 func advance(delta: float) -> void:
+	var t0 := Time.get_ticks_usec()
 	presenter.advance(delta)
+	var t1 := Time.get_ticks_usec()
+	fx.advance(delta)
+	presenter_usec = t1 - t0
+	fx_usec = Time.get_ticks_usec() - t1
 
 
 ## 2D 页每帧调一次：只读同步 3D 节点 + 震屏 + 拖拽 ghost 跟随页面的拖拽状态
@@ -76,6 +91,12 @@ func sync(delta: float, shake: Vector2, drag_index: int, hand: Array, screen: Ve
 ## tile → 屏幕像素（地面高度）；与 deploy 的拾取同一套相机数学，互为逆变换。
 func tile_to_screen(tile: Vector2) -> Vector2:
 	return deploy.tile_to_screen(tile)
+
+
+## 单位/塔（实例 ID）头顶的屏幕像素（不含震屏）；未知返回 null。伤害数字锚点：跟随角色移动，阵亡后停在最后位置 2 秒。
+func head_screen(id: int) -> Variant:
+	var world: Variant = fx.head_world(id)
+	return null if world == null else deploy.tile_screen_world(world)
 
 
 ## 一格在屏幕上的像素边长（取逻辑 y 方向 = 屏幕横向，无透视缩短），供特效/数字定尺寸。

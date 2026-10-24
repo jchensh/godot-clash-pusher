@@ -267,7 +267,8 @@ func _bind_field_3d(your_side: int) -> void:
 		_field3d = BattleField3D.new()
 		add_child(_field3d)
 	_field3d.setup(_client.match_obj.battle, _loader, Vector2(_vw, _vh), TOPBAR_H, HUD_BOTTOM_H,
-		{"local_owner": your_side - 1, "flipped": _flip})
+		{"local_owner": your_side - 1, "flipped": _flip,
+		"players": [_client.match_obj.player, _client.match_obj.opponent]})   # D8：双方落子挂 3D 法术特效钩子
 	Log.i("[net] 战场=3D side=%d flipped=%s" % [your_side, str(_flip)])
 
 
@@ -457,9 +458,9 @@ func _draw() -> void:
 		_draw_deploy_hint(a)
 		_draw_world(a)   # 塔+单位 Y-sort 伪深度单通道（0715 二验同款）
 		_draw_drag_ghost(a)
-	_draw_fx()
-	_draw_unit_fx()
-	_draw_projectiles()
+		_draw_fx()   # D8：3D 时法术/投射物/单位特效由 Field3D.fx 在 3D 里画
+		_draw_unit_fx()
+		_draw_projectiles()
 	_draw_combat_fx()
 	_draw_topbar()
 	draw_rect(Rect2(0, _vh - HUD_BOTTOM_H, _vw, HUD_BOTTOM_H), COL_PANEL)   # 底部 HUD 底板
@@ -1042,7 +1043,7 @@ func _detect_events() -> void:
 			if d > 0.5:
 				_on_hit(id, _disp_pos(u), d, u.unit_id)
 			elif d < -0.5:
-				_spawn_dmgnum(_disp_pos(u), "+%d" % int(-d), COL_OK, 18)
+				_spawn_dmgnum(_disp_pos(u), "+%d" % int(-d), COL_OK, 18, id)
 		_uhp[id] = cur
 	for id in _ulast.keys():   # 死亡消散（0715 配套 FX）：上帧还活着、本帧消失 = 阵亡 → 最后位置放特效
 		if not alive_now.has(id):
@@ -1067,9 +1068,9 @@ func _sprite_fx(unit_id: String, kind: String) -> Dictionary:   # D5：3D 下刀
 func _on_hit(id: int, pos: Vector2, amount: float, unit_id: String = "") -> void:
 	_flash[id] = _elapsed + FLASH_DUR
 	var big: bool = amount >= HITSTOP_DMG
-	_spawn_dmgnum(pos, "%d" % int(round(amount)), Color(1, 0.92, 0.45) if big else Color.WHITE, 24 if big else 18)
+	_spawn_dmgnum(pos, "%d" % int(round(amount)), Color(1, 0.92, 0.45) if big else Color.WHITE, 24 if big else 18, id)
 	var hfx: Dictionary = _sprite_fx(unit_id, "hit")
-	if hfx.is_empty():
+	if hfx.is_empty() and _field3d == null:   # D8：3D 下受击星由 Field3D.fx 画
 		_sparks.append({"pos": pos, "t0": _elapsed, "dur": SPARK_DUR})
 	else:   # 0715 配套受击星芒：替换程序化火花（伤害数字/闪白/顿帧照旧）
 		_spawn_unit_fx(hfx, pos, false)
@@ -1128,27 +1129,12 @@ func _detect_attacks() -> void:
 			var tprev: float = _tatkcd.get(tid, tcur)
 			_tatkcd[tid] = tcur
 			if tcur > tprev + 0.01:
-				var victim = _tower_target(t)
+				var victim = BattleField3D.Fx.tower_target(_client.match_obj.battle, t)
 				if victim != null:
 					var muzzle: Vector2 = (t.pos as Vector2) + _screen_up_tiles(float(t.fh) * 0.4)   # 箭口=塔身上部（屏幕语义）
 					var tdist: float = muzzle.distance_to(victim.pos)
 					_projectiles.append({"from": muzzle, "to": victim.pos, "t0": _elapsed,
 							"dur": clampf(tdist / PROJ_SPEED, 0.1, 0.5), "kind": "arrow"})
-
-# 塔射程内最近的存活敌方单位（view 侧复刻 arena 选择，路线 A）；无则 null。
-func _tower_target(t):
-	var best = null
-	var best_d := INF
-	var r: float = float(t.attack_range) + 0.001
-	for u in _client.match_obj.battle.arena.get_units():
-		if not u.is_alive() or u.owner_id == t.owner_id:
-			continue
-		var d: float = (t.pos as Vector2).distance_to(u.pos as Vector2)
-		if d <= r and d < best_d:
-			best_d = d
-			best = u
-	return best
-
 
 # 投射物：from→to 线性飞行，按 kind 画箭/法术弹/火球。
 func _draw_projectiles() -> void:
@@ -1167,8 +1153,8 @@ func _play_projectile_audio(kind: String) -> void:
 		"fireball": AudioManager.play_sfx("fire_skull_shot")
 
 
-func _spawn_dmgnum(pos: Vector2, text: String, col: Color, size: int) -> void:
-	_dmgnums.append({"pos": pos, "text": text, "col": col, "size": size, "t0": _elapsed, "dur": DMGNUM_DUR})
+func _spawn_dmgnum(pos: Vector2, text: String, col: Color, size: int, id: int = 0) -> void:
+	_dmgnums.append({"pos": pos, "text": text, "col": col, "size": size, "t0": _elapsed, "dur": DMGNUM_DUR, "id": id})
 
 func _update_disp(delta: float) -> void:
 	var b = _client.match_obj.battle
@@ -1207,10 +1193,16 @@ func _draw_combat_fx() -> void:
 			draw_line(c + dir * rr * 0.4, c + dir * rr, Color(1, 1, 0.6, al), 1.5)
 	for dn in _dmgnums:
 		var p2: float = clampf((_elapsed - dn["t0"]) / dn["dur"], 0.0, 1.0)
-		var c2: Vector2 = _t2s(dn["pos"]) + Vector2(-8.0, -ur * 0.8 - DMGNUM_RISE * p2)
+		var c2: Vector2 = _dmg_anchor(dn) + Vector2(-8.0, -DMGNUM_RISE * p2)
 		var col: Color = dn["col"]
 		col.a = 1.0 - p2
+		draw_string_outline(_font, c2, dn["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, int(dn["size"]), 5, Color(0.2, 0.12, 0.1, col.a))
 		draw_string(_font, c2, dn["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, int(dn["size"]), col)
+
+# D8：3D 下伤害数字锚角色/塔头顶（跟随移动，阵亡后停在最后位置）；2D 回退旧锚点。
+func _dmg_anchor(dn: Dictionary) -> Vector2:
+	var head: Variant = _field3d.head_screen(int(dn.get("id", 0))) if _field3d != null else null
+	return (head as Vector2) + _shake if head != null else _t2s(dn["pos"]) + Vector2(0.0, -_ur() * 0.8)
 
 
 # 入场缩放：新兵从 0.35 弹到 1.0（ease-out）。

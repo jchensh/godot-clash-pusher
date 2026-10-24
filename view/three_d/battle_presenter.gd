@@ -120,8 +120,8 @@ func proxy_unit_ids() -> Array:
 func _spawn_unit(unit) -> Node3D:
 	var model: Dictionary = UnitModels.model_for(unit.unit_id)
 	var scale := 1.0
+	var target := UnitModels.target_height(float(_heights.get(unit.unit_id, 0.0)), float(unit.body_radius))
 	if not model.is_empty():
-		var target := UnitModels.target_height(float(_heights.get(unit.unit_id, 0.0)), float(unit.body_radius))
 		scale = target / maxf(float(model["native_h"]), 0.01)
 	var actor := UnitActor.new()
 	add_child(actor)
@@ -133,6 +133,7 @@ func _spawn_unit(unit) -> Node3D:
 		"model_scale": scale,
 		"model_tint": model.get("tint", Color.WHITE),
 		"name": _names.get(unit.unit_id, unit.unit_id),
+		"height": target,
 	})
 	return actor
 

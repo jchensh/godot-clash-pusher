@@ -32,6 +32,7 @@ var display_tile := Vector2.ZERO
 var hp_ratio := 1.0
 var attack_count := 0
 var flying := false
+var body_height := 1.0       # 身高（世界米，不含飞行高度）：D8 特效/伤害数字锚头顶
 
 var _grid := Vector2.ZERO
 var _flipped := false
@@ -51,7 +52,7 @@ var _yaw := 0.0
 var _base_scale := 1.0
 
 
-## info：{grid, flipped, color, model(PackedScene|null), model_scale, model_tint, name}
+## info：{grid, flipped, color, model(PackedScene|null), model_scale, model_tint, name, height}
 func setup(unit, info: Dictionary) -> void:
 	unit_ref = unit
 	_grid = info.grid
@@ -70,6 +71,7 @@ func setup(unit, info: Dictionary) -> void:
 		_build_model(scene, float(info.get("model_scale", 1.0)), info.get("model_tint", Color.WHITE))
 	else:
 		_build_proxy(unit, color, str(info.get("name", unit.unit_id)))
+	body_height = float(info.get("height", body_height))
 	_add_team_ring(unit.body_radius, color)
 	_hp_bar = HpBar.new()
 	_hp_bar.name = "HpBar"
@@ -221,6 +223,11 @@ func _default_yaw(owner_id: int) -> float:
 	return atan2(b.x - a.x, b.z - a.z)
 
 
+## 脚底离地高度（飞行单位的纯表现抬升，不进逻辑）。
+func air_y() -> float:
+	return _height()
+
+
 func _height() -> float:
 	return AIR_HEIGHT if flying else 0.0
 
@@ -244,6 +251,7 @@ func _build_proxy(unit, color: Color, label: String) -> void:
 	var capsule := CapsuleMesh.new()
 	capsule.radius = r * 0.75
 	capsule.height = maxf(r * 2.8, capsule.radius * 2.0 + 0.1)
+	body_height = capsule.height
 	body.mesh = capsule
 	body.position.y = capsule.height * 0.5
 	body.material_override = _mat(color.lerp(Color.WHITE, 0.35))

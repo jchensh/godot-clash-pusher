@@ -19,6 +19,7 @@ var team_color := Color.WHITE
 var destroyed := false
 var hp_ratio := 1.0
 var attack_count := 0
+var top_height := 4.0        # 塔顶高度（世界米）：D8 箭口/伤害数字锚点
 
 var _intact: Node3D
 var _ruin: Node3D
@@ -44,6 +45,7 @@ func setup(tower, info: Dictionary) -> void:
 	_hp_bar = HpBar.new()
 	_hp_bar.name = "HpBar"
 	_hp_bar.position.y = (4.9 if king else 4.3) * fw / (KING_AUTHORED_FW if king else ARROW_AUTHORED_FW)
+	top_height = _hp_bar.position.y - 0.5
 	_hp_bar.setup(float(tower.fw) * 0.8, info.color)
 	_hp_bar.visible = false
 	add_child(_hp_bar)
