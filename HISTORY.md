@@ -978,3 +978,10 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
 ### D2 用户验收（2026-10-24）
 
 - 用户回报 D2 真人用例 **C1~C10 全部通过**；以上 D2 条目的「待真人验收」由本条更新为已验收。D3 未开工。
+
+### UI 偏离修复 ① 色板令牌 + 对比度单测（2026-10-24，代码通过待用户确认提交；Jira 待补）
+
+- **来由**：同日从代码提取「天空牧场」设计系统（[设计系统页](https://claude.ai/code/artifact/ac8e5f64-afaf-4702-8ae8-a8cbfc432cf7)），审计出两条高优先级偏离——`campaign_scene`/`run_scene`/`deck_builder` 仍是夜色深底常量、`modal.gd:39`/`reward_chest.gd:65` 暗幕仍是夜色紫黑。拆 5 步修：①令牌 ②暗幕 ③组卡 ④闯关路线 ⑤run（可选：run 场景当前无入口，只有自身会建 run 状态）。worktree 分支 `feat/ui-drift-fix`。
+- **本步（只加令牌，不动任何界面）**：`view/ui/pixel_ui.gd` 新增暗幕 `COL_DIM #1f3a52`+`DIM_ALPHA 0.5`（替代紫黑 0.72）、路线节点四态 底/描边（已过 `e4f4dc/7cc36a`·当前 `fff8e1/3d9be0`·未到 `eef6fc/cfe3f2`·Boss `fde3e2/e24b4a`）、组卡 兵种 `dceefc/7fb4d9`·法术 `efe4fb/b48fe0`·已填槽 `ffffff/a9d3ee`·空槽 `ddeefb/cfe3f2`·禁用 `cfdde9/8aa4ba`。
+- **新增 `tests/test_pixel_ui_palette.gd`（5 例）**：WCAG 对比度计算自校（黑白 21:1）；主文字 `COL_PARCHMENT` 压 9 个新底色均 ≥ 4.5:1（实测最低禁用底 5.24:1）；新底色亮度 > 0.6 防夜色回流；描边比底色深；暗幕不透明度 < 0.72 且偏青蓝。
+- 客户端 **461/461**（456 + 新 5）；改动两文件 gdlint 绿。新 worktree 首次 headless import 报一次快乐体 fontdata 未就绪，属首次导入先后顺序，导入后跑测试字体正常。Atlassian MCP 本会话未授权，Jira 待补；未提交推送。

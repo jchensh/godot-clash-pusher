@@ -28,6 +28,22 @@ const COL_OUTLINE := Color("1f5c8c")     # 标题描边深蓝
 const COL_PANEL_BG := Color("ffffff")    # 白卡面板底（换肤新增：散装深底的替代语义）
 const COL_INSET_BG := Color("ddeefb")    # 凹槽/列表底
 
+# —— 夜色残留替换令牌（UI 偏离修复 ①，设计系统页 artifact ac8e5f64 审计项）——
+# 暗幕：深青蓝半透，替代夜色紫黑 (0.04,0.03,0.07,0.72)；modal 默认值与自绘暗幕共用。
+const COL_DIM := Color("1f3a52")
+const DIM_ALPHA := 0.5
+# 路线节点四态（campaign / run 路线行）：底 + 描边；字一律 COL_PARCHMENT。
+const COL_NODE_DONE_BG := Color("e4f4dc"); const COL_NODE_DONE_BD := Color("7cc36a")
+const COL_NODE_CURRENT_BG := Color("fff8e1"); const COL_NODE_CURRENT_BD := Color("3d9be0")
+const COL_NODE_FUTURE_BG := Color("eef6fc"); const COL_NODE_FUTURE_BD := Color("cfe3f2")
+const COL_NODE_BOSS_BG := Color("fde3e2"); const COL_NODE_BOSS_BD := Color("e24b4a")
+# 组卡：兵种/法术卡底、已填/空卡槽、禁用按钮（sbpixel 程序化用）。
+const COL_TROOP_BG := Color("dceefc"); const COL_TROOP_BD := Color("7fb4d9")
+const COL_SPELL_BG := Color("efe4fb"); const COL_SPELL_BD := Color("b48fe0")
+const COL_SLOT_FILLED_BG := Color("ffffff"); const COL_SLOT_FILLED_BD := Color("a9d3ee")
+const COL_SLOT_EMPTY_BG := Color("ddeefb"); const COL_SLOT_EMPTY_BD := Color("cfe3f2")
+const COL_DISABLED_BG := Color("cfdde9"); const COL_DISABLED_BD := Color("8aa4ba")
+
 const _BTN_MARGIN := 14   # 按钮 9-slice 边距 = 圆角半径 12 + 2（圆角区不拉伸）
 const _PANEL_MARGIN := 18  # 面板 9-slice 边距 = 圆角半径 16 + 2
 
