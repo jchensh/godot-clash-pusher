@@ -46,7 +46,7 @@ func _new_match():
 
 func _field(m):
 	var field = BattleField3D.new()
-	field.setup(m.battle, _config(), SCREEN, TOP, HUD, false)
+	field.setup(m.battle, _config(), SCREEN, TOP, HUD, {"lighting": false})
 	return field
 
 

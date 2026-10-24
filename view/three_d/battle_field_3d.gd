@@ -1,7 +1,8 @@
 ## D4 正式战斗的 3D 战场层：把 presenter（单位/塔/地形）、出牌输入（落点+ghost）、镜头与光照
 ## 打包给 2D 战斗页（battle_scene）用。2D 页保留 HUD/卡牌/教程/结算/录制，只把「画战场」换成本节点，
 ## 再借本节点的投影把 tile → 屏幕像素（伤害数字/法术特效/教程高亮锚点）。
-## 只读 Battle：sim 由调用方推进；落点只给 tile，出牌仍由调用方走 Player.try_play_card。
+## 只读 Battle：sim 由调用方推进；落点只给 tile，出牌仍由调用方走既有权威入口
+## （PvE Player.try_play_card；D5 联机 BattleClient.send_deploy）。
 extends Node3D
 
 const Presenter := preload("res://view/three_d/battle_presenter.gd")
@@ -19,29 +20,35 @@ var _arena = null
 
 
 ## top_h / hud_h：顶栏与手牌栏高度——场地居中在二者之间，松手在其上 = 取消（与 2D 同口径）。
-func setup(battle, loader, viewport: Vector2, top_h: float, hud_h: float, lighting := true) -> void:
+## options：{lighting:bool=true, local_owner:int=0（本方=蓝、落点合法性按此方）, flipped:bool=false（联机 side2 整场 180°）}。
+## 可重复调用换绑新的一局（D5 断线重连会新建 Match 再追帧）：presenter 清空旧节点重建，镜头/光照/输入复用不重复造。
+func setup(battle, loader, viewport: Vector2, top_h: float, hud_h: float, options: Dictionary = {}) -> void:
 	_arena = battle.arena
+	var local_owner := int(options.get("local_owner", 0))
+	var flipped := bool(options.get("flipped", false))
 	var names := {}
 	var heights := {}
 	for unit_id in loader.units:
 		names[unit_id] = str(loader.units[unit_id].get("name", unit_id))
 		heights[unit_id] = float(loader.units[unit_id].get("vis_height_px", 0.0))
-	presenter = Presenter.new()
-	presenter.name = "BattlePresenter"
-	presenter.auto_advance = false
-	add_child(presenter)
-	presenter.setup(battle, loader.get_arena("default"), {"unit_names": names, "unit_heights": heights})
-	deploy = DeployInput.new()
-	deploy.name = "DeployInput"
-	add_child(deploy)
-	if lighting:
-		BattleLighting.setup(self)
-	camera = Camera3D.new()
-	camera.name = "BattleCamera"
-	add_child(camera)
-	if camera.is_inside_tree():
-		camera.make_current()
-	deploy.configure(camera, _arena, loader, 0, false, viewport)
+	if presenter == null:
+		presenter = Presenter.new()
+		presenter.name = "BattlePresenter"
+		presenter.auto_advance = false
+		add_child(presenter)
+		deploy = DeployInput.new()
+		deploy.name = "DeployInput"
+		add_child(deploy)
+		if bool(options.get("lighting", true)):
+			BattleLighting.setup(self)
+		camera = Camera3D.new()
+		camera.name = "BattleCamera"
+		add_child(camera)
+		if camera.is_inside_tree():
+			camera.make_current()
+	presenter.setup(battle, loader.get_arena("default"), {"local_owner": local_owner, "flipped": flipped,
+		"unit_names": names, "unit_heights": heights})
+	deploy.configure(camera, _arena, loader, local_owner, flipped, viewport)
 	viewport_size = viewport
 	BattleCamera.fit(camera, presenter.grid_size, viewport, Rect2(0.0, top_h, viewport.x, viewport.y - top_h - hud_h))
 	deploy.viewport_size = viewport
@@ -81,11 +88,12 @@ func drop_tile(screen: Vector2) -> Variant:
 	return deploy.pick_tile(screen)
 
 
-## 本方可部署半场在屏幕上的包围矩形（教程 field 高亮）。
+## 本方可部署半场在屏幕上的包围矩形（教程 field 高亮）。玩家 y∈[deploy_player_y_min, h]，对手 y∈[0, deploy_enemy_y_max]。
 func deploy_half_rect() -> Rect2:
 	var grid := Vector2(_arena.grid_w, _arena.grid_h)
-	var y0: float = _arena.deploy_player_y_min
-	var corners := [Vector2(0.0, y0), Vector2(grid.x, y0), Vector2(0.0, grid.y), Vector2(grid.x, grid.y)]
+	var y0: float = _arena.deploy_player_y_min if deploy.owner_id == 0 else 0.0
+	var y1: float = grid.y if deploy.owner_id == 0 else float(_arena.deploy_enemy_y_max)
+	var corners := [Vector2(0.0, y0), Vector2(grid.x, y0), Vector2(0.0, y1), Vector2(grid.x, y1)]
 	var rect := Rect2(tile_to_screen(corners[0]), Vector2.ZERO)
 	for c in corners:
 		rect = rect.expand(tile_to_screen(c))

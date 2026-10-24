@@ -19,6 +19,8 @@ extends Node2D
 # （塔锚点/箭口/镜像判定）统一经 _t2s/_screen_up_tiles，_flip 视角自动正确。
 #
 # 单机训练营 battle_scene.gd 完全不受影响（这是独立新场景）。
+# D5（PLAN_V5_3D）：战场换 3D 层 battle_field_3d（同 D4 单机页；side2 = flipped、本方恒蓝），进房建、重连再进房
+#   换绑新 Match（旧节点清空重建）；_t2s/_ur 借其镜头投影，出牌仍发 send_deploy；2D 战场绘制留到 D9 清理。
 
 const GameStateScript := preload("res://view/game_state.gd")
 const BattleClientScript := preload("res://net/battle_client.gd")
@@ -26,6 +28,7 @@ const BattleScript := preload("res://logic/battle.gd")
 const SpriteDB := preload("res://view/sprite_db.gd")
 const HudWidgets := preload("res://view/ui/hud_widgets.gd")   # V5-S9 双方名片
 const ModalScript := preload("res://view/ui/modal.gd")        # F1 弹窗基类（结算层走 UI.modal，修 KAN-98）
+const BattleField3D := preload("res://view/three_d/battle_field_3d.gd")  # D5 3D 战场层
 
 const TOPBAR_H := 54.0
 const HUD_BOTTOM_H := 176.0
@@ -176,6 +179,7 @@ var _end_t := 0.0
 var _end_winner := 0                            # 服务端判定的 winner（0=平/1=side1/2=side2）
 var _end_result_layer: Control
 var _end_buttons_added := false
+var _field3d = null                             # D5 3D 战场层（进房后建；null = 旧 2D 绘制：裸实例单测）
 
 @onready var _vw: float = float(get_viewport_rect().size.x)
 @onready var _vh: float = float(get_viewport_rect().size.y)
@@ -250,10 +254,21 @@ func _on_joined(your_side: int, opponent_name: String, opponent_avatar: String) 
 		_cancel_btn = null
 	_build_cards()
 	_build_nameplates(opponent_name, opponent_avatar)
+	_bind_field_3d(your_side)
 	# 联机对战音乐 + 战场环境音（AudioManager 全局 autoload，缺资源静默 no-op，与单机一致）。
 	# 0716 首批 BGM：与单机同一套双曲轮播集（曲终随机换下一首）。
 	AudioManager.play_music_set(["music_battle_normal", "music_battle_hunt"])
 	AudioManager.play_ambience("amb_battle_wind")
+
+
+# D5：首次进房建 3D 战场；重连再进房时 BattleClient 已新建 Match 并将追帧 → 同一层换绑（旧节点清空重建，不重复造）。
+func _bind_field_3d(your_side: int) -> void:
+	if _field3d == null:
+		_field3d = BattleField3D.new()
+		add_child(_field3d)
+	_field3d.setup(_client.match_obj.battle, _loader, Vector2(_vw, _vh), TOPBAR_H, HUD_BOTTOM_H,
+		{"local_owner": your_side - 1, "flipped": _flip})
+	Log.i("[net] 战场=3D side=%d flipped=%s" % [your_side, str(_flip)])
 
 
 # V5-S9：双方名片（己方左下、对手右上；头像走怪物卡 SpriteDB 立绘）。重连重入会清旧再建。
@@ -316,6 +331,9 @@ func _process(delta: float) -> void:
 	_update_shake(delta)
 	if _dragging:
 		_drag_screen = get_viewport().get_mouse_position()
+	var lp = _local_player()
+	if _field3d != null and lp != null:   # D5：只读同步 + 震屏 + ghost 跟随拖拽（掉线/结束置 _dragging=false 即撤）
+		_field3d.sync(delta, _shake, _selected if _dragging else -1, lp.deck.get_hand(), _drag_screen)
 	_cull_transients()
 	_sync_cards()
 	if _ending:
@@ -363,6 +381,8 @@ func _field_rect() -> Rect2:
 	return Rect2(zone.position + (zone.size - fs) * 0.5, fs)
 
 func _t2s(p: Vector2) -> Vector2:
+	if _field3d != null:   # D5：3D 镜头投影（翻转已含在 Field3D 里）；_shake 与相机偏移同步
+		return _field3d.tile_to_screen(p) + _shake
 	var a = _client.match_obj.battle.arena
 	var x: float = (a.grid_w - p.x) if _flip else p.x
 	var y: float = (a.grid_h - p.y) if _flip else p.y
@@ -411,6 +431,8 @@ func _fp_screen(fw: float, fh: float) -> Vector2:
 	return Vector2(fw * tp.x, fh * tp.y)
 
 func _ur() -> float:          # 单位绘制参考半径基准 = tile 屏幕边长均值
+	if _field3d != null:
+		return _field3d.tile_px()
 	var tp := _tile_px()
 	return (tp.x + tp.y) * 0.5
 
@@ -424,19 +446,21 @@ func _screen_up_tiles(n: float) -> Vector2:
 
 # —— 绘制 ——
 func _draw() -> void:
-	draw_rect(Rect2(0, 0, _vw, _vh), COL_BG)
+	if _field3d == null:   # 3D 战场时背景是 3D 天空色
+		draw_rect(Rect2(0, 0, _vw, _vh), COL_BG)
 	if _client == null or _client.match_obj == null:
 		_text(Vector2(_vw * 0.5 - 80, _vh * 0.5), _status, Color.WHITE, 24)
 		return
 	var a = _client.match_obj.battle.arena
-	_draw_terrain(a)
-	_draw_deploy_hint(a)
-	_draw_world(a)   # 塔+单位 Y-sort 伪深度单通道（0715 二验同款）
+	if _field3d == null:   # D5：3D 时地形/单位/塔/落点 ghost 由 Field3D 画，这里只叠 2D 特效与 HUD
+		_draw_terrain(a)
+		_draw_deploy_hint(a)
+		_draw_world(a)   # 塔+单位 Y-sort 伪深度单通道（0715 二验同款）
+		_draw_drag_ghost(a)
 	_draw_fx()
 	_draw_unit_fx()
 	_draw_projectiles()
 	_draw_combat_fx()
-	_draw_drag_ghost(a)
 	_draw_topbar()
 	draw_rect(Rect2(0, _vh - HUD_BOTTOM_H, _vw, HUD_BOTTOM_H), COL_PANEL)   # 底部 HUD 底板
 	_draw_elixir()
@@ -800,18 +824,8 @@ func _drop_tile() -> Vector2:
 	return _s2t(_drag_screen + Vector2(0.0, -lift))
 
 # 卡牌出什么：spawn=生成兵；否则法术（radius>0=AOE，=0=直伤）。
-func _card_info(cid) -> Dictionary:
-	for sk in _loader.get_card(cid).get("skills", []):
-		if typeof(sk) != TYPE_DICTIONARY:
-			continue
-		var t = sk.get("type")
-		if t == "spawn_unit":
-			return {"spawn": true, "unit_id": str(sk.get("unit_id")), "count": int(sk.get("count", 1)), "radius": 0.0}
-		elif t == "aoe_damage" or t == "aoe_heal":
-			return {"spawn": false, "unit_id": "", "count": 0, "radius": float(sk.get("radius", 1.0))}
-		elif t == "direct_damage":
-			return {"spawn": false, "unit_id": "", "count": 0, "radius": 0.0}
-	return {"spawn": false, "unit_id": "", "count": 0, "radius": 0.0}
+func _card_info(cid) -> Dictionary:   # D5：与 3D 出牌输入 / 单机页共用一份判定（同口径另带 body_radius）
+	return BattleField3D.DeployInput.card_info(_loader, str(cid))
 
 func _play_card_audio(cid: String, info: Dictionary) -> void:
 	match cid:
@@ -1032,7 +1046,7 @@ func _detect_events() -> void:
 		_uhp[id] = cur
 	for id in _ulast.keys():   # 死亡消散（0715 配套 FX）：上帧还活着、本帧消失 = 阵亡 → 最后位置放特效
 		if not alive_now.has(id):
-			_spawn_unit_fx(SpriteDB.unit_fx(str(_ulast[id]["uid"]), "death"), _ulast[id]["pos"], false)
+			_spawn_unit_fx(_sprite_fx(str(_ulast[id]["uid"]), "death"), _ulast[id]["pos"], false)
 			_ulast.erase(id)
 	for side in [b.player_towers, b.opponent_towers]:
 		for t in side:
@@ -1047,11 +1061,14 @@ func _detect_events() -> void:
 						_on_tower_destroyed(t.pos, t.is_king())
 			_thp[id] = cur
 
+func _sprite_fx(unit_id: String, kind: String) -> Dictionary:   # D5：3D 下刀光/星芒/白烟让位模型动作
+	return {} if _field3d != null else SpriteDB.unit_fx(unit_id, kind)
+
 func _on_hit(id: int, pos: Vector2, amount: float, unit_id: String = "") -> void:
 	_flash[id] = _elapsed + FLASH_DUR
 	var big: bool = amount >= HITSTOP_DMG
 	_spawn_dmgnum(pos, "%d" % int(round(amount)), Color(1, 0.92, 0.45) if big else Color.WHITE, 24 if big else 18)
-	var hfx: Dictionary = SpriteDB.unit_fx(unit_id, "hit")
+	var hfx: Dictionary = _sprite_fx(unit_id, "hit")
 	if hfx.is_empty():
 		_sparks.append({"pos": pos, "t0": _elapsed, "dur": SPARK_DUR})
 	else:   # 0715 配套受击星芒：替换程序化火花（伤害数字/闪白/顿帧照旧）
@@ -1082,7 +1099,7 @@ func _detect_attacks() -> void:
 		if not u.is_alive():
 			continue
 		var ranged: bool = PROJ_KIND.has(u.unit_id) and u.attack_range >= PROJ_RANGED_MIN
-		var slash_fx: Dictionary = SpriteDB.unit_fx(u.unit_id, "attack")   # 0715 近战刀光配套
+		var slash_fx: Dictionary = _sprite_fx(u.unit_id, "attack")   # 0715 近战刀光配套
 		if not ranged and slash_fx.is_empty():
 			continue
 		var id: int = u.get_instance_id()
@@ -1239,13 +1256,16 @@ func _on_card_down(i: int) -> void:
 	AudioManager.play_sfx("ui_card_pickup")
 
 func _on_card_up(i: int) -> void:
+	_release_card(i, get_viewport().get_mouse_position())
+
+# D5：screen 参数化供测试直调；3D 落点 = 镜头射线拾取（与 ghost 同点，已含 side2 翻转），仍只发 send_deploy。
+func _release_card(i: int, screen: Vector2) -> void:
 	var was := _dragging
 	var sc := _selected
 	_dragging = false
 	_selected = -1
 	if not was or sc != i or _client == null or _client.match_obj == null or _ending or not GameStateScript.is_online_ready():
 		return
-	var screen: Vector2 = get_viewport().get_mouse_position()
 	if screen.y < TOPBAR_H or screen.y > _vh - HUD_BOTTOM_H:
 		AudioManager.play_sfx("ui_card_cancel")
 		return
@@ -1259,8 +1279,8 @@ func _on_card_up(i: int) -> void:
 	if not lp.can_play(sc):
 		return
 	# 兵牌落点须本方半场合法（法术不限）；非法不发。owner = 本方 owner。
-	var drop: Vector2 = _drop_tile()
-	if _card_info(cid)["spawn"] and not _client.match_obj.battle.arena.can_deploy(_client.your_side - 1, drop):
+	var drop: Variant = _field3d.drop_tile(screen) if _field3d != null else _drop_tile()   # null = 场外
+	if drop == null or (_card_info(cid)["spawn"] and not _client.match_obj.battle.arena.can_deploy(_client.your_side - 1, drop)):
 		AudioManager.play_sfx("ui_card_drop_invalid")
 		return
 	# 联机：发 deploy 指令（不当场落子，等服务端广播回来两端同 tick 落子）。
@@ -1376,6 +1396,7 @@ func _start_ending() -> void:
 		return
 	_ending = true
 	_end_t = 0.0
+	_dragging = false   # 拖着牌时结算：撤拖拽（3D ghost 随之撤）
 	UI.modal(_end_result_layer)   # 推入弹窗层：演出期不能出牌（场景切换时自动清）
 	# 服务端 winner: 0=平/1=side1/2=side2。本方胜利 = winner == my_side。
 	var mine := 1 if not _flip else 2
