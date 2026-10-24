@@ -10,6 +10,7 @@ const AIControllerScript := preload("res://ai/ai_controller.gd")
 const Presenter := preload("res://view/three_d/battle_presenter.gd")
 const DeployInput := preload("res://view/three_d/deploy_input_3d.gd")
 const BattleCamera := preload("res://view/three_d/battle_camera.gd")
+const BattleLighting := preload("res://view/three_d/battle_lighting.gd")
 
 const LEVEL_ID := "ladder_01"
 const SPEEDS := [1.0, 2.0, 4.0]
@@ -32,6 +33,7 @@ var _cards: Array = []
 var _next_label: Label
 var _elixir_label: Label
 var _unit_names: Dictionary = {}
+var _unit_heights: Dictionary = {}
 var _acc := 0.0
 var _paused := false
 var _flipped := false
@@ -44,22 +46,14 @@ func _ready() -> void:
 	_loader.load_all()
 	for unit_id in _loader.units:
 		_unit_names[unit_id] = str(_loader.units[unit_id].get("name", unit_id))
+		_unit_heights[unit_id] = float(_loader.units[unit_id].get("vis_height_px", 0.0))
 	_presenter.name = "BattlePresenter"
 	_presenter.auto_advance = false
 	add_child(_presenter)
 	_deploy.name = "DeployInput"
 	_deploy.deploy_requested.connect(_on_deploy_requested)
 	add_child(_deploy)
-	_add_light(Vector3(-55, -25, 0), 1.1)
-	_add_light(Vector3(-35, 145, 0), 0.45)
-	var environment := WorldEnvironment.new()
-	environment.environment = Environment.new()
-	environment.environment.background_mode = Environment.BG_COLOR
-	environment.environment.background_color = Color("d8ecfa")
-	environment.environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.environment.ambient_light_color = Color("e1ead6")
-	environment.environment.ambient_light_energy = 0.65
-	add_child(environment)
+	BattleLighting.setup(self)
 	_camera = Camera3D.new()
 	add_child(_camera)
 	_camera.make_current()
@@ -87,6 +81,7 @@ func _setup_view() -> void:
 		"local_owner": _human_owner(),
 		"flipped": _flipped,
 		"unit_names": _unit_names,
+		"unit_heights": _unit_heights,
 	})
 	_deploy.configure(_camera, _match.battle.arena, _loader, _human_owner(), _flipped,
 		get_viewport().get_visible_rect().size)
@@ -238,15 +233,6 @@ func _fit_camera() -> void:
 
 func _field_zone(size: Vector2) -> Rect2:
 	return Rect2(0.0, TOP_H, size.x, size.y - TOP_H - HUD_H)
-
-
-func _add_light(degrees: Vector3, energy: float) -> void:
-	var light := DirectionalLight3D.new()
-	light.rotation_degrees = degrees
-	light.light_energy = energy
-	light.shadow_enabled = energy > 1.0
-	light.directional_shadow_max_distance = 100
-	add_child(light)
 
 
 func _build_labels() -> void:

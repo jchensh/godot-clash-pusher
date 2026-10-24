@@ -1,15 +1,21 @@
-## 单座塔的 3D 表现：几何代理塔身 + 血条 + 受击闪白 + 开火脉冲 + 摧毁废墟；只读 Tower 状态。
+## 单座塔的 3D 表现：正式塔模型（阵营色染旗帜/屋顶）+ 血条 + 受击闪白 + 开火脉冲 + 摧毁换废墟；只读 Tower 状态。
 extends Node3D
 
-const ArenaPresenter := preload("res://view/three_d/arena_presenter.gd")
 const FieldProjection := preload("res://view/three_d/field_projection.gd")
 const HpBar := preload("res://view/three_d/hp_bar_3d.gd")
+const ToonStyle := preload("res://view/three_d/toon_style.gd")
+const KING_MODEL := preload("res://assets/models/king_tower/king_tower.glb")
+const ARROW_MODEL := preload("res://assets/models/arrow_tower/arrow_tower.glb")
+const RUIN_MODEL := preload("res://assets/models/tower_ruin/tower_ruin.glb")
 
 const FLASH_DUR := 0.15
 const PULSE_DUR := 0.25
-const RUIN_COLOR := Color("8b8478")
+const KING_AUTHORED_FW := 4.0    # 王塔模型按 4×4 格制作
+const ARROW_AUTHORED_FW := 3.0   # 箭塔/废墟模型按 3×3 格制作
+const FACE_CAMERA_YAW := PI * 0.5   # 模型正面(+Z)转向镜头所在的 +X 侧：门与旗帜朝玩家
 
 var tower_ref = null
+var team_color := Color.WHITE
 var destroyed := false
 var hp_ratio := 1.0
 var attack_count := 0
@@ -29,15 +35,15 @@ func setup(tower, info: Dictionary) -> void:
 	name = "Tower_%s_%d_%d" % [tower.kind, tower.owner_id, tower.get_instance_id()]
 	position = FieldProjection.tile_to_world(tower.pos, info.grid, info.get("flipped", false))
 	var king: bool = tower.is_king()
-	_intact = ArenaPresenter.make_tower_proxy(king, float(tower.fw), float(tower.fh), info.color)
-	_intact.name = "Intact"
-	add_child(_intact)
-	_ruin = _build_ruin(float(tower.fw), float(tower.fh))
+	team_color = info.color
+	var fw := float(tower.fw)
+	_intact = _wrap("Intact", KING_MODEL if king else ARROW_MODEL,
+		fw / (KING_AUTHORED_FW if king else ARROW_AUTHORED_FW), team_color)
+	_ruin = _wrap("Ruin", RUIN_MODEL, fw / ARROW_AUTHORED_FW, Color.WHITE)
 	_ruin.visible = false
-	add_child(_ruin)
 	_hp_bar = HpBar.new()
 	_hp_bar.name = "HpBar"
-	_hp_bar.position.y = (3.0 if king else 2.2) + 2.0
+	_hp_bar.position.y = (4.9 if king else 4.3) * fw / (KING_AUTHORED_FW if king else ARROW_AUTHORED_FW)
 	_hp_bar.setup(float(tower.fw) * 0.8, info.color)
 	_hp_bar.visible = false
 	add_child(_hp_bar)
@@ -74,14 +80,14 @@ func sync(tower, delta: float) -> void:
 	_intact.scale = Vector3.ONE * (1.0 + sin((_pulse / PULSE_DUR) * PI) * 0.06)
 
 
-## 废墟代理：矮基座 + 几块倾倒碎石（与 2D 王塔废墟一致：敌我共用、不带阵营色）。
-func _build_ruin(fw: float, fh: float) -> Node3D:
-	var ruin := Node3D.new()
-	ruin.name = "Ruin"
-	ArenaPresenter.box(ruin, "RuinBase", Vector3(fw * 0.8, 0.45, fh * 0.8), Vector3(0, 0.22, 0), RUIN_COLOR)
-	var chunks := [Vector3(-0.35, 0.6, 0.2), Vector3(0.4, 0.55, -0.25), Vector3(0.05, 0.75, -0.05)]
-	for i in chunks.size():
-		var piece := ArenaPresenter.box(ruin, "Rubble%d" % i, Vector3(0.6, 0.35, 0.45),
-			chunks[i] * Vector3(fw * 0.4, 1.0, fh * 0.4), RUIN_COLOR.lightened(0.1 * i))
-		piece.rotation = Vector3(0.3 * i, 0.7 * i, 0.25)
-	return ruin
+## 包一层节点承载缩放/朝向；脉冲缩放作用在外层，不改模型本身的占位缩放。
+func _wrap(label: String, scene: PackedScene, scale_k: float, tint: Color) -> Node3D:
+	var holder := Node3D.new()
+	holder.name = label
+	add_child(holder)
+	var model: Node3D = scene.instantiate()
+	model.scale = Vector3.ONE * scale_k
+	model.rotation.y = FACE_CAMERA_YAW
+	holder.add_child(model)
+	ToonStyle.apply(model, tint)
+	return holder

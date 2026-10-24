@@ -6,12 +6,7 @@ extends Node3D
 const ArenaPresenter := preload("res://view/three_d/arena_presenter.gd")
 const UnitActor := preload("res://view/three_d/battle_unit_actor.gd")
 const TowerActor := preload("res://view/three_d/battle_tower_actor.gd")
-const Xiaoxiao := preload("res://assets/models/xiaoxiao/xiaoxiao_animated.glb")
-
-## 已有正式 3D 资产的单位；未登记的一律用标注「代理」的几何体（D3 逐个替换）。
-const MODELS := {
-	"knight_body": {"scene": Xiaoxiao, "scale": 0.75},
-}
+const UnitModels := preload("res://view/three_d/unit_models.gd")
 
 var auto_advance := true         # true：_process 每帧自动 advance；测试置 false 手动喂 delta
 var local_owner := 0
@@ -24,15 +19,18 @@ var _units: Dictionary = {}      # Unit 实例 ID → UnitActor（存活）
 var _dying: Array = []           # 已从逻辑层消失、正在播死亡表现的 UnitActor
 var _towers: Dictionary = {}     # Tower 实例 ID → TowerActor
 var _names: Dictionary = {}
+var _heights: Dictionary = {}    # unit_id → vis_height_px（体型归一；缺省按体积半径近似）
 
 
-## options：{local_owner:int, flipped:bool, unit_names:{unit_id: 显示名}}。重复调用会先清空旧节点（重开/重连）。
+## options：{local_owner:int, flipped:bool, unit_names:{unit_id: 显示名}, unit_heights:{unit_id: vis_height_px}}。
+## 重复调用会先清空旧节点（重开/重连）。
 func setup(battle, arena_cfg: Dictionary, options: Dictionary = {}) -> void:
 	clear()
 	_battle = battle
 	local_owner = int(options.get("local_owner", 0))
 	flipped = bool(options.get("flipped", false))
 	_names = options.get("unit_names", {})
+	_heights = options.get("unit_heights", {})
 	_field = ArenaPresenter.new()
 	_field.name = "Field"
 	add_child(_field)
@@ -120,7 +118,11 @@ func proxy_unit_ids() -> Array:
 
 
 func _spawn_unit(unit) -> Node3D:
-	var model: Dictionary = MODELS.get(unit.unit_id, {})
+	var model: Dictionary = UnitModels.model_for(unit.unit_id)
+	var scale := 1.0
+	if not model.is_empty():
+		var target := UnitModels.target_height(float(_heights.get(unit.unit_id, 0.0)), float(unit.body_radius))
+		scale = target / maxf(float(model["native_h"]), 0.01)
 	var actor := UnitActor.new()
 	add_child(actor)
 	actor.setup(unit, {
@@ -128,7 +130,8 @@ func _spawn_unit(unit) -> Node3D:
 		"flipped": flipped,
 		"color": _team_color(unit.owner_id),
 		"model": model.get("scene"),
-		"model_scale": model.get("scale", 1.0),
+		"model_scale": scale,
+		"model_tint": model.get("tint", Color.WHITE),
 		"name": _names.get(unit.unit_id, unit.unit_id),
 	})
 	return actor

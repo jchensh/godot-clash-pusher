@@ -76,6 +76,24 @@ $taskTools = "$env:USERPROFILE\.codex\tools\blender-mcp-official"
 
 MCP 具有执行任意 Python 的能力：只运行审阅过的代码，桥保持本机监听，不开放到公网。
 
+## 2.5 战斗资产批量管线（D3 起，Claude Code 实作）
+
+战斗单位、塔、地形件统一用脚本程序化生成，不再手工逐个在 MCP 里搭：
+
+| 文件 | 作用 |
+|---|---|
+| `tools/blender/toonkit.py` | 圆角基本体 + 顶点色（`Col` → glTF COLOR_0）+ 刚性分块绑骨 + 世界轴关键帧 + GLB 导出；静态资产只导网格；`tag="team"` 部件进 `M_Team` 材质槽 |
+| `tools/blender/motions.py` / `slimes.py` | 通用动作模板 / 史莱姆共用构件 |
+| `tools/blender/assets/<id>.py` | 每个资产一份，暴露 `build(k)` |
+| `tools/blender/build_asset.py` | 后台权威构建：`blender -b --factory-startup --python-exit-code 1 -P tools/blender/build_asset.py -- <id> [--review DIR]` |
+| `tools/blender/live_build.py` | 直播模式：经 MCP 在用户开着的 Blender 里边拼边刷新，供人看过程；入库文件以后台构建为准 |
+| `tools/blender/add_xiaoxiao_death.py` | 给手工资产小小补 Death 的一次性脚本 |
+
+约定：骨骼一律竖直向上（关节枢轴在 head），关键帧按世界轴写（x 前倾、y 侧倾、z 转身）；动作 Idle/Walk 循环（`_loop` 后缀）、Attack/Death 单次，Death ≤ 0.6 秒。
+Godot 侧统一套 `view/three_d/toon_style.gd`（色阶光 + 恒定像素描边），单位登记在 `view/three_d/unit_models.gd`，体型按 units.json `vis_height_px` 归一。
+Blender 5.2 后台导出顶点色必须 `export_vertex_color="NAME"` + 名字，`ACTIVE` 在后台不生效；导出加 `use_active_scene=True` 防止混入其他场景。
+启动可连 MCP 的 Blender：`powershell -File %USERPROFILE%\.codex\tools\blender-mcp-official\start-blender-mcp.ps1`（带 `--online-mode`，否则插件不开端口）。
+
 ## 3. 从原图建模
 
 1. **读取原图**，不要只根据文件名猜造型。运行时小图不够时，去 `testAssets/` 找原始大图。

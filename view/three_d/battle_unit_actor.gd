@@ -5,6 +5,7 @@ extends Node3D
 const FieldProjection := preload("res://view/three_d/field_projection.gd")
 const HpBar := preload("res://view/three_d/hp_bar_3d.gd")
 const LABEL_FONT := preload("res://assets/fonts/ZCOOLKuaiLe-Regular.ttf")
+const ToonStyle := preload("res://view/three_d/toon_style.gd")
 
 const STATE_IDLE := "idle"
 const STATE_WALK := "walk"
@@ -50,7 +51,7 @@ var _yaw := 0.0
 var _base_scale := 1.0
 
 
-## info：{grid, flipped, color, model(PackedScene|null), model_scale, name}
+## info：{grid, flipped, color, model(PackedScene|null), model_scale, model_tint, name}
 func setup(unit, info: Dictionary) -> void:
 	unit_ref = unit
 	_grid = info.grid
@@ -66,7 +67,7 @@ func setup(unit, info: Dictionary) -> void:
 	add_child(_visual)
 	var scene: PackedScene = info.get("model")
 	if scene != null:
-		_build_model(scene, float(info.get("model_scale", 1.0)))
+		_build_model(scene, float(info.get("model_scale", 1.0)), info.get("model_tint", Color.WHITE))
 	else:
 		_build_proxy(unit, color, str(info.get("name", unit.unit_id)))
 	_add_team_ring(unit.body_radius, color)
@@ -143,6 +144,8 @@ func step_death(delta: float) -> bool:
 		_visual.scale = Vector3.ONE * _base_scale * (1.0 - k * 0.9)
 		_visual.position.y = _height() - k * 0.6
 		_visual.rotation.z = k * 1.2
+	elif k > 0.75:   # Death 片段末尾快速缩没，避免节点释放时突然消失
+		_visual.scale = Vector3.ONE * _base_scale * (1.0 - (k - 0.75) / 0.25)
 	return _death_t >= DEATH_DUR
 
 
@@ -222,11 +225,12 @@ func _height() -> float:
 	return AIR_HEIGHT if flying else 0.0
 
 
-func _build_model(scene: PackedScene, model_scale: float) -> void:
+func _build_model(scene: PackedScene, model_scale: float, tint: Color) -> void:
 	mode = MODE_MODEL
 	var model := scene.instantiate() as Node3D
 	model.name = "Model"
 	_visual.add_child(model)
+	ToonStyle.apply(model, Color.WHITE, tint)
 	_base_scale = model_scale
 	_visual.scale = Vector3.ONE * model_scale
 	_player = model.find_child("AnimationPlayer", true, false) as AnimationPlayer

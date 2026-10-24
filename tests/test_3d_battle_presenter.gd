@@ -29,8 +29,13 @@ func _battle():
 	return battle
 
 
+## 无 3D 资产的单位（D3 起全部配置单位都有模型）：借兔射手数值、换一个未登记的 unit_id 测代理回退路径。
+const PROXY_ID := "test_proxy_body"
+
+
 func _unit(battle, unit_id: String, owner_id: int, pos: Vector2):
-	var unit = UnitScript.new(unit_id, owner_id, _config().get_unit(unit_id), pos)
+	var cfg_id := "archer_body" if unit_id == PROXY_ID else unit_id
+	var unit = UnitScript.new(unit_id, owner_id, _config().get_unit(cfg_id), pos)
 	battle.arena.add_unit(unit)
 	return unit
 
@@ -56,7 +61,7 @@ func _frames(presenter: Node3D, count: int) -> void:
 func test_one_actor_per_unit_and_proxy_marked() -> void:
 	var battle = _battle()
 	var knight = _unit(battle, "knight_body", UnitScript.OWNER_PLAYER, Vector2(6.5, 24.5))
-	var archer = _unit(battle, "archer_body", UnitScript.OWNER_OPPONENT, Vector2(19.5, 5.5))
+	var archer = _unit(battle, PROXY_ID, UnitScript.OWNER_OPPONENT, Vector2(19.5, 5.5))
 	var presenter := _presenter(battle)
 	var children := presenter.get_child_count()
 	_frames(presenter, 30)
@@ -65,7 +70,7 @@ func test_one_actor_per_unit_and_proxy_marked() -> void:
 	assert_eq(presenter.actor_for(knight).mode, UnitActor.MODE_MODEL, "小小用正式 GLB")
 	assert_eq(presenter.actor_for(archer).mode, UnitActor.MODE_PROXY, "无资产单位用代理")
 	assert_not_null(presenter.actor_for(archer).find_child("ProxyLabel", true, false), "代理带明确标注")
-	assert_eq(presenter.proxy_unit_ids(), ["archer_body"], "代理清单只列代理单位")
+	assert_eq(presenter.proxy_unit_ids(), [PROXY_ID], "代理清单只列代理单位")
 	assert_eq(presenter.actor_for(knight).clip, "Idle", "静止时播 Idle")
 	_dispose(presenter)
 
@@ -73,19 +78,24 @@ func test_one_actor_per_unit_and_proxy_marked() -> void:
 func test_death_plays_out_then_frees_node() -> void:
 	var battle = _battle()
 	var knight = _unit(battle, "knight_body", UnitScript.OWNER_PLAYER, Vector2(6.5, 24.5))
+	var proxy = _unit(battle, PROXY_ID, UnitScript.OWNER_PLAYER, Vector2(19.5, 24.5))
 	var presenter := _presenter(battle)
 	var baseline := presenter.get_child_count()
 	knight.take_damage(knight.max_hp)
+	proxy.take_damage(proxy.max_hp)
 	battle.step(SimClockScript.TICK_DELTA)   # 逻辑层清死
 	presenter.advance(DT)
 	assert_eq(presenter.unit_actor_count(), 0, "消失单位移出存活表")
-	assert_eq(presenter.dying_count(), 1, "转入死亡表现")
-	var dying: Node3D = presenter._dying[0]
-	assert_eq(dying.state, UnitActor.STATE_DYING)
-	assert_eq(dying.death_mode, "fallback", "小小无 Death 片段 → 明确回退")
+	assert_eq(presenter.dying_count(), 2, "转入死亡表现")
+	var modes: Dictionary = {}
+	for dying in presenter._dying:
+		assert_eq(dying.state, UnitActor.STATE_DYING)
+		modes[dying.mode] = dying.death_mode
+	assert_eq(modes[UnitActor.MODE_MODEL], "clip", "小小（D3 补了 Death）播死亡片段")
+	assert_eq(modes[UnitActor.MODE_PROXY], "fallback", "代理无片段 → 明确回退")
 	_frames(presenter, 60)
 	assert_eq(presenter.dying_count(), 0, "死亡表现播完")
-	assert_eq(presenter.get_child_count(), baseline - 1, "节点已释放，不泄漏")
+	assert_eq(presenter.get_child_count(), baseline - 2, "节点已释放，不泄漏")
 	_dispose(presenter)
 
 
@@ -133,7 +143,7 @@ func test_movement_interpolates_walks_and_faces_motion() -> void:
 func test_attack_edge_drives_clip_and_hit_updates_bar() -> void:
 	var battle = _battle()
 	var knight = _unit(battle, "knight_body", UnitScript.OWNER_PLAYER, Vector2(13.5, 20.5))
-	var archer = _unit(battle, "archer_body", UnitScript.OWNER_OPPONENT, Vector2(13.5, 19.6))
+	var archer = _unit(battle, PROXY_ID, UnitScript.OWNER_OPPONENT, Vector2(13.5, 19.6))
 	var presenter := _presenter(battle)
 	battle.step(SimClockScript.TICK_DELTA)
 	presenter.advance(DT)
@@ -179,10 +189,10 @@ func test_flipped_view_mirrors_positions_and_swaps_team_color() -> void:
 	var b: Vector3 = flipped.actor_for(knight).position
 	assert_true(a.is_equal_approx(Vector3(-b.x, b.y, -b.z)), "side2 视角整场 180° 翻转")
 	var tower = battle.player_towers[0]
-	var band_n := normal.tower_actor_for(tower).find_child("TeamBand", true, false) as MeshInstance3D
-	var band_f := flipped.tower_actor_for(tower).find_child("TeamBand", true, false) as MeshInstance3D
-	assert_eq(band_n.material_override.albedo_color, ArenaPresenter.COLOR_BLUE, "本方视角：我塔蓝")
-	assert_eq(band_f.material_override.albedo_color, ArenaPresenter.COLOR_RED, "对方视角：同一座塔为红")
+	assert_eq(normal.tower_actor_for(tower).team_color, ArenaPresenter.COLOR_BLUE, "本方视角：我塔蓝")
+	assert_eq(flipped.tower_actor_for(tower).team_color, ArenaPresenter.COLOR_RED, "对方视角：同一座塔为红")
+	assert_true(_has_tinted_surface(normal.tower_actor_for(tower), ArenaPresenter.COLOR_BLUE), "塔模型阵营部件确实染蓝")
+	assert_true(_has_tinted_surface(flipped.tower_actor_for(tower), ArenaPresenter.COLOR_RED), "塔模型阵营部件确实染红")
 	_dispose(normal)
 	_dispose(flipped)
 
@@ -229,3 +239,13 @@ func _ai_tick(ctx: Dictionary) -> void:
 	ctx["player_ai"].tick(dt)
 	ctx["enemy_ai"].tick(dt)
 	m.battle.step(dt)
+
+
+func _has_tinted_surface(root: Node, color: Color) -> bool:
+	for node in root.find_children("*", "MeshInstance3D", true, false):
+		var mi := node as MeshInstance3D
+		for s in mi.mesh.get_surface_count():
+			var mat := mi.get_surface_override_material(s) as ShaderMaterial
+			if mat != null and mat.get_shader_parameter("tint") == color:
+				return true
+	return false
