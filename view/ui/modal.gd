@@ -9,7 +9,9 @@ extends Control
 
 signal closed
 
-var dim_alpha := 0.72            # 暗幕不透明度；0 = 无暗幕（如结算层：演出黑幕由场景 _draw 渐入）
+const _PALETTE := preload("res://view/ui/pixel_ui.gd")   # 私有名：子类多已声明 PixelUI，同名会编译冲突
+
+var dim_alpha := _PALETTE.DIM_ALPHA   # 暗幕不透明度（默认取色板令牌）；0 = 无暗幕（如结算层：演出黑幕由场景 _draw 渐入）
 var close_on_bg_click := false   # 点空白即关闭（确认框类弹窗置 true）
 var bg_click_cb: Callable = Callable()   # 点空白自定义回调（免建子类的轻量覆写；优先于 close_on_bg_click）
 var _assembled := false
@@ -36,7 +38,7 @@ func _assemble() -> void:
 			child_entered_tree.connect(_shift_child)
 	if dim_alpha > 0.0:
 		var d := ColorRect.new()
-		d.color = Color(0.04, 0.03, 0.07, dim_alpha)   # 夜色石板调，对齐 PixelUI 暗幕语言
+		d.color = Color(_PALETTE.COL_DIM, dim_alpha)   # 天空牧场深青蓝暗幕（UI 偏离修复②，替代夜色紫黑）
 		d.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		d.mouse_filter = Control.MOUSE_FILTER_IGNORE   # 输入由本层根统一拦
 		add_child(d)

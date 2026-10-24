@@ -978,3 +978,30 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
 ### D2 用户验收（2026-10-24）
 
 - 用户回报 D2 真人用例 **C1~C10 全部通过**；以上 D2 条目的「待真人验收」由本条更新为已验收。D3 未开工。
+
+### UI 偏离修复 ① 色板令牌 + 对比度单测（2026-10-24，代码通过待用户确认提交；Jira 待补）
+
+- **来由**：同日从代码提取「天空牧场」设计系统（[设计系统页](https://claude.ai/code/artifact/ac8e5f64-afaf-4702-8ae8-a8cbfc432cf7)），审计出两条高优先级偏离——`campaign_scene`/`run_scene`/`deck_builder` 仍是夜色深底常量、`modal.gd:39`/`reward_chest.gd:65` 暗幕仍是夜色紫黑。拆 5 步修：①令牌 ②暗幕 ③组卡 ④闯关路线 ⑤run（可选：run 场景当前无入口，只有自身会建 run 状态）。worktree 分支 `feat/ui-drift-fix`。
+- **本步（只加令牌，不动任何界面）**：`view/ui/pixel_ui.gd` 新增暗幕 `COL_DIM #1f3a52`+`DIM_ALPHA 0.5`（替代紫黑 0.72）、路线节点四态 底/描边（已过 `e4f4dc/7cc36a`·当前 `fff8e1/3d9be0`·未到 `eef6fc/cfe3f2`·Boss `fde3e2/e24b4a`）、组卡 兵种 `dceefc/7fb4d9`·法术 `efe4fb/b48fe0`·已填槽 `ffffff/a9d3ee`·空槽 `ddeefb/cfe3f2`·禁用 `cfdde9/8aa4ba`。
+- **新增 `tests/test_pixel_ui_palette.gd`（5 例）**：WCAG 对比度计算自校（黑白 21:1）；主文字 `COL_PARCHMENT` 压 9 个新底色均 ≥ 4.5:1（实测最低禁用底 5.24:1）；新底色亮度 > 0.6 防夜色回流；描边比底色深；暗幕不透明度 < 0.72 且偏青蓝。
+- 客户端 **461/461**（456 + 新 5）；改动两文件 gdlint 绿。新 worktree 首次 headless import 报一次快乐体 fontdata 未就绪，属首次导入先后顺序，导入后跑测试字体正常。Atlassian MCP 本会话未授权，Jira 待补；未提交推送。
+
+### UI 偏离修复 ② 弹窗暗幕换色板令牌（✅ 真人验收通过，2026-10-24）
+
+- `view/ui/modal.gd`：默认暗幕由夜色紫黑 `(0.04,0.03,0.07,0.72)` 改为 `COL_DIM #1f3a52 @ DIM_ALPHA 0.5`；`dim_alpha` 默认值直接取令牌。实际吃默认暗幕的弹窗 = 设置·登出确认、王国·建筑弹窗（run 场景覆盖层当前无入口）；战斗结算/教程层 dim=0 不受影响。
+- **踩坑**：基类先用 `const PixelUI` 引色板 → 子类 `reward_chest`/`kingdom_building_modal` 已各自声明 `PixelUI`，GDScript 报「member already exists in parent class」，`test_view_scripts_compile` 当场拦下。改私有名 `_PALETTE` 解决。
+- `tests/test_ui_layers.gd::test_modal_dim_assembly` 补断言：暗幕色 = `COL_DIM@DIM_ALPHA`。
+- **宝箱（用户拍板「奖励区垫白卡+暗幕同步换令牌」）**：`reward_chest.gd` 自绘暗幕换 `COL_DIM@DIM_ALPHA`，并用 `panel_box("stone")` 垫白卡。实算发现新暗幕叠在闯关页浅底上≈`#8498a8`，与天空蓝标题/亮星对比≈1:1 会直接消失 → 白卡从「仅奖励区」扩为**罩住标题→星级→宝箱→奖励全程**；尺寸按奖励行数（setup 已知）一次算定，开箱过程不跳动。新增 `card_rect(vp)` + 单测 `test_reward_chest_card_wraps_content`（720×1280/750×1334 × 1/3 行：罩住标题与末行、卡底 < 继续按钮 y=880、水平居中）。
+- **仍待修**：`kingdom_building_modal.gd:34` 面板底仍是夜色 `(0.10,0.08,0.14)`，同属夜色残留。
+- 客户端 **462/462**；改动文件 gdlint 绿；未提交推送。（用户随后决定 ③~⑤ 连做、最后统一真人验收，见下条）
+
+### UI 偏离修复 ③~⑤ 组卡 / 闯关路线 / run 换浅色（✅ 真人验收通过，2026-10-24）
+
+- **节奏变更**：用户表示开引擎验收太麻烦，要求剩余步骤一次做完、最后统一看；②~⑤ 同在 `feat/ui-drift-fix` 未提交。
+- **③ `deck_builder.gd`**（竖屏+横屏两套布局）：删夜色常量 `TROOP_/SPELL_/SLOT_*`，卡池卡底/描边、已填/空卡槽、禁用出战按钮全改走 PixelUI 令牌；卡名/费用/槽位字白 → 主文字深青；分隔线 → `#a9d3ee`；满 8 张计数 → `#7cc36a`；槽按下态 = 凹槽色。
+- **④ `campaign_scene.gd`**：8 个节点常量改为 `COL_NODE_*` 令牌别名（常量名保留，引用面不动）；行字一律主文字色（已过/当前靠 ✓▶ 与底色区分）。
+- **⑤ `run_scene.gd`**（当前无入口，按用户「全部做完」一并改）：路线行同 ④ 令牌；卡组/遗物摘要行改深青/天空蓝；奖励候选卡淡蓝面+天空蓝边；禁用按钮令牌化；奖励选择与结算两个覆盖层加 `_backing()` 白卡垫底（与宝箱同理：令牌暗幕上直接写字不可读）。
+- **守门单测** `test_no_night_literals_in_migrated_views`：扫描 5 个已迁移文件不得再有三通道 < 0.4 的 `Color(...)` 字面量。**反证**：换回旧版 deck_builder 即红并点名 `Color(0.18, 0.24, 0.20`，换回新版转绿。
+- **踩坑**：正则首版写普通字符串 `"Color\("`，经 heredoc 落盘成 `\(` → GDScript「Invalid escape in string」整文件解析失败，且让第一次反证失真（红是因为解析错不是因为夜色）；改 GDScript 原始字符串 `r"..."` 后重做反证。
+- 客户端 **463/463**；全量 gdlint 绿。剩余夜色残留（不在本线范围）：`kingdom_building_modal.gd:34` 面板底、`main_menu` 两处标签底板、`kingdom` 三处自绘标签底、`hud_widget` 锁罩。
+- **统一真人验收通过**（用户 2026-10-24 回报）：组卡、领奖宝箱白卡、登出确认框、闯关路线、王国建筑弹窗暗幕 5 条全过；run 界面无入口未实机验。②~⑤ 合并为一次提交推送 `feat/ui-drift-fix`，尚未合回 master。

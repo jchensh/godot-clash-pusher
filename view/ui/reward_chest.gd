@@ -17,6 +17,9 @@ const T_BTN := 2.05     # 继续按钮出现
 const CHEST_BODY := Color("7fa8c8"); const CHEST_LITE := Color("7fb4d9")
 const CHEST_DARK := Color("8fb8d8"); const CHEST_EDGE := Color("bcd9ef")
 
+const CARD_W := 480.0     # 白卡宽（奖励行文字右缘 cx+126，留足边距）
+const CARD_PAD := 28.0    # 白卡上下内边距
+
 var _t := 0.0
 var _stars := 0
 var _cap := 3
@@ -25,6 +28,7 @@ var _gems := 0
 var _shards := 0
 var _first := true
 var _btn: Button
+var _card_box: StyleBoxTexture
 
 func _init() -> void:
 	dim_alpha = 0.0   # 暗幕由本类 _draw 画（须垫在自绘宝箱之下；基类 ColorRect 是子节点会盖住 _draw）
@@ -33,6 +37,7 @@ func setup(stars: int, cap: int, gold: int, gems: int, shards: int, first: bool)
 	_stars = stars; _cap = cap; _gold = gold; _gems = gems; _shards = shards; _first = first
 
 func _build() -> void:
+	_card_box = PixelUI.panel_box("stone")
 	_btn = Button.new()
 	_btn.text = "继续"
 	_btn.size = Vector2(240, 76)
@@ -62,7 +67,11 @@ func _draw() -> void:
 	var vp := size
 	if vp.x < 10.0:
 		vp = Vector2(720, 1280)
-	draw_rect(Rect2(Vector2.ZERO, vp), Color(0.04, 0.03, 0.07, 0.78), true)
+	# UI 偏离修复②：暗幕取色板令牌（深青蓝）；天空蓝标题/星/深青字在暗幕上不可读 → 全程垫白卡。
+	draw_rect(Rect2(Vector2.ZERO, vp), Color(PixelUI.COL_DIM, PixelUI.DIM_ALPHA), true)
+	if _card_box == null:
+		_card_box = PixelUI.panel_box("stone")
+	draw_style_box(_card_box, card_rect(vp))
 	var cx := vp.x / 2.0
 	var cy := vp.y * 0.40
 	# 标题
@@ -119,6 +128,16 @@ func _draw() -> void:
 		if _shards > 0:
 			y += 40.0
 			_reward_line(cx, y, "shard", "碎片 +%d" % int(_shards * rp))
+
+func _reward_lines() -> int:
+	return 1 + int(_gems > 0) + int(_shards > 0)
+
+# 白卡矩形：罩住标题→星级→宝箱→奖励全程；行数 setup 时已知，尺寸固定（开箱过程不跳动）。
+# 纵向坐标与 _draw 同源（标题基线 0.20vp、宝箱中心 0.40vp、奖励首行 +90、行距 40）。
+func card_rect(vp: Vector2) -> Rect2:
+	var top := vp.y * 0.20 - 56.0 - CARD_PAD
+	var bottom := vp.y * 0.40 + 90.0 + 40.0 * float(_reward_lines() - 1) + 14.0 + CARD_PAD
+	return Rect2(vp.x / 2.0 - CARD_W / 2.0, top, CARD_W, bottom - top)
 
 func _reward_line(cx: float, y: float, icon: String, text: String) -> void:
 	var col := PixelUI.COL_PARCHMENT
