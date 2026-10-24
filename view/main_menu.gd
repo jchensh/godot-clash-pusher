@@ -18,6 +18,7 @@ const GameStateScript := preload("res://view/game_state.gd")
 const CampaignStateScript := preload("res://logic/campaign_state.gd")
 const StageProgressScript := preload("res://logic/stage_progress.gd")
 const MenuIcons := preload("res://view/ui/menu_icons.gd")
+const MenuDiorama := preload("res://view/three_d/menu_diorama.gd")   # D7 章节主视觉 3D 小场景
 
 const COL_BADGE := Color("e5453a")
 
@@ -197,20 +198,26 @@ func _rail_label(text: String, pos: Vector2, w: float) -> Label:
 
 # ---------- 3 中央章节主视觉 + 闯关进度 ----------
 func _build_showpiece() -> void:
-	var art := Button.new()   # 主视觉整块可点 → 闯关地图（美术位后补正式图）
+	var art := Button.new()   # 主视觉整块可点 → 闯关地图
 	art.position = Vector2(150, 96) if _land else Vector2(120, 340)
 	art.size = Vector2(760, 352) if _land else Vector2(480, 300)
 	art.focus_mode = Control.FOCUS_NONE
-	art.add_theme_stylebox_override("normal",
-			PixelUI.sbpixel(Color(0.16, 0.12, 0.20, 0.72), 3, Color("a87b1a")))
-	art.add_theme_stylebox_override("hover",
-			PixelUI.sbpixel(Color(0.20, 0.15, 0.24, 0.78), 3, Color("96701e")))
+	# D7：主视觉 = 3D 小场景（王城/箭塔/角色待机，镜头缓摆），按钮只留天空牧场描边 + 按下轻暗幕。
+	var dio := MenuDiorama.new()
+	dio.name = "ShowpieceDiorama"
+	dio.position = art.position + Vector2(3, 3)
+	dio.size = art.size - Vector2(6, 6)
+	dio.build(false)
+	add_child(dio)
+	art.add_theme_stylebox_override("normal", PixelUI.sbpixel(Color(1, 1, 1, 0.0), 3, PixelUI.COL_SLOT_FILLED_BD))
+	art.add_theme_stylebox_override("hover", PixelUI.sbpixel(Color(1, 1, 1, 0.12), 3, PixelUI.COL_GOLD))
 	art.add_theme_stylebox_override("pressed",
-			PixelUI.sbpixel(Color(0.12, 0.09, 0.16, 0.78), 3, Color("a87b1a")))
+			PixelUI.sbpixel(Color(PixelUI.COL_DIM, 0.18), 3, PixelUI.COL_GOLD))
 	art.pressed.connect(_on_pressed.bind(_on_stage))
 	add_child(art)
-	_chapter_lbl = _child_label(art, "第 — 章", 110 if _land else 96, 44, PixelUI.COL_GOLD)
-	_child_label(art, "章节主视觉 · 美术位占位（点击进闯关）", 190 if _land else 168, 18, PixelUI.COL_HINT)
+	_chapter_lbl = _child_label(art, "第 — 章", 14, 40, PixelUI.COL_GOLD)
+	_chapter_lbl.add_theme_color_override("font_outline_color", Color.WHITE)
+	_chapter_lbl.add_theme_constant_override("outline_size", 10)
 	var bar := Panel.new()
 	bar.position = Vector2(250, 466) if _land else Vector2(160, 660)
 	bar.size = Vector2(560, 26) if _land else Vector2(400, 26)

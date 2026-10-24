@@ -10,6 +10,7 @@ const HudWidgets := preload("res://view/ui/hud_widgets.gd")
 const GameStateScript := preload("res://view/game_state.gd")
 const SpriteDB := preload("res://view/sprite_db.gd")
 const BG_TEX := preload("res://assets/ui/menu_bg.png")
+const ModelStage := preload("res://view/three_d/model_stage.gd")   # D7 3D 角色预览
 
 const RARITY_COL := {
 	"common": Color("9aa0ad"), "rare": Color("4a6db0"),
@@ -25,6 +26,8 @@ var _content: Control
 var _wallet_holder: Control
 var _busy := false
 var _land := false   # L4 横屏：720 内容列整体平移居中（内部布局零改动）+ 顶带返回/钱包
+var _stage = null    # D7：3D 角色预览台（跨刷新常驻，同一张卡不重载模型；法术卡无模型 → 退回 2D 肖像）
+var _stage_uid := ""
 
 func _ready() -> void:
 	AudioManager.play_music("music_main_menu")
@@ -107,9 +110,10 @@ func _populate() -> void:
 	frame.add_theme_stylebox_override("panel", PixelUI.sbpixel(Color("ffffff"), 4, bd))
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_content.add_child(frame)
-	var port := SpriteDB.make_card_portrait(_cid, _config, Vector2(86, 210), Vector2(158, 158))
-	if port != null:
-		_content.add_child(port)
+	if not _show_3d(_unit_of(_cid), frame):
+		var port := SpriteDB.make_card_portrait(_cid, _config, Vector2(86, 210), Vector2(158, 158))
+		if port != null:
+			_content.add_child(port)
 
 	# 右栏：Lv / 阶 pip / 战力 / 数值条
 	var rx := 290.0
@@ -145,6 +149,26 @@ func _populate() -> void:
 		_build_upgrade_rank(cache, st, 560)
 	else:
 		_build_unlock(cache, st, rarity, 480)
+
+# D7：兵牌肖像换 3D 角色（自转 / 拖动旋转 / 点击切换动作），框下一行操作提示；无模型返回 false。
+func _show_3d(uid: String, frame: Control) -> bool:
+	if uid == "":
+		return false
+	if _stage == null:
+		_stage = ModelStage.new()
+		_stage.name = "ModelStage"
+		add_child(_stage)   # 挂在本页（不在 _content 里）：经济刷新重建 _content 时预览不重载
+	_stage.position = _content.position + frame.position + Vector2(4, 4)
+	_stage.size = frame.size - Vector2(8, 8)
+	if _stage_uid != uid:
+		_stage_uid = uid
+		if not _stage.show_unit(uid):
+			_stage.visible = false
+			return false
+	_stage.visible = true
+	_label("拖动旋转 · 点击换动作", frame.position + Vector2(0, frame.size.y + 2), 15, PixelUI.COL_HINT,
+			frame.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+	return true
 
 # ---------- 动作 ----------
 func _build_upgrade_rank(cache, st: Dictionary, y: float) -> void:

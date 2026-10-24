@@ -77,6 +77,16 @@ static func has_model(unit_id: String) -> bool:
 	return not _resolve(unit_id).is_empty()
 
 
+## 单位 → 资产目录名（派生/借用已解析；无模型返回 ""）。D7 预览按需 load，不经本类的常驻缓存。
+static func asset_of(unit_id: String) -> String:
+	return _resolve(unit_id)
+
+
+## 借用单位的整体色偏（其余白色 = 原色）。
+static func tint_of(unit_id: String) -> Color:
+	return BORROW[unit_id]["tint"] if BORROW.has(unit_id) else Color.WHITE
+
+
 ## 返回 {scene: PackedScene, native_h: 模型原始身高(米), tint: 借用单位的整体色偏}；无模型返回 {}。
 static func model_for(unit_id: String) -> Dictionary:
 	var asset := _resolve(unit_id)

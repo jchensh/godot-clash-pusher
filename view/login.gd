@@ -10,6 +10,7 @@ extends Control
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const GameStateScript := preload("res://view/game_state.gd")
 const BG_TEX := preload("res://assets/ui/menu_bg.png")
+const MenuDiorama := preload("res://view/three_d/menu_diorama.gd")   # D7 底部 3D 小场景
 
 const NAME_MAX_HALF := 20   # 宽度上限（与服务端 validateUsername 同口径）：中文/全角=2 半格、英数=1
 
@@ -62,6 +63,14 @@ func _build() -> void:
 	_enter_btn = _mk_button("进 入", 640, _on_enter, "gold", 44)
 	_status = _center_label("", 790, 24, PixelUI.COL_MUTED)
 	_center_label("老玩家直接进主界面 · 新名号将开始建号", 850, 18, PixelUI.COL_HINT)
+	# D7：表单下方空白处放 3D 小场景（透明底浮在背景上，不压任何文字/输入）。
+	var vp := get_viewport_rect().size
+	var dio := MenuDiorama.new()
+	dio.name = "LoginDiorama"
+	dio.position = Vector2(0, 890)
+	dio.size = Vector2(vp.x, maxf(vp.y - 890.0, 200.0))
+	dio.build(true)
+	add_child(dio)
 	_refresh_enter()
 
 func _on_name_changed(_t: String) -> void:
