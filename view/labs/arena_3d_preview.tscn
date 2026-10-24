@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://view/labs/arena_3d_preview.gd" id="1"]
+
+[node name="Arena3DPreview" type="Node3D"]
+script = ExtResource("1")
