@@ -1451,6 +1451,20 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
 - **验收结果**：
   - **真人实机在 Web 前端全流程验收通过**，前后端联调稳定，正式线上环境发布完成。
 
+### V5-E2 / Release 917532f — 3D 表现迁移 D1~D6 只发 Web 前端 (2026-10-25)
+- **部署内容**：
+  - 合并 `origin/master`（`98cf766`，领先 16 个提交）到 release，merge commit **`917532f`**：全 3D 表现迁移 D1~D6（3D 战场 + 3D 王国，55 个新 glb，相机/拾取/寻路）+ UI 偏离修复 + `tools/deploy_prod.sh` 一键发布脚本。
+  - 冲突两处，两边都保留：`.gitignore`（Firebase/快照规则 + Blender 缓存规则）；`HISTORY.md`（master 3D 开发日志接主时间线，本「发布与打包」附录整体留在文末）。
+- **只发前端的原因**：自上次发布 `d257282` 起 `server/ proto/ logic/ config/ net/` 在 master 侧零改动。预检时两点 diff 显示 `server/Dockerfile`（`GOMAXPROCS=1`）与 `Caddyfile.prod`（CORS 白名单）有差异，查证是 **release 自己加的生产补丁**（`d4f914a`/`c80a3e0`/`b56d8dd`/`9812f9e`），merge-base 与 master 都没有这些行 → 三方合并按 release 版保留，后端无需重建。
+- **部署过程**：
+  - 本地验证：headless import exit 0（55 glb 全部 reimport），客户端单测 **496/496**。
+  - `echo yes | bash tools/deploy_prod.sh --apply --web`（首次使用该脚本；`--web` 时后端段整段跳过，未连 GCP VM）：import → `build_web.ps1` 注入生产端点 → 校验注入 → `firebase deploy --only hosting`，12 个文件中 2 个变更上传。
+  - 探活：Web 首页 200，三条注入地址均指向 `towerpushserver.jeffgame.tech`；后端 healthz 200。
+  - **包体**：首次加载约 53.5MB 传输（`index.pck` 48MB，gzip 后仍 46.9MB，3D 资源基本压不动；`index.wasm` br 后 6.6MB），缓存 `max-age=3600`。手机 4G 首次加载预计 20~45 秒，是网页端主要体验风险。
+- **验收结果**（用户 Chrome 网页端实测）：
+  - 通过：登录与持久会话（约 4.6 秒连上）、PvE 3D 战场（`stage_2_7` 3 星通关，战后上报与发奖到账）、王国 3D（16 槽位 + 5 名居民，画面正常，收取后金币到账）。
+  - 未覆盖（欠账）：加载秒数与 FPS 实测数值、手机浏览器、新账号引导战、PvP 3D 单机部分、**D5 双机 PvP 验收**。
+
 
 
 
