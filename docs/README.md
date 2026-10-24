@@ -82,6 +82,8 @@
 | design/battle_bg_template_576x1024.png | 战场背景出图规格模板（KAN-107 起 32×32 正方形格；完整规格书在飞书） |
 | design/ui_mockups/ | UI 改版 HTML 示意图集（720×1560 画布+安全区线；配套飞书《UI 系统策划案》；预览 `.claude/launch.json` 的 ui-mockups 服务或直接开 html） |
 | design/card_progression_design_doc.html | 卡牌升级/升阶系统策划案（HTML 单页） |
+| [design/UI_DESIGN_SYSTEM.md](design/UI_DESIGN_SYSTEM.md) | **「天空牧场」UI 设计系统（agent 必读）**：色板/状态底色/暗幕、按钮面板 HUD、字号、层级、改界面规则、待统一清单；色值以 `view/ui/pixel_ui.gd` 为准 |
+| design/ui_design_system.html | 同上的可视化页面（给人看，浏览器直接打开） |
 | [ART_ASSETS.md](ART_ASSETS.md) | 美术圣经（单位帧网格/塔/FX/地形 as-built，V3 定稿） |
 | [DESIGN_V5_S7_UI.md](DESIGN_V5_S7_UI.md) | S7 UI 整合设计稿（已施工完，存档） |
 | [DESIGN_KINGDOM.md](DESIGN_KINGDOM.md) | 王国领地系统设计（城建经营×城防养成维度，KAN-112；K0~K5 已施工、K6 IAP 待排） |

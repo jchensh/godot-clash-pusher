@@ -1,0 +1,441 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>天空牧场</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* 布局：单栏文档，顶部天空→草地渐变带；规格以「游戏内样张 + 令牌表」成对出现。
+   单一浅色世界（游戏本身只有淡色皮），故意不做暗色主题，所有颜色显式给出。 */
+:root{
+  /* —— 基础色（=view/ui/pixel_ui.gd）—— */
+  --ink:#3a5a74; --muted:#7f9cb3; --hint:#9ab4c8; --sky:#3d9be0; --outline:#1f5c8c;
+  --panel:#ffffff; --inset:#ddeefb; --edge:#a9d3ee; --page:#f4faff;
+  /* —— 按钮三套（=tools/gen_ui_assets.py）—— */
+  --stone-face:#dceefc; --stone-lite:#f2faff; --stone-dark:#bcd9ef; --stone-edge:#7fb4d9;
+  --gold-face:#ffcc4d;  --gold-lite:#ffe08a;  --gold-dark:#e9b23a;  --gold-edge:#a87b1a; --gold-ink:#5c430e;
+  --dark-face:#cfdde9;  --dark-lite:#e2edf5;  --dark-dark:#b7c9d9;  --dark-edge:#8aa4ba;
+  /* —— 语义 —— */
+  --good:#7cc36a; --good-bg:#e4f4dc; --bad:#e24b4a; --badge:#e5453a; --epic:#b48fe0; --rare:#7c94c8;
+  --coin:#cda743; --coin-lite:#f0d480; --coin-dark:#8a6418; --coin-edge:#3a2a08;
+  /* —— 战斗 —— */
+  --self:#216bc7; --foe:#d13d33; --elixir:#cc54f5; --crown:#ecb94e; --ok:#73ff8c; --nope:#ff6b66;
+  /* —— 字体 —— */
+  --f-display:"ZCOOL KuaiLe","Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --f-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --r-btn:12px; --r-panel:16px; --r-chip:10px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:15px/1.7 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1040px;margin:0 auto;padding-block:0 72px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;text-wrap:balance;margin:0}
+h2{font-size:30px;color:var(--sky);text-shadow:0 2px 0 #fff}
+h3{font-size:19px;color:var(--ink)}
+p{margin:0;max-width:65ch}
+code,.mono{font-family:var(--f-mono);font-size:12.5px}
+.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--muted);font-weight:500}
+
+/* 顶部：游戏主菜单背景同款渐变 */
+.sky{margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px)));padding:56px max(16px,env(safe-area-inset-left,0px)) 40px;
+  background:linear-gradient(#bfe3fb 0%,#eaf6ff 62%,#d6efc9 100%);position:relative;overflow:hidden}
+.sky .in{max-width:1040px;margin:0 auto;display:grid;gap:18px;position:relative}
+.cloud{position:absolute;background:#fff;opacity:.8;border-radius:50%}
+.sky h1{font-size:clamp(48px,9vw,84px);line-height:1;color:var(--sky);
+  -webkit-text-stroke:0;text-shadow:0 0 0 var(--outline),3px 3px 0 var(--outline),-1px -1px 0 #fff;letter-spacing:.04em}
+.sky p{font-size:16px;color:var(--ink)}
+.meta{display:flex;flex-wrap:wrap;gap:8px}
+.tag{background:rgba(255,255,255,.75);border:2px solid var(--edge);border-radius:999px;padding:2px 12px;font-size:13px}
+
+section{display:grid;gap:20px;padding-top:56px}
+.lede{color:var(--muted)}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+
+/* 面板（=panel_stone / panel_inset）——只给样张容器用 */
+.panel{background:var(--panel);border:2px solid var(--edge);border-radius:var(--r-panel);
+  box-shadow:inset 0 -2px 0 #eef6fc;padding:20px;display:grid;gap:14px;align-content:start}
+.inset{background:var(--inset);border:2px solid var(--edge);border-radius:var(--r-panel);
+  box-shadow:inset 0 2px 0 #d2e6f6;padding:16px}
+
+/* 色票 */
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.sw{display:grid;gap:6px}
+.chip{height:64px;border-radius:var(--r-chip);border:2px solid rgba(31,92,140,.15)}
+.sw b{font-weight:500;font-size:14px}
+.sw span{font-size:12px;color:var(--muted);line-height:1.4}
+.ramp{display:grid;grid-template-columns:repeat(4,1fr);border-radius:var(--r-chip);overflow:hidden;border:2px solid rgba(31,92,140,.15)}
+.ramp div{height:44px;display:flex;align-items:flex-end;padding:4px 6px;font:11px var(--f-mono)}
+
+/* 按钮（CSS 复刻 9-slice：外描边 + 上亮下暗立体带）*/
+.btn{font-family:var(--f-display);font-size:22px;line-height:1;padding:14px 22px;border-radius:var(--r-btn);
+  border:2px solid var(--e);background:var(--f);color:var(--c);cursor:pointer;
+  box-shadow:inset 0 3px 0 var(--l),inset 0 -3px 0 var(--d);transition:transform .06s}
+.btn:hover{filter:brightness(1.04) saturate(1.05)}
+.btn:active,.btn.is-pressed{box-shadow:inset 0 3px 0 var(--d),inset 0 -3px 0 var(--l);transform:translateY(1px)}
+.btn:disabled{color:color-mix(in srgb,var(--c) 45%,transparent);cursor:not-allowed;filter:none;transform:none}
+.btn:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
+.b-stone{--f:var(--stone-face);--l:var(--stone-lite);--d:var(--stone-dark);--e:var(--stone-edge);--c:var(--ink)}
+.b-gold{--f:var(--gold-face);--l:var(--gold-lite);--d:var(--gold-dark);--e:var(--gold-edge);--c:var(--gold-ink)}
+.b-dark{--f:var(--dark-face);--l:var(--dark-lite);--d:var(--dark-dark);--e:var(--dark-edge);--c:var(--ink)}
+.btnrow{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.state{font-size:12px;color:var(--muted);min-width:56px}
+
+/* 字号阶梯 */
+.scale{display:grid;gap:2px}
+.scale .row{display:grid;grid-template-columns:110px 1fr;gap:16px;align-items:baseline;padding:8px 0;border-bottom:1px dashed var(--edge)}
+.scale .row:last-child{border-bottom:0}
+.scale .k{font-size:12px;color:var(--muted)}
+.scale .k b{display:block;color:var(--ink);font-weight:500;font-size:13px}
+.scale .v{font-family:var(--f-display);color:var(--ink);line-height:1.15;overflow-wrap:anywhere}
+
+/* HUD 组件 */
+.wallet{display:inline-flex;gap:6px;background:#f4faff;border:2px solid #cfe3f2;border-radius:999px;padding:4px 6px;box-shadow:inset 0 -3px 0 #d8ecfa}
+.wallet span{display:inline-flex;align-items:center;gap:6px;padding:2px 12px 2px 4px;font:16px var(--f-display);font-variant-numeric:tabular-nums}
+.coin{width:22px;height:22px;border-radius:50%;background:var(--coin);border:2px solid var(--coin-edge);box-shadow:inset 0 2px 0 var(--coin-lite),inset 0 -2px 0 var(--coin-dark)}
+.gem{width:20px;height:20px;transform:rotate(45deg) scale(.82);background:var(--epic);border:2px solid #7c5ea8;border-radius:4px;box-shadow:inset 2px 2px 0 #e6d4ff}
+.stars{display:flex;gap:4px;font-size:26px;line-height:1}
+.stars i{font-style:normal;color:#e8b94c;text-shadow:0 2px 0 #a87b1a}
+.stars i.off{color:#dceefc;text-shadow:0 2px 0 #bcd9ef}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 12px 3px 5px;font:16px var(--f-display);font-variant-numeric:tabular-nums;border:2px solid #cfe3f2;background:#f4faff}
+.pill.no{color:var(--bad);border-color:#f0b4b3}
+.pips{display:flex;gap:5px}
+.pips i{width:16px;height:16px;border-radius:5px;background:#dceefc;border:2px solid #cfe3f2}
+.pips i.on{background:var(--sky);border-color:var(--outline)}
+.statbar{display:grid;gap:4px;width:100%;max-width:280px}
+.statbar .top{display:flex;justify-content:space-between;font-size:13px}
+.statbar .top b{font-family:var(--f-display);font-weight:400;font-variant-numeric:tabular-nums}
+.track{height:14px;border-radius:999px;background:#eaf4fb;border:2px solid #cfe3f2;overflow:hidden}
+.track i{display:block;height:100%;border-radius:999px;box-shadow:inset 0 3px 0 rgba(255,255,255,.4)}
+.badge{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--badge);color:#fff;font:13px var(--f-display);border:2px solid #fff}
+.hudline{display:flex;flex-wrap:wrap;gap:20px;align-items:center}
+
+/* 关卡行（stage_map.gd）*/
+.stage{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;padding:10px 14px;border-radius:var(--r-chip);border:3px solid}
+.stage .n{font:22px var(--f-display);text-align:center}
+.stage small{display:block;color:var(--muted);font-size:12px}
+.st-done{background:var(--good-bg);border-color:var(--good)}
+.st-cur{background:#fff8e1;border-color:var(--sky)}
+.st-lock{background:#eef6fc;border-color:#dceefc;color:var(--hint)}
+
+/* 战斗 HUD 迷你复刻 */
+.arena{border-radius:var(--r-panel);overflow:hidden;border:2px solid var(--edge);background:#d9edfa}
+.field{height:150px;position:relative;background:linear-gradient(#d9edfa 0 46%,#bfe3fb 46% 54%,#d9edfa 54%)}
+.tower{position:absolute;width:34px;height:40px;border-radius:8px 8px 4px 4px;border:2px solid rgba(0,0,0,.25)}
+.ghost{position:absolute;width:40px;height:40px;border-radius:50%;border:3px dashed}
+.handbar{background:rgba(237,247,255,.96);border-top:2px solid #a8d4ed;padding:10px;display:grid;gap:8px}
+.hand{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.card{aspect-ratio:3/4;max-width:100%;border-radius:10px;background:rgba(219,237,252,.96);border:2px solid #a9d3ee;display:grid;place-items:end center;padding:6px;font:14px var(--f-display);position:relative}
+.card.sel{background:rgba(255,222,115,.97);border-color:var(--gold-edge);transform:translateY(-6px)}
+.card em{position:absolute;top:-6px;left:-6px;width:24px;height:24px;border-radius:50%;background:var(--elixir);color:#fff;font:13px/20px var(--f-display);text-align:center;font-style:normal;border:2px solid #fff}
+.elixir{height:16px;border-radius:999px;background:#eaf4fb;border:2px solid #cfe3f2;overflow:hidden;display:grid;grid-template-columns:repeat(10,1fr);gap:2px;padding:1px}
+.elixir i{border-radius:3px;background:var(--elixir)}
+.elixir i.off{background:transparent}
+
+/* 层级图 */
+.layers{display:grid;gap:8px}
+.layer{display:grid;grid-template-columns:64px 1fr;gap:14px;align-items:center;padding:10px 14px;border-radius:var(--r-chip);background:var(--panel);border:2px solid var(--edge)}
+.layer .z{font:24px var(--f-display);color:var(--sky);text-align:right;font-variant-numeric:tabular-nums}
+.layer p{font-size:13px;color:var(--muted)}
+
+/* 令牌表 */
+.tbl{overflow-x:auto;border-radius:var(--r-panel);border:2px solid var(--edge);background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:13.5px}
+th,td{text-align:left;padding:9px 14px;border-bottom:1px solid #e2eff9;vertical-align:top}
+th{font-weight:500;color:var(--muted);font-size:12px;letter-spacing:.06em;background:#f4faff}
+tr:last-child td{border-bottom:0}
+td .dot{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-1px;margin-right:6px;border:1px solid rgba(0,0,0,.12)}
+
+/* 偏离清单 */
+.issues{display:grid;gap:10px}
+.issue{display:grid;grid-template-columns:auto 1fr;gap:12px;padding:14px 16px;border-radius:var(--r-chip);background:var(--panel);border:2px solid var(--edge)}
+.sev{font:13px var(--f-display);padding:2px 10px;border-radius:999px;height:fit-content;white-space:nowrap}
+.sev.hi{background:#fde3e2;color:#a5302f}
+.sev.md{background:#fff1c9;color:var(--gold-ink)}
+.sev.lo{background:#e2eff9;color:var(--ink)}
+.sev.ok{background:#e4f4dc;color:#2f6b22}
+.issue h3{font-size:16px;margin-bottom:4px}
+.issue p{font-size:13.5px;color:var(--ink)}
+.issue code{background:#eef6fc;padding:1px 5px;border-radius:4px}
+.rules{display:grid;gap:8px;margin:0;padding-left:1.2em}
+.rules li{max-width:70ch}
+footer{padding-top:48px;color:var(--hint);font-size:12.5px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (max-width:520px){.scale .row{grid-template-columns:1fr;gap:2px}.hand{gap:6px}}
+</style>
+
+<div class="sky">
+  <div class="cloud" style="width:180px;height:56px;left:6%;top:22px"></div>
+  <div class="cloud" style="width:120px;height:40px;right:10%;top:40px"></div>
+  <div class="cloud" style="width:90px;height:30px;right:30%;top:150px;opacity:.6"></div>
+  <div class="in">
+    <span class="eyebrow">决策 49 · UI 换肤方案 B · 卡通竖屏推塔</span>
+    <h1>天空牧场</h1>
+    <p>从 <code>view/ui/pixel_ui.gd</code>、<code>tools/gen_ui_assets.py</code>、<code>hud_widget.gd</code> 与各场景散装常量中提取出的界面设计系统。淡天蓝底、白卡面板、暖黄 CTA、圆角加立体边。下半部分把散落的值收拢成一套带语义的令牌，并列出与系统不一致的代码位置。</p>
+    <div class="meta">
+      <span class="tag">画布 750 × 1334 竖屏</span>
+      <span class="tag">字体 站酷快乐体</span>
+      <span class="tag">Godot 4.6 · StyleBoxTexture 9-slice</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<section id="color">
+  <span class="eyebrow">色彩</span>
+  <h2>色板</h2>
+  <p class="lede">浅底深字。主文字用深青蓝而非黑色，强调色是天空蓝，唯一的暖色留给「去打」「领取」这类主行动按钮。</p>
+
+  <h3>基础</h3>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#3a5a74"></div><b>ink 主文字</b><span class="mono">#3a5a74 · COL_PARCHMENT</span></div>
+    <div class="sw"><div class="chip" style="background:#7f9cb3"></div><b>muted 次文字</b><span class="mono">#7f9cb3 · COL_MUTED</span></div>
+    <div class="sw"><div class="chip" style="background:#9ab4c8"></div><b>hint 脚注</b><span class="mono">#9ab4c8 · COL_HINT</span></div>
+    <div class="sw"><div class="chip" style="background:#3d9be0"></div><b>sky 标题·强调</b><span class="mono">#3d9be0 · COL_GOLD</span></div>
+    <div class="sw"><div class="chip" style="background:#1f5c8c"></div><b>outline 标题描边</b><span class="mono">#1f5c8c · COL_OUTLINE</span></div>
+    <div class="sw"><div class="chip" style="background:#ffffff"></div><b>panel 白卡</b><span class="mono">#ffffff · COL_PANEL_BG</span></div>
+    <div class="sw"><div class="chip" style="background:#ddeefb"></div><b>inset 凹槽</b><span class="mono">#ddeefb · COL_INSET_BG</span></div>
+    <div class="sw"><div class="chip" style="background:#a9d3ee"></div><b>edge 面板描边</b><span class="mono">#a9d3ee · 13 处散装</span></div>
+  </div>
+
+  <h3>立体四色组（face · lite · dark · edge）</h3>
+  <p class="lede">每个可按的东西都由四个颜色组成：填充、上沿高光、下沿阴影、外描边。按下时高光和阴影对调，看起来像被按进去。</p>
+  <div class="grid g3">
+    <div class="sw"><div class="ramp"><div style="background:#dceefc">face</div><div style="background:#f2faff">lite</div><div style="background:#bcd9ef">dark</div><div style="background:#7fb4d9">edge</div></div><b>stone 普通按钮</b><span>次要操作、列表项、返回</span></div>
+    <div class="sw"><div class="ramp"><div style="background:#ffcc4d">face</div><div style="background:#ffe08a">lite</div><div style="background:#e9b23a">dark</div><div style="background:#a87b1a;color:#fff">edge</div></div><b>gold 主行动 CTA</b><span>每屏最多一个；字色 #5c430e</span></div>
+    <div class="sw"><div class="ramp"><div style="background:#cfdde9">face</div><div style="background:#e2edf5">lite</div><div style="background:#b7c9d9">dark</div><div style="background:#8aa4ba">edge</div></div><b>dark 弱化按钮</b><span>取消、关闭、不可选的备选项</span></div>
+    <div class="sw"><div class="ramp"><div style="background:#cda743">face</div><div style="background:#f0d480">lite</div><div style="background:#8a6418;color:#fff">dark</div><div style="background:#3a2a08;color:#fff">edge</div></div><b>coin 金币图标</b><span>hud_widget.gd 程序化绘制</span></div>
+  </div>
+
+  <h3>语义与稀有度</h3>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#7cc36a"></div><b>good 已通关·战力达标</b><span class="mono">#7cc36a · 底 #e4f4dc</span></div>
+    <div class="sw"><div class="chip" style="background:#e24b4a"></div><b>bad 不足·战力偏低</b><span class="mono">#e24b4a</span></div>
+    <div class="sw"><div class="chip" style="background:#e5453a"></div><b>badge 红点</b><span class="mono">#e5453a · main_menu</span></div>
+    <div class="sw"><div class="chip" style="background:#7c94c8"></div><b>rare 稀有</b><span class="mono">#7c94c8</span></div>
+    <div class="sw"><div class="chip" style="background:#b48fe0"></div><b>epic 史诗·宝石</b><span class="mono">#b48fe0 · 边 #7c5ea8</span></div>
+  </div>
+
+  <h3>战斗</h3>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#216bc7"></div><b>self 我方</b><span class="mono">(0.13,0.42,0.78) · 恒为蓝</span></div>
+    <div class="sw"><div class="chip" style="background:#d13d33"></div><b>foe 敌方</b><span class="mono">(0.82,0.24,0.20) · 恒为红</span></div>
+    <div class="sw"><div class="chip" style="background:#cc54f5"></div><b>elixir 圣水</b><span class="mono">(0.80,0.33,0.96)</span></div>
+    <div class="sw"><div class="chip" style="background:#ecb94e"></div><b>crown 王冠</b><span class="mono">(0.925,0.725,0.305)</span></div>
+    <div class="sw"><div class="chip" style="background:#73ff8c"></div><b>ok 落点合法</b><span class="mono">(0.45,1.0,0.55)</span></div>
+    <div class="sw"><div class="chip" style="background:#ff6b66"></div><b>nope 落点非法</b><span class="mono">(1.0,0.42,0.40)</span></div>
+  </div>
+
+  <h3>状态底色与暗幕（2026-10-24 新增）</h3>
+  <p class="lede">替代夜色深底。底和描边成对使用（sbpixel），上面的字一律主文字色，单测保证对比度 ≥ 4.5:1。</p>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#e4f4dc;border-color:#7cc36a;border-width:3px"></div><b>路线·已通关</b><span class="mono">#e4f4dc / #7cc36a · COL_NODE_DONE_*</span></div>
+    <div class="sw"><div class="chip" style="background:#fff8e1;border-color:#3d9be0;border-width:3px"></div><b>路线·当前</b><span class="mono">#fff8e1 / #3d9be0 · COL_NODE_CURRENT_*</span></div>
+    <div class="sw"><div class="chip" style="background:#eef6fc;border-color:#cfe3f2;border-width:3px"></div><b>路线·未到</b><span class="mono">#eef6fc / #cfe3f2 · COL_NODE_FUTURE_*</span></div>
+    <div class="sw"><div class="chip" style="background:#fde3e2;border-color:#e24b4a;border-width:3px"></div><b>路线·Boss</b><span class="mono">#fde3e2 / #e24b4a · COL_NODE_BOSS_*</span></div>
+    <div class="sw"><div class="chip" style="background:#dceefc;border-color:#7fb4d9;border-width:3px"></div><b>兵种卡</b><span class="mono">#dceefc / #7fb4d9 · COL_TROOP_*</span></div>
+    <div class="sw"><div class="chip" style="background:#efe4fb;border-color:#b48fe0;border-width:3px"></div><b>法术卡</b><span class="mono">#efe4fb / #b48fe0 · COL_SPELL_*</span></div>
+    <div class="sw"><div class="chip" style="background:#ffffff;border-color:#a9d3ee;border-width:3px"></div><b>已填卡槽</b><span class="mono">#ffffff / #a9d3ee · COL_SLOT_FILLED_*</span></div>
+    <div class="sw"><div class="chip" style="background:#ddeefb;border-color:#cfe3f2;border-width:3px"></div><b>空卡槽</b><span class="mono">#ddeefb / #cfe3f2 · COL_SLOT_EMPTY_*</span></div>
+    <div class="sw"><div class="chip" style="background:#cfdde9;border-color:#8aa4ba;border-width:3px"></div><b>禁用按钮</b><span class="mono">#cfdde9 / #8aa4ba · COL_DISABLED_*</span></div>
+    <div class="sw"><div class="chip" style="background:rgba(31,58,82,.5)"></div><b>暗幕</b><span class="mono">#1f3a52 @ 0.5 · COL_DIM / DIM_ALPHA</span></div>
+  </div>
+
+  <h3>场景背景</h3>
+  <div class="grid g2">
+    <div class="inset" style="height:120px;background:linear-gradient(90deg,#bfe3fb 0%,#eaf6ff 62%,#d6efc9 100%);display:flex;align-items:flex-end;justify-content:space-between;font:12px var(--f-mono)"><span>#bfe3fb 天空</span><span>#eaf6ff 62%</span><span>#d6efc9 草地</span></div>
+    <p>由 <code>PixelUI.add_background()</code> 铺在每个菜单场景最底层：竖向三段渐变，上 62% 天空到雾白，再过渡到淡草绿，并画 5 朵 200/255 透明度的白云。战斗场地底色单独用 <code>COL_BG (0.85,0.93,0.98)</code>。</p>
+  </div>
+</section>
+
+<section id="type">
+  <span class="eyebrow">字体</span>
+  <h2>字号阶梯</h2>
+  <p class="lede">全局一款字体：站酷快乐体（<code>project.godot theme/custom_font</code>）。代码里散落着 30 多个不同字号，下面按实际出现频率收成 7 级，替换时就近取整。</p>
+  <div class="panel scale">
+    <div class="row"><div class="k"><b>display · 76</b>主菜单标题、结算大字</div><div class="v" style="font-size:76px;color:var(--sky);text-shadow:3px 3px 0 var(--outline)">胜利</div></div>
+    <div class="row"><div class="k"><b>h1 · 52</b>场景标题，描边 10</div><div class="v" style="font-size:52px;color:var(--sky);text-shadow:2px 2px 0 var(--outline)">王国领地</div></div>
+    <div class="row"><div class="k"><b>h2 · 36</b>弹窗标题</div><div class="v" style="font-size:36px">升阶确认</div></div>
+    <div class="row"><div class="k"><b>button · 30</b>主按钮（现默认 34）</div><div class="v" style="font-size:30px">开始挑战</div></div>
+    <div class="row"><div class="k"><b>label · 26</b>卡名、关卡名</div><div class="v" style="font-size:26px">第 12 关 · 风车坡</div></div>
+    <div class="row"><div class="k"><b>body · 22</b>最常用正文</div><div class="v" style="font-size:22px">消耗 3 圣水，召唤两名弓手。</div></div>
+    <div class="row"><div class="k"><b>caption · 18</b>脚注、计数</div><div class="v" style="font-size:18px;color:var(--hint)">推荐战力 1,860 · 剩余 2 次</div></div>
+  </div>
+  <p class="lede">标题统一用引擎原生描边 <code>outline_size 10</code> 加 <code>#1f5c8c</code>，不再用偏移投影假描边（KAN-125 对比度修复）。toast 固定 24 号，默认天空蓝。</p>
+</section>
+
+<section id="buttons">
+  <span class="eyebrow">组件 · PixelUI.style_button(btn, kind, size)</span>
+  <h2>按钮</h2>
+  <p class="lede">48px 贴图，圆角 12，9-slice 边距 14（圆角加 2，保证圆角不被拉伸），内边距上下 10、左右 20。禁用态不换贴图，只把字色降到 45% 透明度。</p>
+  <div class="panel">
+    <div class="btnrow"><span class="state">normal</span><button class="btn b-gold" id="b1">开始挑战</button><button class="btn b-stone" id="b2">卡组</button><button class="btn b-dark" id="b3">取消</button></div>
+    <div class="btnrow"><span class="state">pressed</span><button class="btn b-gold is-pressed" id="b4">开始挑战</button><button class="btn b-stone is-pressed" id="b5">卡组</button><button class="btn b-dark is-pressed" id="b6">取消</button></div>
+    <div class="btnrow"><span class="state">disabled</span><button class="btn b-gold" disabled id="b7">碎片不足</button><button class="btn b-stone" disabled id="b8">卡组</button><button class="btn b-dark" disabled id="b9">取消</button></div>
+  </div>
+  <ul class="rules">
+    <li><b>gold</b> 只给本屏最重要的一步：出战、领取、确认升阶。一屏出现两个 gold 时，次要的那个降成 stone。</li>
+    <li><b>dark</b> 用于退出类动作，视觉上比 stone 更退后，避免误点。</li>
+    <li>按钮按下必须有反馈：贴图高光/阴影对调；拇指区（屏幕下 1/3）放主操作。</li>
+  </ul>
+</section>
+
+<section id="surfaces">
+  <span class="eyebrow">组件 · PixelUI.panel_box / sbpixel</span>
+  <h2>面板与色块</h2>
+  <div class="grid g2">
+    <div class="panel">
+      <h3>stone 白卡面板</h3>
+      <p>64px 贴图，圆角 16，描边 2，9-slice 边距 18，内容边距 16。用于对话框、卡槽、信息卡。</p>
+      <div class="inset"><h3 style="font-size:16px">inset 凹槽</h3><p style="font-size:13.5px">放在白卡里面的列表底、输入区。上沿 2px 暗边表示凹进去。</p></div>
+    </div>
+    <div class="panel">
+      <h3>sbpixel 动态色块</h3>
+      <p>难度、稀有度、阵营这类要按数据变色的块，不生成贴图，用 StyleBoxFlat：圆角 10、描边 3、描边色 = 底色加深 18%。</p>
+      <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:8px">
+        <div style="background:#7cc36a;border:3px solid #66a057;border-radius:10px;padding:8px;text-align:center;font-family:var(--f-display);color:#fff">简单</div>
+        <div style="background:#7c94c8;border:3px solid #667aa4;border-radius:10px;padding:8px;text-align:center;font-family:var(--f-display);color:#fff">稀有</div>
+        <div style="background:#b48fe0;border:3px solid #9475b8;border-radius:10px;padding:8px;text-align:center;font-family:var(--f-display);color:#fff">史诗</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="hud">
+  <span class="eyebrow">组件 · view/ui/hud_widgets.gd</span>
+  <h2>HUD 小件</h2>
+  <p class="lede">全部是 <code>_draw</code> 程序化绘制、零贴图。数字一律千分位（<code>format_int</code>）。</p>
+  <div class="grid g2">
+    <div class="panel">
+      <h3>钱包条 · 星级 · 红点</h3>
+      <div class="hudline">
+        <div class="wallet"><span><i class="coin"></i>12,480</span><span><i class="gem"></i>356</span></div>
+        <span class="badge">3</span>
+      </div>
+      <div class="stars"><i>★</i><i>★</i><i class="off">★</i></div>
+    </div>
+    <div class="panel">
+      <h3>花费药丸 · 阶 pip</h3>
+      <div class="hudline">
+        <span class="pill"><i class="coin"></i>2,400</span>
+        <span class="pill no"><i class="gem"></i>80</span>
+      </div>
+      <div class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div>
+    </div>
+    <div class="panel">
+      <h3>数值条 · 战力三档</h3>
+      <div class="statbar"><div class="top"><span>战力（≥ 推荐）</span><b>2,140</b></div><div class="track"><i style="width:100%;background:#7cc36a"></i></div></div>
+      <div class="statbar"><div class="top"><span>战力（≥ 0.8 × 推荐）</span><b>1,600</b></div><div class="track"><i style="width:86%;background:#3d9be0"></i></div></div>
+      <div class="statbar"><div class="top"><span>战力（&lt; 0.8 × 推荐）</span><b>1,120</b></div><div class="track"><i style="width:60%;background:#e24b4a"></i></div></div>
+    </div>
+    <div class="panel">
+      <h3>关卡行 · stage_map.gd</h3>
+      <div class="stage st-done"><span class="n">11</span><div>石桥渡口<small>已通关</small></div><div class="stars" style="font-size:18px"><i>★</i><i>★</i><i>★</i></div></div>
+      <div class="stage st-cur"><span class="n">12</span><div>风车坡<small>推荐战力 1,860</small></div><button class="btn b-gold" style="font-size:16px;padding:8px 14px" id="b10">出战</button></div>
+      <div class="stage st-lock"><span class="n">13</span><div>王都外环<small>通关第 12 关解锁</small></div><span style="font-size:13px">未解锁</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="battle">
+  <span class="eyebrow">场景 · battle_scene / net_battle_scene</span>
+  <h2>战斗 HUD</h2>
+  <div class="grid g2">
+    <div class="arena">
+      <div class="field">
+        <div class="tower" style="left:22%;top:10px;background:#d13d33"></div>
+        <div class="tower" style="right:22%;top:10px;background:#d13d33"></div>
+        <div class="tower" style="left:22%;bottom:10px;background:#216bc7"></div>
+        <div class="tower" style="right:22%;bottom:10px;background:#216bc7"></div>
+        <div class="ghost" style="left:44%;top:88px;border-color:#73ff8c;background:rgba(115,255,140,.2)"></div>
+        <div class="ghost" style="left:60%;top:44px;border-color:#ff6b66;background:rgba(255,107,102,.18)"></div>
+      </div>
+      <div class="handbar">
+        <div class="hand">
+          <div class="card"><em>3</em>弓手</div>
+          <div class="card sel"><em>4</em>骑士</div>
+          <div class="card"><em>2</em>火球</div>
+          <div class="card"><em>5</em>巨人</div>
+        </div>
+        <div class="elixir"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="off"></i><i class="off"></i><i class="off"></i></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>规则</h3>
+      <ul class="rules">
+        <li>阵营色只看「我/敌」，不看 side：本方恒蓝、敌方恒红，塔、血条、HUD 一致。</li>
+        <li>HUD 底板 <span class="mono">(0.93,0.97,1.0,0.96)</span>，上沿 2px 描边 <span class="mono">(0.66,0.83,0.93)</span>。</li>
+        <li>手牌底 = stone 面色；选中卡 = 暖黄 <span class="mono">(1.0,0.87,0.45)</span> 并上浮。</li>
+        <li>拖拽落点：绿圈合法、红圈非法，半透明填充同色。</li>
+        <li>圣水 10 格，紫色；费用角标用同一紫色。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="layers">
+  <span class="eyebrow">结构 · UI autoload / Router</span>
+  <h2>层级</h2>
+  <p class="lede">谁在上面由 CanvasLayer 编号决定，不靠节点树顺序。</p>
+  <div class="layers">
+    <div class="layer"><span class="z">100</span><div><h3>转场黑幕 · Router</h3><p>切场景期间挡住输入，防连点。</p></div></div>
+    <div class="layer"><span class="z">90</span><div><h3>Toast · UI.toast()</h3><p>24 号字，停留 1 秒后 0.5 秒淡出；mouse_filter = IGNORE，永不挡手。</p></div></div>
+    <div class="layer"><span class="z">50</span><div><h3>弹窗 · UI.modal()</h3><p>继承 modal.gd；默认暗幕深青蓝 #1f3a52 @ 0.5（COL_DIM / DIM_ALPHA），结算层可设 0 自己演出。暗幕上不直接写字，自绘暗幕的弹层一律垫白卡。</p></div></div>
+    <div class="layer"><span class="z">0</span><div><h3>场景</h3><p>背景 → 内容 → HUD，铺满一律用 set_anchors_and_offsets_preset。</p></div></div>
+  </div>
+</section>
+
+<section id="tokens">
+  <span class="eyebrow">新系统</span>
+  <h2>语义令牌表</h2>
+  <p class="lede">把现有常量收拢成一个出处。左列是建议的新名字（去掉 COL_PARCHMENT、COL_GOLD 这类夜色时代遗留的误导名），右列是现在代码里的来源。</p>
+  <div class="tbl"><table>
+    <thead><tr><th>令牌</th><th>值</th><th>用途</th><th>现有来源</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">text.primary</td><td class="mono"><span class="dot" style="background:#3a5a74"></span>#3a5a74</td><td>正文、按钮字</td><td class="mono">PixelUI.COL_PARCHMENT</td></tr>
+      <tr><td class="mono">text.secondary</td><td class="mono"><span class="dot" style="background:#7f9cb3"></span>#7f9cb3</td><td>次要说明</td><td class="mono">PixelUI.COL_MUTED</td></tr>
+      <tr><td class="mono">text.hint</td><td class="mono"><span class="dot" style="background:#9ab4c8"></span>#9ab4c8</td><td>脚注、计数</td><td class="mono">PixelUI.COL_HINT</td></tr>
+      <tr><td class="mono">text.on-cta</td><td class="mono"><span class="dot" style="background:#5c430e"></span>#5c430e</td><td>黄按钮上的字</td><td class="mono">PixelUI.COL_GOLD_INK</td></tr>
+      <tr><td class="mono">accent</td><td class="mono"><span class="dot" style="background:#3d9be0"></span>#3d9be0</td><td>标题、强调、toast</td><td class="mono">PixelUI.COL_GOLD · deck_builder.GOLD</td></tr>
+      <tr><td class="mono">accent.outline</td><td class="mono"><span class="dot" style="background:#1f5c8c"></span>#1f5c8c</td><td>标题描边</td><td class="mono">PixelUI.COL_OUTLINE</td></tr>
+      <tr><td class="mono">surface.card</td><td class="mono"><span class="dot" style="background:#fff"></span>#ffffff</td><td>白卡面板</td><td class="mono">PixelUI.COL_PANEL_BG</td></tr>
+      <tr><td class="mono">surface.inset</td><td class="mono"><span class="dot" style="background:#ddeefb"></span>#ddeefb</td><td>凹槽、列表底</td><td class="mono">PixelUI.COL_INSET_BG</td></tr>
+      <tr><td class="mono">surface.chip</td><td class="mono"><span class="dot" style="background:#f4faff"></span>#f4faff</td><td>钱包条、药丸</td><td class="mono">hud_widget.CHIP_FACE</td></tr>
+      <tr><td class="mono">border.default</td><td class="mono"><span class="dot" style="background:#a9d3ee"></span>#a9d3ee</td><td>面板描边</td><td class="mono">13 处散装 Color("a9d3ee")</td></tr>
+      <tr><td class="mono">border.soft</td><td class="mono"><span class="dot" style="background:#cfe3f2"></span>#cfe3f2</td><td>HUD 小件描边</td><td class="mono">hud_widget.CHIP_EDGE / GROOVE_EDGE</td></tr>
+      <tr><td class="mono">status.good</td><td class="mono"><span class="dot" style="background:#7cc36a"></span>#7cc36a</td><td>通关、达标</td><td class="mono">hud_widget.COL_GREEN · stage_map</td></tr>
+      <tr><td class="mono">status.bad</td><td class="mono"><span class="dot" style="background:#e24b4a"></span>#e24b4a</td><td>不足、偏低</td><td class="mono">hud_widget.COL_RED</td></tr>
+      <tr><td class="mono">status.badge</td><td class="mono"><span class="dot" style="background:#e5453a"></span>#e5453a</td><td>红点</td><td class="mono">main_menu.COL_BADGE</td></tr>
+      <tr><td class="mono">rarity.rare / epic</td><td class="mono"><span class="dot" style="background:#7c94c8"></span>#7c94c8 / <span class="dot" style="background:#b48fe0"></span>#b48fe0</td><td>稀有度</td><td class="mono">hud_widget.COL_RARE / COL_VIOLET</td></tr>
+      <tr><td class="mono">battle.self / foe</td><td class="mono"><span class="dot" style="background:#216bc7"></span>#216bc7 / <span class="dot" style="background:#d13d33"></span>#d13d33</td><td>阵营</td><td class="mono">battle_scene + net_battle_scene 各一份</td></tr>
+      <tr><td class="mono">battle.elixir</td><td class="mono"><span class="dot" style="background:#cc54f5"></span>#cc54f5</td><td>圣水</td><td class="mono">三处重复（含 hud_widgets）</td></tr>
+      <tr><td class="mono">reward.gold</td><td class="mono"><span class="dot" style="background:#ecb94e"></span>#ecb94e</td><td>王冠、星、金币高光</td><td class="mono">COL_CROWN（注释仍写「=COL_GOLD」）</td></tr>
+      <tr><td class="mono">overlay.dim</td><td class="mono"><span class="dot" style="background:#1f3a52"></span>#1f3a52 @ 0.5</td><td>弹窗暗幕</td><td class="mono">PixelUI.COL_DIM / DIM_ALPHA</td></tr>
+      <tr><td class="mono">node.done / current / future / boss</td><td class="mono"><span class="dot" style="background:#e4f4dc"></span><span class="dot" style="background:#fff8e1"></span><span class="dot" style="background:#eef6fc"></span><span class="dot" style="background:#fde3e2"></span>见上方色票</td><td>路线行底 + 描边</td><td class="mono">PixelUI.COL_NODE_*_BG / _BD</td></tr>
+      <tr><td class="mono">deck.troop / spell / slot / disabled</td><td class="mono"><span class="dot" style="background:#dceefc"></span><span class="dot" style="background:#efe4fb"></span><span class="dot" style="background:#ddeefb"></span><span class="dot" style="background:#cfdde9"></span>见上方色票</td><td>组卡卡底、卡槽、禁用</td><td class="mono">PixelUI.COL_TROOP_* / SPELL_* / SLOT_* / DISABLED_*</td></tr>
+      <tr><td class="mono">radius.btn / panel / chip</td><td class="mono">12 / 16 / 10</td><td>圆角</td><td class="mono">gen_ui_assets r= · sbpixel</td></tr>
+      <tr><td class="mono">layer.modal / toast / route</td><td class="mono">50 / 90 / 100</td><td>CanvasLayer</td><td class="mono">ui_layers.gd · scene_router.gd</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="drift">
+  <span class="eyebrow">审计</span>
+  <h2>与系统不一致的地方</h2>
+  <p class="lede">提取时发现的残留，按影响排序。两条高优先级已于 2026-10-24 修复（merge 3d6a018），其余待排期。</p>
+  <div class="issues">
+    <div class="issue"><span class="sev ok">已修</span><div><h3>三个场景夜色深底 · 弹窗暗幕夜色紫黑</h3><p><code>deck_builder</code>、<code>campaign_scene</code>、<code>run_scene</code> 换成上方状态底色；<code>modal.gd</code> 暗幕改 COL_DIM @ 0.5；领奖宝箱与 run 覆盖层垫白卡。单测守门：已迁移文件禁夜色字面量。</p></div></div>
+    <div class="issue"><span class="sev md">中</span><div><h3>其余夜色残留</h3><p><code>kingdom_building_modal.gd:34</code> 面板深紫底、<code>main_menu.gd</code> 两处标签底、<code>kingdom.gd</code> 三处自绘标签底、<code>hud_widget.gd</code> 锁罩。</p></div></div>
+    <div class="issue"><span class="sev md">中</span><div><h3>当前关卡行底色是深棕</h3><p><code>stage_map.gd:19</code> ROW_CURRENT_BG = <code>#96701e</code>，深棕底配深字对比不够。建议改淡暖黄 <code>#fff8e1</code>，描边沿用 accent（上方样张已按此画）。</p></div></div>
+    <div class="issue"><span class="sev md">中</span><div><h3>常量名与颜色对不上</h3><p><code>COL_GOLD</code> 实际是天空蓝，<code>COL_PARCHMENT</code> 是深青蓝；<code>COL_CROWN</code> 注释说「= PixelUI COL_GOLD」，两者早已不同色。新来的人按名字取色会取错。</p></div></div>
+    <div class="issue"><span class="sev md">中</span><div><h3>战斗常量复制了两份</h3><p><code>battle_scene.gd:28-59</code> 与 <code>net_battle_scene.gd:35-46</code> 各维护一套阵营/圣水/卡面色，圣水色在 <code>hud_widgets.gd:151</code> 还有第三份。</p></div></div>
+    <div class="issue"><span class="sev lo">低</span><div><h3>字号散成 30 多级</h3><p>从 10 到 96 都有，最常用的是 22 / 24 / 26 / 18。按上方 7 级阶梯收拢即可；按钮默认 34 实际几乎没人用，多数传 22–30。</p></div></div>
+    <div class="issue"><span class="sev lo">低</span><div><h3>设计坐标两套</h3><p><code>project.godot</code> 画布 750×1334，但 <code>modal.gd</code> 与 toast 按 720×1280 换算。目前不出错，后续新组件容易照抄出偏差。</p></div></div>
+  </div>
+</section>
+
+<footer>提取自 master @ 460f759，按 3d6a018 修复结果更新 · 2026-10-24 · 色值权威在 view/ui/pixel_ui.gd，改色后重跑 tools/gen_ui_assets.py · 文字版 docs/design/UI_DESIGN_SYSTEM.md</footer>
+</div>
+</body></html>

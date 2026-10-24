@@ -2,6 +2,7 @@
 # 决策 49 UI 换肤（2026-08-30 用户拍板方案 B「天空牧场」）：夜色像素系 → 淡色卡通系
 # （淡天蓝底/白卡面板/暖黄 CTA/圆角立体边；设计稿 artifact a5e00b52 方案 B 同色值）。
 # 文件名沿用 pixel_ui（引用面 20+ 文件不动）；"像素"仅是历史名。
+# 设计系统文档：docs/design/UI_DESIGN_SYSTEM.md（规则 + 色板语义；人看版 ui_design_system.html）。色值以本文件为准。
 #
 # 用 assets/ui/ 的 9-slice 贴图（tools/gen_ui_assets.py 生成）建 StyleBoxTexture。
 # 各场景 `const PixelUI := preload(".../pixel_ui.gd")` 后调 PixelUI.style_button(btn, kind)

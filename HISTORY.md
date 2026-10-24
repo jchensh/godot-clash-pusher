@@ -1005,3 +1005,9 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
 - **踩坑**：正则首版写普通字符串 `"Color\("`，经 heredoc 落盘成 `\(` → GDScript「Invalid escape in string」整文件解析失败，且让第一次反证失真（红是因为解析错不是因为夜色）；改 GDScript 原始字符串 `r"..."` 后重做反证。
 - 客户端 **463/463**；全量 gdlint 绿。剩余夜色残留（不在本线范围）：`kingdom_building_modal.gd:34` 面板底、`main_menu` 两处标签底板、`kingdom` 三处自绘标签底、`hud_widget` 锁罩。
 - **统一真人验收通过**（用户 2026-10-24 回报）：组卡、领奖宝箱白卡、登出确认框、闯关路线、王国建筑弹窗暗幕 5 条全过；run 界面无入口未实机验。②~⑤ 合并为一次提交推送 `feat/ui-drift-fix`，尚未合回 master。
+
+### 「天空牧场」UI 设计系统文档入库（2026-10-24，文档改动待用户确认提交）
+
+- 用户从 claude.ai 导出设计系统页的 md/html，要求放进主干并让后续 agent 都能读到。导出的 md 有损（按钮四色组只剩标题、HUD 样张成碎字），两份都停在修复前，故**按 `3d6a018` 修复后的现状重写**而非原样入库。
+- 新增 `docs/design/UI_DESIGN_SYSTEM.md`（agent 读的文字版：真相源声明 = `pixel_ui.gd`、色板/状态底色/暗幕、按钮面板 HUD、字号阶梯、层级、改界面 5 条规则、待统一清单）与 `docs/design/ui_design_system.html`（人看的可视化页，同步更新 artifact 第 2 版）。
+- 指引：CLAUDE.md 与 AGENTS.md「架构铁律」各加一条「界面配色/组件走天空牧场设计系统」；`docs/README.md` 设计区登记两份；`pixel_ui.gd` 文件头加文档指针。check_docs 18 文件过，pixel_ui.gd gdlint 绿；未改任何运行逻辑。

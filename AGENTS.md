@@ -31,6 +31,7 @@
 - **逻辑层 / 显示层彻底分离**：逻辑层持有真实状态（位置/血量/圣水），不关心画面；显示层每帧读逻辑状态画出来。
 - 玩家与 AI **完全对称**：两者都只是「向逻辑层发指令」。
 - 数值/卡牌**走配置，不硬编码**。Godot 运行时读取 `config/cards.json`、`config/units.json`、`config/levels.json`；`config/GameConfig.xlsx` 是给人类策划读改的工作簿镜像。
+- **界面配色/组件走「天空牧场」设计系统**（2026-10-24 起）：改任何客户端界面前先读 [docs/design/UI_DESIGN_SYSTEM.md](docs/design/UI_DESIGN_SYSTEM.md)（人看版 `docs/design/ui_design_system.html`）；颜色一律取 `view/ui/pixel_ui.gd` 的 `PixelUI` 常量（色值以代码为准），按钮/面板走 `style_button`/`panel_box`/`sbpixel`。❌ 新代码禁夜色深底（三通道都 < 0.4 的 `Color(...)`）、禁浅底白字、禁在暗幕上直接写字（垫白卡）；新增语义色先加常量并补 `test_pixel_ui_palette` 对比度断言。
 
 ## 配置工作流（JSON / Excel 双入口）
 - **agent 默认改 JSON**：直接编辑 `config/cards.json` / `units.json` / `levels.json`（Godot 运行时读取路径，省上下文）。`config/arena.json` 是 V3 2D 场地结构性配置，**不进 Excel 镜像**。
