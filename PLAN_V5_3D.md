@@ -6,6 +6,8 @@
 
 > **交接状态（2026-10-24）**：D0 已获用户明确验收通过；D1~D9 未开工。用户要求本 session 只整理记录并推送，不做 D1；新 session 参考 [D1 交接说明](docs/HANDOFF_3D_D1_2026-10-24.md)。
 
+> **合并更新**：D0 与小小资产已通过 `8e35087` 合入 master。后续 D1 从最新 master 创建独立 worktree，不再从旧功能工作区接续；正式入口仍是原 2D 流程。
+
 ## 目标与不变项
 
 - 战场、地形、河桥、塔、单位、投射物、王国建筑与居民使用 Node3D / Mesh / Skeleton / AnimationPlayer。

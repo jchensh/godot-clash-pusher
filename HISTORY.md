@@ -942,3 +942,11 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
 - 新增 [D1 交接说明与 prompt](docs/HANDOFF_3D_D1_2026-10-24.md)，记录分支、资产路径、已知基线退出提示、Jira 欠账及下一步边界。D1~D9 均未开工，需新 session 按一步一确认推进。
 - 收尾复查 Jira 仍需重新认证，沿用用户本轮先做后补授权；未伪造 issue 或标 Done。提交前检查结果见本次交付，推送成功以远端分支校验为准。
 - 提交前复跑：客户端 **456/456**、小小展示台冒烟、全部新增 GDScript lint、18 文件文档检查及新增 3D 文档链接检查通过；未修改 logic/config/net/server/proto。ObjectDB/24 resources 退出提示与原 master 基线一致。
+
+### D0 合入 master 与工作区收尾（2026-10-24）
+
+- 用户明确要求把当前成果合入 master、清理本次 worktree，并更新文档与交接 prompt；继续明确不做 D1。
+- fetch 后核对 master 与 origin/master 一致，功能分支 rebase master 无需改写；随后 `--no-ff` 合并 `76a8672`，merge commit **`8e35087`**。此条取代上条“未合入 master”的交付状态；release 未同步。
+- 更新 PLAN_V5_3D、验收台账和 [D1 handoff](docs/HANDOFF_3D_D1_2026-10-24.md)：下一 session 从最新 master 新建独立 worktree。正式 PvE/PvP/王国仍是原 2D 路径；D0 用户验收通过，D1~D9 未开工，Jira 待连接恢复后补记。
+- 本次 managed worktree 已归档移除（保留可恢复快照，包含本轮未跟踪缓存），验证原路径不存在、worktree 列表已移除；已合并的本地 `codex/xiaoxiao-animation` 分支已删除，远端历史分支保留。其他 worktree 未改动。
+- 合并后 master 导入通过、客户端 **456/456**、小小展示台冒烟及 D0 场地 headless 启动通过；退出资源提示与原基线一致。文档收尾另做 docs commit 后随 master 推送。

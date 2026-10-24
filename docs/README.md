@@ -92,7 +92,7 @@
 | 文档 | 一句话 |
 |---|---|
 | [ENVIRONMENT.md](ENVIRONMENT.md) | 环境搭建 + MCP 安装注册 + 画面验收协议 |
-| [HANDOFF_3D_D1_2026-10-24.md](HANDOFF_3D_D1_2026-10-24.md) | D0 用户验收收官、功能分支交付与新 agent 的 D1 交接 prompt |
+| [HANDOFF_3D_D1_2026-10-24.md](HANDOFF_3D_D1_2026-10-24.md) | D0 已合入 master；新 agent 从 master 新建工作树继续 D1 的交接 prompt |
 | [adr/0004-3d-presentation-flat-simulation.md](adr/0004-3d-presentation-flat-simulation.md) | 用户确认的 3D 表现/平面确定性逻辑边界 |
 | [AGENT_BLENDER_GODOT_WORKFLOW.md](AGENT_BLENDER_GODOT_WORKFLOW.md) | Agent 经 Blender MCP 建模、骨骼动画、GLB 导出和 Godot 展示验收的实作指南 |
 | [HANDOFF_MAC_2026-07-16.md](HANDOFF_MAC_2026-07-16.md) | Windows→Mac 换机交接快照：环境搭建步骤 + 项目状态 + 已知欠账（写作当天快照，以 HISTORY.md 为准） |
