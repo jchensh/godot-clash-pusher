@@ -12,11 +12,12 @@
 | [../HISTORY.md](../HISTORY.md) | **进度真相源**：总览表 + 决策日志 + 当前阶段逐步（已收官段见下方归档） | 🟢 活跃·只追加 |
 | [../PLAN_GRAND.md](../PLAN_GRAND.md) | 全项目 roadmap（V1→V5→V6+） | 🟢 活跃 |
 | [../PLAN_V5.md](../PLAN_V5.md) | **当前阶段权威规划**：在线 F2P 闯关养成 + 上线工程线 E0~E9（§13） | 🟢 活跃 |
-| [../PLAN_V5_SANGUO.md](../PLAN_V5_SANGUO.md) | 三国题材改版轨道A 施工图（A1~A4） | 🟢 活跃（A4 进行中） |
+| [../PLAN_V5_SANGUO.md](../PLAN_V5_SANGUO.md) | 三国题材改版轨道A 施工图（A1~A4） | ⚪ 已被决策 49 卡通改版取代（存档） |
+| [../PLAN_V5_CARTOON.md](../PLAN_V5_CARTOON.md) | 卡通改版施工图（决策 49：三国→卡通「萌萌对垒」、卡池缩池 31/48、王国重摆） | ✅ P1~P3 真人验收通过 |
 | [../PLAN_V5_HBATTLE.md](../PLAN_V5_HBATTLE.md) | 横版战斗施工图（H1~H6） | 🟡 H1/H2 完，H3~H6 未开工 |
 | [../PLAN_V5_UIFRAME.md](../PLAN_V5_UIFRAME.md) | UI 层级骨架改造施工图（F1~F3） | 🟡 代码全完，欠 F 组真人验收 |
-| [../PLAN_V5_3D.md](../PLAN_V5_3D.md) | 全 3D 表现迁移 D0~D9，保留平面 sim 与 2D HUD | 🟢 D0 用户验收通过；🟢 D1 真人验收通过；🟢 D2 真人验收通过；🟢 D3 真人验收通过；🟢 D4/D6/D7/D8 真人验收通过；🟡 D5 双机验收欠账；D9 未开工 |
-| [../README.md](../README.md) | 仓库门面（对外简介） | 🟢 |
+| [../PLAN_V5_3D.md](../PLAN_V5_3D.md) | 全 3D 表现迁移 D0~D9，保留平面 sim 与 2D HUD | 🟢 D0 用户验收通过；🟢 D1 真人验收通过；🟢 D2 真人验收通过；🟢 D3 真人验收通过；🟢 D4/D6/D7/D8 真人验收通过；🟡 D8b 画质三档待验收；🟡 D5 双机验收欠账；D9 未开工 |
+| [../README.md](../README.md) | 仓库门面（对外简介 + 正式服地址 + 现状快照） | 🟢 2026-10-31 更新 |
 
 ## 已收官规划（存档备查，不再更新）
 
@@ -63,6 +64,7 @@
 | [ACCEPTANCE_SANGUO.md](ACCEPTANCE_SANGUO.md) | **验收欠账总台账**：三国化 A~F 六组 + 跨线索引 | 🔴 多组欠验收 |
 | [ACCEPTANCE_3D_D3.md](ACCEPTANCE_3D_D3.md) | 3D 战斗资产：样板风格确认 S1~S5（已确认）+ 25 单位/借用/地形统一验收 T1~T10 | ✅ 全过 |
 | [ACCEPTANCE_3D_D2.md](ACCEPTANCE_3D_D2.md) | 3D 出牌输入预览 C1~C10（拖卡落点/红绿判定/法术范围/取消/翻转） | ✅ C1~C10 全过 |
+| [ACCEPTANCE_CARTOON_P1.md](ACCEPTANCE_CARTOON_P1.md) | 卡通改版 P1 角色接入/缩池验收台账 | ✅ 通过（D-1 两机联机后补） |
 | [ACCEPTANCE_3D_D1.md](ACCEPTANCE_3D_D1.md) | 3D 战斗 presenter 预览 B1~B10（单位/塔/死亡/翻转/暂停倍速） | ✅ B1~B10 全过；Jira 待补 |
 | [ACCEPTANCE_XIAOXIAO_3D.md](ACCEPTANCE_XIAOXIAO_3D.md) | 小小 3D 骨骼动画与独立展示台（待机/行走/攻击） | 🟡 自动检查通过，待真人验收；Jira 待补 |
 | [ACCEPTANCE_V5_S8.md](ACCEPTANCE_V5_S8.md) | S8e 100 关难度曲线手感（KAN-59） | 🔴 欠验收 |

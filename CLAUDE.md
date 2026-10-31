@@ -146,7 +146,8 @@ HTTPS_PROXY=http://127.0.0.1:7897 uv run --with "gdtoolkit==4.*" gdradon cc <路
 > 完整进度总览表 + 决策日志 + 当前阶段逐步见 [HISTORY.md](HISTORY.md)；全部文档索引见 [docs/README.md](docs/README.md)。这里只放一句话现状。
 
 - **V1~V4 全部完成**（V4-S5 赛季/榜暂缓 KAN-41）；详细历史按版本线归档于 docs/HISTORY_*.md。
-- **V5 = 实时在线 F2P 闯关养成（决策 48，服务器权威；[PLAN_V5.md](PLAN_V5.md)，Epic KAN-50）**：本地原型 S0~S8 + 在线化 N1~N7 + S9 账号/引导/菜单 + 卡池 16→48 + 框架地基（Router/Events/Log/lint）**代码全部完成**；S8e 难度手感等多组真人验收欠账，台账见 [docs/ACCEPTANCE_SANGUO.md](docs/ACCEPTANCE_SANGUO.md) 与各 ACCEPTANCE_* 文档。
-- **Now = 上线工程线 E0~E9（[PLAN_V5.md](PLAN_V5.md) §13）**：E0 契约 + E1 在线主流程接线（唯一 `Online` autoload、fail-closed、结算幂等）已 Done；**下一步 E2 公网安全**（Prod 去 GM / WS ticket / WSS）。E2 完成前不得上公网、不打正式联机包。
-- **内容支线**：**王国领地系统 K0~K5 代码完成**（城建经营+城防→塔养成维度，[docs/DESIGN_KINGDOM.md](docs/DESIGN_KINGDOM.md)/KAN-112，K6 IAP 待排、真人验收欠）；三国改版轨道A（A1~A3 欠验收、A4 文本/遭遇/奖励回填完成·素材接入进行中，[PLAN_V5_SANGUO.md](PLAN_V5_SANGUO.md)）；横版战斗 H3~H6 未开工（[PLAN_V5_HBATTLE.md](PLAN_V5_HBATTLE.md)）；UI 骨架 F 组验收欠（[PLAN_V5_UIFRAME.md](PLAN_V5_UIFRAME.md)）；数值线 KAN-87/88 挂起。
-- 基线：客户端单测 **409/409**；Go unit+integration 全过；服务端 schema **v8**（0008_pve_battles）；docker **6 容器**（含 verifier）。
+- **V5 = 实时在线 F2P 闯关养成（决策 48，服务器权威；[PLAN_V5.md](PLAN_V5.md)，Epic KAN-50）**：本地原型 S0~S8 + 在线化 N1~N7 + S9 账号/引导/菜单 + 卡池 16→48 + 框架地基（Router/Events/Log/lint）+ 王国领地 K0~K5 **代码全部完成**；S8e 难度手感等多组真人验收欠账，台账见各 ACCEPTANCE_* 文档。
+- **题材/表现**：决策 49 卡通改版（三国→卡通「萌萌对垒」，48 卡中可玩 31、锁 17，[PLAN_V5_CARTOON.md](PLAN_V5_CARTOON.md) P1~P3 Done，取代三国轨道A）；**Now = 全 3D 表现迁移（[PLAN_V5_3D.md](PLAN_V5_3D.md)）**：D0~D8 真人验收通过，D8b 画质三档代码完成待验收，D5 双机验收欠账，D9 未开工；目标平台新增微信/抖音小游戏（低档即基线）。
+- **上线工程线 E0~E9（[PLAN_V5.md](PLAN_V5.md) §13）**：E0/E1 Done；E2-lite（HTTPS/WSS + 发布手册）已上公网测试——正式服 Web 客户端 `https://tower-push-godot.web.app`，后端 `towerpushserver.jeffgame.tech`（[GCP_RELEASE_TLS.md](docs/deployment/GCP_RELEASE_TLS.md)）；完整 E2（去 GM/WS ticket 等）未做。
+- **挂起支线**：横版战斗 H3~H6 未开工（[PLAN_V5_HBATTLE.md](PLAN_V5_HBATTLE.md)）；UI 骨架 F 组验收欠（[PLAN_V5_UIFRAME.md](PLAN_V5_UIFRAME.md)）；数值线 KAN-87/88 挂起。
+- 基线：客户端单测 **518/518**；Go unit+integration 全过；服务端 schema **v9**（0009_kingdom）；docker **6 容器**（含 verifier）。
