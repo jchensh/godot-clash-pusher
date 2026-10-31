@@ -12,6 +12,10 @@ const BattleCamera := preload("res://view/three_d/battle_camera.gd")
 const BattleLighting := preload("res://view/three_d/battle_lighting.gd")
 const FieldProjection := preload("res://view/three_d/field_projection.gd")
 const Fx := preload("res://view/three_d/battle_fx_3d.gd")
+const Quality := preload("res://view/three_d/quality.gd")
+
+const TUNE_FROM := 2.0          # 首局自动调档：第 2~10 秒的帧耗时 p90（避开开场加载卡顿）
+const TUNE_TO := 10.0
 
 var presenter: Node3D
 var deploy: Node3D
@@ -19,6 +23,10 @@ var camera: Camera3D
 var fx: Node3D
 var presenter_usec := 0         # 最近一帧 presenter / 特效层同步耗时（微秒，性能测量用）
 var fx_usec := 0
+
+var _tune_t := 0.0
+var _tune_ms: Array = []
+var _tuned := false
 var viewport_size := Vector2.ZERO
 
 var _arena = null
@@ -30,6 +38,10 @@ var _arena = null
 ## 可重复调用换绑新的一局（D5 断线重连会新建 Match 再追帧）：presenter 清空旧节点重建，镜头/光照/输入复用不重复造。
 func setup(battle, loader, viewport: Vector2, top_h: float, hud_h: float, options: Dictionary = {}) -> void:
 	_arena = battle.arena
+	if presenter == null and is_inside_tree():
+		# D8b：生效画质档（上次自动调档结果）+ 渲染倍率 / LOD 阈值。只在本节点首次 setup 做：
+		# D5 断线重连会对同一节点再 setup，此时若换档，光照（只建一次）与 presenter 的阴影方案会不一致。
+		Quality.begin_scene(get_viewport())
 	var local_owner := int(options.get("local_owner", 0))
 	var flipped := bool(options.get("flipped", false))
 	var names := {}
@@ -46,7 +58,7 @@ func setup(battle, loader, viewport: Vector2, top_h: float, hud_h: float, option
 		deploy.name = "DeployInput"
 		add_child(deploy)
 		if bool(options.get("lighting", true)):
-			BattleLighting.setup(self)
+			BattleLighting.setup(self, true)   # 正交俯视战斗镜头：单层正交阴影
 		camera = Camera3D.new()
 		camera.name = "BattleCamera"
 		add_child(camera)
@@ -61,6 +73,7 @@ func setup(battle, loader, viewport: Vector2, top_h: float, hud_h: float, option
 	deploy.configure(camera, _arena, loader, local_owner, flipped, viewport)
 	viewport_size = viewport
 	BattleCamera.fit(camera, presenter.grid_size, viewport, Rect2(0.0, top_h, viewport.x, viewport.y - top_h - hud_h))
+	presenter.batches.view_basis = camera.transform.basis   # 合批血条按镜头朝向摆放
 	deploy.viewport_size = viewport
 	deploy.blocked_rects = [Rect2(0.0, 0.0, viewport.x, top_h), Rect2(0.0, viewport.y - hud_h, viewport.x, hud_h)]
 
@@ -78,6 +91,7 @@ func advance(delta: float) -> void:
 ## （drag_index<0 = 没在拖：撤 ghost；换牌/新拖 = 重建 ghost；拖着 = 跟手）。
 func sync(delta: float, shake: Vector2, drag_index: int, hand: Array, screen: Vector2) -> void:
 	advance(delta)
+	_tune(delta)
 	set_shake(shake)
 	if drag_index < 0 or drag_index >= hand.size() or hand[drag_index] == null:
 		if deploy.dragging:
@@ -86,6 +100,29 @@ func sync(delta: float, shake: Vector2, drag_index: int, hand: Array, screen: Ve
 	if not deploy.dragging or deploy.hand_index != drag_index:
 		deploy.begin_drag(drag_index, str(hand[drag_index]))
 	deploy.update_drag(screen)
+
+
+## D8b 首局自动调档（每次启动只调一次）：采样第 2~10 秒帧耗时，剔除切后台/追帧的异常长帧后取 p90，
+## 交给 Quality 决定下次升/降一档（手动选过的档不动）。有效样本不足（大半时间在后台）本局不下结论，留给下一局。
+func _tune(delta: float) -> void:
+	if _tuned:
+		return
+	if not Quality.wants_tune():
+		_tuned = true
+		return
+	_tune_t += delta
+	if _tune_t >= TUNE_FROM:
+		_tune_ms.append(delta * 1000.0)
+	if _tune_t < TUNE_TO:
+		return
+	_tuned = true
+	var p90 := Quality.frame_p90(_tune_ms)
+	if p90 < 0.0:
+		return
+	var before := Quality.level()
+	var after := Quality.auto_tune(p90)
+	if after != before:
+		Log.i("[3D] 画质自动调档 %s → %s（帧耗时 p90 %.1f ms，下次进战斗生效）" % [Quality.LABELS[before], Quality.LABELS[after], p90])
 
 
 ## tile → 屏幕像素（地面高度）；与 deploy 的拾取同一套相机数学，互为逆变换。

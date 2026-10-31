@@ -5,7 +5,7 @@ extends Node3D
 const FieldProjection := preload("res://view/three_d/field_projection.gd")
 const HpBar := preload("res://view/three_d/hp_bar_3d.gd")
 const LABEL_FONT := preload("res://assets/fonts/ZCOOLKuaiLe-Regular.ttf")
-const ToonStyle := preload("res://view/three_d/toon_style.gd")
+const Quality := preload("res://view/three_d/quality.gd")
 
 const STATE_IDLE := "idle"
 const STATE_WALK := "walk"
@@ -33,6 +33,10 @@ var hp_ratio := 1.0
 var attack_count := 0
 var flying := false
 var body_height := 1.0       # 身高（世界米，不含飞行高度）：D8 特效/伤害数字锚头顶
+var foot_radius := 0.5       # 贴地圆影半径（D8b 低档）
+var team_color := Color.WHITE
+var ring_radius := 0.5       # 阵营脚环半径；batched 时由 presenter 合批画
+var hp_bar: Node3D
 
 var _grid := Vector2.ZERO
 var _flipped := false
@@ -40,6 +44,8 @@ var _visual: Node3D
 var _player: AnimationPlayer
 var _hp_bar: Node3D
 var _overlay: StandardMaterial3D
+var _overlay_meshes: Array = []   # D8b：闪白叠加层只在受击闪白期间挂上（常挂 = 每个网格白多一个 draw call）
+var _overlay_on := false
 var _prev_hp := 0.0
 var _prev_cooldown := 0.0
 var _walk_hold := 0.0
@@ -50,9 +56,11 @@ var _death_t := 0.0
 var _time := 0.0
 var _yaw := 0.0
 var _base_scale := 1.0
+var _anim_step := 0.0        # D8b：>0 时骨骼动画手动按此间隔推进（低档 30 次/秒）
+var _anim_acc := 0.0
 
 
-## info：{grid, flipped, color, model(PackedScene|null), model_scale, model_tint, name, height}
+## info：{grid, flipped, color, model(PackedScene|null), model_scale, model_tint, name, height, batched}
 func setup(unit, info: Dictionary) -> void:
 	unit_ref = unit
 	_grid = info.grid
@@ -72,11 +80,17 @@ func setup(unit, info: Dictionary) -> void:
 	else:
 		_build_proxy(unit, color, str(info.get("name", unit.unit_id)))
 	body_height = float(info.get("height", body_height))
-	_add_team_ring(unit.body_radius, color)
+	foot_radius = clampf(float(unit.body_radius), 0.25, 0.9) * 1.15
+	team_color = color
+	ring_radius = clampf(float(unit.body_radius), 0.25, 0.9)
+	var batched := bool(info.get("batched", false))   # D8b：脚环/血条交给 presenter 合批
+	if not batched:
+		_add_team_ring(unit.body_radius, color)
 	_hp_bar = HpBar.new()
 	_hp_bar.name = "HpBar"
 	_hp_bar.position.y = (AIR_HEIGHT if flying else 0.0) + 2.0
-	_hp_bar.setup(clampf(unit.body_radius * 2.2, 0.8, 1.8), color)
+	_hp_bar.setup(clampf(unit.body_radius * 2.2, 0.8, 1.8), color, batched)
+	hp_bar = _hp_bar
 	_hp_bar.visible = false
 	add_child(_hp_bar)
 	_apply_overlay()
@@ -117,6 +131,7 @@ func sync(unit, delta: float) -> void:
 	if _attack_left <= 0.0:
 		_play(STATE_WALK if _walk_hold > 0.0 else STATE_IDLE)
 	_tick_visual(delta)
+	_tick_anim(delta)
 	_place()
 
 
@@ -141,6 +156,7 @@ func begin_death() -> void:
 ## 死亡表现推进；返回 true 表示播完、可释放节点。
 func step_death(delta: float) -> bool:
 	_death_t += delta
+	_tick_anim(delta)
 	var k := clampf(_death_t / DEATH_DUR, 0.0, 1.0)
 	if death_mode == "fallback":
 		_visual.scale = Vector3.ONE * _base_scale * (1.0 - k * 0.9)
@@ -188,6 +204,7 @@ func _play(next: String) -> void:
 func _tick_visual(delta: float) -> void:
 	_flash = maxf(_flash - delta, 0.0)
 	_overlay.albedo_color.a = (_flash / FLASH_DUR) * 0.75
+	_set_overlay(_flash > 0.0)
 	var y := _height()
 	if flying:
 		y += sin(_time * 3.0) * 0.12
@@ -237,10 +254,24 @@ func _build_model(scene: PackedScene, model_scale: float, tint: Color) -> void:
 	var model := scene.instantiate() as Node3D
 	model.name = "Model"
 	_visual.add_child(model)
-	ToonStyle.apply(model, Color.WHITE, tint)
+	Quality.dress(model, "unit", Color.WHITE, tint)
 	_base_scale = model_scale
 	_visual.scale = Vector3.ONE * model_scale
 	_player = model.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	var hz := float(Quality.profile()["anim_hz"])
+	if _player != null and hz > 0.0:   # D8b 低档：骨骼动画降到 hz 次/秒，省骨架更新与蒙皮
+		_anim_step = 1.0 / hz
+		_player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
+
+
+## 低档手动推进动画：攒够一个间隔才推进一次（播放/切换动作照常，只是画面按 hz 刷新）。
+func _tick_anim(delta: float) -> void:
+	if _anim_step <= 0.0 or _player == null:
+		return
+	_anim_acc += delta
+	if _anim_acc >= _anim_step:
+		_player.advance(_anim_acc)
+		_anim_acc = 0.0
 
 
 func _build_proxy(unit, color: Color, label: String) -> void:
@@ -299,7 +330,15 @@ func _apply_overlay() -> void:
 	_overlay.albedo_color = Color(1, 1, 1, 0)
 	for node in _visual.find_children("*", "GeometryInstance3D", true, false):
 		if node is MeshInstance3D:
-			(node as MeshInstance3D).material_overlay = _overlay
+			_overlay_meshes.append(node)
+
+
+func _set_overlay(on: bool) -> void:
+	if on == _overlay_on:
+		return
+	_overlay_on = on
+	for mi in _overlay_meshes:
+		(mi as MeshInstance3D).material_overlay = _overlay if on else null
 
 
 static func _mat(color: Color) -> StandardMaterial3D:

@@ -3,7 +3,7 @@ extends Node3D
 
 const FieldProjection := preload("res://view/three_d/field_projection.gd")
 const HpBar := preload("res://view/three_d/hp_bar_3d.gd")
-const ToonStyle := preload("res://view/three_d/toon_style.gd")
+const Quality := preload("res://view/three_d/quality.gd")
 const KING_MODEL := preload("res://assets/models/king_tower/king_tower.glb")
 const ARROW_MODEL := preload("res://assets/models/arrow_tower/arrow_tower.glb")
 const RUIN_MODEL := preload("res://assets/models/tower_ruin/tower_ruin.glb")
@@ -20,11 +20,14 @@ var destroyed := false
 var hp_ratio := 1.0
 var attack_count := 0
 var top_height := 4.0        # 塔顶高度（世界米）：D8 箭口/伤害数字锚点
+var hp_bar: Node3D
 
 var _intact: Node3D
 var _ruin: Node3D
 var _hp_bar: Node3D
 var _overlay: StandardMaterial3D
+var _overlay_on := false     # D8b：闪白叠加层只在闪白期间挂上
+var _overlay_meshes: Array = []   # 完好塔模型的网格（setup 时缓存一次，闪白开关不再遍历子树）
 var _prev_hp := 0.0
 var _prev_cooldown := 0.0
 var _flash := 0.0
@@ -46,15 +49,15 @@ func setup(tower, info: Dictionary) -> void:
 	_hp_bar.name = "HpBar"
 	_hp_bar.position.y = (4.9 if king else 4.3) * fw / (KING_AUTHORED_FW if king else ARROW_AUTHORED_FW)
 	top_height = _hp_bar.position.y - 0.5
-	_hp_bar.setup(float(tower.fw) * 0.8, info.color)
+	_hp_bar.setup(float(tower.fw) * 0.8, info.color, bool(info.get("batched", false)))
+	hp_bar = _hp_bar
 	_hp_bar.visible = false
 	add_child(_hp_bar)
 	_overlay = StandardMaterial3D.new()
 	_overlay.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_overlay.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_overlay.albedo_color = Color(1, 1, 1, 0)
-	for node in _intact.find_children("*", "MeshInstance3D", true, false):
-		(node as MeshInstance3D).material_overlay = _overlay
+	_overlay_meshes = _intact.find_children("*", "MeshInstance3D", true, false)
 	_prev_hp = tower.hp
 	_prev_cooldown = tower._attack_cooldown
 	sync(tower, 0.0)
@@ -79,6 +82,10 @@ func sync(tower, delta: float) -> void:
 	_flash = maxf(_flash - delta, 0.0)
 	_pulse = maxf(_pulse - delta, 0.0)
 	_overlay.albedo_color.a = (_flash / FLASH_DUR) * 0.7
+	if (_flash > 0.0) != _overlay_on:
+		_overlay_on = _flash > 0.0
+		for node in _overlay_meshes:
+			(node as MeshInstance3D).material_overlay = _overlay if _overlay_on else null
 	_intact.scale = Vector3.ONE * (1.0 + sin((_pulse / PULSE_DUR) * PI) * 0.06)
 
 
@@ -91,5 +98,5 @@ func _wrap(label: String, scene: PackedScene, scale_k: float, tint: Color) -> No
 	model.scale = Vector3.ONE * scale_k
 	model.rotation.y = FACE_CAMERA_YAW
 	holder.add_child(model)
-	ToonStyle.apply(model, tint)
+	Quality.dress(model, "tower", tint)
 	return holder

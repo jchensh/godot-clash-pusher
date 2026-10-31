@@ -7,6 +7,12 @@ const ArenaPresenter := preload("res://view/three_d/arena_presenter.gd")
 const UnitActor := preload("res://view/three_d/battle_unit_actor.gd")
 const TowerActor := preload("res://view/three_d/battle_tower_actor.gd")
 const UnitModels := preload("res://view/three_d/unit_models.gd")
+const Quality := preload("res://view/three_d/quality.gd")
+const FxMesh := preload("res://view/three_d/fx_mesh.gd")
+const Batches := preload("res://view/three_d/battle_batches.gd")
+
+const BLOB_CAPACITY := 160      # 贴地圆影初始容量（单位 + 塔；超出按需翻倍）
+const BLOB_COLOR := Color(0.1, 0.13, 0.08, 0.3)
 
 var auto_advance := true         # true：_process 每帧自动 advance；测试置 false 手动喂 delta
 var local_owner := 0
@@ -20,6 +26,8 @@ var _dying: Array = []           # 已从逻辑层消失、正在播死亡表现
 var _towers: Dictionary = {}     # Tower 实例 ID → TowerActor
 var _names: Dictionary = {}
 var _heights: Dictionary = {}    # unit_id → vis_height_px（体型归一；缺省按体积半径近似）
+var _blobs: MultiMeshInstance3D  # D8b 低档：关实时阴影后单位/塔的贴地圆影（一个 MultiMesh = 1 个 draw call）
+var batches: Node3D              # D8b：阵营脚环 + 血条合批（各档通用，画面不变）
 
 
 ## options：{local_owner:int, flipped:bool, unit_names:{unit_id: 显示名}, unit_heights:{unit_id: vis_height_px}}。
@@ -36,11 +44,18 @@ func setup(battle, arena_cfg: Dictionary, options: Dictionary = {}) -> void:
 	add_child(_field)
 	_field.build(arena_cfg, false)
 	grid_size = _field.grid_size
+	if batches == null:
+		batches = Batches.new()
+		batches.name = "Batches"
+		add_child(batches)
+		batches.setup()
 	for tower in battle.player_towers + battle.opponent_towers:
 		var actor := TowerActor.new()
 		add_child(actor)
-		actor.setup(tower, {"grid": grid_size, "flipped": flipped, "color": _team_color(tower.owner_id)})
+		actor.setup(tower, {"grid": grid_size, "flipped": flipped, "color": _team_color(tower.owner_id), "batched": true})
 		_towers[tower.get_instance_id()] = actor
+	if not Quality.real_shadows():
+		_build_blobs()
 	advance(0.0)
 
 
@@ -53,6 +68,9 @@ func clear() -> void:
 	if _field != null:
 		_field.free()
 		_field = null
+	if _blobs != null:
+		_blobs.free()
+		_blobs = null
 	_battle = null
 
 
@@ -90,6 +108,50 @@ func advance(delta: float) -> void:
 		var tower_actor = _towers.get(tower.get_instance_id())
 		if tower_actor != null:
 			tower_actor.sync(tower, delta)
+	if _blobs != null:
+		_update_blobs()
+	batches.refresh(_units.values() + _dying, _towers.values())
+
+
+func blob_count() -> int:
+	return _blobs.multimesh.visible_instance_count if _blobs != null else 0
+
+
+func _build_blobs() -> void:
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.mesh = FxMesh.get_mesh("disk")
+	mm.instance_count = BLOB_CAPACITY
+	mm.visible_instance_count = 0
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_color = BLOB_COLOR
+	_blobs = MultiMeshInstance3D.new()
+	_blobs.name = "BlobShadows"
+	_blobs.multimesh = mm
+	_blobs.material_override = mat
+	_blobs.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(_blobs)
+
+
+## 圆影跟随单位脚下（含死亡表现中的）；空军圆影略小；塔按占地。
+func _update_blobs() -> void:
+	var mm := _blobs.multimesh
+	var actors: Array = _units.values() + _dying
+	Batches._ensure(mm, actors.size() + _towers.size())
+	var n := 0
+	for actor in actors:
+		var r: float = actor.foot_radius * (0.75 if actor.flying else 1.0)
+		mm.set_instance_transform(n, Transform3D(Basis.from_scale(Vector3(r, 1.0, r)), actor.position + Vector3(0, 0.03, 0)))
+		n += 1
+	for tower in _towers.values():
+		if tower.destroyed:
+			continue
+		var tr: float = float(tower.tower_ref.fw) * 0.55
+		mm.set_instance_transform(n, Transform3D(Basis.from_scale(Vector3(tr, 1.0, tr)), tower.position + Vector3(0, 0.03, 0)))
+		n += 1
+	mm.visible_instance_count = n
 
 
 func unit_actor_count() -> int:
@@ -134,6 +196,7 @@ func _spawn_unit(unit) -> Node3D:
 		"model_tint": model.get("tint", Color.WHITE),
 		"name": _names.get(unit.unit_id, unit.unit_id),
 		"height": target,
+		"batched": true,
 	})
 	return actor
 

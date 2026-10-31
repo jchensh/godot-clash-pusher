@@ -6,6 +6,7 @@ extends Control
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const GameStateScript := preload("res://view/game_state.gd")
 const ModalScript := preload("res://view/ui/modal.gd")   # KAN-109 登出确认框（走 UI.modal 层，KAN-97 规约）
+const Quality := preload("res://view/three_d/quality.gd")   # D8b 画质三档（本地显示偏好）
 
 var _http: HTTPRequest
 var _gm_status: Label = null
@@ -32,20 +33,26 @@ func _build() -> void:
 		_zone_label("战斗版式（实验 · 仅 PvE）", 40, 84, 560, 24, PixelUI.COL_MUTED)
 		_layout_button("竖版（默认）", "portrait", 100, 120, lay != "landscape")
 		_layout_button("横版（实验）", "landscape", 340, 120, lay == "landscape")
-		_zone_label("屏幕方向（实验 · 全局）", 40, 248, 560, 24, PixelUI.COL_MUTED)
-		_ui_layout_button("竖屏（默认）", "portrait", 100, 284, ui_lay != "landscape")
-		_ui_layout_button("横屏（实验）", "landscape", 340, 284, ui_lay == "landscape")
-		_zone_label(tr("settings_language"), 40, 412, 560, 24, PixelUI.COL_MUTED)
-		_lang_button(tr("lang_zh"), "zh", 100, 448, cur.begins_with("zh"))
-		_lang_button(tr("lang_en"), "en", 340, 448, cur.begins_with("en"))
-		_logout_button(590)
-		_back_button(590)
+		_zone_label("屏幕方向（实验 · 全局）", 40, 232, 560, 24, PixelUI.COL_MUTED)
+		_ui_layout_button("竖屏（默认）", "portrait", 100, 264, ui_lay != "landscape")
+		_ui_layout_button("横屏（实验）", "landscape", 340, 264, ui_lay == "landscape")
+		_zone_label(tr("settings_language"), 40, 376, 560, 24, PixelUI.COL_MUTED)
+		_lang_button(tr("lang_zh"), "zh", 100, 408, cur.begins_with("zh"))
+		_lang_button(tr("lang_en"), "en", 340, 408, cur.begins_with("en"))
+		_zone_label(_quality_title(), 40, 520, 560, 24, PixelUI.COL_MUTED)   # D8b 画质（横屏 1334×750：压紧各组行距放下）
+		for lv in [Quality.HIGH, Quality.MID, Quality.LOW]:
+			_quality_button(lv, 40.0 + 190.0 * float(Quality.HIGH - lv), 552.0)
+		_logout_button(664)
+		_back_button(664)
 		return
 	_title(tr("settings_title"), 150, 60)
 	# 决策 49：战斗版式/屏幕方向两组实验开关随横屏线封存下线（battle 恒横板投影、全局恒竖屏）。
 	_center_label(tr("settings_language"), 280, 34, PixelUI.COL_MUTED)
 	_lang_button(tr("lang_zh"), "zh", 150, 330, cur.begins_with("zh"))
 	_lang_button(tr("lang_en"), "en", 390, 330, cur.begins_with("en"))
+	_center_label(_quality_title(), 450, 34, PixelUI.COL_MUTED)
+	for lv in [Quality.HIGH, Quality.MID, Quality.LOW]:
+		_quality_button(lv, 60.0 + 210.0 * float(Quality.HIGH - lv), 500.0)
 	_logout_button(1170)   # KAN-109：登出 → 回登录页换号/创新号
 	_back_button(1080)
 
@@ -163,6 +170,29 @@ func _set_ui_layout(lay: String) -> void:
 	GameStateScript.set_ui_layout(lay)
 	Router.apply_ui_layout()   # 立即换窗口方向/逻辑分辨率
 	Router.reload()            # 以新视口重建本页
+
+func _quality_title() -> String:
+	return tr("settings_quality") % tr("settings_quality_manual" if Quality.is_manual() else "settings_quality_auto")
+
+# D8b 画质：高 / 中 / 低（手动选后不再自动调档；下次进战斗 / 王国生效）。高亮 = 下次进 3D 页生效的档（含自动调档待生效结果）。
+func _quality_button(lv: int, x: float, y: float) -> void:
+	var btn := Button.new()
+	btn.text = tr(Quality.LABEL_KEYS[lv])
+	btn.position = Vector2(x, y)
+	btn.size = Vector2(180, 104)
+	btn.pivot_offset = Vector2(90, 52)
+	btn.focus_mode = Control.FOCUS_NONE
+	PixelUI.style_button(btn, "gold" if Quality.next_level() == lv else "stone", 34)
+	btn.pressed.connect(_set_quality.bind(lv))
+	btn.button_down.connect(_scale_to.bind(btn, 0.96))
+	btn.button_up.connect(_scale_to.bind(btn, 1.0))
+	add_child(btn)
+
+func _set_quality(lv: int) -> void:
+	AudioManager.play_sfx("ui_button_press")
+	Log.i("[V5][settings] 画质 → %s（手动）" % Quality.LABELS[lv])
+	Quality.set_level(lv, true)
+	Router.reload()
 
 func _lang_button(text: String, loc: String, x: float, y: float, active: bool) -> void:
 	var btn := Button.new()
