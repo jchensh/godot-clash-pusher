@@ -99,7 +99,8 @@
 | [ENVIRONMENT.md](ENVIRONMENT.md) | 环境搭建 + MCP 安装注册 + 画面验收协议 |
 | [HANDOFF_3D_D1_2026-10-24.md](HANDOFF_3D_D1_2026-10-24.md) | D0→D1 交接 prompt（D1 已在 master 实施，见 HISTORY；其中建工作树的要求已按用户新指示作废） |
 | [adr/0004-3d-presentation-flat-simulation.md](adr/0004-3d-presentation-flat-simulation.md) | 用户确认的 3D 表现/平面确定性逻辑边界 |
-| [PERF_3D_BUDGET.md](PERF_3D_BUDGET.md) | D8 3D 战斗性能预算（单位数/draw call/骨骼/内存/帧耗时）与电脑近似测量、可选降配方案（待真机） |
+| [V0_MINIGAME_REPORT.md](V0_MINIGAME_REPORT.md) | 小游戏技术验证 V0（KAN-148）：降 Godot 4.5 实测、抖音官方插件导出、包体构成与瘦身估算、待做的开发者工具和真机步骤 |
+| [PERF_3D_BUDGET.md](PERF_3D_BUDGET.md) | 3D 战斗性能预算（单位数/draw call/骨骼/内存/帧耗时）、电脑近似测量、D8b 画质三档方案与三档实测（真机待测） |
 | [AGENT_BLENDER_GODOT_WORKFLOW.md](AGENT_BLENDER_GODOT_WORKFLOW.md) | Agent 经 Blender MCP 建模、骨骼动画、GLB 导出和 Godot 展示验收的实作指南 |
 | [HANDOFF_MAC_2026-07-16.md](HANDOFF_MAC_2026-07-16.md) | Windows→Mac 换机交接快照：环境搭建步骤 + 项目状态 + 已知欠账（写作当天快照，以 HISTORY.md 为准） |
 | [V4_S3_g_real_machine_test.md](V4_S3_g_real_machine_test.md) | V4-S3g 两台真机对战测试记录（存档） |

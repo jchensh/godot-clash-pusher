@@ -3,18 +3,21 @@
 ## 每秒交替放一张法术（10 种轮换）+ 远程开火/受击/阵亡特效自然产生；塔设为打不掉，保证测量窗口内满场。
 ## 关垂直同步、不限帧，热身 3 秒后逐帧采样 --seconds 秒：帧耗时、脚本处理耗时、渲染 CPU/GPU 耗时、draw call、
 ## 渲染物体数、图元（三角面，含描边与阴影 pass）、骨架/骨骼数、静态内存、显存、特效件数。结果打印 PERF_JSON 一行。
-## 用法：godot --path . --resolution 750x1334 --script res://tools/perf_battle_3d.gd -- --units 30 --seconds 20
-## 只读测量：不改任何画质/降配设置（D8 用户决策：降配方案由用户拍板）。
+## 用法：godot --path . --resolution 750x1334 --script res://tools/perf_battle_3d.gd -- --units 30 --seconds 20 --quality low --phys 1.44
+## 按 --quality 指定档位测量（只设内存里的强制档，不写玩家设置文件）。
 extends SceneTree
 
 const GameStateScript := preload("res://view/game_state.gd")
 const UnitScript := preload("res://logic/unit.gd")
 const UnitModels := preload("res://view/three_d/unit_models.gd")
 const Catalog := preload("res://view/three_d/fx_catalog.gd")
+const Quality := preload("res://view/three_d/quality.gd")
 
 var _units := 30
 var _fx := true
-var _scale3d := 1.0
+var _phys := 1.0
+var _quality := "high"
+var _no2d := false
 var _page_us := 0
 var _seconds := 20.0
 var _scene: Node
@@ -32,9 +35,14 @@ func _initialize() -> void:
 	if i >= 0:
 		_units = int(args[i + 1])
 	_fx = args.find("--no-fx") < 0
-	i = args.find("--scale3d")   # 3D 渲染倍率：1.44 ≈ 1080 宽手机物理分辨率（窗口受显示器限制开不到时用）
+	_no2d = args.has("--no2d")   # 对照：隐藏 2D HUD/飘字，只量 3D 部分
+	i = args.find("--phys")   # 物理分辨率倍率：1.44 ≈ 1080 宽手机（窗口受显示器限制开不到时用；再乘画质档的 3D 渲染倍率）
 	if i >= 0:
-		_scale3d = float(args[i + 1])
+		_phys = float(args[i + 1])
+	i = args.find("--quality")   # high / mid / low（D8b 画质档）
+	if i >= 0:
+		_quality = args[i + 1]
+	Quality.override_level = {"low": Quality.LOW, "mid": Quality.MID}.get(_quality, Quality.HIGH)
 	i = args.find("--seconds")
 	if i >= 0:
 		_seconds = float(args[i + 1])
@@ -69,8 +77,13 @@ func _run() -> void:
 	for t in _m.battle.player_towers + _m.battle.opponent_towers:
 		t.max_hp = 1.0e9
 		t.hp = 1.0e9
-	root.scaling_3d_scale = _scale3d
+	root.scaling_3d_scale = float(Quality.profile()["scale3d"]) * _phys
 	_rid = root.get_viewport_rid()
+	if _no2d:
+		_scene.visible = false
+		for c in _scene.get_children():
+			if c is CanvasItem or c is CanvasLayer:
+				c.visible = false
 	RenderingServer.viewport_set_measure_render_time(_rid, true)
 	var t := 0.0
 	var spell_t := 0.0
@@ -150,7 +163,7 @@ func _sample(dt: float) -> void:
 
 func _report() -> void:
 	var win := DisplayServer.window_get_size()
-	var out := {"fx": _fx, "scale3d": _scale3d, "resolution": "%dx%d" % [win.x, win.y], "target_units": _units,
+	var out := {"fx": _fx, "no2d": _no2d, "quality": _quality, "phys": _phys, "resolution": "%dx%d" % [win.x, win.y], "target_units": _units,
 		"frames": _samples.size(),
 		"gpu": RenderingServer.get_video_adapter_name(), "renderer": RenderingServer.get_current_rendering_method()}
 	for key in _samples[0].keys():

@@ -5,7 +5,7 @@
 extends Node3D
 
 const KingdomCamera := preload("res://view/three_d/kingdom_camera.gd")
-const ToonStyle := preload("res://view/three_d/toon_style.gd")
+const Quality := preload("res://view/three_d/quality.gd")
 const UnitModels := preload("res://view/three_d/unit_models.gd")
 const BattleLighting := preload("res://view/three_d/battle_lighting.gd")
 const ArenaPresenter := preload("res://view/three_d/arena_presenter.gd")
@@ -67,6 +67,8 @@ var _scenes: Dictionary = {}
 ##          watchtower_extras:[Vector2], walkers:[unit_id], unit_heights:{unit_id: vis_height_px}}（全部 BG 像素）。
 func setup(layout: Dictionary, viewport: Vector2, lighting := true) -> void:
 	viewport_size = viewport
+	if is_inside_tree():
+		Quality.begin_scene(get_viewport())   # D8b 画质档
 	if lighting:
 		BattleLighting.setup(self)
 		(get_node("Sun") as DirectionalLight3D).light_energy *= LIGHT_SCALE
@@ -326,7 +328,7 @@ func _build_slot(building: String, cfg: Dictionary, extras: Array) -> void:
 func _place(asset: String, width_m: float, pos_px: Vector2, parent: Node, team := Color.WHITE) -> Node3D:
 	var inst: Node3D = _scene(asset).instantiate()
 	inst.set_meta("asset", asset)
-	ToonStyle.apply(inst, team, Color.WHITE, GRADE)
+	Quality.dress(inst, "unit", team, Color.WHITE, GRADE)   # 建筑是王国页的画面主体：恒描边
 	var box := _native_box(asset)
 	var k := width_m / maxf(box.size.x, 0.01)
 	inst.scale = Vector3.ONE * k
@@ -422,7 +424,7 @@ func _build_walls(w: Dictionary) -> void:
 	_wall_run(Vector2(right, top), Vector2(right, bottom))
 	for c in [Vector2(left, top), Vector2(right, top), Vector2(left, bottom), Vector2(right, bottom)]:
 		var post: Node3D = _scene(WALL_POST_ASSET).instantiate()
-		ToonStyle.apply(post, Color.WHITE, Color.WHITE, GRADE)
+		Quality.dress(post, "prop", Color.WHITE, Color.WHITE, GRADE)
 		post.position = to_world(c as Vector2)
 		add_child(post)
 
@@ -438,7 +440,7 @@ func _wall_run(a_px: Vector2, b_px: Vector2) -> void:
 	var dir := (b - a).normalized()
 	for i in n:
 		var inst: Node3D = _scene(WALL_ASSET).instantiate()
-		ToonStyle.apply(inst, Color.WHITE, Color.WHITE, GRADE)
+		Quality.dress(inst, "prop", Color.WHITE, Color.WHITE, GRADE)
 		inst.position = a + dir * (seg * (i + 0.5))
 		inst.rotation.y = atan2(-dir.z, dir.x)
 		inst.scale = Vector3(seg / WALL_SEG_M, 1.0, 1.0)
@@ -498,7 +500,7 @@ func _spawn_walkers(ids: Array, heights: Dictionary) -> void:
 		if model.is_empty():
 			continue
 		var node: Node3D = (model["scene"] as PackedScene).instantiate()
-		ToonStyle.apply(node, Color.WHITE, model.get("tint", Color.WHITE), GRADE)
+		Quality.dress(node, "unit", Color.WHITE, model.get("tint", Color.WHITE), GRADE)
 		var h := UnitModels.target_height(float(heights.get(uid, 0.0)), 0.5) * WALKER_SCALE
 		node.scale = Vector3.ONE * (h / maxf(float(model["native_h"]), 0.01))
 		node.name = "Walker_" + str(uid)

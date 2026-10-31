@@ -11,8 +11,9 @@ static var _cache: Dictionary = {}   # tint + 调色 → ShaderMaterial（同参
 
 
 ## grade = (饱和度, 亮度)；缺省 (1,1) = 原色（战斗/图鉴），王国页传降饱和/降亮度。
-static func material(tint: Color = Color.WHITE, grade := Vector2.ONE) -> ShaderMaterial:
-	var key := "%s/%s" % [tint.to_html(), grade]
+## with_outline=false：不挂描边 pass（D8b 画质分档：中/低档场景件、塔、特效省一个 draw call）。
+static func material(tint: Color = Color.WHITE, grade := Vector2.ONE, with_outline := true) -> ShaderMaterial:
+	var key := "%s/%s/%s" % [tint.to_html(), grade, with_outline]
 	if _cache.has(key):
 		return _cache[key]
 	var outline := ShaderMaterial.new()
@@ -22,13 +23,15 @@ static func material(tint: Color = Color.WHITE, grade := Vector2.ONE) -> ShaderM
 	mat.set_shader_parameter("tint", tint)
 	mat.set_shader_parameter("saturation", grade.x)
 	mat.set_shader_parameter("brightness", grade.y)
-	mat.next_pass = outline
+	if with_outline:
+		mat.next_pass = outline
 	_cache[key] = mat
 	return mat
 
 
 ## 返回被换材质的 surface 数（测试/自检用）。
-static func apply(root: Node, team_tint: Color = Color.WHITE, body_tint: Color = Color.WHITE, grade := Vector2.ONE) -> int:
+static func apply(root: Node, team_tint: Color = Color.WHITE, body_tint: Color = Color.WHITE, grade := Vector2.ONE,
+		with_outline := true) -> int:
 	var count := 0
 	for node in root.find_children("*", "MeshInstance3D", true, false):
 		var mi := node as MeshInstance3D
@@ -37,6 +40,6 @@ static func apply(root: Node, team_tint: Color = Color.WHITE, body_tint: Color =
 		for s in mi.mesh.get_surface_count():
 			var src := mi.mesh.surface_get_material(s)
 			var team := src != null and src.resource_name == TEAM_MATERIAL
-			mi.set_surface_override_material(s, material(team_tint if team else body_tint, grade))
+			mi.set_surface_override_material(s, material(team_tint if team else body_tint, grade, with_outline))
 			count += 1
 	return count

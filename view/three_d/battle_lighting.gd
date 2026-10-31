@@ -3,6 +3,8 @@
 ## 再叠环境光，故 太阳 0.7 + 环境 0.3 ≈ 1.0 倍，浅色（石头/米色）也不再顶白。
 extends RefCounted
 
+const Quality := preload("res://view/three_d/quality.gd")
+
 const SKY := Color("d8ecfa")
 const AMBIENT := Color("e1ead6")
 const AMBIENT_ENERGY := 0.3
@@ -20,7 +22,7 @@ static func setup(parent: Node) -> void:
 	env.environment.ambient_light_color = AMBIENT
 	env.environment.ambient_light_energy = AMBIENT_ENERGY
 	parent.add_child(env)
-	parent.add_child(_light("Sun", Vector3(-55, -25, 0), SUN_ENERGY, true))
+	parent.add_child(_light("Sun", Vector3(-55, -25, 0), SUN_ENERGY, Quality.real_shadows()))   # D8b：低档关实时阴影
 	parent.add_child(_light("Fill", Vector3(-35, 145, 0), FILL_ENERGY, false))
 
 
@@ -31,4 +33,5 @@ static func _light(label: String, degrees: Vector3, energy: float, shadow: bool)
 	light.light_energy = energy
 	light.shadow_enabled = shadow
 	light.directional_shadow_max_distance = 100
+	light.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL   # D8b：正交俯视镜头单层足够，省 3 遍阴影绘制
 	return light

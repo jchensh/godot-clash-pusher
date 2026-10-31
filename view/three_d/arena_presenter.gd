@@ -4,6 +4,8 @@ extends Node3D
 
 const FieldProjection := preload("res://view/three_d/field_projection.gd")
 const ToonStyle := preload("res://view/three_d/toon_style.gd")
+const Quality := preload("res://view/three_d/quality.gd")
+const FxMesh := preload("res://view/three_d/fx_mesh.gd")
 const GROUND_SHADER := preload("res://view/three_d/ground.gdshader")
 const WATER_SHADER := preload("res://view/three_d/water.gdshader")
 const BRIDGE := preload("res://assets/models/bridge/bridge.glb")
@@ -32,6 +34,7 @@ var grid_size := Vector2.ZERO
 var bridge_count := 0
 var tower_count := 0
 var _generated: Node3D
+var _stone_parts: Array = []     # 石岸 + 外沿石沿：收集后合成一个顶点色网格（D8b：6 个 draw call → 1 个）
 
 
 func build(config: Dictionary, include_towers := true) -> void:
@@ -42,6 +45,7 @@ func build(config: Dictionary, include_towers := true) -> void:
 	add_child(_generated)
 	bridge_count = 0
 	tower_count = 0
+	_stone_parts.clear()
 	grid_size = Vector2(config.grid.w, config.grid.h)
 	var river: Dictionary = config.river
 	var river_w := float(river.y_max - river.y_min)
@@ -60,10 +64,11 @@ func build(config: Dictionary, include_towers := true) -> void:
 	water_mat.shader = WATER_SHADER
 	water.material_override = water_mat
 	water.position = river_center + Vector3(0, WATER_Y, 0)
+	water.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_generated.add_child(water)
 	for edge in [float(river.y_min), float(river.y_max)]:
 		var at := FieldProjection.tile_to_world(Vector2(grid_size.x * 0.5, edge), grid_size)
-		_toon_box("Bank", Vector3(grid_size.x, 0.4, 0.24), at + Vector3(0, -0.17, 0), Color("a39985"))
+		_stone(Vector3(grid_size.x, 0.4, 0.24), at + Vector3(0, -0.17, 0), Color("a39985"))
 	for bridge in river.bridges:
 		var width := float(bridge.x_max - bridge.x_min)
 		var tile := Vector2((float(bridge.x_min) + float(bridge.x_max)) * 0.5, river_y)
@@ -72,9 +77,10 @@ func build(config: Dictionary, include_towers := true) -> void:
 		model.scale = Vector3(width / BRIDGE_AUTHORED, 1.0, (river_w + 1.0) / BRIDGE_AUTHORED)
 		model.position = FieldProjection.tile_to_world(tile, grid_size, false, -BRIDGE_DROP)
 		_generated.add_child(model)
-		ToonStyle.apply(model)
+		Quality.dress(model, "prop")
 		bridge_count += 1
 	_build_rim()
+	_build_stones()
 	_build_decor()
 	if not include_towers:
 		return
@@ -108,6 +114,7 @@ func _slab(label: String, size: Vector3, pos: Vector3, color_a: Color, color_b: 
 	inst.mesh = mesh
 	inst.material_override = mat
 	inst.position = pos
+	inst.cast_shadow = Quality.shadow_setting("prop")
 	_generated.add_child(inst)
 
 
@@ -118,7 +125,7 @@ func _build_rim() -> void:
 			[Vector3(grid_size.x + 1.0, 0.25, 0.5), Vector3(0, 0.0, half.y + 0.25)],
 			[Vector3(0.5, 0.25, grid_size.y), Vector3(-half.x - 0.25, 0.0, 0)],
 			[Vector3(0.5, 0.25, grid_size.y), Vector3(half.x + 0.25, 0.0, 0)]]:
-		_toon_box("Rim", spec[0], spec[1], Color("a89c80"))
+		_stone(spec[0], spec[1], Color("a89c80"))
 	var transforms: Array = []
 	var ex := half.x + FENCE_GAP
 	var ez := half.y + FENCE_GAP
@@ -162,13 +169,24 @@ func _multimesh(label: String, scene: PackedScene, transforms: Array) -> void:
 	var inst := MultiMeshInstance3D.new()
 	inst.name = label
 	inst.multimesh = mm
-	inst.material_override = ToonStyle.material()
+	inst.material_override = ToonStyle.material(Color.WHITE, Vector2.ONE, Quality.outline("prop"))
+	inst.cast_shadow = Quality.shadow_setting("prop")
 	_generated.add_child(inst)
 
 
-func _toon_box(label: String, size: Vector3, pos: Vector3, color: Color) -> void:
-	var inst := box(_generated, label, size, pos, color)
-	inst.material_override = ToonStyle.material(color)
+func _stone(size: Vector3, pos: Vector3, color: Color) -> void:
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	_stone_parts.append([mesh, Transform3D(Basis.IDENTITY, pos), color])
+
+
+func _build_stones() -> void:
+	var inst := MeshInstance3D.new()
+	inst.name = "Stones"
+	inst.mesh = FxMesh.merge(_stone_parts)
+	inst.material_override = ToonStyle.material(Color.WHITE, Vector2.ONE, Quality.outline("prop"))
+	inst.cast_shadow = Quality.shadow_setting("prop")
+	_generated.add_child(inst)
 
 
 ## 塔几何代理（子节点 Footprint/StoneKeep/TeamBand/Roof/Crown；D0 场地预览用）。

@@ -181,7 +181,8 @@ func test_reconnect_rebind_no_duplicates() -> void:
 	assert_eq(field.presenter.unit_actor_count(), alive, "换绑后单位节点 = 新局存活单位")
 	assert_eq(field.presenter.dying_count(), 0, "旧局节点不转死亡残留")
 	var towers: int = new_m.battle.player_towers.size() + new_m.battle.opponent_towers.size()
-	assert_eq(field.presenter.get_child_count(), 1 + towers + alive, "presenter 子节点 = 场地 + 塔 + 存活单位")
+	var extras := 1 + (1 if field.presenter.get_node_or_null("BlobShadows") != null else 0)   # D8b 合批层（+ 低档圆影）
+	assert_eq(field.presenter.get_child_count(), 1 + extras + towers + alive, "presenter 子节点 = 场地 + 合批层 + 塔 + 存活单位")
 	for u in new_m.battle.arena.get_units():
 		if u.is_alive():
 			assert_true(field.presenter.actor_for(u) != null, "新局每个单位都有节点")

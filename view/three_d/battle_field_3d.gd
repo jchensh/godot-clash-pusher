@@ -12,6 +12,10 @@ const BattleCamera := preload("res://view/three_d/battle_camera.gd")
 const BattleLighting := preload("res://view/three_d/battle_lighting.gd")
 const FieldProjection := preload("res://view/three_d/field_projection.gd")
 const Fx := preload("res://view/three_d/battle_fx_3d.gd")
+const Quality := preload("res://view/three_d/quality.gd")
+
+const TUNE_FROM := 2.0          # 首局自动调档：第 2~10 秒的帧耗时 p90（避开开场加载卡顿）
+const TUNE_TO := 10.0
 
 var presenter: Node3D
 var deploy: Node3D
@@ -19,6 +23,10 @@ var camera: Camera3D
 var fx: Node3D
 var presenter_usec := 0         # 最近一帧 presenter / 特效层同步耗时（微秒，性能测量用）
 var fx_usec := 0
+
+var _tune_t := 0.0
+var _tune_ms: Array = []
+var _tuned := false
 var viewport_size := Vector2.ZERO
 
 var _arena = null
@@ -30,6 +38,8 @@ var _arena = null
 ## 可重复调用换绑新的一局（D5 断线重连会新建 Match 再追帧）：presenter 清空旧节点重建，镜头/光照/输入复用不重复造。
 func setup(battle, loader, viewport: Vector2, top_h: float, hud_h: float, options: Dictionary = {}) -> void:
 	_arena = battle.arena
+	if is_inside_tree():
+		Quality.begin_scene(get_viewport())   # D8b：生效画质档（上次自动调档结果）+ 渲染倍率 / LOD 阈值
 	var local_owner := int(options.get("local_owner", 0))
 	var flipped := bool(options.get("flipped", false))
 	var names := {}
@@ -61,6 +71,7 @@ func setup(battle, loader, viewport: Vector2, top_h: float, hud_h: float, option
 	deploy.configure(camera, _arena, loader, local_owner, flipped, viewport)
 	viewport_size = viewport
 	BattleCamera.fit(camera, presenter.grid_size, viewport, Rect2(0.0, top_h, viewport.x, viewport.y - top_h - hud_h))
+	presenter.batches.view_basis = camera.transform.basis   # 合批血条按镜头朝向摆放
 	deploy.viewport_size = viewport
 	deploy.blocked_rects = [Rect2(0.0, 0.0, viewport.x, top_h), Rect2(0.0, viewport.y - hud_h, viewport.x, hud_h)]
 
@@ -78,6 +89,7 @@ func advance(delta: float) -> void:
 ## （drag_index<0 = 没在拖：撤 ghost；换牌/新拖 = 重建 ghost；拖着 = 跟手）。
 func sync(delta: float, shake: Vector2, drag_index: int, hand: Array, screen: Vector2) -> void:
 	advance(delta)
+	_tune(delta)
 	set_shake(shake)
 	if drag_index < 0 or drag_index >= hand.size() or hand[drag_index] == null:
 		if deploy.dragging:
@@ -86,6 +98,23 @@ func sync(delta: float, shake: Vector2, drag_index: int, hand: Array, screen: Ve
 	if not deploy.dragging or deploy.hand_index != drag_index:
 		deploy.begin_drag(drag_index, str(hand[drag_index]))
 	deploy.update_drag(screen)
+
+
+## D8b 首局自动调档：采样第 2~10 秒帧耗时，p90 交给 Quality 决定下次升/降一档（手动选过的档不动）。
+func _tune(delta: float) -> void:
+	if _tuned:
+		return
+	_tune_t += delta
+	if _tune_t >= TUNE_FROM:
+		_tune_ms.append(delta * 1000.0)
+	if _tune_t >= TUNE_TO and not _tune_ms.is_empty():
+		_tuned = true
+		_tune_ms.sort()
+		var p90: float = _tune_ms[int(_tune_ms.size() * 0.9)]
+		var before := Quality.level()
+		var after := Quality.auto_tune(p90)
+		if after != before:
+			Log.i("[3D] 画质自动调档 %s → %s（帧耗时 p90 %.1f ms，下次进战斗生效）" % [Quality.LABELS[before], Quality.LABELS[after], p90])
 
 
 ## tile → 屏幕像素（地面高度）；与 deploy 的拾取同一套相机数学，互为逆变换。

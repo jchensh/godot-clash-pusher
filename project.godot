@@ -26,6 +26,7 @@ Router="*res://view/scene_router.gd"
 Events="*res://view/events.gd"
 Online="*res://net/online_runtime.gd"
 _mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
+tt="*res://addons/ttsdk/api/tt.gd"
 
 [display]
 
@@ -36,7 +37,7 @@ window/handheld/orientation="portrait"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/godot_ai/plugin.cfg")
+enabled=PackedStringArray("res://addons/godot_ai/plugin.cfg", "res://addons/ttsdk/plugin.cfg", "res://addons/ttsdk.editor/plugin.cfg")
 
 [gui]
 
@@ -47,3 +48,4 @@ theme/custom_font="res://assets/fonts/ZCOOLKuaiLe-Regular.ttf"
 textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true

@@ -10,6 +10,7 @@ const ArenaPresenter := preload("res://view/three_d/arena_presenter.gd")
 const ToonStyle := preload("res://view/three_d/toon_style.gd")
 const FxMesh := preload("res://view/three_d/fx_mesh.gd")
 const Catalog := preload("res://view/three_d/fx_catalog.gd")
+const Quality := preload("res://view/three_d/quality.gd")
 
 const CATCHUP_SKIP := 0.6       # 秒：一帧内逻辑时间推进超过此值 = 重连追帧，期间不放法术特效（防补放一屏）
 const HEAD_KEEP := 2.0          # 秒：阵亡/消失后头顶锚点保留时长（伤害数字收尾）
@@ -38,6 +39,10 @@ var _zones: Array = []          # 法术范围认领 [{c:Vector2(tile), r, until
 var _status: Dictionary = {}    # 单位实例 ID → {kind, node}
 var _beams: Dictionary = {}     # 攻击者实例 ID → {node, left, actor, target, ty}
 var _destroyed: Dictionary = {} # 塔实例 ID → 已放过摧毁爆破
+var _outline := true            # D8b 画质：setup 时按档位定（一局内不变）
+var _shadow := true
+var _particles_k := 1.0
+var _fx_cap := 0
 
 static var _dot: ImageTexture    # 粒子圆点贴图（程序生成：软边白圆，避免方块粒子）
 
@@ -100,6 +105,11 @@ func setup(battle, presenter, loader, camera: Camera3D, players: Array, options:
 	flipped = bool(options.get("flipped", false))
 	grid = presenter.grid_size
 	_seen_elapsed = battle.elapsed
+	var q := Quality.profile()
+	_outline = Quality.outline("fx")
+	_shadow = Quality.casts_shadow("fx")
+	_particles_k = float(q["particles"])
+	_fx_cap = int(q["fx_cap"])
 	for p in players:
 		if p == null:
 			continue
@@ -127,7 +137,8 @@ func clear() -> void:
 		d.clear()
 	_zones.clear()
 	stats = {"casts": {}, "projectiles": {}, "bolts": 0, "beams": 0, "melee": 0, "impacts": 0, "hits": 0,
-		"heals": 0, "deaths": 0, "towers": 0, "tower_shots": 0, "status": {}, "skipped_casts": 0}
+		"heals": 0, "deaths": 0, "towers": 0, "tower_shots": 0, "status": {}, "skipped_casts": 0, "capped": 0,
+		"particles": 0}
 
 
 func active_parts() -> int:
@@ -225,8 +236,9 @@ func time_now() -> float:
 func solid(mesh_name: String, tint: Color, pos: Vector3, scale_k: float, shadow := false) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	mi.mesh = FxMesh.get_mesh(mesh_name)
-	mi.material_override = ToonStyle.material(tint)
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if shadow else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.material_override = ToonStyle.material(tint, Vector2.ONE, _outline)
+	var cast := shadow and _shadow
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if cast else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	mi.position = pos
 	mi.scale = Vector3.ONE * scale_k
 	add_child(mi)
@@ -253,11 +265,15 @@ func glow(mesh: Mesh, color: Color, pos: Vector3, scale_k: float, additive := fa
 	return mi
 
 
-## 一次性粒子爆发（CPUParticles3D：Compatibility 渲染器下最稳）。
+## 一次性粒子爆发（CPUParticles3D：Compatibility 渲染器下最稳）。数量按画质档位缩放，低档不放（返回 null）。
 ## opts：amount, life, speed, grav, size, spread, dir, radius(发射球半径), mesh(名), local(跟随父节点)。
 func particles(pos: Vector3, color: Color, opts: Dictionary, parent: Node3D = null) -> CPUParticles3D:
+	var amount := int(round(float(opts.get("amount", 8)) * _particles_k))
+	if amount < 1:
+		return null
+	stats["particles"] += 1
 	var cp := CPUParticles3D.new()
-	cp.amount = int(opts.get("amount", 8))
+	cp.amount = amount
 	cp.lifetime = float(opts.get("life", 0.5))
 	cp.one_shot = not bool(opts.get("loop", false))
 	cp.explosiveness = 0.0 if bool(opts.get("loop", false)) else 0.9
@@ -438,13 +454,15 @@ func _scan_units(delta: float) -> void:
 				_on_hit(id, u.pos, foot + Vector3(0, actor.body_height * 0.55, 0), d, u.max_hp)
 			elif d < -0.5:
 				stats["heals"] += 1
-				Catalog.heal_sparkle(self, foot, actor.body_height)
+				if _optional_ok():
+					Catalog.heal_sparkle(self, foot, actor.body_height)
 		_hp[id] = u.hp
 		_sync_status(u, actor, id, delta)
 	for id in _last.keys():
 		if not alive.has(id):
 			stats["deaths"] += 1
-			Catalog.poof(self, _last[id]["pos"], float(_last[id]["h"]))
+			if _optional_ok():
+				Catalog.poof(self, _last[id]["pos"], float(_last[id]["h"]))
 			for book in [_last, _hp, _cd, _pending]:
 				book.erase(id)
 			if _status.has(id) and is_instance_valid(_status[id]["node"]):
@@ -489,7 +507,16 @@ func _on_hit(id: int, tile: Vector2, at: Vector3, amount: float, max_hp: float) 
 		if tile.distance_to(z["c"]) <= float(z["r"]) + 0.5:
 			return
 	stats["hits"] += 1
-	Catalog.hit_star(self, at, amount >= maxf(150.0, max_hp * 0.25))
+	if _optional_ok():
+		Catalog.hit_star(self, at, amount >= maxf(150.0, max_hp * 0.25))
+
+
+## 可选特效（受击星/阵亡烟团/治疗闪光）受同屏上限约束；法术与投射物恒放（含义必须看得到）。
+func _optional_ok() -> bool:
+	if _fx_cap <= 0 or _parts.size() < _fx_cap:
+		return true
+	stats["capped"] += 1
+	return false
 
 
 # —— 攻击表现 ——

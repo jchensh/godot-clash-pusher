@@ -5,6 +5,7 @@ extends RefCounted
 
 const FxMesh := preload("res://view/three_d/fx_mesh.gd")
 const ToonStyle := preload("res://view/three_d/toon_style.gd")
+const Quality := preload("res://view/three_d/quality.gd")
 
 const UP := Vector3.UP
 const FIRE := Color(1.0, 0.55, 0.15)
@@ -382,7 +383,7 @@ static func status_node(kind: String, actor) -> Node3D:
 			for i in 3:
 				var star := MeshInstance3D.new()
 				star.mesh = FxMesh.get_mesh("star")
-				star.material_override = ToonStyle.material(Color(1.0, 0.85, 0.2))
+				star.material_override = ToonStyle.material(Color(1.0, 0.85, 0.2), Vector2.ONE, Quality.outline("fx"))
 				var a := TAU * float(i) / 3.0
 				star.position = Vector3(cos(a) * 0.45, air + h + 0.25, sin(a) * 0.45)
 				star.rotation.y = -a
@@ -403,7 +404,7 @@ static func status_node(kind: String, actor) -> Node3D:
 			root.add_child(block)
 			var cap := MeshInstance3D.new()
 			cap.mesh = FxMesh.get_mesh("ice_shard")
-			cap.material_override = ToonStyle.material(FROST)
+			cap.material_override = ToonStyle.material(FROST, Vector2.ONE, Quality.outline("fx"))
 			cap.position.y = air + h * 1.1
 			cap.scale = Vector3.ONE * 0.5
 			root.add_child(cap)
@@ -422,7 +423,7 @@ static func status_node(kind: String, actor) -> Node3D:
 			for i in 3:   # 头顶绕圈的小雪花（实心件；状态挂件不用粒子，省每帧粒子模拟）
 				var flake := MeshInstance3D.new()
 				flake.mesh = FxMesh.get_mesh("star")
-				flake.material_override = ToonStyle.material(FROST)
+				flake.material_override = ToonStyle.material(FROST, Vector2.ONE, Quality.outline("fx"))
 				var a := TAU * float(i) / 3.0
 				flake.position = Vector3(cos(a) * w * 0.8, air + h + 0.15, sin(a) * w * 0.8)
 				flake.rotation.y = -a

@@ -1,7 +1,7 @@
 ## D6 王国页 3D 冒烟（真实场景树，不联网）：Online 换成桩（配置=仓库 JSON、王国状态=固定快照、登录恒成功），
 ## 检查：①3D 场景就绪（16 槽、居民、镜头生效且投影与引擎一致）②建筑形态跟状态（空地/施工脚手架/建成；
 ## 状态变化后自动更新）③点建筑 → 弹该建筑操作窗；拖动平移不触发点选；滚轮缩放有界 ④居民在走。
-## 可选 --shot <dir>：非 headless 运行时截图（自检用）。
+## 可选 --shot <dir>：非 headless 运行时截图（自检用）；--quality low|mid|high 强制画质档（D8b）。
 ## 用法：godot --headless --path . --script res://tools/check_kingdom_3d.gd
 extends SceneTree
 
@@ -70,6 +70,9 @@ func _initialize() -> void:
 	var i := args.find("--shot")
 	if i >= 0 and i + 1 < args.size():
 		_shot_dir = args[i + 1]
+	var q := args.find("--quality")   # D8b：low / mid / high 强制画质档（截图对比用）
+	if q >= 0 and q + 1 < args.size():
+		load("res://view/three_d/quality.gd").override_level = ["low", "mid", "high"].find(args[q + 1])
 	_check.call_deferred()
 
 

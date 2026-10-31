@@ -6,6 +6,7 @@ extends Control
 const PixelUI := preload("res://view/ui/pixel_ui.gd")
 const GameStateScript := preload("res://view/game_state.gd")
 const ModalScript := preload("res://view/ui/modal.gd")   # KAN-109 登出确认框（走 UI.modal 层，KAN-97 规约）
+const Quality := preload("res://view/three_d/quality.gd")   # D8b 画质三档（本地显示偏好）
 
 var _http: HTTPRequest
 var _gm_status: Label = null
@@ -46,6 +47,9 @@ func _build() -> void:
 	_center_label(tr("settings_language"), 280, 34, PixelUI.COL_MUTED)
 	_lang_button(tr("lang_zh"), "zh", 150, 330, cur.begins_with("zh"))
 	_lang_button(tr("lang_en"), "en", 390, 330, cur.begins_with("en"))
+	_center_label("画质（%s）" % ("手动" if Quality.is_manual() else "自动"), 450, 34, PixelUI.COL_MUTED)
+	for lv in [Quality.HIGH, Quality.MID, Quality.LOW]:
+		_quality_button(lv, 60.0 + 210.0 * float(Quality.HIGH - lv), 500.0)
 	_logout_button(1170)   # KAN-109：登出 → 回登录页换号/创新号
 	_back_button(1080)
 
@@ -163,6 +167,26 @@ func _set_ui_layout(lay: String) -> void:
 	GameStateScript.set_ui_layout(lay)
 	Router.apply_ui_layout()   # 立即换窗口方向/逻辑分辨率
 	Router.reload()            # 以新视口重建本页
+
+# D8b 画质：高 / 中 / 低（手动选后不再自动调档；下次进战斗 / 王国生效）。
+func _quality_button(lv: int, x: float, y: float) -> void:
+	var btn := Button.new()
+	btn.text = Quality.LABELS[lv]
+	btn.position = Vector2(x, y)
+	btn.size = Vector2(180, 104)
+	btn.pivot_offset = Vector2(90, 52)
+	btn.focus_mode = Control.FOCUS_NONE
+	PixelUI.style_button(btn, "gold" if Quality.level() == lv else "stone", 34)
+	btn.pressed.connect(_set_quality.bind(lv))
+	btn.button_down.connect(_scale_to.bind(btn, 0.96))
+	btn.button_up.connect(_scale_to.bind(btn, 1.0))
+	add_child(btn)
+
+func _set_quality(lv: int) -> void:
+	AudioManager.play_sfx("ui_button_press")
+	Log.i("[V5][settings] 画质 → %s（手动）" % Quality.LABELS[lv])
+	Quality.set_level(lv, true)
+	Router.reload()
 
 func _lang_button(text: String, loc: String, x: float, y: float, active: bool) -> void:
 	var btn := Button.new()
