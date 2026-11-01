@@ -71,7 +71,8 @@ func _build() -> void:
 		_name_edit.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_name_edit.max_length = 40   # 粗上限（真正限制走宽度校验）；防超长粘贴
 		_name_edit.add_theme_font_size_override("font_size", 36)
-		_name_edit.add_theme_color_override("font_color", Color(1, 1, 1))
+		_name_edit.add_theme_color_override("font_color", PixelUI.COL_PARCHMENT)   # 浅底深字（原白字落在近白底上看不见）
+		_name_edit.add_theme_color_override("font_placeholder_color", PixelUI.COL_HINT)
 		_name_edit.add_theme_stylebox_override("normal", PixelUI.sbpixel(Color("f4faff"), 3, Color("a87b1a")))
 		_name_edit.add_theme_stylebox_override("focus", PixelUI.sbpixel(Color("f0f7fd"), 3, PixelUI.COL_GOLD))
 		_name_edit.text_changed.connect(_on_name_changed)

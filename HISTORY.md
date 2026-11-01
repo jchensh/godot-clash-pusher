@@ -1216,3 +1216,16 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
 - `README.md` 重写：游戏名「萌萌对垒」、**正式服 Web 客户端 `https://tower-push-godot.web.app`** + 后端地址（实测两者均返回 200；正式服 release 停在 3D D6，D7/D8/D8b 未发布）、现状表（3D 迁移、王国、卡通改版、E2-lite、518 单测、schema v9）、玩法/技术栈/快速开始（`make up && make migrate`、6 容器）/目录/文档入口/发布脚本；Wiki 标注为过时快照。
 - `CLAUDE.md` / `AGENTS.md` 进度快照同步（两者原本已不一致）：补卡通改版取代三国轨道A、3D 迁移为当前主线、正式服地址、基线 518 / schema v9。`docs/README.md`：登记 PLAN_V5_CARTOON 与 ACCEPTANCE_CARTOON_P1、三国施工图标为已取代、3D 行补 D8b。
 - 未改 GitHub 仓库简介/主页链接（仍是「竖屏皇室战争式对推小游戏 (Godot 4.x, GDScript)」、主页为空），待用户决定。
+
+### 抖音小游戏 V0 验证（进行中，分支 `feat/v0-minigame`）+ 正式服关 HTTP/3（2026-11-01 ~ 11-02）
+
+- 工作区 `F:\godotTowerPush\master-v0-minigame`，分支 `feat/v0-minigame`（已同步到本 master 并推 GitHub）；10-25 原状另存分支 `backup/v0-minigame-2026-10-25`（只留档、不合并）。逐条过程见该分支 HISTORY 末尾「小游戏技术验证 V0」与 `docs/V0_MINIGAME_REPORT.md`。
+- 进度：抖音开发者工具模拟器 + 安卓真机都已**启动 → 登录 → 持久会话 → 拉经济/王国 → 进主界面 → 开战**；真机整局（战斗中上报、结算发奖）待复测。
+- 关键结论：必须用 Godot **4.5.1** + 抖音 **release** 模板导出（抖音 4.5.1 的 4 个 debug 模板 wasm 本身编译不过）；抖音网络只允许 https/wss（本机 http 服务器不可用，分支改连正式服）；包体限制主包 ≤4 MB、总计 ≤20 MB（分支开分包 + 去 BGM/开发插件/无用资源 + 大图有损 WebP，51 MB → 15.6 MB）；正式上线需境内服务器 + ICP 备案域名（现在的 GCP 台湾机房无法备案）。
+- **master 改动**：
+  - `view/login.gd`、`view/account_create.gd`：名号输入框白字白底看不见（`Color(1,1,1)` on `#f4faff`）→ 改 `PixelUI.COL_PARCHMENT` 深字 + `COL_HINT` 占位色。
+  - `server/docker/Caddyfile.prod` + `server/docker-compose.prod.yml`（与 release `1741de2` 同步）：关 HTTP/3（`servers { protocols h1 h2 }`、不发布 443/udp）——抖音真机战斗中请求被引去 QUIC、跨境 UDP 被丢导致全部超时；访问日志删 `Origin` 头——抖音安卓把含 token 的 wss 地址填进 Origin，token 进了日志。正式服已由用户执行发布（只重建 Caddy），验证响应不再带 `Alt-Svc: h3`。
+  - `docs/deployment/GCP_RELEASE_TLS.md`：补 HTTP/3 关闭原因、只重建 Caddy 的轻量发布命令（PowerShell 用 `gcloud.cmd`）、Origin 脱敏。
+  - `.gitignore`：加 `claude-personal*.bat`（本机启动脚本含 API key）；README 的 Wiki 行改为「2026-10-31 已更新」。
+- 发现的待办（未做）：被新登录顶掉的会话会每 2 秒自动重连、两端循环互踢（应收到「被顶号」关闭码后停止重连并提示）；抖音开发者工具会读用户级环境变量 `HTTP(S)_PROXY` 导致 `protocol mismatch`，需用 `F:\godotTowerPush\_tools\start_douyin_devtools_noproxy.bat` 启动。
+- 验证：客户端单测 518/518（master 4.6.3），改动文件 gdlint 通过，`caddy validate` 通过。

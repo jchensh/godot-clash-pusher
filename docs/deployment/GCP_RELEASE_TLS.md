@@ -20,6 +20,7 @@
 ```
 
 - 一个域名一个 443 端口承载全部流量（api 与 gateway 的路径不重叠，Caddy 按路径分流）。
+- **只走 TCP（HTTP/1.1 + HTTP/2），HTTP/3 已关**（2026-11-01，release `1741de2`）：Caddy 默认回 `Alt-Svc: h3`，抖音小游戏的网络库会改走 UDP 443 的 QUIC，跨境 UDP 被丢 → 战斗中请求全部超时。`Caddyfile.prod` 全局 `servers { protocols h1 h2 }`，compose 不再发布 `443/udp`。
 - 证书由 Caddy 自动向 Let's Encrypt 申请/续期，零人工维护；证书状态持久化在 `caddy_data` 卷。
 - 相关文件（全部在 master，release 跟随合并）：
   `server/docker-compose.prod.yml`（overlay）· `server/docker/Caddyfile.prod`（反代模板）· `server/.env.example`（环境值样板）。
@@ -29,7 +30,7 @@
 1. **GCP 虚拟机**：e2-small 起步即可；装好 docker + docker compose 插件；建议绑静态外网 IP。
 2. **域名**：把一条 A 记录解析到上面的静态 IP（如 `game.example.com`）。裸 IP 拿不到公共证书，域名必须有。
 3. **GCP 防火墙**（VPC 防火墙规则）：
-   - ✅ 放行 TCP 80（证书签发校验用）+ TCP/UDP 443（业务流量）
+   - ✅ 放行 TCP 80（证书签发校验用）+ TCP 443（业务流量；HTTP/3 已关，UDP 443 不再使用）
    - ❌ **不放行** 8080/8081（明文后端）与 5432/6379（数据库/Redis）——基础 compose 为开发便利把它们发布到了宿主机，公网安全完全靠防火墙收口，这四个口一个都不能开。
 
 ## 三、部署步骤（在 GCP 机器上）
@@ -89,6 +90,12 @@ docker compose logs caddy | tail -5                # 无证书报错（certifica
 | 证书状态 | `docker compose logs caddy \| grep -i cert`；证书在 `caddy_data` 卷，删卷会触发重签 |
 | 数据备份 | `docker compose exec postgres pg_dump -U app gcp > backup.sql` |
 
+> **只改 Caddy 的轻量发布**（2026-11-02 实操）：release 提交推送后，服务器快进并只重建 Caddy：
+> ```powershell
+> gcloud.cmd compute ssh towerpush-backend --project tower-push-godot --zone asia-east1-b --tunnel-through-iap --command "cd /opt/godot-clash-pusher && sudo git fetch origin release && sudo git merge --ff-only origin/release && cd server && sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d caddy"
+> ```
+> Windows PowerShell 下 `gcloud`（gcloud.ps1）可能报 `Test-Path : Access is denied`，改用 `gcloud.cmd`。服务器仓库属主是 root，git/docker 都要 `sudo`。验证：`curl -sD - -o NUL https://<域名>/healthz` 不应再有 `Alt-Svc: h3`。
+
 ## 六、本地冒烟模式（开发机验证反代配置，无需域名）
 
 `.env` 里 `DOMAIN=localhost`（Caddy 自动改用内部自签 CA）+ `CADDY_HTTP_PORT=8088`、`CADDY_HTTPS_PORT=8443`（避开本机占用），
@@ -99,7 +106,7 @@ docker compose logs caddy | tail -5                # 无证书报错（certifica
 ## 七、安全边界声明（E2-lite ≠ 完整 E2，勿混淆）
 
 本方案**已经覆盖**：传输加密（token/对局数据不再明文裸奔）、中间人不可见 URL、访问日志 query 脱敏
-（WS token 在 URL 里，Caddyfile 的 log filter 把 query 替换为 REDACTED——这条配置勿删）、强随机 secrets。
+（WS token 在 URL 里，Caddyfile 的 log filter 把 query 替换为 REDACTED，并删掉 `Origin` 头——抖音安卓 WebView 会把含 token 的完整 wss 地址填进 Origin；这两条配置勿删）、强随机 secrets。
 
 本方案**明确没做**（用户 2026-07-16 拍板接受，限「域名只发给测试人员」的前提）：
 - ❌ 登录仍是 username 裸登录（知道名字即可顶号）——KAN-109 已知边界

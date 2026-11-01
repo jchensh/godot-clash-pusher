@@ -147,7 +147,7 @@ HTTPS_PROXY=http://127.0.0.1:7897 uv run --with "gdtoolkit==4.*" gdradon cc <路
 
 - **V1~V4 全部完成**（V4-S5 赛季/榜暂缓 KAN-41）；详细历史按版本线归档于 docs/HISTORY_*.md。
 - **V5 = 实时在线 F2P 闯关养成（决策 48，服务器权威；[PLAN_V5.md](PLAN_V5.md)，Epic KAN-50）**：本地原型 S0~S8 + 在线化 N1~N7 + S9 账号/引导/菜单 + 卡池 16→48 + 框架地基（Router/Events/Log/lint）+ 王国领地 K0~K5 **代码全部完成**；S8e 难度手感等多组真人验收欠账，台账见各 ACCEPTANCE_* 文档。
-- **题材/表现**：决策 49 卡通改版（三国→卡通「萌萌对垒」，48 卡中可玩 31、锁 17，[PLAN_V5_CARTOON.md](PLAN_V5_CARTOON.md) P1~P3 Done，取代三国轨道A）；**Now = 全 3D 表现迁移（[PLAN_V5_3D.md](PLAN_V5_3D.md)）**：D0~D8 真人验收通过，D8b 画质三档代码完成待验收，D5 双机验收欠账，D9 未开工；目标平台新增微信/抖音小游戏（低档即基线）。
+- **题材/表现**：决策 49 卡通改版（三国→卡通「萌萌对垒」，48 卡中可玩 31、锁 17，[PLAN_V5_CARTOON.md](PLAN_V5_CARTOON.md) P1~P3 Done，取代三国轨道A）；**Now = 全 3D 表现迁移（[PLAN_V5_3D.md](PLAN_V5_3D.md)）**：D0~D8 真人验收通过，D8b 画质三档代码完成待验收，D5 双机验收欠账，D9 未开工；目标平台新增微信/抖音小游戏（低档即基线）；**抖音 V0 验证进行中**（分支 `feat/v0-minigame`：Godot 4.5.1 + release 模板 + 分包 15.6 MB，模拟器与真机已能登录进主界面，真机整局待测；正式上线需境内服务器 + ICP 备案）。
 - **上线工程线 E0~E9（[PLAN_V5.md](PLAN_V5.md) §13）**：E0/E1 Done；E2-lite（HTTPS/WSS + 发布手册）已上公网测试——正式服 Web 客户端 `https://tower-push-godot.web.app`，后端 `towerpushserver.jeffgame.tech`（[GCP_RELEASE_TLS.md](docs/deployment/GCP_RELEASE_TLS.md)）；完整 E2（去 GM/WS ticket 等）未做。
 - **挂起支线**：横版战斗 H3~H6 未开工（[PLAN_V5_HBATTLE.md](PLAN_V5_HBATTLE.md)）；UI 骨架 F 组验收欠（[PLAN_V5_UIFRAME.md](PLAN_V5_UIFRAME.md)）；数值线 KAN-87/88 挂起。
 - 基线：客户端单测 **518/518**；Go unit+integration 全过；服务端 schema **v9**（0009_kingdom）；docker **6 容器**（含 verifier）。

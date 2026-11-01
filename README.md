@@ -98,7 +98,7 @@ docs/ tools/    文档；配置/平衡/性能/Blender 建模/发布脚本
 | [`PLAN_GRAND.md`](PLAN_GRAND.md) | 全项目 roadmap |
 | [`docs/deployment/`](docs/deployment/) | 公网发布手册、上线门禁、Staging 拓扑 |
 | [`CLAUDE.md`](CLAUDE.md) / [`AGENTS.md`](AGENTS.md) | AI agent 操作手册（纪律 / 铁律 / 工作流） |
-| [Wiki](https://github.com/jchensh/godot-clash-pusher/wiki) | 2026-06-27 的一次性快照（3D、卡通改版、王国、正式服等之后的内容都没有），以仓库内文档为准 |
+| [Wiki](https://github.com/jchensh/godot-clash-pusher/wiki) | 面向人读的文档站（2026-10-31 更新）：玩法 / 架构 / 路线 / 3D 迁移 / 正式服 / 决策日志；不自动同步，以仓库内文档为准 |
 
 ## 开发模式
 

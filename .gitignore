@@ -32,3 +32,6 @@ Thumbs.db
 __pycache__/
 *.pyc
 *.blend1
+
+# 本机 Claude Code 启动脚本（含 API key，绝不入库）
+claude-personal*.bat
