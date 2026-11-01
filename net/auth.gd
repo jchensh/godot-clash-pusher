@@ -258,12 +258,19 @@ class _HttpResult extends RefCounted:
 func _post_json(http_req: HTTPRequest, path: String, payload: Dictionary) -> _HttpResult:
 	var url := server_url + path
 	var headers := PackedStringArray(["Content-Type: application/json"])
+	var t0 := Time.get_ticks_msec()
+	if OS.has_feature("web"):
+		Log.i("[MG][http] POST %s 发起" % url)   # 小游戏诊断：每个 JSON 请求的起止
 	var err := http_req.request(url, headers, HTTPClient.METHOD_POST, JSON.stringify(payload))
 	if err != OK:
+		Log.w("[MG][http] POST %s request() 立即失败 err=%d" % [url, err])
 		var r := _HttpResult.new()
 		r.error = "HTTPRequest.request err=%d" % err
 		return r
 	var args: Array = await http_req.request_completed
+	if OS.has_feature("web"):
+		Log.i("[MG][http] POST %s 完成 result=%d status=%d body=%dB 用时=%dms" % [
+			url, args[0], args[1], (args[3] as PackedByteArray).size(), Time.get_ticks_msec() - t0])
 	var hr := _HttpResult.new()
 	hr.status_code = args[1]
 	hr.body = args[3]
@@ -285,6 +292,8 @@ func _post_proto(http_req: HTTPRequest, path: String, body: PackedByteArray) -> 
 		"Content-Type: application/x-protobuf",
 		"Accept: application/x-protobuf",
 	])
+	if OS.has_feature("web"):
+		Log.i("[MG][http] POST(pb) %s 发起 body=%dB" % [url, body.size()])
 	var err := http_req.request_raw(url, headers, HTTPClient.METHOD_POST, body)
 	if err != OK:
 		var r := _HttpResult.new()
@@ -292,6 +301,8 @@ func _post_proto(http_req: HTTPRequest, path: String, body: PackedByteArray) -> 
 		return r
 	# request_completed (result, response_code, headers, body)
 	var args: Array = await http_req.request_completed
+	if OS.has_feature("web"):
+		Log.i("[MG][http] POST(pb) %s 完成 result=%d status=%d" % [url, args[0], args[1]])
 	var hr := _HttpResult.new()
 	hr.status_code = args[1]
 	hr.body = args[3]

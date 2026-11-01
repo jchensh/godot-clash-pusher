@@ -1229,3 +1229,50 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
   - `.gitignore`：加 `claude-personal*.bat`（本机启动脚本含 API key）；README 的 Wiki 行改为「2026-10-31 已更新」。
 - 发现的待办（未做）：被新登录顶掉的会话会每 2 秒自动重连、两端循环互踢（应收到「被顶号」关闭码后停止重连并提示）；抖音开发者工具会读用户级环境变量 `HTTP(S)_PROXY` 导致 `protocol mismatch`，需用 `F:\godotTowerPush\_tools\start_douyin_devtools_noproxy.bat` 启动。
 - 验证：客户端单测 518/518（master 4.6.3），改动文件 gdlint 通过，`caddy validate` 通过。
+
+### 小游戏技术验证 V0（2026-10-25，分支 feat/v0-minigame，进行中）
+
+- 用户同意建 worktree + 分支做 V0。工作区 `F:\godotTowerPush\master-v0-minigame`，从 master `b29ef1e` 切出，并复制了 master 上未提交的 D8b 改动（master 原样不动）。Jira KAN-148 已转「正在进行」。
+- 经用户许可下载了：Godot 4.5.2 官方编辑器、抖音 Godot SDK 1.0.4。插件导出时自动下载了抖音自己的 4.5.1 引擎模板，官方 1.35GB 导出模板不需要。
+- 结果（详见 docs/V0_MINIGAME_REPORT.md）：
+  - 用 4.5.2 打开项目，代码零改动，514/514（SCRIPT ERROR 0），9 个冒烟全部通过，三档性能与截图和 4.6.3 一致。
+  - 抖音官方插件无界面导出成功。抖音模板是 Godot 4.5.1 定制版，包含 3D 完整版。
+  - 引擎 release 6.5 MB；资源包 48 MB，其中音乐 27 MB、旧 2D 贴图约 12 MB、字体 3.7 MB、3D 模型 3.4 MB。
+  - 估计清理旧素材、字体只留用到的字、音乐走 CDN 后，总包 13~15 MB，可以进 20 MB 上限。
+- 待用户：抖音 AppID + 开发者工具登录，之后再做开发者工具运行、连本机服务器和真机测试；微信另开一轮。
+- 2026-11-01 同步：用户要求把整个分支在 GitHub 备份，并按建议同步到最新 master。
+  - 备份：工作区原状（含未提交改动）提交到分支 `backup/v0-minigame-2026-10-25` 并推送 GitHub，仅作留档、不合并。
+  - 同步：`feat/v0-minigame` 重置到 master `a749fc5`（已含 D8b 与代码审查修复），丢弃工作区里那份旧 D8b 副本；只把抖音相关改动放回：`addons/ttsdk` + `addons/ttsdk.editor`（SDK 1.0.4）、`export_presets.cfg`（tt-minigame，AppID 为用户确认的真实 `tt70a50618eedbe1b102`）、`project.godot`（启用插件、`tt` 自动加载、ETC2/ASTC 纹理压缩）、本报告与本段记录。
+- 2026-11-01 用 Godot 4.5.1 重导：经用户同意下载官方 4.5.1（`F:\godotTowerPush\_tools\godot-4.5.1`，SHA512 与官方校验一致）。4.5.1 下导入 0 报错、单测 **518/518**。无界面导出 debug 包到 `F:\godotTowerPush\v0-tt-build-451`（AppID 真值，`godotVersion` = 4.5.1，用缓存的抖音 4.5 模板 `web_debug.zip`）。
+  - 发现：10-25 那版在抖音开发者工具里已经跑过一次并失败，日志为引擎 wasm 编译错误 `WebAssembly.instantiate(): Compiling function #421 failed: expected 1 elements on the stack for fallthru, found 2`（工具模拟器引擎 helium）。新包的 `godot.wasm.br` 与旧包逐字节相同（都来自抖音模板），所以该错误与编辑器 4.5.1/4.5.2 无关，大概率仍会出现，要看开发者工具/真机实测。
+  - 导出目录同时有 `main.br`（47 MB）和 `main.pck`（48 MB），配置只引用 `main.br`，`main.pck` 是否随包上传待确认。
+- 2026-11-01 定位开发者工具报错：用户回报 4.5.1 debug 包在开发者工具模拟器里报同样的 `Compiling function #421 failed`。查明不是我们的问题，也不是缓存旧模板：
+  - 抖音远端配置当前下发的就是 `4.5.1-rc-1.0.0.12` 模板（web / web_trim / web_2d / web_2d_trim 四种，各 debug/release），本地缓存 md5 与远端一致。
+  - 8 个模板逐个用 Node 24 编译 wasm：**4 个 debug 版全部编译失败**（同一类 `fallthru` 栈校验错误），**4 个 release 版全部编译成功**。即抖音 4.5.1 的 debug 引擎模板本身是坏的 wasm，任何浏览器 / 模拟器都过不了。
+  - 处理：改用 release 导出到 `F:\godotTowerPush\v0-tt-build-451-release`，导出后 wasm 用 Node 编译通过。debug 模板的问题值得反馈给抖音。
+- 2026-11-01 release 包在开发者工具能运行、进到登录页，但输入名号后「进入」无反应、控制台无日志。排查结论：
+  - 输入框文字是白色（`Color(1,1,1)`），底色近白 `#f4faff`，白字白底看不见——master 原有 bug（`view/login.gd`、`view/account_create.gd`），已在 master 修为 `PixelUI.COL_PARCHMENT` 深字 + 浅色占位提示，本分支同步。
+  - 抖音适配层（`godot.launcher.js`）把 Godot 的隐藏输入框接到 `tt.showKeyboard`；对默认键盘类型（`type=text` 且无 inputmode）只在 `onKeyboardComplete` 时把文字交给引擎，逐字输入不同步。开发者工具里「完成」常不触发 → 引擎里输入框一直为空 → 「进入」按钮按规则禁用，点了不触发任何代码。
+  - 修法（仅本分支，网页导出下生效）：输入框 `virtual_keyboard_type = URL`（Godot 映射为 `type=url`，适配层改为逐字同步）；「进入」按钮在小游戏下不因空名禁用，按下时校验并提示；登录页加 `[MG][login]` 诊断日志（ready 环境、焦点、点击 / 触摸 / 按键、文字变化、按钮按下 / 抬起、check_name 结果、失败提示），`net/auth.gd` 的 JSON / protobuf 请求加 `[MG][http]` 起止日志（URL、result、status、字节数、用时）。
+  - 单测 518/518（4.6.3 master、4.5.1 分支各一遍），gdlint 通过。诊断包导出到 `F:\godotTowerPush\v0-tt-build-451-release-diag`，wasm 用 Node 编译通过。
+- 2026-11-01 诊断包验证：输入与按钮已正常（`[MG][login] on_enter text_len=4 valid=true` → 发起 check-name）。请求被抖音拒绝：`tt.request fail: url use invalid protocol ... support protocol is [https]`——抖音网络 API 只允许 https/wss，本机 `http://localhost` 无法使用（勾「不校验合法域名」也不行）。
+  - 用户决定直接用正式服：本分支 `config/network.json` 改为 `https://towerpushserver.jeffgame.tech` + 两条 wss（master 保持 localhost）。正式服与本分支的 logic/config 一致（release 相比只差设置页画质文字与部署文件），PvE 重放不会误判。
+  - 导出 `F:\godotTowerPush\v0-tt-build-prod`（release 模板，wasm 编译通过，包内已含正式服地址；正式服 check-name 返回 200）。
+  - 备案：抖音官方要求合法域名只支持 HTTPS、不能用 IP/localhost/端口、**必须 ICP 备案**；开发者工具与「手机调试模式」可勾「不校验合法域名 / TLS / HTTPS 证书」跳过；论坛反馈上传测试版后会按白名单校验。`towerpushserver.jeffgame.tech` 解析到 GCP 台湾 `34.80.200.211`（境外服务器无法做 ICP 备案），正式上线需改境内云服务器 + 已备案域名。
+- 2026-11-01 `protocol mismatch` 定位：开发者工具（`F:\douyinDev`）内部用 axios + follow-redirects 发 tt.request，`proxy-from-env` 读用户级环境变量 `HTTP_PROXY`/`HTTPS_PROXY=http://127.0.0.1:7897`，http 代理配 https 目标时触发 follow-redirects 的 `assert.equal(protocol, "protocol mismatch")`（axios 已知问题）。Clash 规则管不到（请求在进 Clash 前就在工具内报错）。处理：`F:\godotTowerPush\_tools\start_douyin_devtools_noproxy.bat` 清空代理变量、设 `NO_PROXY=jeffgame.tech` 后启动开发者工具，不改系统设置。
+- 2026-11-01 用启动脚本打开开发者工具后**登录全链路打通**：check-name 200 → login-name 200 → 持久会话 wss 连上 → 经济 / 王国状态拉取成功 → 进主界面（正式服配置 cfg=b9d8c0281125947f）。
+  - 真机调试被拒：包总大小 51.17 MiB 超过 30 MB（= main.br 46.8 MB + 引擎 6.5 MB；main.pck 不计入）。
+  - 瘦身：导出过滤加 `addons/godot_ai/*`（开发插件）和 `sound/bgm/*`（4 首 BGM 26 MB；AudioManager 找不到资源会静默跳过，暂时无背景音乐，之后走 CDN）。重导到 `F:\godotTowerPush\v0-tt-build-prod-slim`：main.br 19.7 MB，总计约 25 MiB；删掉重复的 main.pck（适配层找不到 .pck 会回退用 .br）。
+- 2026-11-01 再瘦身：开发者工具提示「项目源码包 25.29MB 超过 20.00MB」。抖音限制 = 主包 ≤4 MB、主包 + 分包总计 ≤20 MB（CDN 远程资源不计）。
+  - 拆包：贴图 11.8 MB（264 张）、字体 3.7 MB、3D 模型 3.4 MB、脚本 1 MB。
+  - 处理（仅本分支）：① 58 张大于 40 KB 的贴图导入改为有损 WebP（质量 0.85）；② 导出排除未被引用的资源：像素字体 fusion-pixel（2.5 MB，已不用）、旧 2D 王国 `assets/kingdom/*`、`assets/map/battle_bg_green.png`；③ 开启分包 `douyin/subpackage_on=true`（`godot/` 目录作分包，主包只剩启动脚本约 55 KB）。
+  - 结果 `F:\godotTowerPush\v0-tt-build-prod-slim2`：资源 main.br 9.5 MB + 引擎 6.5 MB，总计 **15.6 MiB**；贴图 11.8 → 4.1 MB。
+- 2026-11-01 真机（Android，抖音 40.7）启动 + 登录成功；之后持久会话每约 2.3 秒断一次再重连、经济状态拉取间歇失败、主菜单「在线启动失败」。经 IAP SSH 只读查正式服：
+  - 根因是**同一账号两端互顶**：开发者工具模拟器和手机同时用账号 jeff（acc=1）在线，服务器「一个账号只保留最新会话」，gateway 日志 `session: acc=1 evicting older connection` 共 38 次；两端被踢后都按 2 秒间隔自动重连，循环互踢。Caddy 日志里两路来源 IP 交替出现可佐证。不是抖音网络问题。
+  - 暴露的产品问题（待排期，master 同样存在）：被新登录顶掉的一端不该自动重连，应收到明确的「被顶号」关闭码后停止重连并提示。
+  - 安全问题：抖音 Android 客户端的 WebSocket 握手把**含 token 的完整 wss URL 写进了 `Origin` 头**，Caddy 访问日志只脱敏 query，不脱敏 headers → JWT 进了正式服访问日志。需在 Caddyfile 加 `request>headers>Origin` 脱敏（E2 前置）。
+- 2026-11-01 真机打一局：开战报到成功，战斗中第一次 `/v5/pve/report` 超时，之后所有 HTTP 请求都 status=0；会话 WebSocket 一直在线。查正式服 Caddy 访问日志：开战（pve/start，HTTP/2）之后手机的 HTTP 请求**一条都没到服务器**。
+  - 根因判断：Caddy 默认对每个响应回 `Alt-Svc: h3=":443"; ma=2592000`，compose 也发布了 443/udp。抖音的网络库（Cronet）看到后切到 HTTP/3（QUIC，走 UDP 443）；跨境 UDP 常被丢弃 → 请求黑洞，5 秒超时。WebSocket 是 HTTP/1.1 走 TCP 不受影响，这和日志完全吻合。
+  - 修复（release + master 工作树已改，未提交/未发布）：`Caddyfile.prod` 全局 `servers { protocols h1 h2 }` 关 HTTP/3；`docker-compose.prod.yml` 去掉 443/udp；日志过滤加 `request>headers>Origin delete`（顺带堵 token 进日志）。`caddy validate` 通过。服务器后端停在 `d257282`，与 release HEAD 之间没有 server/config/logic/proto 改动，快进只影响 Caddy。
+- 2026-11-02 用户在 PowerShell 执行发布（auto mode 拦截了 agent 直接发布）：release 提交 `1741de2` 推送；服务器从 `d257282` 快进到 `1741de2`（只多了文档 / 3D 客户端 / 编辑器插件，server/config/logic/proto 无变化），只重建 Caddy 容器，api/gateway/battle/verifier/pg/redis 未动。验证：响应不再带 `Alt-Svc: h3`，443/udp 不再发布到宿主机（列表里的 `443/udp` 只是镜像自带的 EXPOSE），check-name 200，Web 前端 200。注意：Windows PowerShell 下 `gcloud` 包装脚本报 Access denied，要用 `gcloud.cmd`。
+- 2026-11-02 收尾：用户今天不做真人复测；本分支改动整体提交并推 GitHub，rebase 到 master `6986981`（输入框颜色修复改由 master 提供）。实测结论汇总进 `docs/V0_MINIGAME_REPORT.md` 第 5 节。下次从「真机打完一整局」继续。

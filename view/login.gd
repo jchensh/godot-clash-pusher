@@ -20,13 +20,20 @@ var _counter: Label
 var _enter_btn: Button
 var _status: Label
 var _busy := false
+## 抖音小游戏（网页导出 + tt 适配层）。适配层对「默认键盘类型」的输入框只在键盘「完成」时才把文字交给引擎，
+## 开发者工具里「完成」常不触发 → 引擎一直以为输入框是空的 → 「进入」按钮一直禁用、点了无反应。
+## 小游戏下：输入框改 URL 键盘类型（适配层逐字同步）、「进入」按钮恒可点（按下时再校验并提示），并打满诊断日志。
+var _mg := false
 
 func _ready() -> void:
 	AudioManager.play_music("music_main_menu")
 	AudioManager.stop_ambience()
+	_mg = OS.has_feature("web")
 	_http = HTTPRequest.new()
 	add_child(_http)
 	_build()
+	if _mg:
+		_trace_setup()
 	# 已有记住的 username（如从设置误入/回退）→ 直接回主菜单走静默重登
 	var session = GameStateScript.session()
 	if session != null and not session.needs_login():
@@ -56,7 +63,9 @@ func _build() -> void:
 	_name_edit.add_theme_stylebox_override("normal", PixelUI.sbpixel(Color("f4faff"), 3, Color("a87b1a")))
 	_name_edit.add_theme_stylebox_override("focus", PixelUI.sbpixel(Color("f0f7fd"), 3, PixelUI.COL_GOLD))
 	_name_edit.text_changed.connect(_on_name_changed)
-	_name_edit.text_submitted.connect(func(_t): _on_enter())
+	_name_edit.text_submitted.connect(func(t): _trace("text_submitted len=%d" % t.length()); _on_enter())
+	if _mg:
+		_name_edit.virtual_keyboard_type = LineEdit.KEYBOARD_TYPE_URL   # 适配层对非默认类型逐字同步
 	add_child(_name_edit)
 	_counter = _center_label("0 / 10", 516, 22, PixelUI.COL_HINT)
 	_center_label("最多 10 个中文字（英文数字算半个）", 548, 18, PixelUI.COL_HINT)
@@ -75,6 +84,8 @@ func _build() -> void:
 	_refresh_enter()
 
 func _on_name_changed(_t: String) -> void:
+	if _mg:
+		_trace("text_changed len=%d valid=%s" % [_t.length(), _name_valid()])
 	var half := _name_half_width(_name_edit.text)
 	var w: float = half / 2.0
 	_counter.text = "%s / 10" % (str(int(w)) if w == floor(w) else ("%.1f" % w))
@@ -96,10 +107,17 @@ func _name_valid() -> bool:
 
 func _refresh_enter() -> void:
 	if _enter_btn != null:
-		_enter_btn.disabled = _busy or not _name_valid()
+		# 小游戏下不因「名字为空」禁用：引擎可能还没收到键盘文字，禁用会让点击毫无反馈、也无日志
+		_enter_btn.disabled = _busy or (not _mg and not _name_valid())
 
 func _on_enter() -> void:
-	if _busy or not _name_valid():
+	if _mg:
+		_trace("on_enter busy=%s text_len=%d valid=%s" % [_busy, _name_edit.text.length(), _name_valid()])
+	if _busy:
+		return
+	if not _name_valid():
+		if _mg:
+			_fail("请先输入名号（输完点键盘上的「完成」）" if _name_edit.text.strip_edges() == "" else "名号太长了")
 		return
 	_busy = true
 	_refresh_enter()
@@ -109,6 +127,8 @@ func _on_enter() -> void:
 	Log.i("[V5][login] 查询 username='%s'" % name_v)
 	var session = GameStateScript.session()
 	var chk: Dictionary = await session.check_name(_http, name_v)
+	if _mg:
+		_trace("check_name 结果 %s" % JSON.stringify(chk))
 	if not bool(chk.get("ok", false)):
 		_fail("连不上服务器，稍后再试")
 		return
@@ -126,7 +146,34 @@ func _on_enter() -> void:
 	Log.i("[V5][login] 新玩家 → 选头像注册")
 	Router.goto("account_create", {"username": name_v})
 
+# ---------- 抖音小游戏诊断（只在网页导出下启用；release 构建也会输出，用 Log.i）----------
+func _trace(msg: String) -> void:
+	Log.i("[MG][login] " + msg)
+
+func _trace_setup() -> void:
+	var session = GameStateScript.session()
+	_trace("ready web=%s mobile=%s 触屏=%s 虚拟键盘=%s server=%s" % [
+		OS.has_feature("web"), OS.has_feature("mobile"), DisplayServer.is_touchscreen_available(),
+		DisplayServer.has_feature(DisplayServer.FEATURE_VIRTUAL_KEYBOARD),
+		session.auth.server_url if session != null and session.get("auth") != null else "?"])
+	_name_edit.focus_entered.connect(func(): _trace("输入框 获得焦点"))
+	_name_edit.focus_exited.connect(func(): _trace("输入框 失去焦点 text_len=%d" % _name_edit.text.length()))
+	_name_edit.gui_input.connect(_trace_input.bind("输入框"))
+	_enter_btn.gui_input.connect(_trace_input.bind("进入按钮"))
+	_enter_btn.button_down.connect(func(): _trace("进入按钮 按下 disabled=%s" % _enter_btn.disabled))
+	_enter_btn.button_up.connect(func(): _trace("进入按钮 抬起"))
+
+func _trace_input(ev: InputEvent, who: String) -> void:
+	if ev is InputEventMouseButton and ev.pressed:
+		_trace("%s 点击 pos=%s disabled=%s" % [who, ev.position, _enter_btn.disabled])
+	elif ev is InputEventScreenTouch and ev.pressed:
+		_trace("%s 触摸 pos=%s" % [who, ev.position])
+	elif ev is InputEventKey and ev.pressed:
+		_trace("%s 按键 keycode=%d unicode=%d" % [who, ev.keycode, ev.unicode])
+
 func _fail(msg: String) -> void:
+	if _mg:
+		_trace("失败提示: " + msg)
 	_status.text = msg
 	UI.toast(msg, PixelUI.COL_GOLD, 1080.0, 1.4)
 	_busy = false
