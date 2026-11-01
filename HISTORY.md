@@ -1470,3 +1470,15 @@ A4 三块中的两块（素材分批接入等美术图，另行推进）。修�
 
 
 
+
+### release `1741de2` 只发 Caddy：关 HTTP/3 + 访问日志删 Origin（2026-11-02）
+
+- **起因**（抖音小游戏 V0 真机测试，详见 master HISTORY「抖音小游戏 V0 验证」与分支 `feat/v0-minigame` 的 `docs/V0_MINIGAME_REPORT.md`）：
+  - 安卓真机开战后所有 HTTP 请求都到不了服务器（Caddy 访问日志里没有），会话 wss 正常。Caddy 默认回 `Alt-Svc: h3`，抖音网络库改走 HTTP/3（UDP 443），跨境 UDP 被丢 → 请求黑洞。
+  - 抖音安卓 WebView 把含 token 的完整 wss 地址填进 `Origin` 头，Caddy 只脱敏 query → token 进了访问日志。
+- **改动**：`server/docker/Caddyfile.prod` 全局 `servers { protocols h1 h2 }`、日志过滤加 `request>headers>Origin delete`；`server/docker-compose.prod.yml` 去掉 `443/udp`。`caddy validate` 通过；master 同步提交 `6986981`。
+- **发布**（用户在 PowerShell 执行，agent 的直接发布被 auto mode 拦截）：
+  - `git push origin release`（`fbc540c..1741de2`）。
+  - `gcloud.cmd compute ssh … "sudo git merge --ff-only origin/release && … up -d caddy"`：服务器后端 `d257282 → 1741de2`（中间无 server/config/logic/proto 改动），只重建 Caddy，其余容器未动。PowerShell 的 `gcloud`（gcloud.ps1）报 `Test-Path : Access is denied`，改用 `gcloud.cmd`。
+- **验证**：响应不再带 `Alt-Svc: h3`；443/udp 不再映射到宿主机；healthz、check-name、Web 首页均 200。
+- **欠账**：抖音真机一整局（战斗中上报、结算发奖）待复测。
