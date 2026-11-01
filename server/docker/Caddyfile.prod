@@ -16,6 +16,11 @@
 
 {
 	email {$ACME_EMAIL}
+	# 关 HTTP/3（QUIC）：抖音客户端（Cronet）看到 Alt-Svc: h3 会改走 UDP 443，跨境 UDP 常被丢弃 → 请求黑洞、
+	# 战斗中上报与拉状态全部超时（2026-11-01 抖音真机实测）。只保留 TCP 上的 HTTP/1.1 + HTTP/2。
+	servers {
+		protocols h1 h2
+	}
 }
 
 {$DOMAIN} {
@@ -48,6 +53,8 @@
 				request>uri query {
 					replace token REDACTED
 				}
+				# 抖音安卓 WebView 会把含 token 的完整 wss 地址填进 Origin 头 → 日志里删掉该头
+				request>headers>Origin delete
 			}
 		}
 	}
